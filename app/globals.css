@@ -121,3 +121,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+.suggest-addition {
+  color: #29350e;
+  background-color: #e1fdc5;
+}
+
+.highlight {
+  background-color: #bbe5ff;
+  border-radius: 5px;
+}
+
+.suggest-deletion {
+  color: #676666;
+  background-color: #eaebe9;
+  text-decoration: line-through;
+}

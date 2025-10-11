@@ -11,6 +11,8 @@
     "ai": "^5.0.68",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "diff": "^8.0.2",
+    "is-hotkey": "^0.2.0",
     "lucide-react": "^0.545.0",
     "nanoid": "^5.1.6",
     "next": "15.5.4",
@@ -19,12 +21,14 @@
     "react-dom": "19.1.0",
     "react-icons": "^5.5.0",
     "slate": "^0.118.1",
+    "slate-history": "^0.113.1",
     "slate-react": "^0.117.4",
     "tailwind-merge": "^3.3.1",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/is-hotkey": "^0.1.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

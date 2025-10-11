@@ -24,6 +24,7 @@ export default function RootLayout({
       <body
         data-theme="light"
         className={`${geistSans.variable} ${geistMono.variable} ${notoSerif.variable} ${notoSans.variable} antialiased`}
+        cz-shortcut-listen="false"
       >
         {children}
       </body>

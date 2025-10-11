@@ -1,3 +1,5 @@
+import { TextEditor } from "@/components/TextEditor";
+
 export default function Page() {
-  return <div>Hello, World!</div>;
+  return <TextEditor />;
 }
