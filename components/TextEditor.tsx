@@ -17,6 +17,7 @@ import { TextUtils } from "@/lib/utils/textUtils";
 import { CoreferenceUtils } from "@/lib/utils/coreferenceUtils";
 import { useEditorStore } from "@/lib/stores/editorStore";
 import { useCharacterStore } from "@/lib/stores/characterStore";
+import { useSentenceCacheStore } from "@/lib/stores/sentenceCacheStore";
 import isHotkey from "is-hotkey";
 
 const initialValue: Descendant[] = [
@@ -49,6 +50,10 @@ export const TextEditor = () => {
 
   const setCharacters = useCharacterStore((s) => s.setCharacters);
   const characters = useCharacterStore((s) => s.characters);
+
+  const sentenceCaches = useSentenceCacheStore((s) => s.sentenceCaches);
+  const cachedCharacterNames = useSentenceCacheStore((s) => s.cachedCharacterNames);
+  const setSentenceCaches = useSentenceCacheStore((s) => s.setSentenceCaches);
 
   const editorMatches = useEditorStore((s) => s.matches);
 
@@ -172,34 +177,35 @@ export const TextEditor = () => {
                 return;
               }
 
-              // Step 2: Extract coreferences for all characters
-              alert(
-                `Found ${characterNames.length} characters. Now extracting coreferences...`,
+              // Step 2: Extract coreferences using smart caching
+              const startTime = Date.now();
+
+              const result = await CoreferenceUtils.extractAllCoreferencesWithCache(
+                story,
+                characterNames,
+                sentenceCaches.length > 0 ? sentenceCaches : undefined,
+                cachedCharacterNames.length > 0 ? cachedCharacterNames : undefined,
               );
 
-              const charactersWithCoreferences =
-                await CoreferenceUtils.extractAllCoreferences(
-                  story,
-                  characterNames,
-                );
+              const extractionTime = Date.now() - startTime;
+              console.log(`Extraction completed in ${extractionTime}ms`);
+              console.log("Characters with coreferences:", result.characters);
 
-              console.log(
-                "Characters with coreferences:",
-                charactersWithCoreferences,
-              );
-
-              // Step 3: Save to character store
-              setCharacters(charactersWithCoreferences);
+              // Step 3: Save to stores
+              setCharacters(result.characters);
+              setSentenceCaches(result.sentenceCaches, characterNames);
 
               // Show summary
-              const summary = charactersWithCoreferences
+              const summary = result.characters
                 .map(
                   (char) =>
                     `${char.name}: ${char.coreferenceMatches.length} references`,
                 )
                 .join("\n");
 
-              alert(`Extraction complete!\n\n${summary}`);
+              alert(
+                `Extraction complete in ${(extractionTime / 1000).toFixed(1)}s!\n\n${summary}`,
+              );
             } catch (err) {
               console.error("Extraction error:", err);
               alert(
