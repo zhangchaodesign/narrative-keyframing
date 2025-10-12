@@ -11,7 +11,7 @@ import {
 } from "slate";
 import { Slate, Editable, withReact, RenderLeafProps } from "slate-react";
 import { withHistory, HistoryEditor } from "slate-history";
-import { Leaf } from "@/components/Leaf";
+import { Leaf } from "@/components/TextEditor/Leaf";
 import { SlateUtils } from "@/lib/utils/slateUtils";
 import { TextUtils } from "@/lib/utils/textUtils";
 import { CoreferenceUtils } from "@/lib/utils/coreferenceUtils";
@@ -20,11 +20,7 @@ import { useCharacterStore } from "@/lib/stores/characterStore";
 import { useSentenceCacheStore } from "@/lib/stores/sentenceCacheStore";
 import isHotkey from "is-hotkey";
 
-const initialValue: Descendant[] = [
-  { type: "paragraph", children: [{ text: "Type or paste text here..." }] },
-];
-
-export const TextEditor = () => {
+export default function TextEditor() {
   const [editor] = useState(() => withHistory(withReact(createEditor())));
   const { normalizeNode } = editor;
   editor.normalizeNode = (entry) => {
@@ -252,7 +248,11 @@ export const TextEditor = () => {
         />
       </div>
 
-      <Slate editor={editor} initialValue={initialValue} onChange={setValue}>
+      <Slate
+        editor={editor}
+        initialValue={useEditorStore.getState().value}
+        onChange={setValue}
+      >
         <Editable
           className="prose max-w-none focus:outline-none"
           renderLeaf={(p: RenderLeafProps) => <Leaf {...p} />}
@@ -274,4 +274,4 @@ export const TextEditor = () => {
       </Slate>
     </div>
   );
-};
+}
