@@ -256,8 +256,8 @@ export default function TextEditor() {
                             hasConflict(attr.name)
                               ? "bg-red-100 border-red-400 hover:bg-red-200"
                               : selectedAttribute === attr.name
-                                ? "bg-blue-200 font-bold ring-2 ring-blue-400"
-                                : "bg-blue-50 hover:bg-blue-100"
+                              ? "bg-blue-200 font-bold ring-2 ring-blue-400"
+                              : "bg-blue-50 hover:bg-blue-100"
                           }`}
                           onClick={() => {
                             if (selectedAttribute === attr.name) {
@@ -292,8 +292,8 @@ export default function TextEditor() {
                             hasConflict(attr.name)
                               ? "bg-red-100 border-red-400 hover:bg-red-200"
                               : selectedAttribute === attr.name
-                                ? "bg-purple-200 font-bold ring-2 ring-purple-400"
-                                : "bg-purple-50 hover:bg-purple-100"
+                              ? "bg-purple-200 font-bold ring-2 ring-purple-400"
+                              : "bg-purple-50 hover:bg-purple-100"
                           }`}
                           onClick={() => {
                             if (selectedAttribute === attr.name) {
@@ -328,8 +328,8 @@ export default function TextEditor() {
                             hasConflict(attr.name)
                               ? "bg-red-100 border-red-400 hover:bg-red-200"
                               : selectedAttribute === attr.name
-                                ? "bg-green-200 font-bold ring-2 ring-green-400"
-                                : "bg-green-50 hover:bg-green-100"
+                              ? "bg-green-200 font-bold ring-2 ring-green-400"
+                              : "bg-green-50 hover:bg-green-100"
                           }`}
                           onClick={() => {
                             if (selectedAttribute === attr.name) {
@@ -368,7 +368,8 @@ export default function TextEditor() {
                 {character.conflicts && character.conflicts.length > 0 && (
                   <div className="mt-4 p-3 bg-red-50 border border-red-300 rounded">
                     <h4 className="text-sm font-semibold text-red-700 mb-2">
-                      ⚠️ Characterization Conflicts ({character.conflicts.length})
+                      ⚠️ Characterization Conflicts (
+                      {character.conflicts.length})
                     </h4>
                     <div className="space-y-2">
                       {character.conflicts.map((conflict) => (
@@ -382,8 +383,8 @@ export default function TextEditor() {
                                 conflict.severity === "high"
                                   ? "bg-red-600"
                                   : conflict.severity === "medium"
-                                    ? "bg-orange-500"
-                                    : "bg-yellow-500"
+                                  ? "bg-orange-500"
+                                  : "bg-yellow-500"
                               }`}
                             >
                               {conflict.severity.toUpperCase()}
@@ -407,12 +408,16 @@ export default function TextEditor() {
                               Original evidence: "
                               {conflict.establishedAttribute.evidence.text}"
                               (sentence{" "}
-                              {conflict.establishedAttribute.evidence.sentenceIndex})
+                              {
+                                conflict.establishedAttribute.evidence
+                                  .sentenceIndex
+                              }
+                              )
                             </p>
                             <p className="text-red-600 font-medium">
                               Conflicting evidence: "
-                              {conflict.conflictingEvidence.text}"
-                              (sentence {conflict.conflictingEvidence.sentenceIndex})
+                              {conflict.conflictingEvidence.text}" (sentence{" "}
+                              {conflict.conflictingEvidence.sentenceIndex})
                             </p>
                           </div>
                         </div>
