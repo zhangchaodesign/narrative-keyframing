@@ -14,7 +14,9 @@ import { withHistory, HistoryEditor } from "slate-history";
 import { Leaf } from "@/components/Leaf";
 import { SlateUtils } from "@/lib/utils/slateUtils";
 import { TextUtils } from "@/lib/utils/textUtils";
+import { CoreferenceUtils } from "@/lib/utils/coreferenceUtils";
 import { useEditorStore } from "@/lib/stores/editorStore";
+import { useCharacterStore } from "@/lib/stores/characterStore";
 import isHotkey from "is-hotkey";
 
 const initialValue: Descendant[] = [
@@ -45,7 +47,12 @@ export const TextEditor = () => {
   const setValue = useEditorStore((s) => s.setValue);
   const isReadOnly = useEditorStore((s) => s.isReadOnly);
 
-  const [needle, setNeedle] = useState("text");
+  const setCharacters = useCharacterStore((s) => s.setCharacters);
+  const characters = useCharacterStore((s) => s.characters);
+
+  const editorMatches = useEditorStore((s) => s.matches);
+
+  const [needle, setNeedle] = useState("");
   // 1) Flatten the Slate value (this already skips `.removed` text)
   const flatText = useMemo(() => SlateUtils.stateToText(value as any), [value]);
 
@@ -60,13 +67,24 @@ export const TextEditor = () => {
   );
 
   // 3) Use matcher; convert starts → {start,end}
+  // Combine keyword matches with character coreference matches
   const matches = useMemo(() => {
+    // If there are character matches from the store, use those
+    if (editorMatches.length > 0) {
+      return editorMatches;
+    }
+
+    // Otherwise, use keyword search matches
+    if (needle.length === 0) {
+      return [];
+    }
+
     const starts = TextUtils.findAllMatches(cleanedFlat, cleanedNeedle);
     return starts.map((start) => ({
       start,
       end: start + cleanedNeedle.length,
     }));
-  }, [cleanedFlat, cleanedNeedle]);
+  }, [cleanedFlat, cleanedNeedle, needle.length, editorMatches]);
 
   // 4) Decorate using SlateUtils.toSlatePoint on the ORIGINAL Slate state
   const decorate = useCallback(
@@ -92,32 +110,104 @@ export const TextEditor = () => {
 
   return (
     <div className="p-4 space-y-3">
+      {/* Character list display */}
+      {characters.length > 0 && (
+        <div className="border p-3 rounded bg-gray-50">
+          <h3 className="font-semibold mb-2">Characters:</h3>
+          <div className="flex flex-wrap gap-2">
+            {characters.map((char) => (
+              <button
+                key={char.name}
+                type="button"
+                className="border px-3 py-1 rounded hover:bg-blue-100 text-sm"
+                onClick={() => {
+                  // Highlight all coreferences for this character
+                  const matches = char.coreferenceMatches.map((coref) => ({
+                    start: coref.startIndex,
+                    end: coref.endIndex,
+                  }));
+                  useEditorStore.getState().setMatches(matches);
+                  setNeedle(""); // Clear the keyword search
+                  console.log(
+                    `Highlighting ${matches.length} references for ${char.name}`,
+                  );
+                }}
+              >
+                {char.name} ({char.coreferenceMatches.length})
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-2">
         {/* Create a button to extract characters */}
         <button
           type="button"
           className="border px-2 py-1"
-          onClick={() => {
+          onClick={async () => {
             const story = SlateUtils.stateToText(value as any);
             console.log("Extracting characters from story:", story);
-            fetch("/api/character", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ story }),
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.characters) {
-                  alert(`Extracted characters: ${data.characters}`);
-                } else if (data.error) {
-                  alert(`Error: ${data.error}`);
-                }
-              })
-              .catch((err) => {
-                alert(`Request failed: ${err.message}`);
+
+            try {
+              // Step 1: Extract character names
+              const charResponse = await fetch("/api/character", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ story }),
               });
+
+              const charData = await charResponse.json();
+
+              if (charData.error) {
+                alert(`Error: ${charData.error}`);
+                return;
+              }
+
+              const characterNames: string[] = charData.characters || [];
+              console.log("Extracted character names:", characterNames);
+
+              if (characterNames.length === 0) {
+                alert("No characters found in the story");
+                return;
+              }
+
+              // Step 2: Extract coreferences for all characters
+              alert(
+                `Found ${characterNames.length} characters. Now extracting coreferences...`,
+              );
+
+              const charactersWithCoreferences =
+                await CoreferenceUtils.extractAllCoreferences(
+                  story,
+                  characterNames,
+                );
+
+              console.log(
+                "Characters with coreferences:",
+                charactersWithCoreferences,
+              );
+
+              // Step 3: Save to character store
+              setCharacters(charactersWithCoreferences);
+
+              // Show summary
+              const summary = charactersWithCoreferences
+                .map(
+                  (char) =>
+                    `${char.name}: ${char.coreferenceMatches.length} references`,
+                )
+                .join("\n");
+
+              alert(`Extraction complete!\n\n${summary}`);
+            } catch (err) {
+              console.error("Extraction error:", err);
+              alert(
+                `Request failed: ${
+                  err instanceof Error ? err.message : String(err)
+                }`,
+              );
+            }
           }}
         >
           Extract Characters

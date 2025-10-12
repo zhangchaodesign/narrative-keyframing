@@ -1,5 +1,6 @@
 // store/editorStore.ts
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import type { Descendant } from "slate";
 
 export type Match = { start: number; end: number };
@@ -20,13 +21,20 @@ type EditorState = {
   setFilter: (f: [number, number] | null) => void;
 };
 
-export const useEditorStore = create<EditorState>((set) => ({
-  value: [],
-  setValue: (v) => set({ value: v }),
-  isReadOnly: false,
-  setReadOnly: (b) => set({ isReadOnly: b }),
-  matches: [],
-  setMatches: (m) => set({ matches: m }),
-  filter: null,
-  setFilter: (f) => set({ filter: f }),
-}));
+export const useEditorStore = create<EditorState>()(
+  persist(
+    (set) => ({
+      value: [],
+      setValue: (v) => set({ value: v }),
+      isReadOnly: false,
+      setReadOnly: (b) => set({ isReadOnly: b }),
+      matches: [],
+      setMatches: (m) => set({ matches: m }),
+      filter: null,
+      setFilter: (f) => set({ filter: f }),
+    }),
+    {
+      name: "editor-storage",
+    },
+  ),
+);
