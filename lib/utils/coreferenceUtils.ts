@@ -186,7 +186,10 @@ export class CoreferenceUtils {
 
     // Check if character list changed (order doesn't matter, just set membership)
     const characterListChanged = (() => {
-      if (!cachedCharacterNames || cachedCharacterNames.length !== characterNames.length) {
+      if (
+        !cachedCharacterNames ||
+        cachedCharacterNames.length !== characterNames.length
+      ) {
         return true;
       }
       // Same length, check if same set of names

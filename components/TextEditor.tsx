@@ -52,7 +52,9 @@ export const TextEditor = () => {
   const characters = useCharacterStore((s) => s.characters);
 
   const sentenceCaches = useSentenceCacheStore((s) => s.sentenceCaches);
-  const cachedCharacterNames = useSentenceCacheStore((s) => s.cachedCharacterNames);
+  const cachedCharacterNames = useSentenceCacheStore(
+    (s) => s.cachedCharacterNames,
+  );
   const setSentenceCaches = useSentenceCacheStore((s) => s.setSentenceCaches);
 
   const editorMatches = useEditorStore((s) => s.matches);
@@ -180,12 +182,15 @@ export const TextEditor = () => {
               // Step 2: Extract coreferences using smart caching
               const startTime = Date.now();
 
-              const result = await CoreferenceUtils.extractAllCoreferencesWithCache(
-                story,
-                characterNames,
-                sentenceCaches.length > 0 ? sentenceCaches : undefined,
-                cachedCharacterNames.length > 0 ? cachedCharacterNames : undefined,
-              );
+              const result =
+                await CoreferenceUtils.extractAllCoreferencesWithCache(
+                  story,
+                  characterNames,
+                  sentenceCaches.length > 0 ? sentenceCaches : undefined,
+                  cachedCharacterNames.length > 0
+                    ? cachedCharacterNames
+                    : undefined,
+                );
 
               const extractionTime = Date.now() - startTime;
               console.log(`Extraction completed in ${extractionTime}ms`);
@@ -204,7 +209,9 @@ export const TextEditor = () => {
                 .join("\n");
 
               alert(
-                `Extraction complete in ${(extractionTime / 1000).toFixed(1)}s!\n\n${summary}`,
+                `Extraction complete in ${(extractionTime / 1000).toFixed(
+                  1,
+                )}s!\n\n${summary}`,
               );
             } catch (err) {
               console.error("Extraction error:", err);
