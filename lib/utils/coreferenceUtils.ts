@@ -184,11 +184,15 @@ export class CoreferenceUtils {
     const sentences = TextUtils.splitIntoSentences(story);
     const cache = existingCache || [];
 
-    // Check if character list changed
-    const characterListChanged =
-      !cachedCharacterNames ||
-      cachedCharacterNames.length !== characterNames.length ||
-      !characterNames.every((name) => cachedCharacterNames.includes(name));
+    // Check if character list changed (order doesn't matter, just set membership)
+    const characterListChanged = (() => {
+      if (!cachedCharacterNames || cachedCharacterNames.length !== characterNames.length) {
+        return true;
+      }
+      // Same length, check if same set of names
+      const cachedSet = new Set(cachedCharacterNames);
+      return !characterNames.every((name) => cachedSet.has(name));
+    })();
 
     // Detect which sentences need processing using content-based matching
     const { cacheMapping, newIndices } = this.detectSentenceChanges(
