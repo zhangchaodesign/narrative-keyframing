@@ -24,35 +24,59 @@ export class TextUtils {
 
   /**
    * Find all whole-word matches (respecting word boundaries) in str
-   * This prevents matching "he" inside "the", etc.
+   * Uses fuzzy matching by normalizing both strings (removes special chars, lowercases)
+   * This prevents matching "he" inside "the", but allows matching "hugging her knees."
+   * even with punctuation differences
+   *
+   * Implementation based on matchActionsToText from anotherTextUtils.ts
+   *
    * @param str - The text to search in
-   * @param search - The word to search for
-   * @returns Array of starting indices where the word appears as a complete word
+   * @param search - The phrase/word to search for
+   * @returns Array of starting indices where the phrase appears in the original text
    */
   static findAllWordMatches(str: string, search: string): number[] {
     const indices: number[] = [];
 
     if (search.length === 0) return indices;
 
-    // Create a regex with word boundaries
-    // \b ensures we only match complete words
-    const regex = new RegExp(`\\b${this.escapeRegExp(search)}\\b`, "gi");
-    let match;
+    // Normalize both strings for comparison (like matchActionsToText does)
+    const normalizedStr = this.prepareStringForMatching(str);
+    const normalizedSearch = this.prepareStringForMatching(search);
 
-    while ((match = regex.exec(str)) !== null) {
-      indices.push(match.index);
+    // Find all matches in the normalized string
+    let searchStartIndex = 0;
+    let matchIndex;
+
+    while (
+      (matchIndex = normalizedStr.indexOf(normalizedSearch, searchStartIndex)) >
+      -1
+    ) {
+      // Now map the normalized index back to the original string
+      // We need to count characters in both strings simultaneously
+      let normalizedPos = 0;
+      let originalPos = 0;
+
+      // Walk through original string until we reach the match position in normalized string
+      while (normalizedPos < matchIndex && originalPos < str.length) {
+        const char = str[originalPos];
+        if (/[a-zA-Z0-9]/.test(char)) {
+          // This character appears in normalized string
+          normalizedPos++;
+        } else {
+          // This character becomes a space in normalized string
+          normalizedPos++;
+        }
+        originalPos++;
+      }
+
+      // originalPos now points to the start of the match in the original string
+      indices.push(originalPos);
+
+      // Continue searching after this match
+      searchStartIndex = matchIndex + normalizedSearch.length;
     }
 
     return indices;
-  }
-
-  /**
-   * Escape special regex characters in a string
-   * @param str - String to escape
-   * @returns Escaped string safe for use in RegExp
-   */
-  private static escapeRegExp(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   /**

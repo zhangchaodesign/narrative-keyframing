@@ -82,6 +82,12 @@ Character references in this sentence: ${coreferences.join(", ")}
 Analyze this sentence and identify all PSYCHOLOGY attributes for ${characterName}. For each attribute, provide the attribute name and all verbatim evidence with indicator types.`,
       temperature: 0.3,
     });
+    console.log(
+      "Extracted psychology attributes:",
+      object.attributes,
+      characterName,
+      sentence,
+    );
 
     return NextResponse.json({ attributes: object.attributes });
   } catch (error) {

@@ -332,11 +332,14 @@ export class CoreferenceUtils {
           const sentenceAttributes: SentenceAttribute[] = [];
 
           for (const attr of attributesData) {
+            console.log("Processing attribute:", attr, category);
+
             const evidenceRefs: AttributeEvidenceRef[] = [];
 
             for (const ev of attr.evidence) {
               // Find all occurrences of this evidence text in the sentence
               const indices = TextUtils.findAllWordMatches(sentence, ev.text);
+              console.log(`Found indices for evidence "${ev.text}":`, indices);
               for (const relativeIndex of indices) {
                 evidenceRefs.push({
                   text: ev.text,
@@ -384,12 +387,7 @@ export class CoreferenceUtils {
   ): Promise<AttributeConflict[]> {
     const conflicts: AttributeConflict[] = [];
 
-    // Filter existing attributes by category
-    const existingInCategory = existingAttributes.filter(
-      (attr) => attr.category === category,
-    );
-
-    if (existingInCategory.length === 0) {
+    if (existingAttributes.length === 0) {
       // No existing attributes to conflict with
       return conflicts;
     }
@@ -397,7 +395,7 @@ export class CoreferenceUtils {
     // Check each new attribute against existing ones
     for (const newAttr of newAttributes) {
       // Build summary of existing attributes for API call
-      const existingSummary = existingInCategory.map((attr) => ({
+      const existingSummary = existingAttributes.map((attr) => ({
         name: attr.name,
         evidenceCount: attr.evidence.length,
       }));
@@ -427,7 +425,7 @@ export class CoreferenceUtils {
 
         if (data.isConflicting && data.conflictingAttribute) {
           // Find the conflicting attribute's evidence
-          const conflictingAttr = existingInCategory.find(
+          const conflictingAttr = existingAttributes.find(
             (attr) => attr.name === data.conflictingAttribute,
           );
 
@@ -646,12 +644,19 @@ export class CoreferenceUtils {
           characterAttributes[characterName] = attributes;
 
           // Step 3: Extract indicators (for character development tracking)
-          const indicators = await this.extractIndicatorsForCharacter(
-            story,
-            characterName,
-            sentence.text,
-            coreferences,
-          );
+          // const indicators = await this.extractIndicatorsForCharacter(
+          //   story,
+          //   characterName,
+          //   sentence.text,
+          //   coreferences,
+          // );
+          const indicators: SentenceCharacterIndicators = {
+            directDefinition: [],
+            actions: [],
+            speech: [],
+            appearance: [],
+            environment: [],
+          }; // Skip for now to reduce API calls
           characterIndicators[characterName] = indicators;
         } catch (error) {
           console.error(
@@ -835,11 +840,29 @@ export class CoreferenceUtils {
         sentences[sentIndex].startIndex,
       );
 
+      // Merge attributes into character map FIRST
+      attributes.forEach((attributeList, characterName) => {
+        const existing = characterAttributeMap.get(characterName) || [];
+        characterAttributeMap.set(characterName, [
+          ...existing,
+          ...attributeList,
+        ]);
+      });
+
       // Detect conflicts for newly processed sentences only
+      // Compare new sentence attributes against ALL previously accumulated attributes
       if (sentencesToProcess.includes(sentIndex)) {
         for (const [characterName, newAttributeList] of attributes.entries()) {
-          const existingAttributes =
-            characterAttributeMap.get(characterName) || [];
+          // Get all attributes accumulated BEFORE this sentence
+          const allAttributes = characterAttributeMap.get(characterName) || [];
+          const existingAttributes = allAttributes.filter((attr) =>
+            attr.evidence.some((ev) => ev.sentenceIndex !== sentIndex),
+          );
+
+          if (existingAttributes.length === 0) {
+            // First sentence with attributes, nothing to conflict with
+            continue;
+          }
 
           // Check each category for conflicts
           const categories: AttributeCategory[] = [
@@ -852,6 +875,9 @@ export class CoreferenceUtils {
             const newInCategory = newAttributeList.filter(
               (attr) => attr.category === category,
             );
+            // const existingInCategory = existingAttributes.filter(
+            //   (attr) => attr.category === category,
+            // );
 
             if (newInCategory.length > 0 && existingAttributes.length > 0) {
               // Convert new attributes to SentenceAttribute format for conflict detection
@@ -869,13 +895,12 @@ export class CoreferenceUtils {
               );
 
               try {
-                // const detectedConflicts = await this.detectConflicts(
-                //   category,
-                //   sentenceAttrs,
-                //   existingAttributes,
-                //   sentIndex,
-                // );
-                const detectedConflicts: AttributeConflict[] = []; // TEMP DISABLE CONFLICT DETECTION
+                const detectedConflicts = await this.detectConflicts(
+                  category,
+                  sentenceAttrs,
+                  existingAttributes,
+                  sentIndex,
+                );
 
                 if (detectedConflicts.length > 0) {
                   const existing =
@@ -895,15 +920,6 @@ export class CoreferenceUtils {
           }
         }
       }
-
-      // Merge attributes into character map
-      attributes.forEach((attributeList, characterName) => {
-        const existing = characterAttributeMap.get(characterName) || [];
-        characterAttributeMap.set(characterName, [
-          ...existing,
-          ...attributeList,
-        ]);
-      });
 
       // OLD: Convert indicators (kept for backward compatibility but empty)
       const indicators = this.sentenceCacheToIndicatorMatches(

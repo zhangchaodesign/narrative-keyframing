@@ -17,12 +17,12 @@ const ConflictSchema = z.object({
     .enum(["high", "medium", "low", "none"])
     .optional()
     .describe("Severity of the conflict"),
-  explanation: z
-    .string()
-    .optional()
-    .describe(
-      "Brief explanation of why these attributes conflict; or 'none' if no conflict",
-    ),
+  // explanation: z
+  //   .string()
+  //   .optional()
+  //   .describe(
+  //     "Brief explanation of why these attributes conflict; or 'none' if no conflict",
+  //   ),
 });
 
 export async function POST(request: Request) {
@@ -36,6 +36,13 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    console.log("Detecting conflicts with:", {
+      category,
+      newAttributeName,
+      newEvidence,
+      existingAttributes,
+    });
 
     // Build existing attributes summary for context
     const existingSummary = existingAttributes
@@ -83,6 +90,7 @@ ${existingSummary}
 Does the new attribute "${newAttributeName}" conflict with any existing attributes? Consider the evidence context carefully.`,
       temperature: 0.3,
     });
+    console.log("Conflict detection result:", object);
 
     return NextResponse.json(object);
   } catch (error) {
