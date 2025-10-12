@@ -82,7 +82,7 @@ export class TextUtils {
 
     while ((match = sentenceRegex.exec(text)) !== null) {
       sentences.push({
-        text: match[0].trim(),
+        text: match[0],
         startIndex: match.index,
       });
     }
