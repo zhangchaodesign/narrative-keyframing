@@ -56,6 +56,10 @@ export default function TextEditor() {
   const editorMatches = useEditorStore((s) => s.matches);
 
   const [needle, setNeedle] = useState("");
+  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null);
+  const [enabledIndicators, setEnabledIndicators] = useState<Set<string>>(
+    new Set(["directDefinition", "actions", "speech", "appearance", "environment"])
+  );
   // 1) Flatten the Slate value (this already skips `.removed` text)
   const flatText = useMemo(() => SlateUtils.stateToText(value as any), [value]);
 
@@ -97,6 +101,7 @@ export default function TextEditor() {
       // Only compute once per editor node; Slate will call us for each node
       if (!Editor.isEditor(node)) return ranges;
 
+      // Add coreference/keyword matches
       for (const m of matches) {
         // Convert string offsets into Slate Points.
         const anchor = SlateUtils.toSlatePoint(value as any, m.start);
@@ -106,9 +111,43 @@ export default function TextEditor() {
           ranges.push({ anchor, focus, highlight: true });
         }
       }
+
+      // Add indicator highlights for selected character
+      if (selectedCharacter) {
+        const character = characters.find((c) => c.name === selectedCharacter);
+        if (character && character.indicatorMatches) {
+          // Add each enabled indicator type
+          const indicatorTypes = [
+            "directDefinition",
+            "actions",
+            "speech",
+            "appearance",
+            "environment",
+          ] as const;
+
+          for (const type of indicatorTypes) {
+            if (enabledIndicators.has(type)) {
+              const indicators = character.indicatorMatches[type] || [];
+              for (const indicator of indicators) {
+                const anchor = SlateUtils.toSlatePoint(value as any, indicator.startIndex);
+                const focus = SlateUtils.toSlatePoint(value as any, indicator.endIndex);
+
+                if (anchor && focus) {
+                  ranges.push({
+                    anchor,
+                    focus,
+                    [type]: true, // Set the indicator type as a property
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
       return ranges;
     },
-    [matches, value],
+    [matches, value, selectedCharacter, characters, enabledIndicators],
   );
 
   return (
@@ -122,23 +161,73 @@ export default function TextEditor() {
               <button
                 key={char.name}
                 type="button"
-                className="border px-3 py-1 rounded hover:bg-blue-100 text-sm"
+                className={`border px-3 py-1 rounded hover:bg-blue-100 text-sm ${
+                  selectedCharacter === char.name ? "bg-blue-200 font-bold" : ""
+                }`}
                 onClick={() => {
-                  // Highlight all coreferences for this character
-                  const matches = char.coreferenceMatches.map((coref) => ({
-                    start: coref.startIndex,
-                    end: coref.endIndex,
-                  }));
-                  useEditorStore.getState().setMatches(matches);
-                  setNeedle(""); // Clear the keyword search
-                  console.log(
-                    `Highlighting ${matches.length} references for ${char.name}`,
-                  );
+                  if (selectedCharacter === char.name) {
+                    // Deselect character
+                    setSelectedCharacter(null);
+                    useEditorStore.getState().setMatches([]);
+                    setNeedle("");
+                  } else {
+                    // Select character and highlight coreferences
+                    setSelectedCharacter(char.name);
+                    const matches = char.coreferenceMatches.map((coref) => ({
+                      start: coref.startIndex,
+                      end: coref.endIndex,
+                    }));
+                    useEditorStore.getState().setMatches(matches);
+                    setNeedle(""); // Clear the keyword search
+                    console.log(
+                      `Highlighting ${matches.length} references for ${char.name}`,
+                    );
+                  }
                 }}
               >
                 {char.name} ({char.coreferenceMatches.length})
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Indicator type controls */}
+      {selectedCharacter && (
+        <div className="border p-3 rounded bg-gray-50">
+          <h3 className="font-semibold mb-2">Show Indicators for {selectedCharacter}:</h3>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "directDefinition", label: "Direct Definition", color: "bg-pink-200" },
+              { key: "actions", label: "Actions", color: "bg-orange-200" },
+              { key: "speech", label: "Speech", color: "bg-green-200" },
+              { key: "appearance", label: "Appearance", color: "bg-purple-200" },
+              { key: "environment", label: "Environment", color: "bg-yellow-200" },
+            ].map(({ key, label, color }) => {
+              const character = characters.find((c) => c.name === selectedCharacter);
+              const count = character?.indicatorMatches?.[key as keyof typeof character.indicatorMatches]?.length || 0;
+
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`border px-3 py-1 rounded text-sm ${
+                    enabledIndicators.has(key) ? `${color} font-semibold` : "bg-gray-200"
+                  }`}
+                  onClick={() => {
+                    const newEnabled = new Set(enabledIndicators);
+                    if (newEnabled.has(key)) {
+                      newEnabled.delete(key);
+                    } else {
+                      newEnabled.add(key);
+                    }
+                    setEnabledIndicators(newEnabled);
+                  }}
+                >
+                  {label} ({count})
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -190,7 +279,7 @@ export default function TextEditor() {
 
               const extractionTime = Date.now() - startTime;
               console.log(`Extraction completed in ${extractionTime}ms`);
-              console.log("Characters with coreferences:", result.characters);
+              console.log("Characters with coreferences and indicators:", result.characters);
 
               // Step 3: Save to stores
               setCharacters(result.characters);
@@ -198,10 +287,17 @@ export default function TextEditor() {
 
               // Show summary
               const summary = result.characters
-                .map(
-                  (char) =>
-                    `${char.name}: ${char.coreferenceMatches.length} references`,
-                )
+                .map((char) => {
+                  const indicators = char.indicatorMatches;
+                  const indicatorCounts = [
+                    `Direct: ${indicators.directDefinition.length}`,
+                    `Actions: ${indicators.actions.length}`,
+                    `Speech: ${indicators.speech.length}`,
+                    `Appearance: ${indicators.appearance.length}`,
+                    `Environment: ${indicators.environment.length}`,
+                  ].join(", ");
+                  return `${char.name}: ${char.coreferenceMatches.length} refs | ${indicatorCounts}`;
+                })
                 .join("\n");
 
               alert(

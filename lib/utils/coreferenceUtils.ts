@@ -4,6 +4,13 @@ import type {
   SentenceCache,
   SentenceCharacterRef,
 } from "../stores/sentenceCacheStore";
+import type {
+  IndicatorType,
+  SentenceIndicatorRef,
+  SentenceCharacterIndicators,
+  CharacterIndicators,
+  IndicatorMatch,
+} from "../types/indicators";
 
 export class CoreferenceUtils {
   /**
@@ -91,11 +98,152 @@ export class CoreferenceUtils {
   }
 
   /**
-   * Process a single sentence to extract character references
+   * Convert cached indicator data to absolute indicator matches
+   * @param sentenceCache - Cached sentence data with relative indices
+   * @param sentenceIndex - Index of this sentence in the story
+   * @param sentenceStartIndex - Absolute start position of this sentence in story
+   * @returns Map of character name to their indicator matches
+   */
+  private static sentenceCacheToIndicatorMatches(
+    sentenceCache: SentenceCache,
+    sentenceIndex: number,
+    sentenceStartIndex: number,
+  ): Map<string, CharacterIndicators> {
+    const indicatorsByCharacter = new Map<string, CharacterIndicators>();
+
+    for (const [characterName, indicators] of Object.entries(
+      sentenceCache.characterIndicators || {},
+    )) {
+      const characterIndicators: CharacterIndicators = {
+        directDefinition: [],
+        actions: [],
+        speech: [],
+        appearance: [],
+        environment: [],
+      };
+
+      // Convert each indicator type
+      const indicatorTypes: IndicatorType[] = [
+        "directDefinition",
+        "actions",
+        "speech",
+        "appearance",
+        "environment",
+      ];
+
+      for (const type of indicatorTypes) {
+        const refs = indicators[type] || [];
+        characterIndicators[type] = refs.map((ref) => ({
+          sentenceIndex,
+          startIndex: sentenceStartIndex + ref.relativeIndex,
+          endIndex: sentenceStartIndex + ref.relativeIndex + ref.text.length,
+          text: ref.text,
+          type,
+        }));
+      }
+
+      indicatorsByCharacter.set(characterName, characterIndicators);
+    }
+
+    return indicatorsByCharacter;
+  }
+
+  /**
+   * Extract indicators for a character in a sentence
+   * @param story - Full story text (for context)
+   * @param characterName - Character to analyze
+   * @param sentence - Sentence text
+   * @param coreferences - List of coreferences found for this character
+   * @returns SentenceCharacterIndicators object
+   */
+  private static async extractIndicatorsForCharacter(
+    story: string,
+    characterName: string,
+    sentence: string,
+    coreferences: string[],
+  ): Promise<SentenceCharacterIndicators> {
+    const indicatorTypes: IndicatorType[] = [
+      "directDefinition",
+      "actions",
+      "speech",
+      "appearance",
+      "environment",
+    ];
+
+    const indicators: SentenceCharacterIndicators = {
+      directDefinition: [],
+      actions: [],
+      speech: [],
+      appearance: [],
+      environment: [],
+    };
+
+    // Only process if there are coreferences in this sentence
+    if (coreferences.length === 0) {
+      return indicators;
+    }
+
+    // Call all 5 indicator APIs in parallel
+    await Promise.all(
+      indicatorTypes.map(async (type) => {
+        try {
+          const apiPath = type === "directDefinition"
+            ? "direct-definition"
+            : type;
+
+          const response = await fetch(`/api/indicators/${apiPath}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              story,
+              characterName,
+              sentence,
+              coreferences,
+            }),
+          });
+
+          if (!response.ok) {
+            console.error(
+              `Failed to extract ${type} indicators for ${characterName}`,
+            );
+            return;
+          }
+
+          const data = await response.json();
+          const indicatorTexts: string[] = data.indicators || [];
+
+          // Convert indicator texts to relative indices
+          const refs: SentenceIndicatorRef[] = [];
+          for (const indicatorText of indicatorTexts) {
+            const indices = TextUtils.findAllWordMatches(sentence, indicatorText);
+            for (const relativeIndex of indices) {
+              refs.push({
+                text: indicatorText,
+                relativeIndex,
+              });
+            }
+          }
+
+          indicators[type] = refs;
+        } catch (error) {
+          console.error(
+            `Error extracting ${type} indicators for ${characterName}:`,
+            error,
+          );
+        }
+      }),
+    );
+
+    return indicators;
+  }
+
+  /**
+   * Process a single sentence to extract character references and indicators
    * @param story - Full story text (for context)
    * @param sentence - Sentence to process
    * @param sentenceIndex - Index of this sentence
    * @param characterNames - Characters to look for
+   * @param extractIndicators - Whether to extract indicators (default: true)
    * @returns SentenceCache object for this sentence
    */
   private static async processSentence(
@@ -103,14 +251,17 @@ export class CoreferenceUtils {
     sentence: { text: string; startIndex: number },
     sentenceIndex: number,
     characterNames: string[],
+    extractIndicators: boolean = true,
   ): Promise<SentenceCache> {
     const characterRefs: { [characterName: string]: SentenceCharacterRef[] } =
       {};
+    const characterIndicators: { [characterName: string]: SentenceCharacterIndicators } = {};
 
     // Process all characters for this sentence in parallel
     await Promise.all(
       characterNames.map(async (characterName) => {
         try {
+          // Step 1: Extract coreferences
           const response = await fetch("/api/coreference", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -126,6 +277,13 @@ export class CoreferenceUtils {
               `Failed to extract coreferences for ${characterName} in sentence ${sentenceIndex}`,
             );
             characterRefs[characterName] = [];
+            characterIndicators[characterName] = {
+              directDefinition: [],
+              actions: [],
+              speech: [],
+              appearance: [],
+              environment: [],
+            };
             return;
           }
 
@@ -148,12 +306,38 @@ export class CoreferenceUtils {
           }
 
           characterRefs[characterName] = refs;
+
+          // Step 2: Extract indicators (only if coreferences exist)
+          if (extractIndicators) {
+            const indicators = await this.extractIndicatorsForCharacter(
+              story,
+              characterName,
+              sentence.text,
+              coreferences,
+            );
+            characterIndicators[characterName] = indicators;
+          } else {
+            characterIndicators[characterName] = {
+              directDefinition: [],
+              actions: [],
+              speech: [],
+              appearance: [],
+              environment: [],
+            };
+          }
         } catch (error) {
           console.error(
             `Error processing sentence ${sentenceIndex} for character ${characterName}:`,
             error,
           );
           characterRefs[characterName] = [];
+          characterIndicators[characterName] = {
+            directDefinition: [],
+            actions: [],
+            speech: [],
+            appearance: [],
+            environment: [],
+          };
         }
       }),
     );
@@ -161,6 +345,7 @@ export class CoreferenceUtils {
     return {
       text: sentence.text,
       characterRefs,
+      characterIndicators,
     };
   }
 
@@ -266,21 +451,32 @@ export class CoreferenceUtils {
         newCache[i] = {
           text: sentences[i].text,
           characterRefs: {},
+          characterIndicators: {},
         };
       }
     }
 
     // Convert cache to character matches with absolute indices
     const characterMatchMap = new Map<string, CoreferenceMatch[]>();
+    const characterIndicatorMap = new Map<string, CharacterIndicators>();
 
     // Initialize all characters
     characterNames.forEach((name) => {
       characterMatchMap.set(name, []);
+      characterIndicatorMap.set(name, {
+        directDefinition: [],
+        actions: [],
+        speech: [],
+        appearance: [],
+        environment: [],
+      });
     });
 
     // Process each sentence's cache and convert to absolute indices
     for (let sentIndex = 0; sentIndex < sentences.length; sentIndex++) {
       const sentenceCache = newCache[sentIndex];
+
+      // Convert coreferences
       const matches = this.sentenceCacheToMatches(
         sentenceCache,
         sentIndex,
@@ -292,12 +488,44 @@ export class CoreferenceUtils {
         const existing = characterMatchMap.get(characterName) || [];
         characterMatchMap.set(characterName, [...existing, ...matchList]);
       });
+
+      // Convert indicators
+      const indicators = this.sentenceCacheToIndicatorMatches(
+        sentenceCache,
+        sentIndex,
+        sentences[sentIndex].startIndex,
+      );
+
+      // Merge indicators into character map
+      indicators.forEach((indicatorData, characterName) => {
+        const existing = characterIndicatorMap.get(characterName)!;
+        const indicatorTypes: IndicatorType[] = [
+          "directDefinition",
+          "actions",
+          "speech",
+          "appearance",
+          "environment",
+        ];
+
+        for (const type of indicatorTypes) {
+          existing[type] = [...existing[type], ...indicatorData[type]];
+        }
+
+        characterIndicatorMap.set(characterName, existing);
+      });
     }
 
     // Convert map to Character array
     const characters: Character[] = characterNames.map((name) => ({
       name,
       coreferenceMatches: characterMatchMap.get(name) || [],
+      indicatorMatches: characterIndicatorMap.get(name) || {
+        directDefinition: [],
+        actions: [],
+        speech: [],
+        appearance: [],
+        environment: [],
+      },
     }));
 
     return {

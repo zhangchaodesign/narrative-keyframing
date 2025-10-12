@@ -137,3 +137,34 @@
   background-color: #eaebe9;
   text-decoration: line-through;
 }
+
+/* Indicator highlights - Rimmon-Kenan characterization types */
+.indicator-direct {
+  background-color: #ffd4e5; /* Pink - Direct Definition (explicit traits) */
+  border-bottom: 2px solid #ff69b4;
+  border-radius: 3px;
+}
+
+.indicator-actions {
+  background-color: #ffe4b5; /* Moccasin - Actions (what character does) */
+  border-bottom: 2px solid #ffa500;
+  border-radius: 3px;
+}
+
+.indicator-speech {
+  background-color: #d4f4dd; /* Mint - Speech (what character says) */
+  border-bottom: 2px solid #4caf50;
+  border-radius: 3px;
+}
+
+.indicator-appearance {
+  background-color: #e6e6fa; /* Lavender - Appearance (how character looks) */
+  border-bottom: 2px solid #9370db;
+  border-radius: 3px;
+}
+
+.indicator-environment {
+  background-color: #fff4e6; /* Papaya Whip - Environment (character's surroundings) */
+  border-bottom: 2px solid #cd853f;
+  border-radius: 3px;
+}

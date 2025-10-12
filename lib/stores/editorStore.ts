@@ -24,7 +24,7 @@ type EditorState = {
 export const useEditorStore = create<EditorState>()(
   persist(
     (set) => ({
-      value: [],
+      value: [{ type: "paragraph", children: [{ text: "Type here..." }] }],
       setValue: (v) => set({ value: v }),
       isReadOnly: false,
       setReadOnly: (b) => set({ isReadOnly: b }),

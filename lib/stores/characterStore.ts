@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { CharacterIndicators } from "../types/indicators";
 
 export type CoreferenceMatch = {
   sentenceIndex: number;
@@ -11,6 +12,7 @@ export type CoreferenceMatch = {
 export type Character = {
   name: string;
   coreferenceMatches: CoreferenceMatch[];
+  indicatorMatches: CharacterIndicators;
 };
 
 type CharacterState = {
@@ -20,6 +22,10 @@ type CharacterState = {
   updateCharacterCoreferences: (
     characterName: string,
     coreferences: CoreferenceMatch[],
+  ) => void;
+  updateCharacterIndicators: (
+    characterName: string,
+    indicators: CharacterIndicators,
   ) => void;
   clearCharacters: () => void;
 };
@@ -36,6 +42,14 @@ export const useCharacterStore = create<CharacterState>()(
           characters: state.characters.map((char) =>
             char.name === characterName
               ? { ...char, coreferenceMatches: coreferences }
+              : char,
+          ),
+        })),
+      updateCharacterIndicators: (characterName, indicators) =>
+        set((state) => ({
+          characters: state.characters.map((char) =>
+            char.name === characterName
+              ? { ...char, indicatorMatches: indicators }
               : char,
           ),
         })),
