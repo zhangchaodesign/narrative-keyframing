@@ -122,6 +122,22 @@
   }
 }
 
+@utility btn {
+  @apply shadow-none;
+}
+
+body {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  background-color: white;
+  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+  background-size: 16px 16px;
+  color: var(--color-neutral);
+  font-family: var(--font-geist-sans);
+}
+
 .suggest-addition {
   color: #29350e;
   background-color: #e1fdc5;

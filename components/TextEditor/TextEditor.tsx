@@ -31,7 +31,7 @@ function ConflictCard({
 }) {
   return (
     <div
-      className="p-3 bg-red-50 border-2 border-red-300 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
+      className="p-3 bg-red-50 border-2 border-red-300 rounded shadow hover:shadow-md transition-shadow cursor-pointer"
       onClick={onClick}
     >
       <div className="flex items-center gap-2 mb-2">
@@ -216,9 +216,9 @@ export default function TextEditor() {
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white">
+    <div className="flex h-screen overflow-hidden">
       {/* Left Sidebar - Characters & Attributes */}
-      <div className="w-80 border-r bg-gray-50 overflow-y-auto flex-shrink-0">
+      <div className="w-80 overflow-y-auto flex-shrink-0">
         <div className="p-4 space-y-4">
           <h2 className="text-lg font-bold text-gray-800">Characters</h2>
 
@@ -314,7 +314,7 @@ export default function TextEditor() {
               };
 
               return (
-                <div className="space-y-4">
+                <div className="space-y-4 p-3 bg-yellow-50 border-2 border-yellow-300 rounded shadow hover:shadow-md transition-shadow">
                   <h3 className="font-semibold text-gray-800">
                     Attributes for {selectedCharacter}
                   </h3>
@@ -448,9 +448,9 @@ export default function TextEditor() {
       </div>
 
       {/* Center - Text Editor */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden my-2">
         {/* Toolbar */}
-        <div className="border-b bg-gray-50 p-3 flex items-center gap-3 flex-wrap">
+        <div className="bg-gray-50 p-3 flex items-center gap-3 justify-between w-full rounded">
           <button
             type="button"
             className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm"
@@ -545,24 +545,26 @@ export default function TextEditor() {
           >
             Extract Characters
           </button>
-          <button
-            type="button"
-            className="border px-3 py-1.5 rounded hover:bg-gray-100 text-sm"
-            onClick={() => HistoryEditor.undo(editor)}
-            title="Undo"
-          >
-            Undo
-          </button>
-          <button
-            type="button"
-            className="border px-3 py-1.5 rounded hover:bg-gray-100 text-sm"
-            onClick={() => HistoryEditor.redo(editor)}
-            title="Redo"
-          >
-            Redo
-          </button>
-
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="border px-3 py-1.5 rounded hover:bg-gray-100 text-sm"
+              onClick={() => HistoryEditor.undo(editor)}
+              title="Undo"
+            >
+              Undo
+            </button>
+            <button
+              type="button"
+              className="border px-3 py-1.5 rounded hover:bg-gray-100 text-sm"
+              onClick={() => HistoryEditor.redo(editor)}
+              title="Redo"
+            >
+              Redo
+            </button>
+          </div>
+
+          {/* <div className="flex items-center gap-2">
             <label className="text-sm text-gray-600">Keyword:</label>
             <input
               value={needle}
@@ -570,15 +572,15 @@ export default function TextEditor() {
               className="border px-3 py-1.5 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
               placeholder="type to highlight matches"
             />
-          </div>
+          </div> */}
         </div>
 
         {/* Editor Container with Relative Positioning for Conflicts */}
         <div
           ref={editorContainerRef}
-          className="flex-1 overflow-y-auto relative"
+          className="flex-1 overflow-y-auto relative bg-white border border-zinc-200 my-2 rounded"
         >
-          <div className="max-w-4xl mx-auto py-8 px-12">
+          <div className="max-w-4xl mx-auto p-8">
             <Slate
               editor={editor}
               initialValue={useEditorStore.getState().value}
@@ -608,7 +610,7 @@ export default function TextEditor() {
       </div>
 
       {/* Right Margin - Floating Conflicts */}
-      <div className="w-80 relative border-l bg-gray-50 flex-shrink-0">
+      <div className="w-80 relative flex-shrink-0">
         {selectedCharacter &&
           (() => {
             const character = characters.find(
@@ -633,8 +635,8 @@ export default function TextEditor() {
 
             return (
               <div className="h-full overflow-y-auto">
-                <div className="sticky top-0 p-4 bg-gray-50 border-b z-10">
-                  <h3 className="text-sm font-semibold text-red-700">
+                <div className="sticky top-0 p-4 z-10">
+                  <h3 className="text-lg font-bold text-red-700">
                     ⚠️ Conflicts ({character.conflicts.length})
                   </h3>
                   <p className="text-xs text-gray-500 mt-1">
