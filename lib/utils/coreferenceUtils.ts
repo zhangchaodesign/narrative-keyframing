@@ -19,6 +19,7 @@ import type {
   CharacterAttribute,
   AttributeEvidence,
 } from "../types/attributes";
+import type { AttributeConflict, ConflictSeverity } from "../types/conflicts";
 
 export class CoreferenceUtils {
   /**
@@ -368,7 +369,105 @@ export class CoreferenceUtils {
   }
 
   /**
-   * OLD INDICATOR EXTRACTION METHOD - Kept for future use but not currently called
+   * Detect conflicts between new attributes and existing character attributes
+   * @param category - Attribute category
+   * @param newAttributes - Newly extracted attributes from current sentence
+   * @param existingAttributes - All previously accumulated attributes for character
+   * @param sentenceIndex - Index of sentence being processed
+   * @returns Array of detected conflicts
+   */
+  private static async detectConflicts(
+    category: AttributeCategory,
+    newAttributes: SentenceAttribute[],
+    existingAttributes: CharacterAttribute[],
+    sentenceIndex: number,
+  ): Promise<AttributeConflict[]> {
+    const conflicts: AttributeConflict[] = [];
+
+    // Filter existing attributes by category
+    const existingInCategory = existingAttributes.filter(
+      (attr) => attr.category === category,
+    );
+
+    if (existingInCategory.length === 0) {
+      // No existing attributes to conflict with
+      return conflicts;
+    }
+
+    // Check each new attribute against existing ones
+    for (const newAttr of newAttributes) {
+      // Build summary of existing attributes for API call
+      const existingSummary = existingInCategory.map((attr) => ({
+        name: attr.name,
+        evidenceCount: attr.evidence.length,
+      }));
+
+      // Take first evidence piece as representative
+      const newEvidenceText =
+        newAttr.evidence.length > 0 ? newAttr.evidence[0].text : newAttr.name;
+
+      try {
+        const response = await fetch("/api/conflicts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            category,
+            newAttributeName: newAttr.name,
+            newEvidence: newEvidenceText,
+            existingAttributes: existingSummary,
+          }),
+        });
+
+        if (!response.ok) {
+          console.error("Failed to detect conflicts");
+          continue;
+        }
+
+        const data = await response.json();
+
+        if (data.isConflicting && data.conflictingAttribute) {
+          // Find the conflicting attribute's evidence
+          const conflictingAttr = existingInCategory.find(
+            (attr) => attr.name === data.conflictingAttribute,
+          );
+
+          if (conflictingAttr && conflictingAttr.evidence.length > 0) {
+            // Create conflict record
+            const conflict: AttributeConflict = {
+              id: `${category}-${Date.now()}-${Math.random()}`,
+              category,
+              attribute1: {
+                name: data.conflictingAttribute,
+                evidence: conflictingAttr.evidence[0], // Use first evidence
+              },
+              attribute2: {
+                name: newAttr.name,
+                evidence: {
+                  text: newEvidenceText,
+                  indicatorType: newAttr.evidence[0].indicatorType,
+                  startIndex: 0, // Will be updated with absolute index later
+                  endIndex: newEvidenceText.length,
+                  sentenceIndex,
+                },
+              },
+              severity: data.severity as ConflictSeverity,
+              explanation:
+                data.explanation || "Conflicting attributes detected",
+              detectedAt: Date.now(),
+            };
+
+            conflicts.push(conflict);
+          }
+        }
+      } catch (error) {
+        console.error("Error detecting conflicts:", error);
+      }
+    }
+
+    return conflicts;
+  }
+
+  /**
    * Extract indicators for a character in a sentence
    * @param story - Full story text (for context)
    * @param characterName - Character to analyze
@@ -376,7 +475,6 @@ export class CoreferenceUtils {
    * @param coreferences - List of coreferences found for this character
    * @returns SentenceCharacterIndicators object
    */
-  /*
   private static async extractIndicatorsForCharacter(
     story: string,
     characterName: string,
@@ -408,9 +506,8 @@ export class CoreferenceUtils {
     await Promise.all(
       indicatorTypes.map(async (type) => {
         try {
-          const apiPath = type === "directDefinition"
-            ? "direct-definition"
-            : type;
+          const apiPath =
+            type === "directDefinition" ? "direct-definition" : type;
 
           const response = await fetch(`/api/indicators/${apiPath}`, {
             method: "POST",
@@ -436,7 +533,10 @@ export class CoreferenceUtils {
           // Convert indicator texts to relative indices
           const refs: SentenceIndicatorRef[] = [];
           for (const indicatorText of indicatorTexts) {
-            const indices = TextUtils.findAllWordMatches(sentence, indicatorText);
+            const indices = TextUtils.findAllWordMatches(
+              sentence,
+              indicatorText,
+            );
             for (const relativeIndex of indices) {
               refs.push({
                 text: indicatorText,
@@ -457,7 +557,6 @@ export class CoreferenceUtils {
 
     return indicators;
   }
-  */
 
   /**
    * Process a single sentence to extract character references and attributes
@@ -537,7 +636,7 @@ export class CoreferenceUtils {
 
           characterRefs[characterName] = refs;
 
-          // Step 2: Extract attributes (NEW - using Egri's bone structure)
+          // Step 2: Extract attributes (using Egri's bone structure)
           const attributes = await this.extractAttributesForCharacter(
             story,
             characterName,
@@ -546,28 +645,14 @@ export class CoreferenceUtils {
           );
           characterAttributes[characterName] = attributes;
 
-          // OLD: Extract indicators (commented out but kept for future use)
-          /*
-          if (extractIndicators) {
-            const indicators = await this.extractIndicatorsForCharacter(
-              story,
-              characterName,
-              sentence.text,
-              coreferences,
-            );
-            characterIndicators[characterName] = indicators;
-          } else {
-          */
-          characterIndicators[characterName] = {
-            directDefinition: [],
-            actions: [],
-            speech: [],
-            appearance: [],
-            environment: [],
-          };
-          /*
-          }
-          */
+          // Step 3: Extract indicators (for character development tracking)
+          const indicators = await this.extractIndicatorsForCharacter(
+            story,
+            characterName,
+            sentence.text,
+            coreferences,
+          );
+          characterIndicators[characterName] = indicators;
         } catch (error) {
           console.error(
             `Error processing sentence ${sentenceIndex} for character ${characterName}:`,
@@ -710,6 +795,7 @@ export class CoreferenceUtils {
     const characterMatchMap = new Map<string, CoreferenceMatch[]>();
     const characterIndicatorMap = new Map<string, CharacterIndicators>();
     const characterAttributeMap = new Map<string, CharacterAttribute[]>();
+    const characterConflictMap = new Map<string, AttributeConflict[]>();
 
     // Initialize all characters
     characterNames.forEach((name) => {
@@ -722,6 +808,7 @@ export class CoreferenceUtils {
         environment: [],
       });
       characterAttributeMap.set(name, []);
+      characterConflictMap.set(name, []);
     });
 
     // Process each sentence's cache and convert to absolute indices
@@ -747,6 +834,67 @@ export class CoreferenceUtils {
         sentIndex,
         sentences[sentIndex].startIndex,
       );
+
+      // Detect conflicts for newly processed sentences only
+      if (sentencesToProcess.includes(sentIndex)) {
+        for (const [characterName, newAttributeList] of attributes.entries()) {
+          const existingAttributes =
+            characterAttributeMap.get(characterName) || [];
+
+          // Check each category for conflicts
+          const categories: AttributeCategory[] = [
+            "physiology",
+            "psychology",
+            "sociology",
+          ];
+
+          for (const category of categories) {
+            const newInCategory = newAttributeList.filter(
+              (attr) => attr.category === category,
+            );
+
+            if (newInCategory.length > 0 && existingAttributes.length > 0) {
+              // Convert new attributes to SentenceAttribute format for conflict detection
+              const sentenceAttrs: SentenceAttribute[] = newInCategory.map(
+                (attr) => ({
+                  category: attr.category,
+                  name: attr.name,
+                  evidence: attr.evidence.map((ev) => ({
+                    text: ev.text,
+                    indicatorType: ev.indicatorType,
+                    relativeIndex:
+                      ev.startIndex - sentences[sentIndex].startIndex,
+                  })),
+                }),
+              );
+
+              try {
+                // const detectedConflicts = await this.detectConflicts(
+                //   category,
+                //   sentenceAttrs,
+                //   existingAttributes,
+                //   sentIndex,
+                // );
+                const detectedConflicts: AttributeConflict[] = []; // TEMP DISABLE CONFLICT DETECTION
+
+                if (detectedConflicts.length > 0) {
+                  const existing =
+                    characterConflictMap.get(characterName) || [];
+                  characterConflictMap.set(characterName, [
+                    ...existing,
+                    ...detectedConflicts,
+                  ]);
+                }
+              } catch (error) {
+                console.error(
+                  `Error detecting conflicts for ${characterName} in sentence ${sentIndex}:`,
+                  error,
+                );
+              }
+            }
+          }
+        }
+      }
 
       // Merge attributes into character map
       attributes.forEach((attributeList, characterName) => {
@@ -797,6 +945,7 @@ export class CoreferenceUtils {
       attributes: this.consolidateAttributes(
         characterAttributeMap.get(name) || [],
       ),
+      conflicts: characterConflictMap.get(name) || [],
     }));
 
     return {

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { CharacterIndicators } from "../types/indicators";
 import { CharacterAttribute } from "../types/attributes";
+import { AttributeConflict } from "../types/conflicts";
 
 export type CoreferenceMatch = {
   sentenceIndex: number;
@@ -15,6 +16,7 @@ export type Character = {
   coreferenceMatches: CoreferenceMatch[];
   indicatorMatches: CharacterIndicators; // OLD indicator system
   attributes: CharacterAttribute[]; // NEW attribute system
+  conflicts: AttributeConflict[]; // Detected inconsistencies in characterization
 };
 
 type CharacterState = {
@@ -32,6 +34,10 @@ type CharacterState = {
   updateCharacterAttributes: (
     characterName: string,
     attributes: CharacterAttribute[],
+  ) => void;
+  updateCharacterConflicts: (
+    characterName: string,
+    conflicts: AttributeConflict[],
   ) => void;
   clearCharacters: () => void;
 };
@@ -63,6 +69,12 @@ export const useCharacterStore = create<CharacterState>()(
         set((state) => ({
           characters: state.characters.map((char) =>
             char.name === characterName ? { ...char, attributes } : char,
+          ),
+        })),
+      updateCharacterConflicts: (characterName, conflicts) =>
+        set((state) => ({
+          characters: state.characters.map((char) =>
+            char.name === characterName ? { ...char, conflicts } : char,
           ),
         })),
       clearCharacters: () => set({ characters: [] }),

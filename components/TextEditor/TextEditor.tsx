@@ -232,6 +232,15 @@ export default function TextEditor() {
               ),
             };
 
+            // Helper to check if an attribute has conflicts
+            const hasConflict = (attrName: string) => {
+              return character.conflicts.some(
+                (conflict) =>
+                  conflict.attribute1.name === attrName ||
+                  conflict.attribute2.name === attrName,
+              );
+            };
+
             return (
               <div className="space-y-3">
                 {/* Physiology */}
@@ -246,9 +255,11 @@ export default function TextEditor() {
                           key={`phys-${attr.name}`}
                           type="button"
                           className={`border px-3 py-1 rounded text-sm ${
-                            selectedAttribute === attr.name
-                              ? "bg-blue-200 font-bold ring-2 ring-blue-400"
-                              : "bg-blue-50 hover:bg-blue-100"
+                            hasConflict(attr.name)
+                              ? "bg-red-100 border-red-400 hover:bg-red-200"
+                              : selectedAttribute === attr.name
+                                ? "bg-blue-200 font-bold ring-2 ring-blue-400"
+                                : "bg-blue-50 hover:bg-blue-100"
                           }`}
                           onClick={() => {
                             if (selectedAttribute === attr.name) {
@@ -260,6 +271,7 @@ export default function TextEditor() {
                             }
                           }}
                         >
+                          {hasConflict(attr.name) && "⚠️ "}
                           {attr.name} ({attr.evidence.length})
                         </button>
                       ))}
@@ -279,9 +291,11 @@ export default function TextEditor() {
                           key={`psych-${attr.name}`}
                           type="button"
                           className={`border px-3 py-1 rounded text-sm ${
-                            selectedAttribute === attr.name
-                              ? "bg-purple-200 font-bold ring-2 ring-purple-400"
-                              : "bg-purple-50 hover:bg-purple-100"
+                            hasConflict(attr.name)
+                              ? "bg-red-100 border-red-400 hover:bg-red-200"
+                              : selectedAttribute === attr.name
+                                ? "bg-purple-200 font-bold ring-2 ring-purple-400"
+                                : "bg-purple-50 hover:bg-purple-100"
                           }`}
                           onClick={() => {
                             if (selectedAttribute === attr.name) {
@@ -293,6 +307,7 @@ export default function TextEditor() {
                             }
                           }}
                         >
+                          {hasConflict(attr.name) && "⚠️ "}
                           {attr.name} ({attr.evidence.length})
                         </button>
                       ))}
@@ -312,9 +327,11 @@ export default function TextEditor() {
                           key={`soc-${attr.name}`}
                           type="button"
                           className={`border px-3 py-1 rounded text-sm ${
-                            selectedAttribute === attr.name
-                              ? "bg-green-200 font-bold ring-2 ring-green-400"
-                              : "bg-green-50 hover:bg-green-100"
+                            hasConflict(attr.name)
+                              ? "bg-red-100 border-red-400 hover:bg-red-200"
+                              : selectedAttribute === attr.name
+                                ? "bg-green-200 font-bold ring-2 ring-green-400"
+                                : "bg-green-50 hover:bg-green-100"
                           }`}
                           onClick={() => {
                             if (selectedAttribute === attr.name) {
@@ -326,6 +343,7 @@ export default function TextEditor() {
                             }
                           }}
                         >
+                          {hasConflict(attr.name) && "⚠️ "}
                           {attr.name} ({attr.evidence.length})
                         </button>
                       ))}
@@ -346,6 +364,62 @@ export default function TextEditor() {
                       Environment
                     </span>
                   </p>
+                )}
+
+                {/* Conflicts Section */}
+                {character.conflicts && character.conflicts.length > 0 && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-300 rounded">
+                    <h4 className="text-sm font-semibold text-red-700 mb-2">
+                      ⚠️ Characterization Conflicts ({character.conflicts.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {character.conflicts.map((conflict) => (
+                        <div
+                          key={conflict.id}
+                          className="text-xs bg-white p-2 rounded border border-red-200"
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span
+                              className={`px-2 py-0.5 rounded text-white text-[10px] font-semibold ${
+                                conflict.severity === "high"
+                                  ? "bg-red-600"
+                                  : conflict.severity === "medium"
+                                    ? "bg-orange-500"
+                                    : "bg-yellow-500"
+                              }`}
+                            >
+                              {conflict.severity.toUpperCase()}
+                            </span>
+                            <span className="text-gray-600 font-semibold">
+                              {conflict.category}
+                            </span>
+                          </div>
+                          <p className="text-gray-800 mb-1">
+                            <span className="font-semibold">
+                              "{conflict.attribute1.name}"
+                            </span>{" "}
+                            conflicts with{" "}
+                            <span className="font-semibold">
+                              "{conflict.attribute2.name}"
+                            </span>
+                          </p>
+                          <p className="text-gray-600 italic">
+                            {conflict.explanation}
+                          </p>
+                          <div className="mt-2 text-[10px] text-gray-500">
+                            <p>
+                              Evidence 1: "{conflict.attribute1.evidence.text}"
+                              (sentence {conflict.attribute1.evidence.sentenceIndex})
+                            </p>
+                            <p>
+                              Evidence 2: "{conflict.attribute2.evidence.text}"
+                              (sentence {conflict.attribute2.evidence.sentenceIndex})
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             );
