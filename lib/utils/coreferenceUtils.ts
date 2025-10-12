@@ -332,7 +332,7 @@ export class CoreferenceUtils {
           const sentenceAttributes: SentenceAttribute[] = [];
 
           for (const attr of attributesData) {
-            console.log("Processing attribute:", attr, category);
+            // console.log("Processing attribute:", attr, category);
 
             const evidenceRefs: AttributeEvidenceRef[] = [];
 
