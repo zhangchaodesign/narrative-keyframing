@@ -372,18 +372,21 @@ export class CoreferenceUtils {
   }
 
   /**
-   * Detect conflicts between new attributes and existing character attributes
-   * @param category - Attribute category
-   * @param newAttributes - Newly extracted attributes from current sentence
+   * Detect conflicts between a sentence and existing character attributes
+   * Checks if the sentence content contradicts established attributes
+   * @param characterName - Character being analyzed
+   * @param sentence - Sentence text
+   * @param sentenceIndex - Index of sentence in story
+   * @param sentenceStartIndex - Absolute start position in story
    * @param existingAttributes - All previously accumulated attributes for character
-   * @param sentenceIndex - Index of sentence being processed
    * @returns Array of detected conflicts
    */
-  private static async detectConflicts(
-    category: AttributeCategory,
-    newAttributes: SentenceAttribute[],
-    existingAttributes: CharacterAttribute[],
+  private static async detectSentenceConflicts(
+    characterName: string,
+    sentence: string,
     sentenceIndex: number,
+    sentenceStartIndex: number,
+    existingAttributes: CharacterAttribute[],
   ): Promise<AttributeConflict[]> {
     const conflicts: AttributeConflict[] = [];
 
@@ -392,74 +395,79 @@ export class CoreferenceUtils {
       return conflicts;
     }
 
-    // Check each new attribute against existing ones
-    for (const newAttr of newAttributes) {
-      // Build summary of existing attributes for API call
-      const existingSummary = existingAttributes.map((attr) => ({
-        name: attr.name,
-        evidenceCount: attr.evidence.length,
-      }));
+    // Build summary of existing attributes for API call
+    const existingSummary = existingAttributes.map((attr) => ({
+      name: attr.name,
+      category: attr.category,
+      evidenceCount: attr.evidence.length,
+    }));
 
-      // Take first evidence piece as representative
-      const newEvidenceText =
-        newAttr.evidence.length > 0 ? newAttr.evidence[0].text : newAttr.name;
+    try {
+      const response = await fetch("/api/conflicts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          characterName,
+          sentence,
+          existingAttributes: existingSummary,
+        }),
+      });
 
-      try {
-        const response = await fetch("/api/conflicts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            category,
-            newAttributeName: newAttr.name,
-            newEvidence: newEvidenceText,
-            existingAttributes: existingSummary,
-          }),
-        });
-
-        if (!response.ok) {
-          console.error("Failed to detect conflicts");
-          continue;
-        }
-
-        const data = await response.json();
-
-        if (data.isConflicting && data.conflictingAttribute) {
-          // Find the conflicting attribute's evidence
-          const conflictingAttr = existingAttributes.find(
-            (attr) => attr.name === data.conflictingAttribute,
-          );
-
-          if (conflictingAttr && conflictingAttr.evidence.length > 0) {
-            // Create conflict record
-            const conflict: AttributeConflict = {
-              id: `${category}-${Date.now()}-${Math.random()}`,
-              category,
-              attribute1: {
-                name: data.conflictingAttribute,
-                evidence: conflictingAttr.evidence[0], // Use first evidence
-              },
-              attribute2: {
-                name: newAttr.name,
-                evidence: {
-                  text: newEvidenceText,
-                  indicatorType: newAttr.evidence[0].indicatorType,
-                  startIndex: 0, // Will be updated with absolute index later
-                  endIndex: newEvidenceText.length,
-                  sentenceIndex,
-                },
-              },
-              severity: data.severity as ConflictSeverity,
-              explanation:
-                data.explanation || "Conflicting attributes detected",
-              detectedAt: Date.now(),
-            };
-
-            conflicts.push(conflict);
-          }
-        }
-      } catch (error) {
-        console.error("Error detecting conflicts:", error);
+      if (!response.ok) {
+        console.error("Failed to detect sentence conflicts");
+        return conflicts;
       }
+
+      const data = await response.json();
+
+      // Process each detected conflict
+      for (const conflictData of data.conflicts || []) {
+        // Find the established attribute being contradicted
+        const establishedAttr = existingAttributes.find(
+          (attr) =>
+            attr.name === conflictData.attributeName &&
+            attr.category === conflictData.attributeCategory,
+        );
+
+        if (establishedAttr && establishedAttr.evidence.length > 0) {
+          // Find position of conflicting evidence in sentence
+          const conflictingText = conflictData.conflictingEvidence;
+          const relativeIndex = sentence.indexOf(conflictingText);
+
+          if (relativeIndex === -1) {
+            console.warn(
+              `Conflicting evidence "${conflictingText}" not found in sentence`,
+            );
+            continue;
+          }
+
+          // Create conflict record
+          const conflict: AttributeConflict = {
+            id: `${
+              conflictData.attributeCategory
+            }-${Date.now()}-${Math.random()}`,
+            category: conflictData.attributeCategory as AttributeCategory,
+            establishedAttribute: {
+              name: establishedAttr.name,
+              evidence: establishedAttr.evidence[0], // Use first evidence of established attribute
+            },
+            conflictingEvidence: {
+              text: conflictingText,
+              sentenceIndex,
+              startIndex: sentenceStartIndex + relativeIndex,
+              endIndex:
+                sentenceStartIndex + relativeIndex + conflictingText.length,
+            },
+            severity: conflictData.severity as ConflictSeverity,
+            explanation: conflictData.explanation,
+            detectedAt: Date.now(),
+          };
+
+          conflicts.push(conflict);
+        }
+      }
+    } catch (error) {
+      console.error("Error detecting sentence conflicts:", error);
     }
 
     return conflicts;
@@ -850,13 +858,14 @@ export class CoreferenceUtils {
       });
 
       // Detect conflicts for newly processed sentences only
-      // Compare new sentence attributes against ALL previously accumulated attributes
+      // Check if sentence content contradicts existing attributes (NEW approach)
       if (sentencesToProcess.includes(sentIndex)) {
-        for (const [characterName, newAttributeList] of attributes.entries()) {
+        // Process each character that has coreferences in this sentence
+        for (const characterName of characterNames) {
           // Get all attributes accumulated BEFORE this sentence
           const allAttributes = characterAttributeMap.get(characterName) || [];
           const existingAttributes = allAttributes.filter((attr) =>
-            attr.evidence.some((ev) => ev.sentenceIndex !== sentIndex),
+            attr.evidence.some((ev) => ev.sentenceIndex < sentIndex),
           );
 
           if (existingAttributes.length === 0) {
@@ -864,59 +873,42 @@ export class CoreferenceUtils {
             continue;
           }
 
-          // Check each category for conflicts
-          const categories: AttributeCategory[] = [
-            "physiology",
-            "psychology",
-            "sociology",
-          ];
+          // Only check sentences that mention this character
+          const sentenceCache = newCache[sentIndex];
+          const characterRefs =
+            sentenceCache.characterRefs[characterName] || [];
 
-          for (const category of categories) {
-            const newInCategory = newAttributeList.filter(
-              (attr) => attr.category === category,
+          if (characterRefs.length === 0) {
+            // Character not mentioned in this sentence, skip
+            continue;
+          }
+
+          try {
+            // Check if this sentence contradicts any existing attributes
+            const detectedConflicts = await this.detectSentenceConflicts(
+              characterName,
+              sentences[sentIndex].text,
+              sentIndex,
+              sentences[sentIndex].startIndex,
+              existingAttributes,
             );
-            // const existingInCategory = existingAttributes.filter(
-            //   (attr) => attr.category === category,
-            // );
 
-            if (newInCategory.length > 0 && existingAttributes.length > 0) {
-              // Convert new attributes to SentenceAttribute format for conflict detection
-              const sentenceAttrs: SentenceAttribute[] = newInCategory.map(
-                (attr) => ({
-                  category: attr.category,
-                  name: attr.name,
-                  evidence: attr.evidence.map((ev) => ({
-                    text: ev.text,
-                    indicatorType: ev.indicatorType,
-                    relativeIndex:
-                      ev.startIndex - sentences[sentIndex].startIndex,
-                  })),
-                }),
+            if (detectedConflicts.length > 0) {
+              const existing = characterConflictMap.get(characterName) || [];
+              characterConflictMap.set(characterName, [
+                ...existing,
+                ...detectedConflicts,
+              ]);
+
+              console.log(
+                `Found ${detectedConflicts.length} conflicts for ${characterName} in sentence ${sentIndex}`,
               );
-
-              try {
-                const detectedConflicts = await this.detectConflicts(
-                  category,
-                  sentenceAttrs,
-                  existingAttributes,
-                  sentIndex,
-                );
-
-                if (detectedConflicts.length > 0) {
-                  const existing =
-                    characterConflictMap.get(characterName) || [];
-                  characterConflictMap.set(characterName, [
-                    ...existing,
-                    ...detectedConflicts,
-                  ]);
-                }
-              } catch (error) {
-                console.error(
-                  `Error detecting conflicts for ${characterName} in sentence ${sentIndex}:`,
-                  error,
-                );
-              }
             }
+          } catch (error) {
+            console.error(
+              `Error detecting conflicts for ${characterName} in sentence ${sentIndex}:`,
+              error,
+            );
           }
         }
       }

@@ -235,9 +235,7 @@ export default function TextEditor() {
             // Helper to check if an attribute has conflicts
             const hasConflict = (attrName: string) => {
               return character.conflicts.some(
-                (conflict) =>
-                  conflict.attribute1.name === attrName ||
-                  conflict.attribute2.name === attrName,
+                (conflict) => conflict.establishedAttribute.name === attrName,
               );
             };
 
@@ -395,25 +393,26 @@ export default function TextEditor() {
                             </span>
                           </div>
                           <p className="text-gray-800 mb-1">
+                            Established attribute{" "}
                             <span className="font-semibold">
-                              "{conflict.attribute1.name}"
+                              "{conflict.establishedAttribute.name}"
                             </span>{" "}
-                            conflicts with{" "}
-                            <span className="font-semibold">
-                              "{conflict.attribute2.name}"
-                            </span>
+                            is contradicted by new evidence
                           </p>
                           <p className="text-gray-600 italic">
                             {conflict.explanation}
                           </p>
                           <div className="mt-2 text-[10px] text-gray-500">
                             <p>
-                              Evidence 1: "{conflict.attribute1.evidence.text}"
-                              (sentence {conflict.attribute1.evidence.sentenceIndex})
+                              Original evidence: "
+                              {conflict.establishedAttribute.evidence.text}"
+                              (sentence{" "}
+                              {conflict.establishedAttribute.evidence.sentenceIndex})
                             </p>
-                            <p>
-                              Evidence 2: "{conflict.attribute2.evidence.text}"
-                              (sentence {conflict.attribute2.evidence.sentenceIndex})
+                            <p className="text-red-600 font-medium">
+                              Conflicting evidence: "
+                              {conflict.conflictingEvidence.text}"
+                              (sentence {conflict.conflictingEvidence.sentenceIndex})
                             </p>
                           </div>
                         </div>

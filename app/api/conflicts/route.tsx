@@ -3,100 +3,146 @@ import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
 
-const ConflictSchema = z.object({
-  isConflicting: z
-    .boolean()
-    .describe(
-      "True if the new attribute conflicts with any existing attributes",
-    ),
-  conflictingAttribute: z
-    .string()
-    .optional()
-    .describe("Name of the existing attribute that conflicts"),
-  severity: z
-    .enum(["high", "medium", "low", "none"])
-    .optional()
-    .describe("Severity of the conflict"),
-  // explanation: z
-  //   .string()
-  //   .optional()
-  //   .describe(
-  //     "Brief explanation of why these attributes conflict; or 'none' if no conflict",
-  //   ),
+const SentenceConflictSchema = z.object({
+  conflicts: z
+    .array(
+      z.object({
+        attributeName: z
+          .string()
+          .describe("Name of the existing attribute that conflicts"),
+        attributeCategory: z
+          .enum(["physiology", "psychology", "sociology"])
+          .describe("Category of the conflicting attribute"),
+        conflictingEvidence: z
+          .string()
+          .describe(
+            "The specific text from the new sentence that contradicts the attribute",
+          ),
+        severity: z
+          .enum(["high", "medium", "low", "none"])
+          .describe("Severity of the conflict"),
+        explanation: z
+          .string()
+          .describe(
+            "Brief explanation of why this sentence conflicts; empty if none",
+          ),
+      }),
+    )
+    .describe("List of conflicts found in this sentence"),
 });
 
 export async function POST(request: Request) {
   try {
-    const { category, newAttributeName, newEvidence, existingAttributes } =
+    const { characterName, sentence, existingAttributes } =
       await request.json();
 
-    if (!category || !newAttributeName || !newEvidence || !existingAttributes) {
+    if (!characterName || !sentence || !existingAttributes) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
       );
     }
 
-    console.log("Detecting conflicts with:", {
-      category,
-      newAttributeName,
-      newEvidence,
-      existingAttributes,
+    console.log("Detecting sentence conflicts for:", {
+      characterName,
+      sentence: sentence.substring(0, 100),
+      attributeCount: existingAttributes.length,
     });
 
-    // Build existing attributes summary for context
-    const existingSummary = existingAttributes
-      .map((attr: { name: string; evidenceCount: number }) => {
-        return `- ${attr.name} (${attr.evidenceCount} evidence pieces)`;
-      })
-      .join("\n");
+    // Build existing attributes summary organized by category
+    const attributesByCategory = {
+      physiology: [] as string[],
+      psychology: [] as string[],
+      sociology: [] as string[],
+    };
+
+    existingAttributes.forEach(
+      (attr: { name: string; category: string; evidenceCount: number }) => {
+        const category = attr.category as keyof typeof attributesByCategory;
+        attributesByCategory[category].push(
+          `- ${attr.name} (${attr.evidenceCount} evidence pieces)`,
+        );
+      },
+    );
+
+    const attributesSummary = `
+PHYSIOLOGY (physical traits):
+${
+  attributesByCategory.physiology.length > 0
+    ? attributesByCategory.physiology.join("\n")
+    : "- None established"
+}
+
+PSYCHOLOGY (personality, mindset):
+${
+  attributesByCategory.psychology.length > 0
+    ? attributesByCategory.psychology.join("\n")
+    : "- None established"
+}
+
+SOCIOLOGY (relationships, social status):
+${
+  attributesByCategory.sociology.length > 0
+    ? attributesByCategory.sociology.join("\n")
+    : "- None established"
+}
+`.trim();
 
     const { object } = await generateObject({
       model: openai("gpt-4.1"),
-      schema: ConflictSchema,
-      prompt: `You are an expert in detecting inconsistencies in character development and narrative coherence.
+      schema: SentenceConflictSchema,
+      prompt: `You are an expert in detecting narrative inconsistencies and character development contradictions.
 
-Your task is to determine if a newly identified character attribute conflicts with existing attributes.
+Your task: Analyze a NEW SENTENCE to see if it contains any evidence that CONTRADICTS existing established character attributes.
+
+IMPORTANT DISTINCTION:
+- DO NOT identify new attributes in the sentence
+- DO NOT compare new attributes with old attributes
+- ONLY identify if the sentence content contradicts what we already know about the character
 
 CONFLICT TYPES:
-1. Direct Contradiction: Attributes that cannot coexist
-   - Example: "shy" vs "outgoing", "wealthy" vs "poor", "young" vs "elderly"
+1. Direct Contradiction: Sentence states something opposite to established attribute
+   - Example: Established "blonde hair" → Sentence: "brushed his dark hair"
+   - Example: Established "outgoing" → Sentence: "avoided all social interaction"
 
-2. Behavioral Inconsistency: Actions/traits that contradict established patterns
-   - Example: "compassionate" character acts cruelly without explanation
-   - Example: "illiterate" character quotes Shakespeare
+2. Behavioral Contradiction: Action/statement incompatible with established trait
+   - Example: Established "illiterate" → Sentence: "read the book fluently"
+   - Example: Established "compassionate" → Sentence: "laughed at the suffering child"
 
-3. Temporal Impossibility: Changes that don't align with story timeline
-   - Example: "pregnant" then "not pregnant" in same day
-   - Example: "injured" then "athletic performance" immediately after
+3. Temporal Contradiction: Change that doesn't fit timeline
+   - Example: Established "pregnant" → Sentence: "went mountain climbing the same day"
+   - Example: Established "broken leg" → Sentence: "ran a marathon hours later"
 
 SEVERITY LEVELS:
-- HIGH: Direct contradictions (black/white opposites)
-- MEDIUM: Behavioral inconsistencies that seem unnatural
-- LOW: Minor tensions that could be explained by character complexity
+- HIGH: Clear, direct contradiction (impossible to reconcile)
+- MEDIUM: Strong inconsistency (requires explanation)
+- LOW: Minor tension (could be explained by context)
 
-IMPORTANT:
-- Allow for character complexity: People can be both "nervous" and "confident" in different contexts
-- Consider evidence context: "acted bravely" doesn't conflict with "generally anxious"
-- Flag only genuine inconsistencies, not natural human variability
+WHAT TO IGNORE:
+- Natural complexity: "nervous" person can act "bravely" in crisis
+- Contextual variation: "quiet" person can be "loud" when angry
+- Character growth: Traits can evolve naturally over time
+- Situational behavior: Different contexts warrant different responses
 
-Category: ${category}
-New Attribute: "${newAttributeName}"
-New Evidence: "${newEvidence}"
+CHARACTER: ${characterName}
 
-Existing ${category} Attributes:
-${existingSummary}
+NEW SENTENCE TO ANALYZE:
+"${sentence}"
 
-Does the new attribute "${newAttributeName}" conflict with any existing attributes? Consider the evidence context carefully.`,
+EXISTING ESTABLISHED ATTRIBUTES:
+${attributesSummary}
+
+Identify ANY parts of the new sentence that contradict the established attributes. Return empty array if no conflicts.`,
       temperature: 0.3,
     });
-    console.log("Conflict detection result:", object);
+
+    console.log("Sentence conflict detection result:", object);
 
     return NextResponse.json(object);
   } catch (error) {
-    console.error("Error detecting conflicts:", error);
+    console.error("Error detecting sentence conflicts:", error);
     return NextResponse.json(
-      { error: "Failed to detect conflicts" },
+      { error: "Failed to detect sentence conflicts" },
       { status: 500 },
     );
   }

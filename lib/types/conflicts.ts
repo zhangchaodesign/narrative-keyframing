@@ -11,21 +11,28 @@ import type { AttributeCategory, AttributeEvidence } from "./attributes";
 export type ConflictSeverity = "high" | "medium" | "low";
 
 /**
- * A conflict between two attributes
+ * A conflict between an established attribute and contradictory evidence from a sentence
  */
 export type AttributeConflict = {
   id: string; // Unique identifier for this conflict
   category: AttributeCategory;
-  attribute1: {
+
+  // The established attribute being contradicted
+  establishedAttribute: {
     name: string;
-    evidence: AttributeEvidence;
+    evidence: AttributeEvidence; // Original evidence that established this attribute
   };
-  attribute2: {
-    name: string;
-    evidence: AttributeEvidence;
+
+  // The contradictory evidence from a new sentence
+  conflictingEvidence: {
+    text: string; // The conflicting text from the sentence
+    sentenceIndex: number; // Which sentence contains the conflict
+    startIndex: number; // Absolute position in story
+    endIndex: number; // Absolute position in story
   };
+
   severity: ConflictSeverity;
-  explanation: string; // Why these conflict
+  explanation: string; // Why the sentence conflicts with the attribute
   detectedAt: number; // Timestamp when conflict was detected
 };
 
