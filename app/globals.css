@@ -184,3 +184,11 @@ body {
   border-bottom: 2px solid #cd853f;
   border-radius: 3px;
 }
+
+/* Conflict highlight - For conflicting evidence (different from character coreferences) */
+.conflict-highlight {
+  background-color: #ffcccc; /* Light red - Conflict evidence */
+  border-bottom: 3px solid #ff0000;
+  border-radius: 3px;
+  font-weight: 600;
+}

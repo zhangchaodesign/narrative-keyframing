@@ -5,6 +5,7 @@ export function Leaf(props: any) {
   if (props.leaf.added) classes.push("suggest-addition");
   if (props.leaf.removed) classes.push("suggest-deletion");
   if (props.leaf.highlight) classes.push("highlight");
+  if (props.leaf.conflictHighlight) classes.push("conflict-highlight");
 
   // Indicator highlights (different colors for each type)
   if (props.leaf.directDefinition) classes.push("indicator-direct");

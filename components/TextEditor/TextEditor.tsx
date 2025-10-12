@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from "react";
 import {
   createEditor,
   Range,
@@ -25,13 +31,17 @@ import isHotkey from "is-hotkey";
 function ConflictCard({
   conflict,
   onClick,
+  isSelected,
 }: {
   conflict: AttributeConflict;
   onClick: () => void;
+  isSelected: boolean;
 }) {
   return (
     <div
-      className="p-3 bg-red-50 border-2 border-red-300 rounded shadow hover:shadow-md transition-shadow cursor-pointer"
+      className={`p-3 bg-red-50 border-2 rounded shadow hover:shadow-md transition-all cursor-pointer ${
+        isSelected ? "border-red-600 ring-4 ring-red-300" : "border-red-300"
+      }`}
       onClick={onClick}
     >
       <div className="flex items-center gap-2 mb-2">
@@ -109,6 +119,13 @@ export default function TextEditor() {
     null,
   );
   const [selectedAttribute, setSelectedAttribute] = useState<string | null>(
+    null,
+  );
+  const [conflictHighlight, setConflictHighlight] = useState<{
+    start: number;
+    end: number;
+  } | null>(null);
+  const [selectedConflictId, setSelectedConflictId] = useState<string | null>(
     null,
   );
 
@@ -200,20 +217,63 @@ export default function TextEditor() {
         }
       }
 
+      // Add conflict highlight (separate from character coreference highlighting)
+      if (conflictHighlight) {
+        const anchor = SlateUtils.toSlatePoint(
+          value as any,
+          conflictHighlight.start,
+        );
+        const focus = SlateUtils.toSlatePoint(
+          value as any,
+          conflictHighlight.end,
+        );
+
+        if (anchor && focus) {
+          ranges.push({ anchor, focus, conflictHighlight: true } as any);
+        }
+      }
+
       return ranges;
     },
-    [matches, value, selectedCharacter, selectedAttribute, characters],
+    [
+      matches,
+      value,
+      selectedCharacter,
+      selectedAttribute,
+      characters,
+      conflictHighlight,
+    ],
   );
 
   // Handler for clicking a conflict card to highlight the conflicting evidence
   const handleConflictClick = useCallback((conflict: AttributeConflict) => {
-    // Highlight the conflicting evidence in the editor
-    const match = {
+    // Set conflict highlight (separate from character coreferences)
+    setConflictHighlight({
       start: conflict.conflictingEvidence.startIndex,
       end: conflict.conflictingEvidence.endIndex,
-    };
-    useEditorStore.getState().setMatches([match]);
+    });
+    // Track which conflict is selected
+    setSelectedConflictId(conflict.id);
   }, []);
+
+  // Clear conflict highlight when character changes or has no conflicts
+  useEffect(() => {
+    if (!selectedCharacter) {
+      setConflictHighlight(null);
+      setSelectedConflictId(null);
+      return;
+    }
+
+    const character = characters.find((c) => c.name === selectedCharacter);
+    if (
+      !character ||
+      !character.conflicts ||
+      character.conflicts.length === 0
+    ) {
+      setConflictHighlight(null);
+      setSelectedConflictId(null);
+    }
+  }, [selectedCharacter, characters]);
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -239,12 +299,16 @@ export default function TextEditor() {
                       // Deselect character
                       setSelectedCharacter(null);
                       setSelectedAttribute(null);
+                      setConflictHighlight(null); // Clear conflict highlight
+                      setSelectedConflictId(null); // Clear selected conflict
                       useEditorStore.getState().setMatches([]);
                       setNeedle("");
                     } else {
                       // Select character and highlight coreferences
                       setSelectedCharacter(char.name);
                       setSelectedAttribute(null); // Clear selected attribute when switching characters
+                      setConflictHighlight(null); // Clear conflict highlight when switching characters
+                      setSelectedConflictId(null); // Clear selected conflict when switching characters
                       const matches = char.coreferenceMatches.map((coref) => ({
                         start: coref.startIndex,
                         end: coref.endIndex,
@@ -649,6 +713,7 @@ export default function TextEditor() {
                       key={conflict.id}
                       conflict={conflict}
                       onClick={() => handleConflictClick(conflict)}
+                      isSelected={selectedConflictId === conflict.id}
                     />
                   ))}
                 </div>
