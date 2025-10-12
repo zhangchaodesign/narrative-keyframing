@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     const { object } = await generateObject({
-      model: openai("gpt-4o-mini"),
+      model: openai("gpt-4.1"),
       schema: z.object({
         attributes: z.array(AttributeSchema),
       }),

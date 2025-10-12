@@ -113,8 +113,38 @@ export class CoreferenceUtils {
    * @returns Map of character name to their attributes
    */
   /**
+   * Normalize attribute name for fuzzy matching
+   * Handles: singular/plural, articles (a/an/the), extra spaces
+   * Examples:
+   *   "social connections" → "social connection"
+   *   "love cats" → "love cat"
+   *   "a nervous person" → "nervous person"
+   */
+  private static normalizeAttributeName(name: string): string {
+    let normalized = name.toLowerCase().trim();
+
+    // Remove articles (a, an, the) at the beginning
+    normalized = normalized.replace(/^(a|an|the)\s+/i, "");
+
+    // Remove extra whitespace
+    normalized = normalized.replace(/\s+/g, " ");
+
+    // Simple plural to singular conversion
+    // Handle common patterns: -ies → -y, -es → e or nothing, -s → nothing
+    normalized = normalized
+      .replace(/ies\b/g, "y") // cities → city, worries → worry
+      .replace(/sses\b/g, "ss") // classes → class, passes → pass
+      .replace(/([^aeiou])es\b/g, "$1e") //aches → ache, boxes → boxe (imperfect but reasonable)
+      .replace(/([aeiou])s\b/g, "$1") // cats → cat, dogs → dog
+      .replace(/([^s])s\b/g, "$1"); // connections → connection, but not grass → gras
+
+    return normalized;
+  }
+
+  /**
    * Consolidate duplicate attributes by grouping same category+name and merging evidence
    * Example: Two "calm" psychology attributes become one with combined evidence
+   * Uses fuzzy matching to handle variations: "social connections" = "social connection"
    */
   private static consolidateAttributes(
     attributes: CharacterAttribute[],
@@ -122,8 +152,9 @@ export class CoreferenceUtils {
     const attributeMap = new Map<string, CharacterAttribute>();
 
     for (const attr of attributes) {
-      // Create unique key from category + name
-      const key = `${attr.category}:${attr.name}`;
+      // Normalize name for fuzzy matching
+      const normalizedName = this.normalizeAttributeName(attr.name);
+      const key = `${attr.category}:${normalizedName}`;
 
       if (attributeMap.has(key)) {
         // Merge evidence into existing attribute
@@ -131,6 +162,7 @@ export class CoreferenceUtils {
         existing.evidence = [...existing.evidence, ...attr.evidence];
       } else {
         // First occurrence - create new entry with evidence copy
+        // Use original name (not normalized) for display
         attributeMap.set(key, {
           category: attr.category,
           name: attr.name,
