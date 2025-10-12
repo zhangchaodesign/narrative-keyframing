@@ -93,6 +93,35 @@ export const TextEditor = () => {
   return (
     <div className="p-4 space-y-3">
       <div className="flex items-center gap-2">
+        {/* Create a button to extract characters */}
+        <button
+          type="button"
+          className="border px-2 py-1"
+          onClick={() => {
+            const story = SlateUtils.stateToText(value as any);
+            console.log("Extracting characters from story:", story);
+            fetch("/api/character", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ story }),
+            })
+              .then((res) => res.json())
+              .then((data) => {
+                if (data.characters) {
+                  alert(`Extracted characters: ${data.characters}`);
+                } else if (data.error) {
+                  alert(`Error: ${data.error}`);
+                }
+              })
+              .catch((err) => {
+                alert(`Request failed: ${err.message}`);
+              });
+          }}
+        >
+          Extract Characters
+        </button>
         <button
           type="button"
           className="border px-2 py-1"
