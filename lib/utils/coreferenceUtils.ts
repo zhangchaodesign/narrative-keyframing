@@ -11,6 +11,14 @@ import type {
   CharacterIndicators,
   IndicatorMatch,
 } from "../types/indicators";
+import type {
+  AttributeCategory,
+  AttributeEvidenceRef,
+  SentenceAttribute,
+  SentenceCharacterAttributes,
+  CharacterAttribute,
+  AttributeEvidence,
+} from "../types/attributes";
 
 export class CoreferenceUtils {
   /**
@@ -98,11 +106,91 @@ export class CoreferenceUtils {
   }
 
   /**
-   * Convert cached indicator data to absolute indicator matches
+   * Convert cached attribute data to absolute attribute matches
    * @param sentenceCache - Cached sentence data with relative indices
    * @param sentenceIndex - Index of this sentence in the story
    * @param sentenceStartIndex - Absolute start position of this sentence in story
-   * @returns Map of character name to their indicator matches
+   * @returns Map of character name to their attributes
+   */
+  /**
+   * Consolidate duplicate attributes by grouping same category+name and merging evidence
+   * Example: Two "calm" psychology attributes become one with combined evidence
+   */
+  private static consolidateAttributes(
+    attributes: CharacterAttribute[],
+  ): CharacterAttribute[] {
+    const attributeMap = new Map<string, CharacterAttribute>();
+
+    for (const attr of attributes) {
+      // Create unique key from category + name
+      const key = `${attr.category}:${attr.name}`;
+
+      if (attributeMap.has(key)) {
+        // Merge evidence into existing attribute
+        const existing = attributeMap.get(key)!;
+        existing.evidence = [...existing.evidence, ...attr.evidence];
+      } else {
+        // First occurrence - create new entry with evidence copy
+        attributeMap.set(key, {
+          category: attr.category,
+          name: attr.name,
+          evidence: [...attr.evidence],
+        });
+      }
+    }
+
+    return Array.from(attributeMap.values());
+  }
+
+  private static sentenceCacheToAttributes(
+    sentenceCache: SentenceCache,
+    sentenceIndex: number,
+    sentenceStartIndex: number,
+  ): Map<string, CharacterAttribute[]> {
+    const attributesByCharacter = new Map<string, CharacterAttribute[]>();
+
+    for (const [characterName, sentenceAttrs] of Object.entries(
+      sentenceCache.characterAttributes || {},
+    )) {
+      const allAttributes: CharacterAttribute[] = [];
+
+      // Process each category
+      const categories: AttributeCategory[] = [
+        "physiology",
+        "psychology",
+        "sociology",
+      ];
+
+      for (const category of categories) {
+        const categoryAttrs = sentenceAttrs[category] || [];
+
+        for (const attr of categoryAttrs) {
+          // Convert evidence to absolute indices
+          const evidence: AttributeEvidence[] = attr.evidence.map((ev) => ({
+            text: ev.text,
+            indicatorType: ev.indicatorType,
+            startIndex: sentenceStartIndex + ev.relativeIndex,
+            endIndex: sentenceStartIndex + ev.relativeIndex + ev.text.length,
+            sentenceIndex,
+          }));
+
+          allAttributes.push({
+            category: attr.category,
+            name: attr.name,
+            evidence,
+          });
+        }
+      }
+
+      attributesByCharacter.set(characterName, allAttributes);
+    }
+
+    return attributesByCharacter;
+  }
+
+  /**
+   * OLD: Convert cached indicator data to absolute indicator matches
+   * Kept for future use but not currently called
    */
   private static sentenceCacheToIndicatorMatches(
     sentenceCache: SentenceCache,
@@ -149,6 +237,106 @@ export class CoreferenceUtils {
   }
 
   /**
+   * Extract attributes for a character in a sentence using Egri's bone structure
+   * @param story - Full story text (for context)
+   * @param characterName - Character to analyze
+   * @param sentence - Sentence text
+   * @param coreferences - List of coreferences found for this character
+   * @returns SentenceCharacterAttributes object
+   */
+  private static async extractAttributesForCharacter(
+    story: string,
+    characterName: string,
+    sentence: string,
+    coreferences: string[],
+  ): Promise<SentenceCharacterAttributes> {
+    const attributes: SentenceCharacterAttributes = {
+      physiology: [],
+      psychology: [],
+      sociology: [],
+    };
+
+    // Only process if there are coreferences in this sentence
+    if (coreferences.length === 0) {
+      return attributes;
+    }
+
+    // Call all 3 attribute category APIs in parallel
+    const categories: AttributeCategory[] = [
+      "physiology",
+      "psychology",
+      "sociology",
+    ];
+
+    await Promise.all(
+      categories.map(async (category) => {
+        try {
+          const response = await fetch(`/api/attributes/${category}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              story,
+              characterName,
+              sentence,
+              coreferences,
+            }),
+          });
+
+          if (!response.ok) {
+            console.error(
+              `Failed to extract ${category} attributes for ${characterName}`,
+            );
+            return;
+          }
+
+          const data = await response.json();
+          const attributesData: Array<{
+            name: string;
+            evidence: Array<{ text: string; indicatorType: string }>;
+          }> = data.attributes || [];
+
+          // Convert to SentenceAttribute with relative indices
+          const sentenceAttributes: SentenceAttribute[] = [];
+
+          for (const attr of attributesData) {
+            const evidenceRefs: AttributeEvidenceRef[] = [];
+
+            for (const ev of attr.evidence) {
+              // Find all occurrences of this evidence text in the sentence
+              const indices = TextUtils.findAllWordMatches(sentence, ev.text);
+              for (const relativeIndex of indices) {
+                evidenceRefs.push({
+                  text: ev.text,
+                  indicatorType: ev.indicatorType as IndicatorType,
+                  relativeIndex,
+                });
+              }
+            }
+
+            if (evidenceRefs.length > 0) {
+              sentenceAttributes.push({
+                category,
+                name: attr.name,
+                evidence: evidenceRefs,
+              });
+            }
+          }
+
+          attributes[category] = sentenceAttributes;
+        } catch (error) {
+          console.error(
+            `Error extracting ${category} attributes for ${characterName}:`,
+            error,
+          );
+        }
+      }),
+    );
+
+    return attributes;
+  }
+
+  /**
+   * OLD INDICATOR EXTRACTION METHOD - Kept for future use but not currently called
    * Extract indicators for a character in a sentence
    * @param story - Full story text (for context)
    * @param characterName - Character to analyze
@@ -156,6 +344,7 @@ export class CoreferenceUtils {
    * @param coreferences - List of coreferences found for this character
    * @returns SentenceCharacterIndicators object
    */
+  /*
   private static async extractIndicatorsForCharacter(
     story: string,
     characterName: string,
@@ -236,14 +425,14 @@ export class CoreferenceUtils {
 
     return indicators;
   }
+  */
 
   /**
-   * Process a single sentence to extract character references and indicators
+   * Process a single sentence to extract character references and attributes
    * @param story - Full story text (for context)
    * @param sentence - Sentence to process
    * @param sentenceIndex - Index of this sentence
    * @param characterNames - Characters to look for
-   * @param extractIndicators - Whether to extract indicators (default: true)
    * @returns SentenceCache object for this sentence
    */
   private static async processSentence(
@@ -251,11 +440,15 @@ export class CoreferenceUtils {
     sentence: { text: string; startIndex: number },
     sentenceIndex: number,
     characterNames: string[],
-    extractIndicators: boolean = true,
   ): Promise<SentenceCache> {
     const characterRefs: { [characterName: string]: SentenceCharacterRef[] } =
       {};
-    const characterIndicators: { [characterName: string]: SentenceCharacterIndicators } = {};
+    const characterIndicators: {
+      [characterName: string]: SentenceCharacterIndicators;
+    } = {};
+    const characterAttributes: {
+      [characterName: string]: SentenceCharacterAttributes;
+    } = {};
 
     // Process all characters for this sentence in parallel
     await Promise.all(
@@ -284,6 +477,11 @@ export class CoreferenceUtils {
               appearance: [],
               environment: [],
             };
+            characterAttributes[characterName] = {
+              physiology: [],
+              psychology: [],
+              sociology: [],
+            };
             return;
           }
 
@@ -307,7 +505,17 @@ export class CoreferenceUtils {
 
           characterRefs[characterName] = refs;
 
-          // Step 2: Extract indicators (only if coreferences exist)
+          // Step 2: Extract attributes (NEW - using Egri's bone structure)
+          const attributes = await this.extractAttributesForCharacter(
+            story,
+            characterName,
+            sentence.text,
+            coreferences,
+          );
+          characterAttributes[characterName] = attributes;
+
+          // OLD: Extract indicators (commented out but kept for future use)
+          /*
           if (extractIndicators) {
             const indicators = await this.extractIndicatorsForCharacter(
               story,
@@ -317,14 +525,17 @@ export class CoreferenceUtils {
             );
             characterIndicators[characterName] = indicators;
           } else {
-            characterIndicators[characterName] = {
-              directDefinition: [],
-              actions: [],
-              speech: [],
-              appearance: [],
-              environment: [],
-            };
+          */
+          characterIndicators[characterName] = {
+            directDefinition: [],
+            actions: [],
+            speech: [],
+            appearance: [],
+            environment: [],
+          };
+          /*
           }
+          */
         } catch (error) {
           console.error(
             `Error processing sentence ${sentenceIndex} for character ${characterName}:`,
@@ -338,6 +549,11 @@ export class CoreferenceUtils {
             appearance: [],
             environment: [],
           };
+          characterAttributes[characterName] = {
+            physiology: [],
+            psychology: [],
+            sociology: [],
+          };
         }
       }),
     );
@@ -346,6 +562,7 @@ export class CoreferenceUtils {
       text: sentence.text,
       characterRefs,
       characterIndicators,
+      characterAttributes,
     };
   }
 
@@ -452,6 +669,7 @@ export class CoreferenceUtils {
           text: sentences[i].text,
           characterRefs: {},
           characterIndicators: {},
+          characterAttributes: {},
         };
       }
     }
@@ -459,6 +677,7 @@ export class CoreferenceUtils {
     // Convert cache to character matches with absolute indices
     const characterMatchMap = new Map<string, CoreferenceMatch[]>();
     const characterIndicatorMap = new Map<string, CharacterIndicators>();
+    const characterAttributeMap = new Map<string, CharacterAttribute[]>();
 
     // Initialize all characters
     characterNames.forEach((name) => {
@@ -470,6 +689,7 @@ export class CoreferenceUtils {
         appearance: [],
         environment: [],
       });
+      characterAttributeMap.set(name, []);
     });
 
     // Process each sentence's cache and convert to absolute indices
@@ -489,7 +709,23 @@ export class CoreferenceUtils {
         characterMatchMap.set(characterName, [...existing, ...matchList]);
       });
 
-      // Convert indicators
+      // Convert attributes (NEW)
+      const attributes = this.sentenceCacheToAttributes(
+        sentenceCache,
+        sentIndex,
+        sentences[sentIndex].startIndex,
+      );
+
+      // Merge attributes into character map
+      attributes.forEach((attributeList, characterName) => {
+        const existing = characterAttributeMap.get(characterName) || [];
+        characterAttributeMap.set(characterName, [
+          ...existing,
+          ...attributeList,
+        ]);
+      });
+
+      // OLD: Convert indicators (kept for backward compatibility but empty)
       const indicators = this.sentenceCacheToIndicatorMatches(
         sentenceCache,
         sentIndex,
@@ -515,7 +751,7 @@ export class CoreferenceUtils {
       });
     }
 
-    // Convert map to Character array
+    // Convert map to Character array and consolidate duplicate attributes
     const characters: Character[] = characterNames.map((name) => ({
       name,
       coreferenceMatches: characterMatchMap.get(name) || [],
@@ -526,6 +762,9 @@ export class CoreferenceUtils {
         appearance: [],
         environment: [],
       },
+      attributes: this.consolidateAttributes(
+        characterAttributeMap.get(name) || [],
+      ),
     }));
 
     return {

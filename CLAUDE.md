@@ -9,7 +9,7 @@ Characify is a Next.js application that combines a Slate.js rich text editor wit
 **Tech Stack:**
 - **Framework**: Next.js 15 with Turbopack
 - **Editor**: Slate.js with custom normalization
-- **AI**: OpenAI GPT-4o-mini for NLP tasks
+- **AI**: OpenAI gpt-4o for NLP tasks
 - **State**: Zustand with localStorage persistence
 - **Styling**: Tailwind CSS
 
@@ -68,7 +68,7 @@ Custom Slate.js editor with:
 **[/api/character](app/api/character/route.tsx)**: Extracts character names from story
 - Input: `{ story: string }`
 - Output: `{ characters: string[] }`
-- Model: GPT-4o-mini
+- Model: gpt-4o
 
 **[/api/coreference](app/api/coreference/route.tsx)**: Finds character references in a sentence
 - Input: `{ story: string, characterName: string, sentence: string }`

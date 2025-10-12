@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { SentenceCharacterIndicators } from "../types/indicators";
+import { SentenceCharacterAttributes } from "../types/attributes";
 
 /**
  * Represents a character reference within a sentence (using relative indices)
@@ -19,7 +20,10 @@ export type SentenceCache = {
     [characterName: string]: SentenceCharacterRef[]; // Character name → their references in this sentence
   };
   characterIndicators: {
-    [characterName: string]: SentenceCharacterIndicators; // Character name → their indicators in this sentence
+    [characterName: string]: SentenceCharacterIndicators; // OLD: Character name → their indicators in this sentence
+  };
+  characterAttributes: {
+    [characterName: string]: SentenceCharacterAttributes; // NEW: Character name → their attributes in this sentence
   };
 };
 

@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
   // Extract characters from the story using the AI model
   const { object } = await generateObject({
-    model: openai("gpt-4o-mini"),
+    model: openai("gpt-4o"),
     schema: z.object({
       characters: z.array(z.string()),
     }),

@@ -56,9 +56,11 @@ export default function TextEditor() {
   const editorMatches = useEditorStore((s) => s.matches);
 
   const [needle, setNeedle] = useState("");
-  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null);
-  const [enabledIndicators, setEnabledIndicators] = useState<Set<string>>(
-    new Set(["directDefinition", "actions", "speech", "appearance", "environment"])
+  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(
+    null,
+  );
+  const [selectedAttribute, setSelectedAttribute] = useState<string | null>(
+    null,
   );
   // 1) Flatten the Slate value (this already skips `.removed` text)
   const flatText = useMemo(() => SlateUtils.stateToText(value as any), [value]);
@@ -112,33 +114,33 @@ export default function TextEditor() {
         }
       }
 
-      // Add indicator highlights for selected character
-      if (selectedCharacter) {
+      // Add attribute evidence highlights for selected attribute
+      if (selectedCharacter && selectedAttribute) {
         const character = characters.find((c) => c.name === selectedCharacter);
-        if (character && character.indicatorMatches) {
-          // Add each enabled indicator type
-          const indicatorTypes = [
-            "directDefinition",
-            "actions",
-            "speech",
-            "appearance",
-            "environment",
-          ] as const;
+        if (character && character.attributes) {
+          // Find the selected attribute
+          const attribute = character.attributes.find(
+            (attr) => attr.name === selectedAttribute,
+          );
 
-          for (const type of indicatorTypes) {
-            if (enabledIndicators.has(type)) {
-              const indicators = character.indicatorMatches[type] || [];
-              for (const indicator of indicators) {
-                const anchor = SlateUtils.toSlatePoint(value as any, indicator.startIndex);
-                const focus = SlateUtils.toSlatePoint(value as any, indicator.endIndex);
+          if (attribute && attribute.evidence) {
+            // Highlight all evidence for this attribute, color-coded by indicator type
+            for (const evidence of attribute.evidence) {
+              const anchor = SlateUtils.toSlatePoint(
+                value as any,
+                evidence.startIndex,
+              );
+              const focus = SlateUtils.toSlatePoint(
+                value as any,
+                evidence.endIndex,
+              );
 
-                if (anchor && focus) {
-                  ranges.push({
-                    anchor,
-                    focus,
-                    [type]: true, // Set the indicator type as a property
-                  });
-                }
+              if (anchor && focus) {
+                ranges.push({
+                  anchor,
+                  focus,
+                  [evidence.indicatorType]: true, // Color by indicator type
+                });
               }
             }
           }
@@ -147,7 +149,7 @@ export default function TextEditor() {
 
       return ranges;
     },
-    [matches, value, selectedCharacter, characters, enabledIndicators],
+    [matches, value, selectedCharacter, selectedAttribute, characters],
   );
 
   return (
@@ -168,11 +170,13 @@ export default function TextEditor() {
                   if (selectedCharacter === char.name) {
                     // Deselect character
                     setSelectedCharacter(null);
+                    setSelectedAttribute(null);
                     useEditorStore.getState().setMatches([]);
                     setNeedle("");
                   } else {
                     // Select character and highlight coreferences
                     setSelectedCharacter(char.name);
+                    setSelectedAttribute(null); // Clear selected attribute when switching characters
                     const matches = char.coreferenceMatches.map((coref) => ({
                       start: coref.startIndex,
                       end: coref.endIndex,
@@ -192,43 +196,160 @@ export default function TextEditor() {
         </div>
       )}
 
-      {/* Indicator type controls */}
+      {/* Attribute controls - grouped by Egri's categories */}
       {selectedCharacter && (
         <div className="border p-3 rounded bg-gray-50">
-          <h3 className="font-semibold mb-2">Show Indicators for {selectedCharacter}:</h3>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { key: "directDefinition", label: "Direct Definition", color: "bg-pink-200" },
-              { key: "actions", label: "Actions", color: "bg-orange-200" },
-              { key: "speech", label: "Speech", color: "bg-green-200" },
-              { key: "appearance", label: "Appearance", color: "bg-purple-200" },
-              { key: "environment", label: "Environment", color: "bg-yellow-200" },
-            ].map(({ key, label, color }) => {
-              const character = characters.find((c) => c.name === selectedCharacter);
-              const count = character?.indicatorMatches?.[key as keyof typeof character.indicatorMatches]?.length || 0;
-
+          <h3 className="font-semibold mb-3">
+            Attributes for {selectedCharacter}:
+          </h3>
+          {(() => {
+            const character = characters.find(
+              (c) => c.name === selectedCharacter,
+            );
+            if (
+              !character ||
+              !character.attributes ||
+              character.attributes.length === 0
+            ) {
               return (
-                <button
-                  key={key}
-                  type="button"
-                  className={`border px-3 py-1 rounded text-sm ${
-                    enabledIndicators.has(key) ? `${color} font-semibold` : "bg-gray-200"
-                  }`}
-                  onClick={() => {
-                    const newEnabled = new Set(enabledIndicators);
-                    if (newEnabled.has(key)) {
-                      newEnabled.delete(key);
-                    } else {
-                      newEnabled.add(key);
-                    }
-                    setEnabledIndicators(newEnabled);
-                  }}
-                >
-                  {label} ({count})
-                </button>
+                <p className="text-gray-500 text-sm">
+                  No attributes extracted yet. Click "Extract Characters" to
+                  analyze.
+                </p>
               );
-            })}
-          </div>
+            }
+
+            // Group attributes by category
+            const grouped = {
+              physiology: character.attributes.filter(
+                (a) => a.category === "physiology",
+              ),
+              psychology: character.attributes.filter(
+                (a) => a.category === "psychology",
+              ),
+              sociology: character.attributes.filter(
+                (a) => a.category === "sociology",
+              ),
+            };
+
+            return (
+              <div className="space-y-3">
+                {/* Physiology */}
+                {grouped.physiology.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-blue-700 mb-1">
+                      Physiology
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {grouped.physiology.map((attr) => (
+                        <button
+                          key={`phys-${attr.name}`}
+                          type="button"
+                          className={`border px-3 py-1 rounded text-sm ${
+                            selectedAttribute === attr.name
+                              ? "bg-blue-200 font-bold ring-2 ring-blue-400"
+                              : "bg-blue-50 hover:bg-blue-100"
+                          }`}
+                          onClick={() => {
+                            if (selectedAttribute === attr.name) {
+                              setSelectedAttribute(null);
+                              useEditorStore.getState().setMatches([]);
+                            } else {
+                              setSelectedAttribute(attr.name);
+                              useEditorStore.getState().setMatches([]);
+                            }
+                          }}
+                        >
+                          {attr.name} ({attr.evidence.length})
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Psychology */}
+                {grouped.psychology.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-purple-700 mb-1">
+                      Psychology
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {grouped.psychology.map((attr) => (
+                        <button
+                          key={`psych-${attr.name}`}
+                          type="button"
+                          className={`border px-3 py-1 rounded text-sm ${
+                            selectedAttribute === attr.name
+                              ? "bg-purple-200 font-bold ring-2 ring-purple-400"
+                              : "bg-purple-50 hover:bg-purple-100"
+                          }`}
+                          onClick={() => {
+                            if (selectedAttribute === attr.name) {
+                              setSelectedAttribute(null);
+                              useEditorStore.getState().setMatches([]);
+                            } else {
+                              setSelectedAttribute(attr.name);
+                              useEditorStore.getState().setMatches([]);
+                            }
+                          }}
+                        >
+                          {attr.name} ({attr.evidence.length})
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Sociology */}
+                {grouped.sociology.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-green-700 mb-1">
+                      Sociology
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {grouped.sociology.map((attr) => (
+                        <button
+                          key={`soc-${attr.name}`}
+                          type="button"
+                          className={`border px-3 py-1 rounded text-sm ${
+                            selectedAttribute === attr.name
+                              ? "bg-green-200 font-bold ring-2 ring-green-400"
+                              : "bg-green-50 hover:bg-green-100"
+                          }`}
+                          onClick={() => {
+                            if (selectedAttribute === attr.name) {
+                              setSelectedAttribute(null);
+                              useEditorStore.getState().setMatches([]);
+                            } else {
+                              setSelectedAttribute(attr.name);
+                              useEditorStore.getState().setMatches([]);
+                            }
+                          }}
+                        >
+                          {attr.name} ({attr.evidence.length})
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedAttribute && (
+                  <p className="text-xs text-gray-600 mt-2">
+                    💡 Evidence is color-coded:{" "}
+                    <span className="indicator-direct px-1">Direct</span>{" "}
+                    <span className="indicator-actions px-1">Actions</span>{" "}
+                    <span className="indicator-speech px-1">Speech</span>{" "}
+                    <span className="indicator-appearance px-1">
+                      Appearance
+                    </span>{" "}
+                    <span className="indicator-environment px-1">
+                      Environment
+                    </span>
+                  </p>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -279,7 +400,10 @@ export default function TextEditor() {
 
               const extractionTime = Date.now() - startTime;
               console.log(`Extraction completed in ${extractionTime}ms`);
-              console.log("Characters with coreferences and indicators:", result.characters);
+              console.log(
+                "Characters with coreferences and indicators:",
+                result.characters,
+              );
 
               // Step 3: Save to stores
               setCharacters(result.characters);
@@ -288,15 +412,23 @@ export default function TextEditor() {
               // Show summary
               const summary = result.characters
                 .map((char) => {
-                  const indicators = char.indicatorMatches;
-                  const indicatorCounts = [
-                    `Direct: ${indicators.directDefinition.length}`,
-                    `Actions: ${indicators.actions.length}`,
-                    `Speech: ${indicators.speech.length}`,
-                    `Appearance: ${indicators.appearance.length}`,
-                    `Environment: ${indicators.environment.length}`,
-                  ].join(", ");
-                  return `${char.name}: ${char.coreferenceMatches.length} refs | ${indicatorCounts}`;
+                  const attributes = char.attributes || [];
+                  const grouped = {
+                    physiology: attributes.filter(
+                      (a) => a.category === "physiology",
+                    ).length,
+                    psychology: attributes.filter(
+                      (a) => a.category === "psychology",
+                    ).length,
+                    sociology: attributes.filter(
+                      (a) => a.category === "sociology",
+                    ).length,
+                  };
+                  const totalEvidence = attributes.reduce(
+                    (sum, attr) => sum + attr.evidence.length,
+                    0,
+                  );
+                  return `${char.name}: ${char.coreferenceMatches.length} refs | ${attributes.length} attributes (Phys: ${grouped.physiology}, Psych: ${grouped.psychology}, Soc: ${grouped.sociology}) | ${totalEvidence} evidence`;
                 })
                 .join("\n");
 
