@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { Header } from "@/components/Header";
 import { CharacterSidebar } from "@/components/CharacterSidebar";
 import { ConflictsSidebar } from "@/components/ConflictsSidebar";
@@ -12,9 +12,8 @@ import { type AttributeConflict } from "@/lib/types/conflicts";
 export function EditorPage() {
   const { characters } = useCharacterStore();
 
-  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(
-    null,
-  );
+  /** 🔁 MULTI-SELECT: use an array */
+  const [selectedCharacters, setSelectedCharacters] = useState<string[]>([]);
   const [selectedAttribute, setSelectedAttribute] = useState<string | null>(
     null,
   );
@@ -26,49 +25,49 @@ export function EditorPage() {
     null,
   );
 
+  /** Keep old children working by picking the first as "primary" */
+  const primarySelectedCharacter = selectedCharacters[0] ?? null;
+
+  /** When selection changes, clear conflict UI if nothing is selected */
   useEffect(() => {
-    if (!selectedCharacter) {
+    if (selectedCharacters.length === 0) {
       setConflictHighlight(null);
       setSelectedConflictId(null);
+    }
+  }, [selectedCharacters]);
+
+  /** Recompute editor matches as the union of all selected characters' corefs */
+  useEffect(() => {
+    if (selectedCharacters.length === 0) {
+      useEditorStore.getState().setMatches([]);
       return;
     }
-    const character = characters.find((c) => c.name === selectedCharacter);
-    if (
-      !character ||
-      !character.conflicts ||
-      character.conflicts.length === 0
-    ) {
-      setConflictHighlight(null);
-      setSelectedConflictId(null);
-    }
-  }, [selectedCharacter, characters]);
+    const selectedSet = new Set(selectedCharacters);
+    const matches =
+      characters
+        .filter((c) => selectedSet.has(c.name))
+        .flatMap((c) =>
+          c.coreferenceMatches.map((m) => ({
+            start: m.startIndex,
+            end: m.endIndex,
+          })),
+        ) ?? [];
+    useEditorStore.getState().setMatches(matches);
+  }, [selectedCharacters, characters]);
 
-  const handleCharacterClick = useCallback(
-    (characterName: string) => {
-      if (selectedCharacter === characterName) {
-        setSelectedCharacter(null);
-        setSelectedAttribute(null);
-        setConflictHighlight(null);
-        setSelectedConflictId(null);
-        useEditorStore.getState().setMatches([]);
-      } else {
-        setSelectedCharacter(characterName);
-        setSelectedAttribute(null);
-        setConflictHighlight(null);
-        setSelectedConflictId(null);
-        const char = characters.find((c) => c.name === characterName);
-        if (char) {
-          const matches = char.coreferenceMatches.map((coref) => ({
-            start: coref.startIndex,
-            end: coref.endIndex,
-          }));
-          useEditorStore.getState().setMatches(matches);
-        }
-      }
-    },
-    [selectedCharacter, characters],
-  );
+  /** Toggle a character on/off */
+  const handleCharacterToggle = useCallback((characterName: string) => {
+    setSelectedAttribute(null);
+    setConflictHighlight(null);
+    setSelectedConflictId(null);
+    setSelectedCharacters((prev) =>
+      prev.includes(characterName)
+        ? prev.filter((n) => n !== characterName)
+        : [...prev, characterName],
+    );
+  }, []);
 
+  /** Attribute click logic (kept global for now) */
   const handleAttributeClick = useCallback(
     (attributeName: string) => {
       if (selectedAttribute === attributeName) {
@@ -76,12 +75,14 @@ export function EditorPage() {
         useEditorStore.getState().setMatches([]);
       } else {
         setSelectedAttribute(attributeName);
+        // If you want attribute-level evidence highlights, compute them here.
         useEditorStore.getState().setMatches([]);
       }
     },
     [selectedAttribute],
   );
 
+  /** Conflict click (still tied to whichever conflict card is clicked) */
   const handleConflictClick = useCallback(
     (conflict: AttributeConflict) => {
       if (selectedConflictId === conflict.id) {
@@ -110,9 +111,10 @@ export function EditorPage() {
             <div className="shrink-0">
               <CharacterSidebar
                 characters={characters}
-                selectedCharacter={selectedCharacter}
+                /** ⬇️ pass multi-select API */
+                selectedCharacters={selectedCharacters}
                 selectedAttribute={selectedAttribute}
-                onCharacterClick={handleCharacterClick}
+                onCharacterToggle={handleCharacterToggle}
                 onAttributeClick={handleAttributeClick}
               />
             </div>
@@ -120,7 +122,8 @@ export function EditorPage() {
             {/* Editor (fixed width, no flex-1) */}
             <div className="w-[720px] shrink-0">
               <TextEditor
-                selectedCharacter={selectedCharacter}
+                /** keep existing TextEditor API happy for now */
+                selectedCharacter={primarySelectedCharacter}
                 selectedAttribute={selectedAttribute}
                 characters={characters}
                 conflictHighlight={conflictHighlight}
@@ -130,7 +133,8 @@ export function EditorPage() {
             {/* Right sidebar */}
             <div className="shrink-0">
               <ConflictsSidebar
-                selectedCharacter={selectedCharacter}
+                /** also keep existing ConflictsSidebar API for now */
+                selectedCharacter={primarySelectedCharacter}
                 characters={characters}
                 selectedConflictId={selectedConflictId}
                 onConflictClick={handleConflictClick}
