@@ -156,7 +156,7 @@ export default function RelationshipGraph({
   }
 
   return (
-    <div className="h-[300px] rounded">
+    <div className="h-[250px] rounded">
       <ReactFlow
         nodes={nodes}
         edges={edges}
