@@ -13,7 +13,7 @@ export default function CustomNode({ data }: NodeProps) {
   return (
     <div
       className={`
-        px-4 py-3 rounded-lg font-semibold text-sm transition-all duration-200 cursor-pointer
+        px-4 py-2 rounded font-semibold text-sm transition-all duration-100 cursor-pointer
         ${
           isSelected
             ? "bg-pink-500 text-white border-3 border-pink-700 scale-110"
