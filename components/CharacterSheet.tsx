@@ -116,10 +116,8 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
         {selectedAttribute && (
           <div className="p-2 bg-white rounded text-xs">
             <p className="font-semibold mb-1">Evidence Types:</p>
-            <p>
-              <span className="indicator-definition px-1">
-                Direct Definition
-              </span>{" "}
+            <p className="flex flex-wrap gap-1">
+              <span className="indicator-direct px-1">Direct Definition</span>{" "}
               <span className="indicator-actions px-1">Actions</span>{" "}
               <span className="indicator-speech px-1">Speech</span>{" "}
               <span className="indicator-appearance px-1">Appearance</span>{" "}
