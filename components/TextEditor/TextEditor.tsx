@@ -163,7 +163,7 @@ export default function TextEditor({
           onChange={setValue}
         >
           <Editable
-            className="prose max-w-none focus:outline-none min-h-[600px] text-xs leading-relaxed"
+            className="prose max-w-none focus:outline-none min-h-[600px] text-base leading-relaxed"
             renderLeaf={(p: RenderLeafProps) => <Leaf {...p} />}
             decorate={decorate}
             readOnly={isReadOnly}
