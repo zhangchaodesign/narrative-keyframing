@@ -1,5 +1,5 @@
-import { TextEditor } from "@/components/TextEditor/DynamicEditor";
+import { DynamicEditorPage } from "@/components/DynamicEditorPage";
 
 export default function Page() {
-  return <TextEditor />;
+  return <DynamicEditorPage />;
 }

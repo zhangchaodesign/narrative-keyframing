@@ -17,8 +17,15 @@ export function ConflictsSidebar({
   selectedConflictId,
   onConflictClick,
 }: ConflictsSidebarProps) {
+  // Always render the sidebar to maintain layout
   if (!selectedCharacter) {
-    return null;
+    return (
+      <div className="w-80 relative flex-shrink-0">
+        <div className="sticky top-0 p-4 z-10">
+          <h3 className="text-lg font-bold text-red-700">⚠️ Conflicts</h3>
+        </div>
+      </div>
+    );
   }
 
   const character = characters.find((c) => c.name === selectedCharacter);
@@ -26,13 +33,8 @@ export function ConflictsSidebar({
   if (!character || !character.conflicts || character.conflicts.length === 0) {
     return (
       <div className="w-80 relative flex-shrink-0">
-        <div className="p-4">
-          <h3 className="text-sm font-semibold text-gray-600 mb-2">
-            Conflicts
-          </h3>
-          <p className="text-xs text-gray-500">
-            No conflicts detected for {selectedCharacter}
-          </p>
+        <div className="sticky top-0 p-4 z-10">
+          <h3 className="text-lg font-bold text-red-700">⚠️ Conflicts</h3>
         </div>
       </div>
     );

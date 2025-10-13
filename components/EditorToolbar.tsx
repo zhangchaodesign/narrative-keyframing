@@ -1,13 +1,10 @@
 "use client";
 
-import { Editor as SlateEditor } from "slate";
-import { HistoryEditor } from "slate-history";
 import { SlateUtils } from "@/lib/utils/slateUtils";
 import { CoreferenceUtils } from "@/lib/utils/coreferenceUtils";
 import { type SentenceCache } from "@/lib/stores/sentenceCacheStore";
 
 interface EditorToolbarProps {
-  editor: SlateEditor & HistoryEditor;
   value: any;
   sentenceCaches: SentenceCache[];
   cachedCharacterNames: string[];
@@ -18,7 +15,6 @@ interface EditorToolbarProps {
 }
 
 export function EditorToolbar({
-  editor,
   value,
   sentenceCaches,
   cachedCharacterNames,
@@ -105,7 +101,7 @@ export function EditorToolbar({
   };
 
   return (
-    <div className="bg-gray-50 p-3 flex items-center gap-3 justify-between w-full rounded">
+    <div className="bg-zinc-50 p-3 flex items-center gap-3 w-full rounded">
       <button
         type="button"
         className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm"
@@ -113,24 +109,6 @@ export function EditorToolbar({
       >
         Extract Characters
       </button>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className="border px-3 py-1.5 rounded hover:bg-gray-100 text-sm"
-          onClick={() => HistoryEditor.undo(editor)}
-          title="Undo"
-        >
-          Undo
-        </button>
-        <button
-          type="button"
-          className="border px-3 py-1.5 rounded hover:bg-gray-100 text-sm"
-          onClick={() => HistoryEditor.redo(editor)}
-          title="Redo"
-        >
-          Redo
-        </button>
-      </div>
     </div>
   );
 }
