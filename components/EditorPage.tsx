@@ -105,11 +105,11 @@ export function EditorPage() {
 
       {/* Main area: fills remaining height, no page scrolling */}
       <div className="flex-1 overflow-hidden">
-        <div className="mx-auto max-w-[1500px] px-6 py-4 h-full">
+        <div className="mx-auto max-w-[1500px] px-6 pt-4 h-full">
           {/* Three-column strip */}
           <div className="flex h-full items-stretch gap-4 overflow-hidden">
             {/* Left: CharacterSidebar — its own scroll */}
-            <div className="shrink-0 h-full overflow-y-auto">
+            <div className="shrink-0 h-full overflow-y-auto pb-4">
               <CharacterSidebar
                 characters={characters}
                 selectedCharacters={selectedCharacters}
@@ -120,7 +120,7 @@ export function EditorPage() {
             </div>
 
             {/* Middle: TextEditor — its own scroll */}
-            <div className="w-[720px] shrink-0 h-full overflow-y-auto">
+            <div className="w-[720px] shrink-0 h-full overflow-y-auto pb-4">
               <TextEditor
                 selectedCharacters={selectedCharacters}
                 selectedAttribute={selectedAttribute}
@@ -130,7 +130,7 @@ export function EditorPage() {
             </div>
 
             {/* Right: ConflictsSidebar — its own scroll */}
-            <div className="shrink-0 h-full overflow-y-auto">
+            <div className="shrink-0 h-full overflow-y-auto pb-4">
               <ConflictsSidebar
                 selectedCharacters={selectedCharacters}
                 characters={characters}
