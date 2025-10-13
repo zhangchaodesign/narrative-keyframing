@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ReactFlow,
   Node,
@@ -14,6 +14,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
 import { Relationship } from "@/lib/stores/relationshipStore";
+import CustomNode from "./CustomNode";
 
 interface RelationshipGraphProps {
   relationships: Relationship[];
@@ -54,6 +55,11 @@ const getLayoutedElements = (
   return { nodes: layoutedNodes, edges };
 };
 
+// Define custom node types
+const nodeTypes = {
+  custom: CustomNode,
+};
+
 export default function RelationshipGraph({
   relationships,
   onCharacterClick,
@@ -72,17 +78,9 @@ export default function RelationshipGraph({
     // Create nodes for each character
     const nodes: Node[] = Array.from(characterSet).map((char) => ({
       id: char,
+      type: "custom",
       data: { label: char },
       position: { x: 0, y: 0 }, // Will be set by layout
-      style: {
-        background: "#ffffff",
-        border: "2px solid #3b82f6",
-        borderRadius: "8px",
-        padding: "10px",
-        fontSize: "14px",
-        fontWeight: "600",
-        cursor: "pointer",
-      },
     }));
 
     // Deduplicate bidirectional edges - keep only one edge per pair
@@ -135,10 +133,36 @@ export default function RelationshipGraph({
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(
+    new Set(),
+  );
 
-  // Handle node click - highlight character in editor
+  // Update node data to include custom selected state
+  React.useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          isSelected: selectedNodeIds.has(node.id),
+        },
+      })),
+    );
+  }, [selectedNodeIds, setNodes]);
+
+  // Handle node click - toggle selection and highlight character in editor
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
+      setSelectedNodeIds((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(node.id)) {
+          newSet.delete(node.id);
+        } else {
+          newSet.add(node.id);
+        }
+        return newSet;
+      });
+
       if (onCharacterClick) {
         onCharacterClick(node.id);
       }
@@ -160,12 +184,16 @@ export default function RelationshipGraph({
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
         proOptions={proOptions}
         fitView
         fitViewOptions={{ padding: 0.2 }}
+        panOnDrag={true}
+        selectionOnDrag={false}
+        multiSelectionKeyCode={null}
       >
         <Controls />
         {/* <MiniMap /> */}
