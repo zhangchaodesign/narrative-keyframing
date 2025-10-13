@@ -22,71 +22,51 @@ export class TextUtils {
     return indices;
   }
 
-  /**
-   * Find all whole-word matches (respecting word boundaries) in str
-   * Uses fuzzy matching by normalizing both strings (removes special chars, lowercases)
-   * This prevents matching "he" inside "the", but allows matching "hugging her knees."
-   * even with punctuation differences
-   *
-   * Implementation based on matchActionsToText from anotherTextUtils.ts
-   *
-   * @param str - The text to search in
-   * @param search - The phrase/word to search for
-   * @returns Array of starting indices where the phrase appears in the original text
-   */
-  static findAllWordMatches(str: string, search: string): number[] {
-    const indices: number[] = [];
-
-    if (search.length === 0) return indices;
-
-    // Normalize both strings for comparison (like matchActionsToText does)
-    const normalizedStr = this.prepareStringForMatching(str);
-    const normalizedSearch = this.prepareStringForMatching(search);
-
-    // Find all matches in the normalized string
-    let searchStartIndex = 0;
-    let matchIndex;
-
-    while (
-      (matchIndex = normalizedStr.indexOf(normalizedSearch, searchStartIndex)) >
-      -1
-    ) {
-      // Now map the normalized index back to the original string
-      // We need to count characters in both strings simultaneously
-      let normalizedPos = 0;
-      let originalPos = 0;
-
-      // Walk through original string until we reach the match position in normalized string
-      while (normalizedPos < matchIndex && originalPos < str.length) {
-        const char = str[originalPos];
-        if (/[a-zA-Z0-9]/.test(char)) {
-          // This character appears in normalized string
-          normalizedPos++;
-        } else {
-          // This character becomes a space in normalized string
-          normalizedPos++;
-        }
-        originalPos++;
-      }
-
-      // originalPos now points to the start of the match in the original string
-      indices.push(originalPos);
-
-      // Continue searching after this match
-      searchStartIndex = matchIndex + normalizedSearch.length;
-    }
-
-    return indices;
+  private static escapeRegex(s: string) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   /**
-   * Clean up a string to make it easier to be matched against (mostly for GPT because it seems to mess with special characters)
-   * @param str
-   * @param replacement
-   * @returns
+   * Whole-word/phrase matcher that:
+   * - does NOT match inside other words (no "he" in "the"/"she")
+   * - DOES match phrases containing punctuation/smart quotes (e.g., “I’m a pacifist,”)
+   * - is Unicode-aware (handles curly apostrophes/quotes)
    */
-  static prepareStringForMatching(str: string, replacement = " "): string {
-    return str.replace(/[^a-zA-Z0-9]/g, replacement).toLocaleLowerCase();
+  static findAllWordMatches(
+    str: string,
+    search: string,
+    {
+      caseSensitive = false,
+      allowApostrophesInsideWords = true, // keep ’ or ' inside words like I’m
+    }: { caseSensitive?: boolean; allowApostrophesInsideWords?: boolean } = {},
+  ): number[] {
+    const indices: number[] = [];
+    if (!search || !search.trim()) return indices;
+
+    // Split search into tokens by whitespace, but KEEP punctuation inside tokens.
+    const tokens = search.trim().split(/\s+/).map(this.escapeRegex);
+    if (!tokens.length) return indices;
+
+    // What counts as a "word character" for boundaries:
+    const wordChar = allowApostrophesInsideWords
+      ? `[\\p{L}\\p{N}'’]`
+      : `[\\p{L}\\p{N}]`;
+
+    // Allow ANY run of non-letter/digit (spaces, punctuation, quotes) between tokens.
+    const between = `(?:[^\\p{L}\\p{N}]+)`;
+    const inner = tokens.join(between);
+
+    // Require non-word on both ends (so we don't match inside larger words).
+    const pattern = `(?<!${wordChar})${inner}(?!${wordChar})`;
+    const flags = `g${caseSensitive ? "u" : "iu"}`;
+
+    const re = new RegExp(pattern, flags);
+
+    for (let m: RegExpExecArray | null; (m = re.exec(str)); ) {
+      indices.push(m.index);
+      if (re.lastIndex === m.index) re.lastIndex++; // safety
+    }
+    return indices;
   }
 
   /**
