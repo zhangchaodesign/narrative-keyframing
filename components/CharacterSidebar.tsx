@@ -53,20 +53,26 @@ export function CharacterSidebar({
 
   return (
     <div className="w-80 overflow-y-auto flex-shrink-0">
-      <div className="p-4 space-y-4">
-        <div className="w-full flex justify-between">
-          <h2 className="text-lg font-bold text-gray-800">Characters</h2>
-          <Toolbar
-            value={value}
-            sentenceCaches={sentenceCaches}
-            cachedCharacterNames={cachedCharacterNames}
-            onExtractComplete={handleExtractComplete}
-          />
+      <div className="space-y-4">
+        <div className="p-4 bg-white/80 backdrop-blur border border-zinc-100 rounded">
+          <div className="w-full flex justify-between ">
+            <h2 className="text-lg font-bold text-gray-800">Characters</h2>
+            <Toolbar
+              value={value}
+              sentenceCaches={sentenceCaches}
+              cachedCharacterNames={cachedCharacterNames}
+              onExtractComplete={handleExtractComplete}
+            />
+          </div>
+
+          <p className="text-xs text-gray-500 mt-1">
+            Select one or more characters to view attributes.
+          </p>
         </div>
 
         {/* Character list with multi-select toggles */}
         {characters.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2 px-4">
             {characters.map((char) => {
               const isSelected = selectedSet.has(char.name);
               return (
@@ -110,7 +116,7 @@ export function CharacterSidebar({
 
         {/* Multiple CharacterSheets */}
         {selectedList.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-4 px-4">
             {selectedList.map((character) => (
               <CharacterSheet
                 key={character.name}
