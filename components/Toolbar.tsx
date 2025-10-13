@@ -3,6 +3,7 @@
 import { SlateUtils } from "@/lib/utils/slateUtils";
 import { CoreferenceUtils } from "@/lib/utils/coreferenceUtils";
 import { type SentenceCache } from "@/lib/stores/sentenceCacheStore";
+import { useRelationshipStore } from "@/lib/stores/relationshipStore";
 
 interface ToolbarProps {
   value: any;
@@ -20,6 +21,8 @@ export function Toolbar({
   cachedCharacterNames,
   onExtractComplete,
 }: ToolbarProps) {
+  const { setRelationships, setIsLoading } = useRelationshipStore();
+
   const handleExtractCharacters = async () => {
     const story = SlateUtils.stateToText(value as any);
     console.log("Extracting characters from story:", story);
@@ -66,6 +69,29 @@ export function Toolbar({
 
       // Step 3: Notify parent component
       onExtractComplete(result);
+
+      // Step 4: Analyze relationships
+      if (characterNames.length >= 2) {
+        console.log("Analyzing relationships...");
+        setIsLoading(true);
+        try {
+          const relResponse = await fetch("/api/relationships", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ story, characters: characterNames }),
+          });
+
+          if (relResponse.ok) {
+            const relData = await relResponse.json();
+            setRelationships(relData.relationships || []);
+            console.log("Relationships analyzed:", relData.relationships);
+          }
+        } catch (relError) {
+          console.error("Relationship analysis failed:", relError);
+        } finally {
+          setIsLoading(false);
+        }
+      }
 
       // Show summary
       const summary = result.characters

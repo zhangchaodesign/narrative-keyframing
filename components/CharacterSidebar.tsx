@@ -4,8 +4,10 @@ import React, { useCallback, useMemo } from "react";
 import { useEditorStore } from "@/lib/stores/editorStore";
 import { useCharacterStore, type Character } from "@/lib/stores/characterStore";
 import { useSentenceCacheStore } from "@/lib/stores/sentenceCacheStore";
+import { useRelationshipStore } from "@/lib/stores/relationshipStore";
 import { Toolbar } from "@/components/Toolbar";
 import { CharacterSheet } from "@/components/CharacterSheet";
+import RelationshipGraph from "@/components/RelationshipGraph";
 
 interface CharacterSidebarProps {
   characters: Character[];
@@ -29,6 +31,7 @@ export function CharacterSidebar({
   const { setCharacters } = useCharacterStore();
   const { sentenceCaches, cachedCharacterNames, setSentenceCaches } =
     useSentenceCacheStore();
+  const { relationships } = useRelationshipStore();
 
   const handleExtractComplete = useCallback(
     (result: { characters: any[]; sentenceCaches: any[] }) => {
@@ -71,7 +74,7 @@ export function CharacterSidebar({
         </div>
 
         {/* Character list with multi-select toggles */}
-        {characters.length > 0 && (
+        {/* {characters.length > 0 && (
           <div className="space-y-2 px-4">
             {characters.map((char) => {
               const isSelected = selectedSet.has(char.name);
@@ -111,6 +114,18 @@ export function CharacterSidebar({
                 </button>
               );
             })}
+          </div>
+        )} */}
+
+        {/* Relationship Visualization Section */}
+        {relationships.length > 0 && (
+          <div className="px-4">
+            <div className="bg-white/80 backdrop-blur border border-zinc-100 rounded">
+              <RelationshipGraph
+                relationships={relationships}
+                onCharacterClick={onCharacterToggle}
+              />
+            </div>
           </div>
         )}
 

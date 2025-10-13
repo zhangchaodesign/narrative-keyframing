@@ -9,9 +9,12 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.49",
+    "@types/dagre": "^0.7.53",
+    "@xyflow/react": "^12.8.6",
     "ai": "^5.0.68",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dagre": "^0.8.5",
     "diff": "^8.0.2",
     "is-hotkey": "^0.2.0",
     "lucide-react": "^0.545.0",
