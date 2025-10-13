@@ -25,9 +25,6 @@ export function EditorPage() {
     null,
   );
 
-  /** Keep old children working by picking the first as "primary" */
-  const primarySelectedCharacter = selectedCharacters[0] ?? null;
-
   /** When selection changes, clear conflict UI if nothing is selected */
   useEffect(() => {
     if (selectedCharacters.length === 0) {
@@ -100,18 +97,21 @@ export function EditorPage() {
   );
 
   return (
-    <div className="flex h-screen flex-col">
-      <Header />
+    <div className="flex h-screen flex-col overflow-hidden">
+      {/* Header stays fixed height at top */}
+      <div className="shrink-0">
+        <Header />
+      </div>
 
-      {/* Main area with centered, fixed-width strip */}
-      <div className="flex-1 overflow-auto">
-        <div className="mx-auto max-w-[1400px] px-6 py-4">
-          <div className="flex items-start gap-4">
-            {/* Left sidebar */}
-            <div className="shrink-0">
+      {/* Main area: fills remaining height, no page scrolling */}
+      <div className="flex-1 overflow-hidden">
+        <div className="mx-auto max-w-[1500px] px-6 py-4 h-full">
+          {/* Three-column strip */}
+          <div className="flex h-full items-stretch gap-4 overflow-hidden">
+            {/* Left: CharacterSidebar — its own scroll */}
+            <div className="shrink-0 h-full overflow-y-auto">
               <CharacterSidebar
                 characters={characters}
-                /** ⬇️ pass multi-select API */
                 selectedCharacters={selectedCharacters}
                 selectedAttribute={selectedAttribute}
                 onCharacterToggle={handleCharacterToggle}
@@ -119,22 +119,20 @@ export function EditorPage() {
               />
             </div>
 
-            {/* Editor (fixed width, no flex-1) */}
-            <div className="w-[720px] shrink-0">
+            {/* Middle: TextEditor — its own scroll */}
+            <div className="w-[720px] shrink-0 h-full overflow-y-auto">
               <TextEditor
-                /** keep existing TextEditor API happy for now */
-                selectedCharacter={primarySelectedCharacter}
+                selectedCharacters={selectedCharacters}
                 selectedAttribute={selectedAttribute}
                 characters={characters}
                 conflictHighlight={conflictHighlight}
               />
             </div>
 
-            {/* Right sidebar */}
-            <div className="shrink-0">
+            {/* Right: ConflictsSidebar — its own scroll */}
+            <div className="shrink-0 h-full overflow-y-auto">
               <ConflictsSidebar
-                /** also keep existing ConflictsSidebar API for now */
-                selectedCharacter={primarySelectedCharacter}
+                selectedCharacters={selectedCharacters}
                 characters={characters}
                 selectedConflictId={selectedConflictId}
                 onConflictClick={handleConflictClick}

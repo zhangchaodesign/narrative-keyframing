@@ -13,14 +13,16 @@ import { geistMono } from "@/app/fonts";
 import { cn } from "@/lib/utils/utils";
 
 interface TextEditorProps {
-  selectedCharacter: string | null;
+  /** ✅ multi-select */
+  selectedCharacters: string[];
+  /** still global unless you move to per-character */
   selectedAttribute: string | null;
   characters: Character[];
   conflictHighlight: { start: number; end: number } | null;
 }
 
 export default function TextEditor({
-  selectedCharacter,
+  selectedCharacters,
   selectedAttribute,
   characters,
   conflictHighlight,
@@ -32,13 +34,11 @@ export default function TextEditor({
     if (path.length === 0) {
       const children = (node as any).children;
       if (children.length > 1) {
-        // add a newline at the beginning of the second paragraph,
-        // then merge it into the first
         Transforms.insertText(editor, "\n", {
           at: { path: [1, 0], offset: 0 },
         });
         Transforms.mergeNodes(editor, { at: [1] });
-        return; // done this pass
+        return;
       }
     }
     normalizeNode(entry);
@@ -50,77 +50,66 @@ export default function TextEditor({
   const { value, matches, setValue } = useEditorStore();
   const [isReadOnly] = useState<boolean>(false);
 
-  // Decorate function for highlights
   const decorate = useCallback(
     ([node, path]: NodeEntry): Range[] => {
       const ranges: Range[] = [];
+      if (!(node as any).text) return ranges;
 
-      // Only process text nodes
-      if (!(node as any).text) {
-        return ranges;
-      }
+      const nodeStart = SlateUtils.toStrIndex(value as any, {
+        path,
+        offset: 0,
+      });
+      const nodeEnd = nodeStart + (node as any).text.length;
 
-      // Add coreference matches for selected character
+      // 1) Coreference matches (union already computed in parent & stored)
       if (matches && matches.length > 0) {
-        const nodeStart = SlateUtils.toStrIndex(value as any, {
-          path,
-          offset: 0,
-        });
-
         for (const match of matches) {
-          const nodeEnd = nodeStart + (node as any).text.length;
           if (match.start < nodeEnd && match.end > nodeStart) {
             const anchor = SlateUtils.toSlatePoint(value as any, match.start);
             const focus = SlateUtils.toSlatePoint(value as any, match.end);
-            if (anchor && focus) {
+            if (anchor && focus)
               ranges.push({ anchor, focus, highlight: true } as any);
-            }
           }
         }
       }
 
-      // Add attribute evidence highlighting with indicator types
-      if (selectedCharacter && selectedAttribute) {
-        const character = characters.find((c) => c.name === selectedCharacter);
-        if (character && character.attributes) {
-          const attribute = character.attributes.find(
+      // 2) Attribute evidence across ALL selected characters (if attribute chosen)
+      if (selectedAttribute && selectedCharacters.length > 0) {
+        const selectedSet = new Set(selectedCharacters);
+        const selectedChars = characters.filter((c) => selectedSet.has(c.name));
+
+        for (const character of selectedChars) {
+          const attribute = character.attributes?.find(
             (a) => a.name === selectedAttribute,
           );
-          if (attribute) {
-            const nodeStart = SlateUtils.toStrIndex(value as any, {
-              path,
-              offset: 0,
-            });
+          if (!attribute) continue;
 
-            for (const evidence of attribute.evidence) {
-              const nodeEnd = nodeStart + (node as any).text.length;
-              if (
-                evidence.startIndex < nodeEnd &&
-                evidence.endIndex > nodeStart
-              ) {
-                const anchor = SlateUtils.toSlatePoint(
-                  value as any,
-                  evidence.startIndex,
-                );
-                const focus = SlateUtils.toSlatePoint(
-                  value as any,
-                  evidence.endIndex,
-                );
-
-                if (anchor && focus) {
-                  ranges.push({
-                    anchor,
-                    focus,
-                    [evidence.indicatorType]: true, // Color by indicator type
-                  });
-                }
+          for (const evidence of attribute.evidence ?? []) {
+            if (
+              evidence.startIndex < nodeEnd &&
+              evidence.endIndex > nodeStart
+            ) {
+              const anchor = SlateUtils.toSlatePoint(
+                value as any,
+                evidence.startIndex,
+              );
+              const focus = SlateUtils.toSlatePoint(
+                value as any,
+                evidence.endIndex,
+              );
+              if (anchor && focus) {
+                ranges.push({
+                  anchor,
+                  focus,
+                  [evidence.indicatorType]: true, // same color-by-indicator behavior
+                } as any);
               }
             }
           }
         }
       }
 
-      // Add conflict highlight (separate from character coreference highlighting)
+      // 3) Single conflict highlight (from ConflictsSidebar click)
       if (conflictHighlight) {
         const anchor = SlateUtils.toSlatePoint(
           value as any,
@@ -130,10 +119,8 @@ export default function TextEditor({
           value as any,
           conflictHighlight.end,
         );
-
-        if (anchor && focus) {
+        if (anchor && focus)
           ranges.push({ anchor, focus, conflictHighlight: true } as any);
-        }
       }
 
       return ranges;
@@ -141,8 +128,8 @@ export default function TextEditor({
     [
       matches,
       value,
-      selectedCharacter,
       selectedAttribute,
+      selectedCharacters,
       characters,
       conflictHighlight,
     ],
