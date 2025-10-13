@@ -117,8 +117,35 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Apply to everything that can scroll */
+  * {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: rgba(51, 51, 51, 0.3) transparent; /* Firefox */
+  }
+
+  /* Chromium/WebKit */
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: rgba(51, 51, 51, 0.3);
+    border-radius: 9999px;
+  }
+
+  /* Make sure the root scroller is included */
+  html,
+  body {
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable both-edges; /* optional: keeps layout from shifting */
   }
 }
 
