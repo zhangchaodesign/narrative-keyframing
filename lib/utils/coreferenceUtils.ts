@@ -222,54 +222,6 @@ export class CoreferenceUtils {
   }
 
   /**
-   * OLD: Convert cached indicator data to absolute indicator matches
-   * Kept for future use but not currently called
-   */
-  private static sentenceCacheToIndicatorMatches(
-    sentenceCache: SentenceCache,
-    sentenceIndex: number,
-    sentenceStartIndex: number,
-  ): Map<string, CharacterIndicators> {
-    const indicatorsByCharacter = new Map<string, CharacterIndicators>();
-
-    for (const [characterName, indicators] of Object.entries(
-      sentenceCache.characterIndicators || {},
-    )) {
-      const characterIndicators: CharacterIndicators = {
-        directDefinition: [],
-        actions: [],
-        speech: [],
-        appearance: [],
-        environment: [],
-      };
-
-      // Convert each indicator type
-      const indicatorTypes: IndicatorType[] = [
-        "directDefinition",
-        "actions",
-        "speech",
-        "appearance",
-        "environment",
-      ];
-
-      for (const type of indicatorTypes) {
-        const refs = indicators[type] || [];
-        characterIndicators[type] = refs.map((ref) => ({
-          sentenceIndex,
-          startIndex: sentenceStartIndex + ref.relativeIndex,
-          endIndex: sentenceStartIndex + ref.relativeIndex + ref.text.length,
-          text: ref.text,
-          type,
-        }));
-      }
-
-      indicatorsByCharacter.set(characterName, characterIndicators);
-    }
-
-    return indicatorsByCharacter;
-  }
-
-  /**
    * Extract attributes for a character in a sentence using Egri's bone structure
    * @param story - Full story text (for context)
    * @param characterName - Character to analyze
@@ -471,97 +423,6 @@ export class CoreferenceUtils {
     }
 
     return conflicts;
-  }
-
-  /**
-   * Extract indicators for a character in a sentence
-   * @param story - Full story text (for context)
-   * @param characterName - Character to analyze
-   * @param sentence - Sentence text
-   * @param coreferences - List of coreferences found for this character
-   * @returns SentenceCharacterIndicators object
-   */
-  private static async extractIndicatorsForCharacter(
-    story: string,
-    characterName: string,
-    sentence: string,
-    coreferences: string[],
-  ): Promise<SentenceCharacterIndicators> {
-    const indicatorTypes: IndicatorType[] = [
-      "directDefinition",
-      "actions",
-      "speech",
-      "appearance",
-      "environment",
-    ];
-
-    const indicators: SentenceCharacterIndicators = {
-      directDefinition: [],
-      actions: [],
-      speech: [],
-      appearance: [],
-      environment: [],
-    };
-
-    // Only process if there are coreferences in this sentence
-    if (coreferences.length === 0) {
-      return indicators;
-    }
-
-    // Call all 5 indicator APIs in parallel
-    await Promise.all(
-      indicatorTypes.map(async (type) => {
-        try {
-          const apiPath =
-            type === "directDefinition" ? "direct-definition" : type;
-
-          const response = await fetch(`/api/indicators/${apiPath}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              story,
-              characterName,
-              sentence,
-              coreferences,
-            }),
-          });
-
-          if (!response.ok) {
-            console.error(
-              `Failed to extract ${type} indicators for ${characterName}`,
-            );
-            return;
-          }
-
-          const data = await response.json();
-          const indicatorTexts: string[] = data.indicators || [];
-
-          // Convert indicator texts to relative indices
-          const refs: SentenceIndicatorRef[] = [];
-          for (const indicatorText of indicatorTexts) {
-            const indices = TextUtils.findAllWordMatches(
-              sentence,
-              indicatorText,
-            );
-            for (const relativeIndex of indices) {
-              refs.push({
-                text: indicatorText,
-                relativeIndex,
-              });
-            }
-          }
-
-          indicators[type] = refs;
-        } catch (error) {
-          console.error(
-            `Error extracting ${type} indicators for ${characterName}:`,
-            error,
-          );
-        }
-      }),
-    );
-
-    return indicators;
   }
 
   /**
@@ -934,31 +795,6 @@ export class CoreferenceUtils {
           }
         }
       }
-
-      // OLD: Convert indicators (kept for backward compatibility but empty)
-      const indicators = this.sentenceCacheToIndicatorMatches(
-        sentenceCache,
-        sentIndex,
-        sentences[sentIndex].startIndex,
-      );
-
-      // Merge indicators into character map
-      indicators.forEach((indicatorData, characterName) => {
-        const existing = characterIndicatorMap.get(characterName)!;
-        const indicatorTypes: IndicatorType[] = [
-          "directDefinition",
-          "actions",
-          "speech",
-          "appearance",
-          "environment",
-        ];
-
-        for (const type of indicatorTypes) {
-          existing[type] = [...existing[type], ...indicatorData[type]];
-        }
-
-        characterIndicatorMap.set(characterName, existing);
-      });
     }
 
     // Convert map to Character array and consolidate duplicate attributes
