@@ -1,4 +1,6 @@
 import { type AttributeConflict } from "@/lib/types/conflicts";
+import { geistMono } from "@/app/fonts";
+import { cn } from "@/lib/utils/utils";
 
 interface ConflictCardProps {
   conflict: AttributeConflict;
@@ -40,14 +42,21 @@ export function ConflictCard({
           "{conflict.establishedAttribute.name}"
         </span>
       </p>
-      <p className="text-xs text-gray-600 italic mb-2">
-        {conflict.explanation}
-      </p>
-      <div className="text-[10px] text-gray-500 space-y-1">
-        <p>Original: "{conflict.establishedAttribute.evidence.text}"</p>
-        <p className="text-red-600 font-medium">
-          Conflicts with: "{conflict.conflictingEvidence.text}"
-        </p>
+      <p className="text-[10px] text-gray-600 mb-2">{conflict.explanation}</p>
+      <div className="text-[10px]  space-y-1">
+        <div className="space-y-1">
+          <p>Original</p>
+          <p className={cn(geistMono.className, "p-1 bg-red-100 rounded")}>
+            {conflict.establishedAttribute.evidence.text}
+          </p>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-red-600 font-medium">Conflicts with</p>
+          <p className={cn(geistMono.className, "p-1 bg-red-100 rounded")}>
+            {conflict.conflictingEvidence.text}
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -7,15 +7,11 @@ import { ConflictsSidebar } from "@/components/ConflictsSidebar";
 import TextEditor from "@/components/TextEditor/TextEditor";
 import { useEditorStore } from "@/lib/stores/editorStore";
 import { useCharacterStore } from "@/lib/stores/characterStore";
-import { useSentenceCacheStore } from "@/lib/stores/sentenceCacheStore";
 import { type AttributeConflict } from "@/lib/types/conflicts";
 
 export function EditorPage() {
-  // Zustand stores
-  const { characters, setCharacters } = useCharacterStore();
-  const { setSentenceCaches } = useSentenceCacheStore();
+  const { characters } = useCharacterStore();
 
-  // Local state for UI interactions
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(
     null,
   );
@@ -30,14 +26,12 @@ export function EditorPage() {
     null,
   );
 
-  // Clear conflict highlight when character changes or has no conflicts
   useEffect(() => {
     if (!selectedCharacter) {
       setConflictHighlight(null);
       setSelectedConflictId(null);
       return;
     }
-
     const character = characters.find((c) => c.name === selectedCharacter);
     if (
       !character ||
@@ -49,18 +43,15 @@ export function EditorPage() {
     }
   }, [selectedCharacter, characters]);
 
-  // Character click handler
   const handleCharacterClick = useCallback(
     (characterName: string) => {
       if (selectedCharacter === characterName) {
-        // Deselect character
         setSelectedCharacter(null);
         setSelectedAttribute(null);
         setConflictHighlight(null);
         setSelectedConflictId(null);
         useEditorStore.getState().setMatches([]);
       } else {
-        // Select character and highlight coreferences
         setSelectedCharacter(characterName);
         setSelectedAttribute(null);
         setConflictHighlight(null);
@@ -72,16 +63,12 @@ export function EditorPage() {
             end: coref.endIndex,
           }));
           useEditorStore.getState().setMatches(matches);
-          console.log(
-            `Highlighting ${matches.length} references for ${characterName}`,
-          );
         }
       }
     },
     [selectedCharacter, characters],
   );
 
-  // Attribute click handler
   const handleAttributeClick = useCallback(
     (attributeName: string) => {
       if (selectedAttribute === attributeName) {
@@ -95,51 +82,62 @@ export function EditorPage() {
     [selectedAttribute],
   );
 
-  // Conflict click handler
-  const handleConflictClick = useCallback((conflict: AttributeConflict) => {
-    setConflictHighlight({
-      start: conflict.conflictingEvidence.startIndex,
-      end: conflict.conflictingEvidence.endIndex,
-    });
-    setSelectedConflictId(conflict.id);
-  }, []);
+  const handleConflictClick = useCallback(
+    (conflict: AttributeConflict) => {
+      if (selectedConflictId === conflict.id) {
+        setSelectedConflictId(null);
+        setConflictHighlight(null);
+        return;
+      }
+      setSelectedConflictId(conflict.id);
+      setConflictHighlight({
+        start: conflict.conflictingEvidence.startIndex,
+        end: conflict.conflictingEvidence.endIndex,
+      });
+    },
+    [selectedConflictId],
+  );
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header */}
+    <div className="flex h-screen flex-col">
       <Header />
 
-      {/* Main Content Area */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar - Characters & Attributes */}
-        <CharacterSidebar
-          characters={characters}
-          selectedCharacter={selectedCharacter}
-          selectedAttribute={selectedAttribute}
-          onCharacterClick={handleCharacterClick}
-          onAttributeClick={handleAttributeClick}
-        />
+      {/* Main area with centered, fixed-width strip */}
+      <div className="flex-1 overflow-auto">
+        <div className="mx-auto max-w-[1400px] px-6 py-4">
+          <div className="flex items-start gap-4">
+            {/* Left sidebar */}
+            <div className="shrink-0">
+              <CharacterSidebar
+                characters={characters}
+                selectedCharacter={selectedCharacter}
+                selectedAttribute={selectedAttribute}
+                onCharacterClick={handleCharacterClick}
+                onAttributeClick={handleAttributeClick}
+              />
+            </div>
 
-        {/* Center - Editor Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Text Editor */}
-          <div className="flex-1 overflow-hidden py-4">
-            <TextEditor
-              selectedCharacter={selectedCharacter}
-              selectedAttribute={selectedAttribute}
-              characters={characters}
-              conflictHighlight={conflictHighlight}
-            />
+            {/* Editor (fixed width, no flex-1) */}
+            <div className="w-[720px] shrink-0">
+              <TextEditor
+                selectedCharacter={selectedCharacter}
+                selectedAttribute={selectedAttribute}
+                characters={characters}
+                conflictHighlight={conflictHighlight}
+              />
+            </div>
+
+            {/* Right sidebar */}
+            <div className="shrink-0">
+              <ConflictsSidebar
+                selectedCharacter={selectedCharacter}
+                characters={characters}
+                selectedConflictId={selectedConflictId}
+                onConflictClick={handleConflictClick}
+              />
+            </div>
           </div>
         </div>
-
-        {/* Right Sidebar - Conflicts */}
-        <ConflictsSidebar
-          selectedCharacter={selectedCharacter}
-          characters={characters}
-          selectedConflictId={selectedConflictId}
-          onConflictClick={handleConflictClick}
-        />
       </div>
     </div>
   );

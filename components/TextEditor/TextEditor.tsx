@@ -9,6 +9,8 @@ import { SlateUtils } from "@/lib/utils/slateUtils";
 import { useEditorStore } from "@/lib/stores/editorStore";
 import { type Character } from "@/lib/stores/characterStore";
 import isHotkey from "is-hotkey";
+import { geistMono } from "@/app/fonts";
+import { cn } from "@/lib/utils/utils";
 
 interface TextEditorProps {
   selectedCharacter: string | null;
@@ -149,7 +151,10 @@ export default function TextEditor({
   return (
     <div
       ref={editorContainerRef}
-      className="h-full overflow-y-auto relative bg-white border border-zinc-200 rounded"
+      className={cn(
+        geistMono.className,
+        "h-full overflow-y-auto relative bg-white border border-zinc-200 rounded",
+      )}
     >
       <div className="px-24 py-12">
         <Slate
@@ -158,7 +163,7 @@ export default function TextEditor({
           onChange={setValue}
         >
           <Editable
-            className="prose max-w-none focus:outline-none min-h-[600px] text-base leading-relaxed"
+            className="prose max-w-none focus:outline-none min-h-[600px] text-xs leading-relaxed"
             renderLeaf={(p: RenderLeafProps) => <Leaf {...p} />}
             decorate={decorate}
             readOnly={isReadOnly}
