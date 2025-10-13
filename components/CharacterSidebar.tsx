@@ -82,7 +82,7 @@ export function CharacterSidebar({
                   className={`w-full text-left border px-3 py-2 rounded text-sm transition-colors
                     ${
                       isSelected
-                        ? "bg-blue-200 font-bold border-blue-400"
+                        ? "bg-blue-200 font-semibold border-blue-400"
                         : "bg-white hover:bg-blue-100"
                     }`}
                   onClick={() => onCharacterToggle(char.name)}
