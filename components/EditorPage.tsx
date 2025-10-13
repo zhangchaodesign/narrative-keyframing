@@ -4,7 +4,6 @@ import React, { useState, useCallback, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { CharacterSidebar } from "@/components/CharacterSidebar";
 import { ConflictsSidebar } from "@/components/ConflictsSidebar";
-import { EditorToolbar } from "@/components/EditorToolbar";
 import TextEditor from "@/components/TextEditor/TextEditor";
 import { useEditorStore } from "@/lib/stores/editorStore";
 import { useCharacterStore } from "@/lib/stores/characterStore";
@@ -13,10 +12,8 @@ import { type AttributeConflict } from "@/lib/types/conflicts";
 
 export function EditorPage() {
   // Zustand stores
-  const { value, setValue } = useEditorStore();
   const { characters, setCharacters } = useCharacterStore();
-  const { sentenceCaches, cachedCharacterNames, setSentenceCaches } =
-    useSentenceCacheStore();
+  const { setSentenceCaches } = useSentenceCacheStore();
 
   // Local state for UI interactions
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(
@@ -107,18 +104,6 @@ export function EditorPage() {
     setSelectedConflictId(conflict.id);
   }, []);
 
-  // Extract complete handler
-  const handleExtractComplete = useCallback(
-    (result: { characters: any[]; sentenceCaches: any[] }) => {
-      setCharacters(result.characters);
-      setSentenceCaches(
-        result.sentenceCaches,
-        result.characters.map((c) => c.name),
-      );
-    },
-    [setCharacters, setSentenceCaches],
-  );
-
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
@@ -137,18 +122,8 @@ export function EditorPage() {
 
         {/* Center - Editor Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Toolbar */}
-          <div className="p-3">
-            <EditorToolbar
-              value={value}
-              sentenceCaches={sentenceCaches}
-              cachedCharacterNames={cachedCharacterNames}
-              onExtractComplete={handleExtractComplete}
-            />
-          </div>
-
           {/* Text Editor */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden py-4">
             <TextEditor
               selectedCharacter={selectedCharacter}
               selectedAttribute={selectedAttribute}

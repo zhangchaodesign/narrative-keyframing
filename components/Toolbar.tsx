@@ -4,7 +4,7 @@ import { SlateUtils } from "@/lib/utils/slateUtils";
 import { CoreferenceUtils } from "@/lib/utils/coreferenceUtils";
 import { type SentenceCache } from "@/lib/stores/sentenceCacheStore";
 
-interface EditorToolbarProps {
+interface ToolbarProps {
   value: any;
   sentenceCaches: SentenceCache[];
   cachedCharacterNames: string[];
@@ -14,12 +14,12 @@ interface EditorToolbarProps {
   }) => void;
 }
 
-export function EditorToolbar({
+export function Toolbar({
   value,
   sentenceCaches,
   cachedCharacterNames,
   onExtractComplete,
-}: EditorToolbarProps) {
+}: ToolbarProps) {
   const handleExtractCharacters = async () => {
     const story = SlateUtils.stateToText(value as any);
     console.log("Extracting characters from story:", story);
@@ -101,14 +101,12 @@ export function EditorToolbar({
   };
 
   return (
-    <div className="bg-zinc-50 p-3 flex items-center gap-3 w-full rounded">
-      <button
-        type="button"
-        className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm"
-        onClick={handleExtractCharacters}
-      >
-        Extract Characters
-      </button>
-    </div>
+    <button
+      type="button"
+      className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium text-sm"
+      onClick={handleExtractCharacters}
+    >
+      Analyze
+    </button>
   );
 }

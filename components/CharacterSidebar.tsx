@@ -1,6 +1,10 @@
 "use client";
 
+import React, { useCallback } from "react";
 import { useEditorStore } from "@/lib/stores/editorStore";
+import { useCharacterStore } from "@/lib/stores/characterStore";
+import { useSentenceCacheStore } from "@/lib/stores/sentenceCacheStore";
+import { Toolbar } from "@/components/Toolbar";
 import { type Character } from "@/lib/stores/characterStore";
 
 interface CharacterSidebarProps {
@@ -18,10 +22,35 @@ export function CharacterSidebar({
   onCharacterClick,
   onAttributeClick,
 }: CharacterSidebarProps) {
+  const { value, setValue } = useEditorStore();
+  const { setCharacters } = useCharacterStore();
+  const { sentenceCaches, cachedCharacterNames, setSentenceCaches } =
+    useSentenceCacheStore();
+
+  // Extract complete handler
+  const handleExtractComplete = useCallback(
+    (result: { characters: any[]; sentenceCaches: any[] }) => {
+      setCharacters(result.characters);
+      setSentenceCaches(
+        result.sentenceCaches,
+        result.characters.map((c) => c.name),
+      );
+    },
+    [setCharacters, setSentenceCaches],
+  );
+
   return (
     <div className="w-80 overflow-y-auto flex-shrink-0">
       <div className="p-4 space-y-4">
-        <h2 className="text-lg font-bold text-gray-800">Characters</h2>
+        <div className="w-full flex justify-between">
+          <h2 className="text-lg font-bold text-gray-800">Characters</h2>
+          <Toolbar
+            value={value}
+            sentenceCaches={sentenceCaches}
+            cachedCharacterNames={cachedCharacterNames}
+            onExtractComplete={handleExtractComplete}
+          />
+        </div>
 
         {/* Character list display */}
         {characters.length > 0 && (
