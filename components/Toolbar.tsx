@@ -3,12 +3,14 @@
 import { SlateUtils } from "@/lib/utils/slateUtils";
 import { CoreferenceUtils } from "@/lib/utils/coreferenceUtils";
 import { type SentenceCache } from "@/lib/stores/sentenceCacheStore";
+import { type Character } from "@/lib/stores/characterStore";
 import { useRelationshipStore } from "@/lib/stores/relationshipStore";
 
 interface ToolbarProps {
   value: any;
   sentenceCaches: SentenceCache[];
   cachedCharacterNames: string[];
+  existingCharacters: Character[];
   onExtractComplete: (result: {
     characters: any[];
     sentenceCaches: SentenceCache[];
@@ -19,6 +21,7 @@ export function Toolbar({
   value,
   sentenceCaches,
   cachedCharacterNames,
+  existingCharacters,
   onExtractComplete,
 }: ToolbarProps) {
   const { setRelationships, setIsLoading } = useRelationshipStore();
@@ -58,6 +61,7 @@ export function Toolbar({
         characterNames,
         sentenceCaches.length > 0 ? sentenceCaches : undefined,
         cachedCharacterNames.length > 0 ? cachedCharacterNames : undefined,
+        existingCharacters.length > 0 ? existingCharacters : undefined,
       );
 
       const extractionTime = Date.now() - startTime;

@@ -709,6 +709,7 @@ export class CoreferenceUtils {
     characterNames: string[],
     existingCache?: SentenceCache[],
     cachedCharacterNames?: string[],
+    existingCharacters?: Character[],
   ): Promise<{
     characters: Character[];
     sentenceCaches: SentenceCache[];
@@ -868,7 +869,28 @@ export class CoreferenceUtils {
             attr.evidence.some((ev) => ev.sentenceIndex < sentIndex),
           );
 
-          if (existingAttributes.length === 0) {
+          // ALSO include manually added attributes from existingCharacters (these have no evidence)
+          const manualAttributes: CharacterAttribute[] = [];
+          if (existingCharacters) {
+            const existingChar = existingCharacters.find(
+              (c) => c.name === characterName,
+            );
+            if (existingChar) {
+              // Get manual attributes (no evidence or empty evidence)
+              const manualAttrs = existingChar.attributes.filter(
+                (attr) => !attr.evidence || attr.evidence.length === 0,
+              );
+              manualAttributes.push(...manualAttrs);
+            }
+          }
+
+          // Combine AI-extracted attributes with manual attributes
+          const allExistingAttributes = [
+            ...existingAttributes,
+            ...manualAttributes,
+          ];
+
+          if (allExistingAttributes.length === 0) {
             // First sentence with attributes, nothing to conflict with
             continue;
           }
@@ -884,13 +906,13 @@ export class CoreferenceUtils {
           }
 
           try {
-            // Check if this sentence contradicts any existing attributes
+            // Check if this sentence contradicts any existing attributes (including manual ones)
             const detectedConflicts = await this.detectSentenceConflicts(
               characterName,
               sentences[sentIndex].text,
               sentIndex,
               sentences[sentIndex].startIndex,
-              existingAttributes,
+              allExistingAttributes,
             );
 
             if (detectedConflicts.length > 0) {
@@ -942,6 +964,7 @@ export class CoreferenceUtils {
     // Convert map to Character array and consolidate duplicate attributes
     const characters: Character[] = characterNames.map((name) => ({
       name,
+      source: "ai-extracted" as const,
       coreferenceMatches: characterMatchMap.get(name) || [],
       indicatorMatches: characterIndicatorMap.get(name) || {
         directDefinition: [],

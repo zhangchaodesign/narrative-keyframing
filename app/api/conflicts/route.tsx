@@ -136,7 +136,11 @@ Identify ANY parts of the new sentence that contradict the established attribute
       temperature: 0.3,
     });
 
-    console.log("Sentence conflict detection result:", object);
+    console.log(
+      "Sentence conflict detection result:",
+      attributesSummary,
+      object,
+    );
 
     return NextResponse.json(object);
   } catch (error) {

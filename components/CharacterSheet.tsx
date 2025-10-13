@@ -1,16 +1,21 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { type Character } from "@/lib/stores/characterStore";
+import { type Character, useCharacterStore } from "@/lib/stores/characterStore";
+import { AttributeEditor } from "./AttributeEditor";
 
 type CharacterSheetProps = {
   character: Character;
   selectedAttribute: string | null;
   onAttributeClick: (attributeName: string) => void;
+  enableEditing?: boolean;
 };
 
 export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
-  ({ character, selectedAttribute, onAttributeClick }) => {
+  ({ character, selectedAttribute, onAttributeClick, enableEditing = true }) => {
+    const { addAttributeToCharacter, removeAttributeFromCharacter, removeCharacter } =
+      useCharacterStore();
+
     const grouped = useMemo(() => {
       const attrs = character?.attributes ?? [];
       return {
@@ -20,19 +25,35 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
       };
     }, [character]);
 
+    const handleAddAttribute = (category: string, value: string) => {
+      addAttributeToCharacter(character.name, category, value);
+    };
+
+    const handleRemoveAttribute = (category: string, value: string) => {
+      removeAttributeFromCharacter(character.name, category, value);
+    };
+
+    const handleDeleteCharacter = () => {
+      if (confirm(`Are you sure you want to delete ${character.name}?`)) {
+        removeCharacter(character.name);
+      }
+    };
+
     const hasConflict = (attrName: string) =>
       character?.conflicts?.some(
         (conflict) => conflict.establishedAttribute.name === attrName,
       );
 
+    // For AI-extracted characters with no attributes, show extraction prompt
     if (
       !character ||
-      !character.attributes ||
-      character.attributes.length === 0
+      (!character.attributes || character.attributes.length === 0) &&
+      character.source === "ai-extracted" &&
+      !enableEditing
     ) {
       return (
         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-gray-600">
-          No attributes extracted yet. Click "Extract Characters" to analyze.
+          No attributes extracted yet. Click "Analyze" to extract attributes.
         </div>
       );
     }
@@ -41,32 +62,32 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
       title: string;
       titleClass: string;
       prefix: string;
+      category: string;
       items: Array<{ name: string; evidence: any[] }>;
       selectedClass: string;
       idleClass: string;
-    }> = ({ title, titleClass, prefix, items, selectedClass, idleClass }) =>
-      items.length > 0 ? (
-        <div>
-          <h4 className={`text-xs font-semibold mb-2 uppercase ${titleClass}`}>
-            {title}
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            {items.map((attr) => {
-              const isSelected = selectedAttribute === attr.name;
-              const conflict = hasConflict(attr.name);
-              const base =
-                "border px-2 py-1 rounded text-xs transition-colors focus:outline-none focus:ring";
-              const conflictClass =
-                "bg-red-100 border-red-400 hover:bg-red-200";
-              const stateClass = conflict
-                ? conflictClass
-                : isSelected
-                ? selectedClass
-                : idleClass;
+    }> = ({ title, titleClass, prefix, category, items, selectedClass, idleClass }) => (
+      <div>
+        <h4 className={`text-xs font-semibold mb-2 uppercase ${titleClass}`}>
+          {title}
+        </h4>
+        <div className="flex flex-wrap gap-2 items-center">
+          {items.map((attr) => {
+            const isSelected = selectedAttribute === attr.name;
+            const conflict = hasConflict(attr.name);
+            const base =
+              "border px-2 py-1 rounded text-xs transition-colors focus:outline-none focus:ring";
+            const conflictClass =
+              "bg-red-100 border-red-400 hover:bg-red-200";
+            const stateClass = conflict
+              ? conflictClass
+              : isSelected
+              ? selectedClass
+              : idleClass;
 
-              return (
+            return (
+              <div key={`${prefix}-${attr.name}`} className="flex items-center gap-1">
                 <button
-                  key={`${prefix}-${attr.name}`}
                   type="button"
                   className={`${base} ${stateClass}`}
                   onClick={() => onAttributeClick(attr.name)}
@@ -74,22 +95,52 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
                   {conflict && "⚠️ "}
                   {attr.name} ({attr.evidence.length})
                 </button>
-              );
-            })}
-          </div>
+                {enableEditing && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveAttribute(category, attr.name)}
+                    className="text-red-500 hover:text-red-700 text-xs"
+                    title="Remove attribute"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {enableEditing && (
+            <AttributeEditor
+              onAdd={(value) => handleAddAttribute(category, value)}
+              placeholder={`Add ${title.toLowerCase()}...`}
+            />
+          )}
         </div>
-      ) : null;
+      </div>
+    );
 
     return (
       <div className="space-y-4 p-3 bg-yellow-50 border-2 border-yellow-300 rounded shadow hover:shadow-md transition-shadow">
-        <h3 className="font-semibold text-gray-800">
-          Attributes for {character.name}
-        </h3>
+        <div className="flex justify-between items-start">
+          <h3 className="font-semibold text-gray-800">
+            Attributes for {character.name}
+          </h3>
+          {enableEditing && character.source === "manual" && (
+            <button
+              type="button"
+              onClick={handleDeleteCharacter}
+              className="text-xs text-red-600 hover:text-red-800 font-medium"
+              title="Delete character"
+            >
+              Delete
+            </button>
+          )}
+        </div>
 
         <GroupBlock
           title="Physiology"
           titleClass="text-blue-700"
           prefix="phys"
+          category="physiology"
           items={grouped.physiology}
           selectedClass="bg-blue-200 font-bold ring-2 ring-blue-400 border-blue-300"
           idleClass="bg-blue-50 hover:bg-blue-100 border-blue-200"
@@ -99,6 +150,7 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
           title="Psychology"
           titleClass="text-purple-700"
           prefix="psych"
+          category="psychology"
           items={grouped.psychology}
           selectedClass="bg-purple-200 font-bold ring-2 ring-purple-400 border-purple-300"
           idleClass="bg-purple-50 hover:bg-purple-100 border-purple-200"
@@ -108,6 +160,7 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
           title="Sociology"
           titleClass="text-green-700"
           prefix="soc"
+          category="sociology"
           items={grouped.sociology}
           selectedClass="bg-green-200 font-bold ring-2 ring-green-400 border-green-300"
           idleClass="bg-green-50 hover:bg-green-100 border-green-200"

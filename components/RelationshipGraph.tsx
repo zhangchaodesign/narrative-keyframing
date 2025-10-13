@@ -14,10 +14,12 @@ import {
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
 import { Relationship } from "@/lib/stores/relationshipStore";
+import { Character } from "@/lib/stores/characterStore";
 import CustomNode from "./CustomNode";
 
 interface RelationshipGraphProps {
   relationships: Relationship[];
+  characters: Character[]; // All characters (manual + AI)
   onCharacterClick?: (characterName: string) => void;
 }
 
@@ -62,14 +64,17 @@ const nodeTypes = {
 
 export default function RelationshipGraph({
   relationships,
+  characters,
   onCharacterClick,
 }: RelationshipGraphProps) {
   const proOptions = { hideAttribution: true };
 
   // Convert relationships to nodes and edges
   const { initialNodes, initialEdges } = useMemo(() => {
-    // Get unique character names
-    const characterSet = new Set<string>();
+    // Start with all character names (from characters prop)
+    const characterSet = new Set<string>(characters.map((c) => c.name));
+
+    // Also add characters from relationships (in case relationships reference characters not in the list)
     relationships.forEach((rel) => {
       characterSet.add(rel.source);
       characterSet.add(rel.target);
@@ -123,7 +128,7 @@ export default function RelationshipGraph({
     });
 
     return { initialNodes: nodes, initialEdges: edges };
-  }, [relationships]);
+  }, [relationships, characters]);
 
   // Apply auto-layout
   const { nodes: layoutedNodes, edges: layoutedEdges } = useMemo(
@@ -170,11 +175,10 @@ export default function RelationshipGraph({
     [onCharacterClick],
   );
 
-  if (relationships.length === 0) {
+  if (characters.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        No relationships found. Extract characters and analyze relationships
-        first.
+      <div className="flex items-center justify-center h-64 text-gray-500 text-sm px-4">
+        No characters yet. Add characters manually or extract them from your story.
       </div>
     );
   }

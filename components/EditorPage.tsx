@@ -33,6 +33,19 @@ export function EditorPage() {
     }
   }, [selectedCharacters]);
 
+  /** Clean up selectedCharacters when characters are deleted */
+  useEffect(() => {
+    const validCharacterNames = new Set(characters.map((c) => c.name));
+    const invalidSelections = selectedCharacters.filter(
+      (name) => !validCharacterNames.has(name),
+    );
+    if (invalidSelections.length > 0) {
+      setSelectedCharacters((prev) =>
+        prev.filter((name) => validCharacterNames.has(name)),
+      );
+    }
+  }, [characters, selectedCharacters]);
+
   /** Recompute editor matches as the union of all selected characters' corefs */
   useEffect(() => {
     if (selectedCharacters.length === 0) {
