@@ -15,6 +15,11 @@ interface ConflictsSidebarProps {
   characters: Character[];
   selectedConflictId: string | null;
   onConflictClick: (conflict: AttributeConflict) => void;
+  onResolveConflict?: (
+    characterName: string,
+    conflictId: string,
+    decision: "approved" | "rejected",
+  ) => void;
 }
 
 export function ConflictsSidebar({
@@ -22,6 +27,7 @@ export function ConflictsSidebar({
   characters,
   selectedConflictId,
   onConflictClick,
+  onResolveConflict,
 }: ConflictsSidebarProps) {
   const [isDetecting, setIsDetecting] = useState(false);
   const { selectedList, totalConflicts } = useMemo(() => {
@@ -209,6 +215,14 @@ export function ConflictsSidebar({
                         conflict={conflict}
                         onClick={() => onConflictClick(conflict)}
                         isSelected={selectedConflictId === conflict.id}
+                        characterName={character.name}
+                        onResolve={(decision) =>
+                          onResolveConflict?.(
+                            character.name,
+                            conflict.id,
+                            decision,
+                          )
+                        }
                       />
                     ))}
                   </div>

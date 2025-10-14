@@ -109,6 +109,16 @@ export function EditorPage() {
     [selectedConflictId],
   );
 
+  const handleConflictResolve = useCallback(
+    (_characterName: string, conflictId: string, decision: "approved" | "rejected") => {
+      if (decision === "approved") {
+        setConflictHighlight(null);
+      }
+      setSelectedConflictId((prev) => (prev === conflictId ? null : prev));
+    },
+    [],
+  );
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       {/* Header stays fixed height at top */}
@@ -149,6 +159,7 @@ export function EditorPage() {
                 characters={characters}
                 selectedConflictId={selectedConflictId}
                 onConflictClick={handleConflictClick}
+                onResolveConflict={handleConflictResolve}
               />
             </div>
           </div>

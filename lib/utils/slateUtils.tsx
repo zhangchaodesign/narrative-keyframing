@@ -1,8 +1,21 @@
 // Static class with a bunch of utility functions for text manipulation
 
-import { Node, Point, Selection, Node as SlateNode, Element } from "slate";
+import {
+  Node,
+  Point,
+  Selection,
+  Node as SlateNode,
+  Element,
+  Descendant,
+} from "slate";
 
 type CustomElement = Element;
+
+export type SlateTextSegment = {
+  text: string;
+  added?: boolean;
+  removed?: boolean;
+};
 
 export class SlateUtils {
   /**
@@ -21,6 +34,7 @@ export class SlateUtils {
     if (node.text !== undefined) {
       if (
         !node.removed &&
+        !node.added &&
         ((isLast && startStrIndex + node.text.length >= strIndex) ||
           startStrIndex + node.text.length > strIndex)
       ) {
@@ -39,7 +53,7 @@ export class SlateUtils {
         if (point) {
           return { path: [i, ...point.path], offset: point.offset };
         }
-        if (child.removed === undefined)
+        if (child.removed === undefined && child.added === undefined)
           startStrIndex += Node.string(child).length;
       }
     } else if (Array.isArray(node)) {
@@ -113,9 +127,60 @@ export class SlateUtils {
       .map((node: any) =>
         SlateNode.string({
           type: "paragraph",
-          children: node.children.filter((c: any) => c.removed === undefined),
+          children: node.children.filter(
+            (c: any) =>
+              c.removed === undefined &&
+              c.added === undefined &&
+              c.insertions === undefined,
+          ),
         } as CustomElement),
       )
       .join("\n");
+  }
+
+  static segmentsToSlateState(segments: SlateTextSegment[]): Descendant[] {
+    const paragraphs: Descendant[] = [];
+    let currentChildren: any[] = [];
+
+    const pushParagraph = () => {
+      paragraphs.push({
+        type: "paragraph",
+        children:
+          currentChildren.length > 0 ? currentChildren : [{ text: "" }],
+      } as CustomElement);
+      currentChildren = [];
+    };
+
+    if (segments.length === 0) {
+      return [
+        {
+          type: "paragraph",
+          children: [{ text: "" }],
+        } as CustomElement,
+      ];
+    }
+
+    for (const segment of segments) {
+      const lines = segment.text.split("\n");
+
+      for (let i = 0; i < lines.length; i++) {
+        const leaf: Record<string, any> = { text: lines[i] };
+        if (segment.added) leaf.added = true;
+        if (segment.removed) leaf.removed = true;
+        currentChildren.push(leaf);
+
+        if (i < lines.length - 1) {
+          pushParagraph();
+        }
+      }
+    }
+
+    pushParagraph();
+
+    return paragraphs;
+  }
+
+  static textToSlateState(text: string): Descendant[] {
+    return SlateUtils.segmentsToSlateState([{ text }]);
   }
 }

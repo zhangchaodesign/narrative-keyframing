@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { createEditor, Range, NodeEntry, Transforms } from "slate";
 import { Slate, Editable, withReact, RenderLeafProps } from "slate-react";
 import { withHistory, HistoryEditor } from "slate-history";
@@ -134,6 +134,13 @@ export default function TextEditor({
       conflictHighlight,
     ],
   );
+
+  useEffect(() => {
+    if ((editor as any).children !== value) {
+      (editor as any).children = value as any;
+      editor.onChange();
+    }
+  }, [editor, value]);
 
   return (
     <div
