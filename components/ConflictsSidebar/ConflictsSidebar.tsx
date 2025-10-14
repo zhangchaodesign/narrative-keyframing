@@ -53,7 +53,9 @@ export function ConflictsSidebar({
         return;
       }
 
-      const conflictsByCharacter = new Map<string, AttributeConflict[]>();
+      const detectionTasks: Array<
+        Promise<{ characterName: string; conflicts: AttributeConflict[] }>
+      > = [];
 
       for (
         let sentenceIndex = 0;
@@ -61,8 +63,7 @@ export function ConflictsSidebar({
         sentenceIndex++
       ) {
         const sentence = sentences[sentenceIndex];
-        const sentenceText = sentence.text.trim();
-        if (!sentenceText) continue;
+        if (!sentence.text.trim()) continue;
 
         for (const character of characters) {
           const attributes = character.attributes ?? [];
@@ -77,20 +78,41 @@ export function ConflictsSidebar({
 
           if (!mentionedInSentence) continue;
 
-          const detected = await CoreferenceUtils.detectSentenceConflicts(
-            character.name,
-            sentence.text,
-            sentenceIndex,
-            sentence.startIndex,
-            attributes,
+          detectionTasks.push(
+            CoreferenceUtils.detectSentenceConflicts(
+              character.name,
+              sentence.text,
+              sentenceIndex,
+              sentence.startIndex,
+              attributes,
+            )
+              .then((conflicts) => ({
+                characterName: character.name,
+                conflicts,
+              }))
+              .catch((error) => {
+                console.error(
+                  `Failed detecting conflicts for ${character.name} in sentence ${sentenceIndex}`,
+                  error,
+                );
+                return { characterName: character.name, conflicts: [] };
+              }),
           );
+        }
+      }
 
-          if (detected.length === 0) continue;
+      const conflictsByCharacter = new Map<string, AttributeConflict[]>();
 
-          const existing = conflictsByCharacter.get(character.name) ?? [];
+      if (detectionTasks.length > 0) {
+        const results = await Promise.all(detectionTasks);
+
+        for (const { characterName, conflicts } of results) {
+          if (!conflicts || conflicts.length === 0) continue;
+
+          const existing = conflictsByCharacter.get(characterName) ?? [];
           const merged = [...existing];
 
-          for (const conflict of detected) {
+          for (const conflict of conflicts) {
             const isDuplicate = merged.some(
               (existingConflict) =>
                 existingConflict.establishedAttribute.name ===
@@ -107,7 +129,7 @@ export function ConflictsSidebar({
             }
           }
 
-          conflictsByCharacter.set(character.name, merged);
+          conflictsByCharacter.set(characterName, merged);
         }
       }
 
