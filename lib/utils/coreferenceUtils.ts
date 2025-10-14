@@ -1,29 +1,14 @@
 import { TextUtils } from "./textUtils";
 import { EvidenceProcessor } from "./evidenceProcessor";
 import type { Character, CoreferenceMatch } from "../stores/characterStore";
-import type {
-  SentenceCache,
-  SentenceCharacterRef,
-} from "../stores/sentenceCacheStore";
-import type {
-  IndicatorType,
-  SentenceIndicatorRef,
-  SentenceCharacterIndicators,
-  CharacterIndicators,
-  IndicatorMatch,
-} from "../types/indicators";
+import type { SentenceCache } from "../stores/sentenceCacheStore";
+import type { CharacterIndicators } from "../types/indicators";
 import type {
   AttributeCategory,
-  AttributeEvidenceRef,
-  SentenceAttribute,
-  SentenceCharacterAttributes,
   CharacterAttribute,
   AttributeEvidence,
 } from "../types/attributes";
 import type { AttributeConflict, ConflictSeverity } from "../types/conflicts";
-
-// Feature flag: Enable new evidence-first architecture
-const USE_EVIDENCE_FIRST = true;
 
 export class CoreferenceUtils {
   /**
@@ -250,108 +235,6 @@ export class CoreferenceUtils {
   }
 
   /**
-   * Extract attributes for a character in a sentence using Egri's bone structure
-   * @param story - Full story text (for context)
-   * @param characterName - Character to analyze
-   * @param sentence - Sentence text
-   * @param coreferences - List of coreferences found for this character
-   * @returns SentenceCharacterAttributes object
-   */
-  private static async extractAttributesForCharacter(
-    story: string,
-    characterName: string,
-    sentence: string,
-    coreferences: string[],
-  ): Promise<SentenceCharacterAttributes> {
-    const attributes: SentenceCharacterAttributes = {
-      physiology: [],
-      psychology: [],
-      sociology: [],
-    };
-
-    // Only process if there are coreferences in this sentence
-    if (coreferences.length === 0) {
-      return attributes;
-    }
-
-    // Call all 3 attribute category APIs in parallel
-    const categories: AttributeCategory[] = [
-      "physiology",
-      "psychology",
-      "sociology",
-    ];
-
-    await Promise.all(
-      categories.map(async (category) => {
-        try {
-          const response = await fetch(`/api/attributes/${category}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              story,
-              characterName,
-              sentence,
-              coreferences,
-            }),
-          });
-
-          if (!response.ok) {
-            console.error(
-              `Failed to extract ${category} attributes for ${characterName}`,
-            );
-            return;
-          }
-
-          const data = await response.json();
-          const attributesData: Array<{
-            name: string;
-            evidence: Array<{ text: string; indicatorType: string }>;
-          }> = data.attributes || [];
-
-          // Convert to SentenceAttribute with relative indices
-          const sentenceAttributes: SentenceAttribute[] = [];
-
-          for (const attr of attributesData) {
-            // console.log("Processing attribute:", attr, category);
-
-            const evidenceRefs: AttributeEvidenceRef[] = [];
-
-            for (const ev of attr.evidence) {
-              // Find all occurrences of this evidence text in the sentence
-              const indices = TextUtils.findAllWordMatches(sentence, ev.text);
-              console.log(`Found indices for evidence "${ev.text}":`, indices);
-              for (const relativeIndex of indices) {
-                evidenceRefs.push({
-                  text: ev.text,
-                  indicatorType: ev.indicatorType as IndicatorType,
-                  relativeIndex,
-                });
-              }
-            }
-
-            if (evidenceRefs.length > 0) {
-              sentenceAttributes.push({
-                category,
-                name: attr.name,
-                evidence: evidenceRefs,
-              });
-            }
-          }
-
-          attributes[category] = sentenceAttributes;
-        } catch (error) {
-          console.error(
-            `Error extracting ${category} attributes for ${characterName}:`,
-            error,
-          );
-        }
-      }),
-    );
-
-    return attributes;
-  }
-
-  /**
    * Detect conflicts between a sentence and existing character attributes
    * Checks if the sentence content contradicts established attributes
    * @param characterName - Character being analyzed
@@ -454,138 +337,6 @@ export class CoreferenceUtils {
   }
 
   /**
-   * Process a single sentence to extract character references and attributes
-   * @param story - Full story text (for context)
-   * @param sentence - Sentence to process
-   * @param sentenceIndex - Index of this sentence
-   * @param characterNames - Characters to look for
-   * @returns SentenceCache object for this sentence
-   */
-  private static async processSentence(
-    story: string,
-    sentence: { text: string; startIndex: number },
-    sentenceIndex: number,
-    characterNames: string[],
-  ): Promise<SentenceCache> {
-    const characterRefs: { [characterName: string]: SentenceCharacterRef[] } =
-      {};
-    const characterIndicators: {
-      [characterName: string]: SentenceCharacterIndicators;
-    } = {};
-    const characterAttributes: {
-      [characterName: string]: SentenceCharacterAttributes;
-    } = {};
-
-    // Process all characters for this sentence in parallel
-    await Promise.all(
-      characterNames.map(async (characterName) => {
-        try {
-          // Step 1: Extract coreferences
-          const response = await fetch("/api/coreference", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              story,
-              characterName,
-              sentence: sentence.text,
-            }),
-          });
-
-          if (!response.ok) {
-            console.error(
-              `Failed to extract coreferences for ${characterName} in sentence ${sentenceIndex}`,
-            );
-            characterRefs[characterName] = [];
-            characterIndicators[characterName] = {
-              directDefinition: [],
-              actions: [],
-              speech: [],
-              appearance: [],
-              environment: [],
-            };
-            characterAttributes[characterName] = {
-              physiology: [],
-              psychology: [],
-              sociology: [],
-            };
-            return;
-          }
-
-          const data = await response.json();
-          const coreferences: string[] = data.coreferences || [];
-
-          // Convert coreferences to relative indices
-          const refs: SentenceCharacterRef[] = [];
-          for (const corefText of coreferences) {
-            const indices = TextUtils.findAllWordMatches(
-              sentence.text,
-              corefText,
-            );
-            for (const relativeIndex of indices) {
-              refs.push({
-                text: corefText,
-                relativeIndex,
-              });
-            }
-          }
-
-          characterRefs[characterName] = refs;
-
-          // Step 2: Extract attributes (using Egri's bone structure)
-          const attributes = await this.extractAttributesForCharacter(
-            story,
-            characterName,
-            sentence.text,
-            coreferences,
-          );
-          characterAttributes[characterName] = attributes;
-
-          // Step 3: Extract indicators (for character development tracking)
-          // const indicators = await this.extractIndicatorsForCharacter(
-          //   story,
-          //   characterName,
-          //   sentence.text,
-          //   coreferences,
-          // );
-          const indicators: SentenceCharacterIndicators = {
-            directDefinition: [],
-            actions: [],
-            speech: [],
-            appearance: [],
-            environment: [],
-          }; // Skip for now to reduce API calls
-          characterIndicators[characterName] = indicators;
-        } catch (error) {
-          console.error(
-            `Error processing sentence ${sentenceIndex} for character ${characterName}:`,
-            error,
-          );
-          characterRefs[characterName] = [];
-          characterIndicators[characterName] = {
-            directDefinition: [],
-            actions: [],
-            speech: [],
-            appearance: [],
-            environment: [],
-          };
-          characterAttributes[characterName] = {
-            physiology: [],
-            psychology: [],
-            sociology: [],
-          };
-        }
-      }),
-    );
-
-    return {
-      text: sentence.text,
-      characterRefs,
-      characterIndicators,
-      characterAttributes,
-    };
-  }
-
-  /**
    * Extract coreference mentions for all characters in a story (with smart caching)
    * @param story - The full story text
    * @param characterNames - Array of character names to track
@@ -605,19 +356,6 @@ export class CoreferenceUtils {
   }> {
     const sentences = TextUtils.splitIntoSentences(story);
     const cache = existingCache || [];
-
-    // Check if character list changed (order doesn't matter, just set membership)
-    const characterListChanged = (() => {
-      if (
-        !cachedCharacterNames ||
-        cachedCharacterNames.length !== characterNames.length
-      ) {
-        return true;
-      }
-      // Same length, check if same set of names
-      const cachedSet = new Set(cachedCharacterNames);
-      return !characterNames.every((name) => cachedSet.has(name));
-    })();
 
     const cachedCharacterSet = new Set(cachedCharacterNames || []);
     const newCharacterNames = characterNames.filter(
@@ -691,20 +429,13 @@ export class CoreferenceUtils {
     if (sentencesToProcessFully.length > 0) {
       const fullyProcessedCaches = await Promise.all(
         sentencesToProcessFully.map((sentIndex) =>
-          USE_EVIDENCE_FIRST
-            ? EvidenceProcessor.processSentenceEvidenceFirst(
-                story,
-                sentences[sentIndex],
-                sentIndex,
-                characterNames,
-                existingCharacters || [],
-              )
-            : this.processSentence(
-                story,
-                sentences[sentIndex],
-                sentIndex,
-                characterNames,
-              ),
+          EvidenceProcessor.processSentenceEvidenceFirst(
+            story,
+            sentences[sentIndex],
+            sentIndex,
+            characterNames,
+            existingCharacters || [],
+          ),
         ),
       );
 
@@ -721,20 +452,13 @@ export class CoreferenceUtils {
     if (sentencesToProcessPartially.length > 0 && hasNewCharacters) {
       const partiallyProcessedCaches = await Promise.all(
         sentencesToProcessPartially.map((sentIndex) =>
-          USE_EVIDENCE_FIRST
-            ? EvidenceProcessor.processSentenceEvidenceFirst(
-                story,
-                sentences[sentIndex],
-                sentIndex,
-                newCharacterNames,
-                existingCharacters || [],
-              )
-            : this.processSentence(
-                story,
-                sentences[sentIndex],
-                sentIndex,
-                newCharacterNames,
-              ),
+          EvidenceProcessor.processSentenceEvidenceFirst(
+            story,
+            sentences[sentIndex],
+            sentIndex,
+            newCharacterNames,
+            existingCharacters || [],
+          ),
         ),
       );
 
