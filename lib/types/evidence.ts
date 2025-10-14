@@ -7,11 +7,11 @@ import { AttributeCategory } from "./attributes";
 
 /**
  * Extracted phrase from Phase 1 (evidence extraction)
+ * Note: startOffset is calculated in JavaScript, not by LLM
  */
 export type ExtractedPhrase = {
   text: string;
   indicatorType: IndicatorType;
-  startOffset: number; // Position within sentence
   characterName: string;
 };
 

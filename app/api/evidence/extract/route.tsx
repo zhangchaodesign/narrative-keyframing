@@ -5,9 +5,6 @@ import { z } from "zod";
 
 const PhraseSchema = z.object({
   text: z.string().describe("Exact verbatim phrase from the sentence"),
-  startOffset: z
-    .number()
-    .describe("Character offset where this phrase starts in the sentence"),
 });
 
 const indicatorDescriptions = {
@@ -66,12 +63,12 @@ Definition: ${
 
 Rules:
 1. Extract ONLY phrases of type "${indicatorType}" that relate to the character "${characterName}"
-2. Each phrase must be EXACT verbatim text from the sentence
-3. Include the character offset where each phrase starts in the sentence
-4. Extract ALL relevant phrases of this type, not just one
-5. Return empty array if no phrases of this type exist
-6. DO NOT interpret or infer what the phrases mean - just extract them
-7. Phrases should be meaningful units (not single words unless they're standalone)
+2. Each phrase must be EXACT verbatim text from the sentence (exactly as it appears)
+3. Extract ALL relevant phrases of this type, not just one
+4. Return empty array if no phrases of this type exist
+5. DO NOT interpret or infer what the phrases mean - just extract them
+6. Phrases should be meaningful units (not single words unless they're standalone)
+7. The text must match exactly including spaces, punctuation, and case
 
 Story context (for understanding): ${story}
 

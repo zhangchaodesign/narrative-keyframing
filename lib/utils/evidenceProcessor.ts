@@ -74,7 +74,6 @@ export class EvidenceProcessor {
       return (data.phrases || []).map((p: any) => ({
         text: p.text,
         indicatorType,
-        startOffset: p.startOffset,
         characterName,
       }));
     } catch (error) {
@@ -350,64 +349,89 @@ export class EvidenceProcessor {
             sociology: [],
           };
 
-          // Build attributes from processed evidences
+          // Build indicators and attributes from processed evidences
           for (const evidence of processedEvidences) {
             const { phrase, classification, inferences } = evidence;
 
-            if (classification.result === "matching") {
-              // Link to existing attribute
-              const [category, attrName] = (
-                classification.matchedAttributeId || ""
-              ).split("-");
-              if (category && attrName) {
-                const attrCategory = category as AttributeCategory;
-                const existingAttr = attributes[attrCategory].find(
-                  (a) => a.name === attrName,
-                );
+            // Calculate all positions for this phrase in the sentence
+            const phrasePositions = TextUtils.findAllWordMatches(
+              sentence.text,
+              phrase.text,
+            );
 
-                const evidenceRef: AttributeEvidenceRef = {
-                  text: phrase.text,
-                  indicatorType: phrase.indicatorType,
-                  relativeIndex: phrase.startOffset,
-                };
+            // If phrase not found, skip it (LLM hallucination)
+            if (phrasePositions.length === 0) {
+              console.warn(
+                `Phrase "${phrase.text}" not found in sentence: "${sentence.text}"`,
+              );
+              continue;
+            }
 
-                if (existingAttr) {
-                  existingAttr.evidence.push(evidenceRef);
-                } else {
-                  attributes[attrCategory].push({
-                    category: attrCategory,
-                    name: attrName,
-                    evidence: [evidenceRef],
-                  });
-                }
-              }
-            } else if (classification.result === "irrelevant" && inferences) {
-              // Create new attributes from inferences
-              for (const inference of inferences) {
-                if (inference.hasAttribute && inference.attributeName) {
-                  const existingAttr = attributes[inference.category].find(
-                    (a) => a.name === inference.attributeName,
+            // Add phrase to indicators for each occurrence
+            for (const relativeIndex of phrasePositions) {
+              indicators[phrase.indicatorType].push({
+                text: phrase.text,
+                relativeIndex,
+              });
+            }
+
+            // Create attribute evidence refs for each occurrence
+            for (const relativeIndex of phrasePositions) {
+              if (classification.result === "matching") {
+                // Link to existing attribute
+                const [category, attrName] = (
+                  classification.matchedAttributeId || ""
+                ).split("-");
+                if (category && attrName) {
+                  const attrCategory = category as AttributeCategory;
+                  const existingAttr = attributes[attrCategory].find(
+                    (a) => a.name === attrName,
                   );
 
                   const evidenceRef: AttributeEvidenceRef = {
                     text: phrase.text,
                     indicatorType: phrase.indicatorType,
-                    relativeIndex: phrase.startOffset,
+                    relativeIndex,
                   };
 
                   if (existingAttr) {
                     existingAttr.evidence.push(evidenceRef);
                   } else {
-                    attributes[inference.category].push({
-                      category: inference.category,
-                      name: inference.attributeName,
+                    attributes[attrCategory].push({
+                      category: attrCategory,
+                      name: attrName,
                       evidence: [evidenceRef],
                     });
                   }
                 }
+              } else if (classification.result === "irrelevant" && inferences) {
+                // Create new attributes from inferences
+                for (const inference of inferences) {
+                  if (inference.hasAttribute && inference.attributeName) {
+                    const existingAttr = attributes[inference.category].find(
+                      (a) => a.name === inference.attributeName,
+                    );
+
+                    const evidenceRef: AttributeEvidenceRef = {
+                      text: phrase.text,
+                      indicatorType: phrase.indicatorType,
+                      relativeIndex,
+                    };
+
+                    if (existingAttr) {
+                      existingAttr.evidence.push(evidenceRef);
+                    } else {
+                      attributes[inference.category].push({
+                        category: inference.category,
+                        name: inference.attributeName,
+                        evidence: [evidenceRef],
+                      });
+                    }
+                  }
+                }
               }
+              // For conflicting, we'll handle separately in conflict detection
             }
-            // For conflicting, we'll handle separately in conflict detection
           }
 
           characterIndicators[characterName] = indicators;
