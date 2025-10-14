@@ -1,4 +1,5 @@
 import { TextUtils } from "./textUtils";
+import { EvidenceProcessor } from "./evidenceProcessor";
 import type { Character, CoreferenceMatch } from "../stores/characterStore";
 import type {
   SentenceCache,
@@ -20,6 +21,9 @@ import type {
   AttributeEvidence,
 } from "../types/attributes";
 import type { AttributeConflict, ConflictSeverity } from "../types/conflicts";
+
+// Feature flag: Enable new evidence-first architecture
+const USE_EVIDENCE_FIRST = true;
 
 export class CoreferenceUtils {
   /**
@@ -633,12 +637,20 @@ export class CoreferenceUtils {
     // Process sentences that need updating in parallel
     const processedCaches = await Promise.all(
       sentencesToProcess.map((sentIndex) =>
-        this.processSentence(
-          story,
-          sentences[sentIndex],
-          sentIndex,
-          characterNames,
-        ),
+        USE_EVIDENCE_FIRST
+          ? EvidenceProcessor.processSentenceEvidenceFirst(
+              story,
+              sentences[sentIndex],
+              sentIndex,
+              characterNames,
+              existingCharacters || [],
+            )
+          : this.processSentence(
+              story,
+              sentences[sentIndex],
+              sentIndex,
+              characterNames,
+            ),
       ),
     );
 
