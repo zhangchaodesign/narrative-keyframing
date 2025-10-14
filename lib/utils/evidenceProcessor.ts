@@ -175,7 +175,7 @@ export class EvidenceProcessor {
       if (!b) return false;
 
       // Fallback using word-boundary matcher
-      console.log(`Checking evidence duplication: "${a}" vs "${b}"`);
+      // console.log(`Checking evidence duplication: "${a}" vs "${b}"`);
       const ab = TextUtils.findAllWordMatches(b, a);
       const ba = TextUtils.findAllWordMatches(a, b);
       // if ab or ba has ANY matches, consider it a dup

@@ -9,6 +9,7 @@ import { Toolbar } from "@/components/Toolbar";
 import { CharacterSheet } from "@/components/CharacterSheet";
 import { AddCharacterModal } from "@/components/AddCharacterModal";
 import RelationshipGraph from "@/components/RelationshipGraph";
+import { CoreferenceUtils } from "@/lib/utils/coreferenceUtils";
 
 interface CharacterSidebarProps {
   characters: Character[];
@@ -37,7 +38,70 @@ export function CharacterSidebar({
 
   const handleExtractComplete = useCallback(
     (result: { characters: any[]; sentenceCaches: any[] }) => {
-      setCharacters(result.characters);
+      // Merge AI-extracted characters with existing characters
+      const existingCharMap = new Map(characters.map((c) => [c.name, c]));
+      const aiCharacters = result.characters;
+
+      // Merge characters: combine attributes by name, keep source preference
+      const mergedCharacters = aiCharacters.map((aiChar) => {
+        const existingChar = existingCharMap.get(aiChar.name);
+        if (existingChar) {
+          // Character already exists - merge attributes by name
+          const existingAttrMap = new Map(
+            existingChar.attributes.map((attr) => [
+              `${attr.category}-${attr.name}`,
+              attr,
+            ]),
+          );
+
+          // Merge AI attributes with existing ones
+          const mergedAttributes = aiChar.attributes.map((aiAttr: any) => {
+            const key = `${aiAttr.category}-${aiAttr.name}`;
+            const existingAttr = existingAttrMap.get(key);
+
+            if (existingAttr) {
+              // Same attribute exists - merge evidence
+              const attrProxy = existingAttr;
+              for (const ev of aiAttr.evidence) {
+                CoreferenceUtils.addEvidenceIfNewByText(attrProxy, ev);
+              }
+              return {
+                ...aiAttr,
+                evidence: attrProxy.evidence,
+              };
+            }
+            return aiAttr; // New AI attribute
+          });
+
+          // Add existing attributes that weren't found in AI results
+          existingChar.attributes.forEach((existingAttr) => {
+            const key = `${existingAttr.category}-${existingAttr.name}`;
+            const foundInAI = aiChar.attributes.some(
+              (a: any) => `${a.category}-${a.name}` === key,
+            );
+            if (!foundInAI) {
+              mergedAttributes.push(existingAttr);
+            }
+          });
+
+          return {
+            ...aiChar,
+            source: existingChar.source, // Preserve original source
+            attributes: mergedAttributes,
+          };
+        }
+        return aiChar; // New AI character
+      });
+
+      // Add existing characters that weren't extracted by AI
+      const aiCharNames = new Set(aiCharacters.map((c) => c.name));
+      const existingOnlyChars = characters.filter(
+        (c) => !aiCharNames.has(c.name),
+      );
+
+      const finalCharacters = [...mergedCharacters, ...existingOnlyChars];
+
+      setCharacters(finalCharacters);
       setSentenceCaches(
         result.sentenceCaches,
         result.characters.map((c) => c.name),

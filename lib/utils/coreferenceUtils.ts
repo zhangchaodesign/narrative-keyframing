@@ -158,7 +158,7 @@ export class CoreferenceUtils {
       if (!b) return false;
 
       // Fallback using word-boundary matcher
-      console.log(`Checking evidence duplication: "${a}" vs "${b}"`);
+      // console.log(`Checking evidence duplication: "${a}" vs "${b}"`);
       const ab = TextUtils.findAllWordMatches(b, a);
       const ba = TextUtils.findAllWordMatches(a, b);
       // if ab or ba has ANY matches, consider it a dup
@@ -659,6 +659,7 @@ export class CoreferenceUtils {
     );
 
     // Process sentences that need updating in parallel
+    console.log("existingCharacters:", existingCharacters);
     const processedCaches = await Promise.all(
       sentencesToProcess.map((sentIndex) =>
         USE_EVIDENCE_FIRST
@@ -677,6 +678,8 @@ export class CoreferenceUtils {
             ),
       ),
     );
+
+    console.log("Processed caches:", processedCaches);
 
     // Build the final cache array
     const newCache: SentenceCache[] = [];
