@@ -9,11 +9,11 @@ const PhraseSchema = z.object({
 
 const indicatorDescriptions = {
   directDefinition:
-    "Explicit direct statements or labels about the character (e.g., 'old man', 'tall woman', 'brave soldier')",
+    "Explicit direct statements or labels about the character (e.g., 'old man', 'tall woman', 'brave soldier', 'brother')",
   actions:
     "Physical actions, behaviors, or body language (e.g., 'moved slowly', 'frowned', 'clenched his fists')",
   speech:
-    "What the character says, how they speak, or dialogue patterns (e.g., 'shouted angrily', 'whispered softly')",
+    "What the character says, how they speak, dialogue patterns, inner thoughts, or how other characters say about them (e.g., 'shouted angrily', 'whispered softly')",
   appearance:
     "Visual descriptions of the character (e.g., 'gray hair', 'wrinkled skin', 'piercing blue eyes')",
   environment:
@@ -76,7 +76,6 @@ Sentence to analyze: "${sentence}"
 Target character: ${characterName}
 
 Extract all "${indicatorType}" phrases about ${characterName} from this sentence.`,
-      temperature: 0.2,
     });
 
     return NextResponse.json({ phrases: object.phrases });

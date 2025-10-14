@@ -133,7 +133,6 @@ EXISTING ESTABLISHED ATTRIBUTES:
 ${attributesSummary}
 
 Identify ANY parts of the new sentence that contradict the established attributes. Return empty array if no conflicts.`,
-      temperature: 0.3,
     });
 
     // console.log(

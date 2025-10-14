@@ -88,7 +88,6 @@ Rules:
 5. Consider the full story context to avoid misinterpretation
 
 Analyze this phrase and determine if it reveals a ${category} attribute.`,
-      temperature: 0.3,
     });
 
     return NextResponse.json(object);

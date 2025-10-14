@@ -80,7 +80,6 @@ Important:
 - Be precise: only mark as relevant if it truly supports an existing attribute 
 - When in doubt between relevant and irrelevant, choose irrelevant 
 - Consider context from the story to understand nuance`,
-      temperature: 0.3,
     });
 
     return NextResponse.json(object);
