@@ -5,10 +5,10 @@ import { useEditorStore } from "@/lib/stores/editorStore";
 import { useCharacterStore, type Character } from "@/lib/stores/characterStore";
 import { useSentenceCacheStore } from "@/lib/stores/sentenceCacheStore";
 import { useRelationshipStore } from "@/lib/stores/relationshipStore";
-import { Toolbar } from "@/components/Toolbar";
-import { CharacterSheet } from "@/components/CharacterSheet";
-import { AddCharacterModal } from "@/components/AddCharacterModal";
-import RelationshipGraph from "@/components/RelationshipGraph";
+import { Toolbar } from "@/components/CharacterSidebar/Toolbar";
+import { CharacterSheet } from "@/components/CharacterSidebar/CharacterSheet";
+import { AddCharacterModal } from "@/components/CharacterSidebar/AddCharacterModal";
+import RelationshipGraph from "@/components/RelationshipGraph/RelationshipGraph";
 import { CoreferenceUtils } from "@/lib/utils/coreferenceUtils";
 
 interface CharacterSidebarProps {

@@ -1,6 +1,6 @@
 "use client";
 
-import { ConflictCard } from "@/components/ConflictCard";
+import { ConflictCard } from "@/components/ConflictsSidebar/ConflictCard";
 import { type Character } from "@/lib/stores/characterStore";
 import { type AttributeConflict } from "@/lib/types/conflicts";
 import React, { useMemo } from "react";

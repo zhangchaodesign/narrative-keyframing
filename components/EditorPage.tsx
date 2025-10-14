@@ -2,8 +2,8 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { Header } from "@/components/Header";
-import { CharacterSidebar } from "@/components/CharacterSidebar";
-import { ConflictsSidebar } from "@/components/ConflictsSidebar";
+import { CharacterSidebar } from "@/components/CharacterSidebar/CharacterSidebar";
+import { ConflictsSidebar } from "@/components/ConflictsSidebar/ConflictsSidebar";
 import TextEditor from "@/components/TextEditor/TextEditor";
 import { useEditorStore } from "@/lib/stores/editorStore";
 import { useCharacterStore } from "@/lib/stores/characterStore";

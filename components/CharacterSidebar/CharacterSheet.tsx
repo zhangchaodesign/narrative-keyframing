@@ -12,9 +12,17 @@ type CharacterSheetProps = {
 };
 
 export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
-  ({ character, selectedAttribute, onAttributeClick, enableEditing = true }) => {
-    const { addAttributeToCharacter, removeAttributeFromCharacter, removeCharacter } =
-      useCharacterStore();
+  ({
+    character,
+    selectedAttribute,
+    onAttributeClick,
+    enableEditing = true,
+  }) => {
+    const {
+      addAttributeToCharacter,
+      removeAttributeFromCharacter,
+      removeCharacter,
+    } = useCharacterStore();
 
     const grouped = useMemo(() => {
       const attrs = character?.attributes ?? [];
@@ -47,9 +55,9 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
     // For AI-extracted characters with no attributes, show extraction prompt
     if (
       !character ||
-      (!character.attributes || character.attributes.length === 0) &&
-      character.source === "ai-extracted" &&
-      !enableEditing
+      ((!character.attributes || character.attributes.length === 0) &&
+        character.source === "ai-extracted" &&
+        !enableEditing)
     ) {
       return (
         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-gray-600">
@@ -66,7 +74,15 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
       items: Array<{ name: string; evidence: any[] }>;
       selectedClass: string;
       idleClass: string;
-    }> = ({ title, titleClass, prefix, category, items, selectedClass, idleClass }) => (
+    }> = ({
+      title,
+      titleClass,
+      prefix,
+      category,
+      items,
+      selectedClass,
+      idleClass,
+    }) => (
       <div>
         <h4 className={`text-xs font-semibold mb-2 uppercase ${titleClass}`}>
           {title}
@@ -77,8 +93,7 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
             const conflict = hasConflict(attr.name);
             const base =
               "border px-2 py-1 rounded text-xs transition-colors focus:outline-none focus:ring";
-            const conflictClass =
-              "bg-red-100 border-red-400 hover:bg-red-200";
+            const conflictClass = "bg-red-100 border-red-400 hover:bg-red-200";
             const stateClass = conflict
               ? conflictClass
               : isSelected
@@ -86,7 +101,10 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
               : idleClass;
 
             return (
-              <div key={`${prefix}-${attr.name}`} className="flex items-center gap-1">
+              <div
+                key={`${prefix}-${attr.name}`}
+                className="flex items-center gap-1"
+              >
                 <button
                   type="button"
                   className={`${base} ${stateClass}`}
