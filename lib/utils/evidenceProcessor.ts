@@ -72,7 +72,7 @@ export class EvidenceProcessor {
 
       const data = await response.json();
       return (data.phrases || []).map((p: any) => ({
-        text: p.text,
+        text: p,
         indicatorType,
         characterName,
       }));

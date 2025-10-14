@@ -3,10 +3,6 @@ import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
 
-const PhraseSchema = z.object({
-  text: z.string().describe("Exact verbatim phrase from the sentence"),
-});
-
 const indicatorDescriptions = {
   directDefinition:
     "Explicit direct statements or labels about the character (e.g., 'old man', 'tall woman', 'brave soldier', 'brother')",
@@ -50,7 +46,9 @@ export async function POST(request: Request) {
     const { object } = await generateObject({
       model: openai("gpt-4.1"),
       schema: z.object({
-        phrases: z.array(PhraseSchema),
+        phrases: z.array(
+          z.string().describe("Exact verbatim phrase from the sentence"),
+        ),
       }),
       prompt: `You are an expert in literary character analysis. Your task is to extract specific types of characterization evidence from a sentence.
 
