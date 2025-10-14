@@ -159,7 +159,7 @@ export function ConflictsSidebar({
   return (
     <div className="w-80 relative flex-shrink-0">
       <div className="h-full overflow-y-auto">
-        <div className="sticky top-0 p-4 z-10 bg-white/80 backdrop-blur border border-zinc-100 rounded">
+        <div className="sticky top-0 p-4 z-10 bg-white/80 backdrop-blur border border-zinc-100 rounded select-none">
           <h3 className="text-lg font-bold text-red-700">
             ⚠️ Conflicts
             {typeof totalConflicts === "number" ? ` (${totalConflicts})` : ""}

@@ -132,7 +132,7 @@ export function CharacterSidebar({
   return (
     <div className="w-80 overflow-y-auto flex-shrink-0">
       <div className="space-y-4">
-        <div className="p-4 bg-white/80 backdrop-blur border border-zinc-100 rounded">
+        <div className="p-4 bg-white/80 backdrop-blur border border-zinc-100 rounded select-none">
           <div className="w-full flex justify-between ">
             <h2 className="text-lg font-bold text-gray-800">Characters</h2>
             <button
