@@ -108,6 +108,8 @@ export class EvidenceProcessor {
         }),
       });
 
+      // console.log("existingAttributes:", existingAttributes);
+
       if (!response.ok) {
         console.error(`Failed to classify phrase for ${characterName}`);
         return { result: "irrelevant" };
@@ -401,7 +403,7 @@ export class EvidenceProcessor {
                 // Link to existing attribute
                 const [category, attrName] = (
                   classification.matchedAttributeId || ""
-                ).split("-");
+                ).split("#");
                 if (category && attrName) {
                   const attrCategory = category as AttributeCategory;
                   const existingAttr = attributes[attrCategory].find(

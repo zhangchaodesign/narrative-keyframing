@@ -13,7 +13,7 @@ const ClassificationSchema = z.object({
     .string()
     .optional()
     .describe(
-      "If relevant: the ID/key of the matched attribute (format: 'category-name'); empty if none",
+      "If relevant: the ID/key of the matched attribute (format: 'category#name'); empty if none",
     ),
 });
 
@@ -48,6 +48,12 @@ export async function POST(request: Request) {
             )
             .join("\n");
 
+    // console.log("Classifying phrase:", {
+    //   characterName,
+    //   phrase,
+    //   attributesList,
+    // });
+
     const { object } = await generateObject({
       model: openai("gpt-4.1"),
       schema: ClassificationSchema,
@@ -68,7 +74,7 @@ Binary Classification Rules:
   - either supports/aligns with an existing attribute, or
   - contradicts an existing attribute
   - Example: Existing "tall" + Phrase "towered over others" = relevant 
-  - Return: matchedAttributeId (format: "category-name", e.g., "physiology-tall")
+  - Return: matchedAttributeId (format: "category#name", e.g., "physiology#tall")
 
 - **irrelevant**: The phrase describes something new or unrelated 
   - Not covered by existing attributes 
@@ -81,6 +87,8 @@ Important:
 - When in doubt between relevant and irrelevant, choose irrelevant 
 - Consider context from the story to understand nuance`,
     });
+
+    // console.log("Classification result:", object);
 
     return NextResponse.json(object);
   } catch (error) {
