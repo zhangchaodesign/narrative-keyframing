@@ -14,6 +14,7 @@ type PendingSuggestion = {
   sentenceStart: number;
   originalSentence: string;
   revisedSentence: string;
+  sentenceIndex: number;
 };
 
 type SuggestionPayload = {
@@ -22,6 +23,7 @@ type SuggestionPayload = {
   originalSentence: string;
   revisedSentence: string;
   diffSegments: SlateTextSegment[];
+  sentenceIndex: number;
 };
 
 type EditorState = {
@@ -92,6 +94,7 @@ export const useEditorStore = create<EditorState>()(
               sentenceStart: payload.sentenceStart,
               originalSentence: payload.originalSentence,
               revisedSentence: payload.revisedSentence,
+              sentenceIndex: payload.sentenceIndex,
             },
           };
         }),

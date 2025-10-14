@@ -43,6 +43,13 @@ type CharacterState = {
     characterName: string,
     conflicts: AttributeConflict[],
   ) => void;
+  removeSentenceData: (sentenceIndex: number) => void;
+  shiftIndicesAfterSentenceChange: (
+    sentenceIndex: number,
+    sentenceStart: number,
+    originalLength: number,
+    newLength: number,
+  ) => void;
   clearCharacters: () => void;
 
   // Manual character management
@@ -101,6 +108,169 @@ export const useCharacterStore = create<CharacterState>()(
             char.name === characterName ? { ...char, conflicts } : char,
           ),
         })),
+      removeSentenceData: (sentenceIndex) =>
+        set((state) => ({
+          characters: state.characters.map((char) => {
+            const filteredCorefs = char.coreferenceMatches.filter(
+              (match) => match.sentenceIndex !== sentenceIndex,
+            );
+
+            const filterIndicators = <T extends { sentenceIndex: number }>(
+              matches: T[],
+            ): T[] =>
+              matches.filter((match) => match.sentenceIndex !== sentenceIndex);
+
+            const filteredIndicators: CharacterIndicators = {
+              directDefinition: filterIndicators(
+                char.indicatorMatches.directDefinition,
+              ),
+              actions: filterIndicators(char.indicatorMatches.actions),
+              speech: filterIndicators(char.indicatorMatches.speech),
+              appearance: filterIndicators(char.indicatorMatches.appearance),
+              environment: filterIndicators(char.indicatorMatches.environment),
+            };
+
+            const filteredAttributes = char.attributes.map((attr) => ({
+              ...attr,
+              evidence: attr.evidence.filter(
+                (ev) => ev.sentenceIndex !== sentenceIndex,
+              ),
+            }));
+
+            const filteredConflicts = char.conflicts.filter(
+              (conflict) =>
+                conflict.conflictingEvidence.sentenceIndex !== sentenceIndex &&
+                conflict.establishedAttribute.evidence.sentenceIndex !==
+                  sentenceIndex,
+            );
+
+            return {
+              ...char,
+              coreferenceMatches: filteredCorefs,
+              indicatorMatches: filteredIndicators,
+              attributes: filteredAttributes,
+              conflicts: filteredConflicts,
+            };
+          }),
+        })),
+      shiftIndicesAfterSentenceChange: (
+        sentenceIndex,
+        sentenceStart,
+        originalLength,
+        newLength,
+      ) =>
+        set((state) => {
+          const delta = newLength - originalLength;
+          if (delta === 0) return state;
+          const changeEnd = sentenceStart + originalLength;
+
+          const adjustRange = (
+            start: number,
+            end: number,
+            rangeSentenceIndex: number,
+          ) => {
+            if (rangeSentenceIndex > sentenceIndex) {
+              return { start: start + delta, end: end + delta };
+            }
+            if (
+              rangeSentenceIndex === sentenceIndex &&
+              start >= changeEnd
+            ) {
+              return { start: start + delta, end: end + delta };
+            }
+            return { start, end };
+          };
+
+          const adjustMatches = (matches: CoreferenceMatch[]) =>
+            matches.map((match) => {
+              const { start, end } = adjustRange(
+                match.startIndex,
+                match.endIndex,
+                match.sentenceIndex,
+              );
+              if (
+                start !== match.startIndex ||
+                end !== match.endIndex
+              ) {
+                return { ...match, startIndex: start, endIndex: end };
+              }
+              return match;
+            });
+
+          const adjustEvidenceList = <T extends {
+            startIndex: number;
+            endIndex: number;
+            sentenceIndex: number;
+          }>(evidence: T[]): T[] =>
+            evidence.map((ev) => {
+              const { start, end } = adjustRange(
+                ev.startIndex,
+                ev.endIndex,
+                ev.sentenceIndex,
+              );
+              if (start !== ev.startIndex || end !== ev.endIndex) {
+                return { ...ev, startIndex: start, endIndex: end };
+              }
+              return ev;
+            });
+
+          const adjustIndicators = (
+            indicators: CharacterIndicators,
+          ): CharacterIndicators => ({
+            directDefinition: adjustEvidenceList(indicators.directDefinition),
+            actions: adjustEvidenceList(indicators.actions),
+            speech: adjustEvidenceList(indicators.speech),
+            appearance: adjustEvidenceList(indicators.appearance),
+            environment: adjustEvidenceList(indicators.environment),
+          });
+
+          const adjustedCharacters = state.characters.map((char) => {
+            const updatedCorefs = adjustMatches(char.coreferenceMatches);
+            const updatedIndicators = adjustIndicators(char.indicatorMatches);
+            const updatedAttributes = char.attributes.map((attr) => ({
+              ...attr,
+              evidence: adjustEvidenceList(attr.evidence),
+            }));
+            const updatedConflicts = char.conflicts.map((conflict) => {
+              const established = adjustRange(
+                conflict.establishedAttribute.evidence.startIndex,
+                conflict.establishedAttribute.evidence.endIndex,
+                conflict.establishedAttribute.evidence.sentenceIndex,
+              );
+              const conflicting = adjustRange(
+                conflict.conflictingEvidence.startIndex,
+                conflict.conflictingEvidence.endIndex,
+                conflict.conflictingEvidence.sentenceIndex,
+              );
+              return {
+                ...conflict,
+                establishedAttribute: {
+                  ...conflict.establishedAttribute,
+                  evidence: {
+                    ...conflict.establishedAttribute.evidence,
+                    startIndex: established.start,
+                    endIndex: established.end,
+                  },
+                },
+                conflictingEvidence: {
+                  ...conflict.conflictingEvidence,
+                  startIndex: conflicting.start,
+                  endIndex: conflicting.end,
+                },
+              };
+            });
+
+            return {
+              ...char,
+              coreferenceMatches: updatedCorefs,
+              indicatorMatches: updatedIndicators,
+              attributes: updatedAttributes,
+              conflicts: updatedConflicts,
+            };
+          });
+
+          return { characters: adjustedCharacters };
+        }),
       clearCharacters: () => set({ characters: [] }),
 
       // Manual character management

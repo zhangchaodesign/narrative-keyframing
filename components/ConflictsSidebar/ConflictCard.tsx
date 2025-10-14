@@ -110,6 +110,7 @@ export function ConflictCard({
           sentenceStart: targetSentence.startIndex,
           originalSentence: targetSentence.text,
           revisedSentence,
+          sentenceIndex: conflict.conflictingEvidence.sentenceIndex,
           diffSegments: diff.map((part) => ({
             text: part.value,
             added: Boolean(part.added),
@@ -142,23 +143,44 @@ export function ConflictCard({
       event.stopPropagation();
       if (!isActiveSuggestion) return;
 
+      const currentSuggestion = suggestion;
       applySuggestion();
 
       const characterStore = useCharacterStore.getState();
-      const targetCharacter = characterStore.characters.find(
+      if (currentSuggestion) {
+        characterStore.removeSentenceData(currentSuggestion.sentenceIndex);
+        characterStore.shiftIndicesAfterSentenceChange(
+          currentSuggestion.sentenceIndex,
+          currentSuggestion.sentenceStart,
+          currentSuggestion.originalSentence.length,
+          currentSuggestion.revisedSentence.length,
+        );
+      }
+
+      const { characters: updatedCharacters } = useCharacterStore.getState();
+      const targetCharacter = updatedCharacters.find(
         (c) => c.name === characterName,
       );
       const remainingConflicts =
         targetCharacter?.conflicts?.filter((c) => c.id !== conflict.id) ?? [];
-      characterStore.updateCharacterConflicts(
-        characterName,
-        remainingConflicts,
-      );
+      useCharacterStore
+        .getState()
+        .updateCharacterConflicts(
+          characterName,
+          remainingConflicts,
+        );
 
       setError(null);
       onResolve?.("approved");
     },
-    [applySuggestion, characterName, conflict.id, isActiveSuggestion, onResolve],
+    [
+      applySuggestion,
+      characterName,
+      conflict.id,
+      isActiveSuggestion,
+      onResolve,
+      suggestion,
+    ],
   );
 
   const handleReject = useCallback(
