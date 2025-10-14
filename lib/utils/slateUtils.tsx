@@ -145,8 +145,7 @@ export class SlateUtils {
     const pushParagraph = () => {
       paragraphs.push({
         type: "paragraph",
-        children:
-          currentChildren.length > 0 ? currentChildren : [{ text: "" }],
+        children: currentChildren.length > 0 ? currentChildren : [{ text: "" }],
       } as CustomElement);
       currentChildren = [];
     };

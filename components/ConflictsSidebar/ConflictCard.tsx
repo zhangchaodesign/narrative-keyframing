@@ -97,7 +97,10 @@ export function ConflictCard({
           return;
         }
 
-        const diff = diffWords(targetSentence.text, revisedSentence) as Change[];
+        const diff = diffWords(
+          targetSentence.text,
+          revisedSentence,
+        ) as Change[];
         const hasChange = diff.some((part) => part.added || part.removed);
 
         if (!hasChange) {
@@ -165,10 +168,7 @@ export function ConflictCard({
         targetCharacter?.conflicts?.filter((c) => c.id !== conflict.id) ?? [];
       useCharacterStore
         .getState()
-        .updateCharacterConflicts(
-          characterName,
-          remainingConflicts,
-        );
+        .updateCharacterConflicts(characterName, remainingConflicts);
 
       setError(null);
       onResolve?.("approved");

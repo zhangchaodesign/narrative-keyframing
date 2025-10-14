@@ -7,10 +7,7 @@ const ResolutionSchema = z.object({
   revisedSentence: z
     .string()
     .describe("Sentence rewritten to resolve the conflict"),
-  rationale: z
-    .string()
-    .optional()
-    .describe("Short explanation of the change"),
+  rationale: z.string().optional().describe("Short explanation of the change"),
 });
 
 export async function POST(request: Request) {
@@ -43,7 +40,9 @@ Constraints:
 
 Context:
 - Character: ${characterName || "Unknown"}
-- Established Attribute (${attributeCategory || "attribute"}): "${attributeName}" backed by evidence: "${establishedEvidence || "N/A"}"
+- Established Attribute (${
+      attributeCategory || "attribute"
+    }): "${attributeName}" backed by evidence: "${establishedEvidence || "N/A"}"
 - Conflicting Evidence: "${conflictingEvidence}"
 - Original Sentence: "${originalSentence}"
 

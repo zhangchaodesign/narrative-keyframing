@@ -578,7 +578,6 @@ export class CoreferenceUtils {
           ...attributeList,
         ]);
       });
-
     }
 
     // Convert map to Character array and consolidate duplicate attributes

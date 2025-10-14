@@ -110,7 +110,11 @@ export function EditorPage() {
   );
 
   const handleConflictResolve = useCallback(
-    (_characterName: string, conflictId: string, decision: "approved" | "rejected") => {
+    (
+      _characterName: string,
+      conflictId: string,
+      decision: "approved" | "rejected",
+    ) => {
       if (decision === "approved") {
         setConflictHighlight(null);
       }

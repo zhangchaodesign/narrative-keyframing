@@ -172,10 +172,7 @@ export const useCharacterStore = create<CharacterState>()(
             if (rangeSentenceIndex > sentenceIndex) {
               return { start: start + delta, end: end + delta };
             }
-            if (
-              rangeSentenceIndex === sentenceIndex &&
-              start >= changeEnd
-            ) {
+            if (rangeSentenceIndex === sentenceIndex && start >= changeEnd) {
               return { start: start + delta, end: end + delta };
             }
             return { start, end };
@@ -188,20 +185,21 @@ export const useCharacterStore = create<CharacterState>()(
                 match.endIndex,
                 match.sentenceIndex,
               );
-              if (
-                start !== match.startIndex ||
-                end !== match.endIndex
-              ) {
+              if (start !== match.startIndex || end !== match.endIndex) {
                 return { ...match, startIndex: start, endIndex: end };
               }
               return match;
             });
 
-          const adjustEvidenceList = <T extends {
-            startIndex: number;
-            endIndex: number;
-            sentenceIndex: number;
-          }>(evidence: T[]): T[] =>
+          const adjustEvidenceList = <
+            T extends {
+              startIndex: number;
+              endIndex: number;
+              sentenceIndex: number;
+            },
+          >(
+            evidence: T[],
+          ): T[] =>
             evidence.map((ev) => {
               const { start, end } = adjustRange(
                 ev.startIndex,
