@@ -43,11 +43,11 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("Detecting sentence conflicts for:", {
-      characterName,
-      sentence: sentence.substring(0, 100),
-      attributeCount: existingAttributes.length,
-    });
+    // console.log("Detecting sentence conflicts for:", {
+    //   characterName,
+    //   sentence: sentence.substring(0, 100),
+    //   attributeCount: existingAttributes.length,
+    // });
 
     // Build existing attributes summary organized by category
     const attributesByCategory = {
@@ -136,11 +136,11 @@ Identify ANY parts of the new sentence that contradict the established attribute
       temperature: 0.3,
     });
 
-    console.log(
-      "Sentence conflict detection result:",
-      attributesSummary,
-      object,
-    );
+    // console.log(
+    //   "Sentence conflict detection result:",
+    //   attributesSummary,
+    //   object,
+    // );
 
     return NextResponse.json(object);
   } catch (error) {
