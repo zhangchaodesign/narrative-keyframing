@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { SlateUtils } from "@/lib/utils/slateUtils";
 import { CoreferenceUtils } from "@/lib/utils/coreferenceUtils";
 import { type SentenceCache } from "@/lib/stores/sentenceCacheStore";
@@ -25,8 +26,11 @@ export function Toolbar({
   onExtractComplete,
 }: ToolbarProps) {
   const { setRelationships, setIsLoading } = useRelationshipStore();
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleExtractCharacters = async () => {
+    if (isAnalyzing) return;
+    setIsAnalyzing(true);
     const story = SlateUtils.stateToText(value as any);
     console.log("Extracting characters from story:", story);
 
@@ -127,16 +131,19 @@ export function Toolbar({
       alert(
         `Request failed: ${err instanceof Error ? err.message : String(err)}`,
       );
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
   return (
     <button
       type="button"
-      className="text-blue-700 bg-blue-50 border border-blue-300 w-full rounded px-3 py-2 text-xs font-semibold transition hover:bg-blue-100"
+      className="w-full rounded bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
       onClick={handleExtractCharacters}
+      disabled={isAnalyzing}
     >
-      Analyze
+      {isAnalyzing ? "Analyzing…" : "Analyze Characters"}
     </button>
   );
 }
