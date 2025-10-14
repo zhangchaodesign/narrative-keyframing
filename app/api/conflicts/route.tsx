@@ -124,11 +124,11 @@ ${attributesSummary}
 Identify ANY parts of the new sentence that contradict the established attributes. Return empty array if no conflicts.`,
     });
 
-    console.log(
-      "Sentence conflict detection result:",
-      attributesSummary,
-      object,
-    );
+    // console.log(
+    //   "Sentence conflict detection result:",
+    //   attributesSummary,
+    //   object,
+    // );
 
     return NextResponse.json(object);
   } catch (error) {

@@ -414,16 +414,6 @@ export class CoreferenceUtils {
 
     // Process sentences that need updating in parallel
     console.log("existingCharacters:", existingCharacters);
-    const processedCharactersBySentence = new Map<number, Set<string>>();
-    const markProcessed = (sentenceIndex: number, names: string[]) => {
-      if (!names || names.length === 0) return;
-      const existing = processedCharactersBySentence.get(sentenceIndex);
-      const set = existing ?? new Set<string>();
-      names.forEach((name) => set.add(name));
-      if (!existing) {
-        processedCharactersBySentence.set(sentenceIndex, set);
-      }
-    };
 
     const fullyProcessedMap = new Map<number, SentenceCache>();
     if (sentencesToProcessFully.length > 0) {
@@ -442,7 +432,6 @@ export class CoreferenceUtils {
       sentencesToProcessFully.forEach((sentenceIndex, idx) => {
         const processed = fullyProcessedCaches[idx];
         fullyProcessedMap.set(sentenceIndex, processed);
-        markProcessed(sentenceIndex, characterNames);
       });
 
       console.log("Fully processed caches:", fullyProcessedMap);
@@ -465,16 +454,10 @@ export class CoreferenceUtils {
       sentencesToProcessPartially.forEach((sentenceIndex, idx) => {
         const processed = partiallyProcessedCaches[idx];
         partiallyProcessedMap.set(sentenceIndex, processed);
-        markProcessed(sentenceIndex, newCharacterNames);
       });
 
       console.log("Partially processed caches:", partiallyProcessedMap);
     }
-
-    console.log(
-      "Processed characters by sentence:",
-      processedCharactersBySentence,
-    );
 
     // Build the final cache array
     const newCache: SentenceCache[] = [];
@@ -544,7 +527,6 @@ export class CoreferenceUtils {
     const characterMatchMap = new Map<string, CoreferenceMatch[]>();
     const characterIndicatorMap = new Map<string, CharacterIndicators>();
     const characterAttributeMap = new Map<string, CharacterAttribute[]>();
-    const characterConflictMap = new Map<string, AttributeConflict[]>();
 
     // Initialize all characters
     characterNames.forEach((name) => {
@@ -557,7 +539,6 @@ export class CoreferenceUtils {
         environment: [],
       });
       characterAttributeMap.set(name, []);
-      characterConflictMap.set(name, []);
     });
 
     // Process each sentence's cache and convert to absolute indices
@@ -598,97 +579,6 @@ export class CoreferenceUtils {
         ]);
       });
 
-      // Detect conflicts for sentences processed in this update
-      const processedCharacters = processedCharactersBySentence.get(sentIndex);
-      if (processedCharacters && processedCharacters.size > 0) {
-        console.log(`Checking conflicts for sentence ${sentIndex}...`);
-
-        for (const characterName of processedCharacters) {
-          // Get all attributes accumulated BEFORE this sentence
-          const allAttributes = characterAttributeMap.get(characterName) || [];
-          console.log(
-            `Existing attributes for ${characterName}:`,
-            allAttributes,
-          );
-          const existingAttributes = allAttributes.filter((attr) =>
-            attr.evidence.some((ev) => ev.sentenceIndex < sentIndex),
-          );
-
-          // ALSO include manually added attributes from existingCharacters (these have no evidence)
-          const manualAttributes: CharacterAttribute[] = [];
-          if (existingCharacters) {
-            const existingChar = existingCharacters.find(
-              (c) => c.name === characterName,
-            );
-            if (existingChar) {
-              // Get manual attributes (no evidence or empty evidence)
-              const manualAttrs = existingChar.attributes.filter(
-                (attr) => !attr.evidence || attr.evidence.length === 0,
-              );
-              manualAttributes.push(...manualAttrs);
-            }
-          }
-
-          // Combine AI-extracted attributes with manual attributes
-          const allExistingAttributes = [
-            ...existingAttributes,
-            ...manualAttributes,
-          ];
-
-          if (allExistingAttributes.length === 0) {
-            // First sentence with attributes, nothing to conflict with
-            console.log(
-              `No existing attributes for ${characterName} before sentence ${sentIndex}, skipping conflict check.`,
-            );
-            continue;
-          }
-
-          // Only check sentences that mention this character
-          const sentenceCache = newCache[sentIndex];
-          const characterRefs =
-            sentenceCache.characterRefs[characterName] || [];
-
-          if (characterRefs.length === 0) {
-            // Character not mentioned in this sentence, skip
-            console.log(
-              `Character ${characterName} not mentioned in sentence ${sentIndex}, skipping conflict check.`,
-            );
-            continue;
-          }
-
-          try {
-            // Check if this sentence contradicts any existing attributes (including manual ones)
-            const detectedConflicts = await this.detectSentenceConflicts(
-              characterName,
-              sentences[sentIndex].text,
-              sentIndex,
-              sentences[sentIndex].startIndex,
-              allExistingAttributes,
-            );
-
-            if (detectedConflicts.length > 0) {
-              const existing = characterConflictMap.get(characterName) || [];
-              characterConflictMap.set(characterName, [
-                ...existing,
-                ...detectedConflicts,
-              ]);
-
-              console.log(
-                `Found ${detectedConflicts.length} conflicts for ${characterName} in sentence ${sentIndex}`,
-              );
-            } else {
-              console.log(
-                `No conflicts found for ${characterName} in sentence ${sentIndex}`,
-              );
-            }
-          } catch (error) {
-            console.error(
-              `Error detecting conflicts for ${characterName} in sentence ${sentIndex}:`,
-              error,
-            );
-          }
-        }
-      }
     }
 
     // Convert map to Character array and consolidate duplicate attributes
@@ -706,7 +596,7 @@ export class CoreferenceUtils {
       attributes: this.consolidateAttributes(
         characterAttributeMap.get(name) || [],
       ),
-      conflicts: characterConflictMap.get(name) || [],
+      conflicts: [],
     }));
 
     return {
