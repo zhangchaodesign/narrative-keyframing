@@ -619,6 +619,15 @@ export class CoreferenceUtils {
       return !characterNames.every((name) => cachedSet.has(name));
     })();
 
+    const cachedCharacterSet = new Set(cachedCharacterNames || []);
+    const newCharacterNames = characterNames.filter(
+      (name) => !cachedCharacterSet.has(name),
+    );
+    const removedCharacterNames = cachedCharacterNames
+      ? cachedCharacterNames.filter((name) => !characterNames.includes(name))
+      : [];
+    const hasNewCharacters = newCharacterNames.length > 0;
+
     // Detect which sentences need processing using content-based matching
     const { cacheMapping, newIndices } = this.detectSentenceChanges(
       sentences,
@@ -647,62 +656,164 @@ export class CoreferenceUtils {
         .join("\n"),
     );
 
-    // Determine which sentences need API calls
-    const sentencesToProcess = characterListChanged
-      ? sentences.map((_, i) => i) // Process all if character list changed
-      : newIndices; // Only process new sentences when incrementally updating
+    const sentencesToProcessFully = [...newIndices];
+    const sentencesToProcessFullySet = new Set(sentencesToProcessFully);
+    const sentencesToProcessPartially =
+      hasNewCharacters && sentences.length > 0
+        ? sentences
+            .map((_, index) => index)
+            .filter((index) => !sentencesToProcessFullySet.has(index))
+        : [];
 
     console.log(
-      `Processing ${sentencesToProcess.length} sentences (${
-        characterListChanged ? "character list changed" : "incremental update"
-      })`,
+      `Processing ${sentencesToProcessFully.length} sentences fully and ${
+        sentencesToProcessPartially.length
+      } sentences for new characters (${newCharacterNames.join(", ")})`,
     );
+    if (removedCharacterNames.length > 0) {
+      console.log("Removed characters detected:", removedCharacterNames);
+    }
 
     // Process sentences that need updating in parallel
     console.log("existingCharacters:", existingCharacters);
-    const processedCaches = await Promise.all(
-      sentencesToProcess.map((sentIndex) =>
-        USE_EVIDENCE_FIRST
-          ? EvidenceProcessor.processSentenceEvidenceFirst(
-              story,
-              sentences[sentIndex],
-              sentIndex,
-              characterNames,
-              existingCharacters || [],
-            )
-          : this.processSentence(
-              story,
-              sentences[sentIndex],
-              sentIndex,
-              characterNames,
-            ),
-      ),
-    );
+    const processedCharactersBySentence = new Map<number, Set<string>>();
+    const markProcessed = (sentenceIndex: number, names: string[]) => {
+      if (!names || names.length === 0) return;
+      const existing = processedCharactersBySentence.get(sentenceIndex);
+      const set = existing ?? new Set<string>();
+      names.forEach((name) => set.add(name));
+      if (!existing) {
+        processedCharactersBySentence.set(sentenceIndex, set);
+      }
+    };
 
-    console.log("Processed caches:", processedCaches);
+    const fullyProcessedMap = new Map<number, SentenceCache>();
+    if (sentencesToProcessFully.length > 0) {
+      const fullyProcessedCaches = await Promise.all(
+        sentencesToProcessFully.map((sentIndex) =>
+          USE_EVIDENCE_FIRST
+            ? EvidenceProcessor.processSentenceEvidenceFirst(
+                story,
+                sentences[sentIndex],
+                sentIndex,
+                characterNames,
+                existingCharacters || [],
+              )
+            : this.processSentence(
+                story,
+                sentences[sentIndex],
+                sentIndex,
+                characterNames,
+              ),
+        ),
+      );
+
+      sentencesToProcessFully.forEach((sentenceIndex, idx) => {
+        const processed = fullyProcessedCaches[idx];
+        fullyProcessedMap.set(sentenceIndex, processed);
+        markProcessed(sentenceIndex, characterNames);
+      });
+
+      console.log("Fully processed caches:", fullyProcessedMap);
+    }
+
+    const partiallyProcessedMap = new Map<number, SentenceCache>();
+    if (sentencesToProcessPartially.length > 0 && hasNewCharacters) {
+      const partiallyProcessedCaches = await Promise.all(
+        sentencesToProcessPartially.map((sentIndex) =>
+          USE_EVIDENCE_FIRST
+            ? EvidenceProcessor.processSentenceEvidenceFirst(
+                story,
+                sentences[sentIndex],
+                sentIndex,
+                newCharacterNames,
+                existingCharacters || [],
+              )
+            : this.processSentence(
+                story,
+                sentences[sentIndex],
+                sentIndex,
+                newCharacterNames,
+              ),
+        ),
+      );
+
+      sentencesToProcessPartially.forEach((sentenceIndex, idx) => {
+        const processed = partiallyProcessedCaches[idx];
+        partiallyProcessedMap.set(sentenceIndex, processed);
+        markProcessed(sentenceIndex, newCharacterNames);
+      });
+
+      console.log("Partially processed caches:", partiallyProcessedMap);
+    }
+
+    console.log(
+      "Processed characters by sentence:",
+      processedCharactersBySentence,
+    );
 
     // Build the final cache array
     const newCache: SentenceCache[] = [];
+    const allowedCharacters = new Set(characterNames);
 
     for (let i = 0; i < sentences.length; i++) {
-      const cachedIndex = cacheMapping.get(i);
+      if (fullyProcessedMap.has(i)) {
+        newCache[i] = fullyProcessedMap.get(i)!;
+        continue;
+      }
 
-      if (sentencesToProcess.includes(i)) {
-        // Use newly processed data
-        const processedIndex = sentencesToProcess.indexOf(i);
-        newCache[i] = processedCaches[processedIndex];
-      } else if (cachedIndex !== null && cachedIndex !== undefined) {
-        // Reuse existing cache from the matched sentence
-        newCache[i] = cache[cachedIndex];
-      } else {
-        // Shouldn't happen, but create empty cache as fallback
-        newCache[i] = {
-          text: sentences[i].text,
-          characterRefs: {},
-          characterIndicators: {},
-          characterAttributes: {},
+      const cachedIndex = cacheMapping.get(i);
+      const baseCache =
+        cachedIndex !== null && cachedIndex !== undefined
+          ? cache[cachedIndex]
+          : undefined;
+
+      const filteredCharacterRefs = baseCache?.characterRefs
+        ? Object.fromEntries(
+            Object.entries(baseCache.characterRefs).filter(([name]) =>
+              allowedCharacters.has(name),
+            ),
+          )
+        : {};
+      const filteredCharacterIndicators = baseCache?.characterIndicators
+        ? Object.fromEntries(
+            Object.entries(baseCache.characterIndicators).filter(([name]) =>
+              allowedCharacters.has(name),
+            ),
+          )
+        : {};
+      const filteredCharacterAttributes = baseCache?.characterAttributes
+        ? Object.fromEntries(
+            Object.entries(baseCache.characterAttributes).filter(([name]) =>
+              allowedCharacters.has(name),
+            ),
+          )
+        : {};
+
+      const mergedCache: SentenceCache = {
+        text: sentences[i].text,
+        characterRefs: filteredCharacterRefs,
+        characterIndicators: filteredCharacterIndicators,
+        characterAttributes: filteredCharacterAttributes,
+      };
+
+      const partialCache = partiallyProcessedMap.get(i);
+      if (partialCache) {
+        mergedCache.characterRefs = {
+          ...mergedCache.characterRefs,
+          ...partialCache.characterRefs,
+        };
+        mergedCache.characterIndicators = {
+          ...mergedCache.characterIndicators,
+          ...partialCache.characterIndicators,
+        };
+        mergedCache.characterAttributes = {
+          ...mergedCache.characterAttributes,
+          ...partialCache.characterAttributes,
         };
       }
+
+      newCache[i] = mergedCache;
     }
 
     // Convert cache to character matches with absolute indices
@@ -763,13 +874,12 @@ export class CoreferenceUtils {
         ]);
       });
 
-      // Detect conflicts for newly processed sentences only
-      // Check if sentence content contradicts existing attributes (NEW approach)
-      if (sentencesToProcess.includes(sentIndex)) {
+      // Detect conflicts for sentences processed in this update
+      const processedCharacters = processedCharactersBySentence.get(sentIndex);
+      if (processedCharacters && processedCharacters.size > 0) {
         console.log(`Checking conflicts for sentence ${sentIndex}...`);
 
-        // Process each character that has coreferences in this sentence
-        for (const characterName of characterNames) {
+        for (const characterName of processedCharacters) {
           // Get all attributes accumulated BEFORE this sentence
           const allAttributes = characterAttributeMap.get(characterName) || [];
           console.log(
