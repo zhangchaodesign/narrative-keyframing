@@ -722,6 +722,11 @@ export class CoreferenceUtils {
         sentences[sentIndex].startIndex,
       );
 
+      console.log(
+        `Sentence ${sentIndex} attributes:`,
+        Array.from(attributes.entries()),
+      );
+
       // Merge attributes into character map FIRST
       attributes.forEach((attributeList, characterName) => {
         const existing = characterAttributeMap.get(characterName) || [];
@@ -734,10 +739,16 @@ export class CoreferenceUtils {
       // Detect conflicts for newly processed sentences only
       // Check if sentence content contradicts existing attributes (NEW approach)
       if (sentencesToProcess.includes(sentIndex)) {
+        console.log(`Checking conflicts for sentence ${sentIndex}...`);
+
         // Process each character that has coreferences in this sentence
         for (const characterName of characterNames) {
           // Get all attributes accumulated BEFORE this sentence
           const allAttributes = characterAttributeMap.get(characterName) || [];
+          console.log(
+            `Existing attributes for ${characterName}:`,
+            allAttributes,
+          );
           const existingAttributes = allAttributes.filter((attr) =>
             attr.evidence.some((ev) => ev.sentenceIndex < sentIndex),
           );
@@ -765,6 +776,9 @@ export class CoreferenceUtils {
 
           if (allExistingAttributes.length === 0) {
             // First sentence with attributes, nothing to conflict with
+            console.log(
+              `No existing attributes for ${characterName} before sentence ${sentIndex}, skipping conflict check.`,
+            );
             continue;
           }
 
@@ -775,6 +789,9 @@ export class CoreferenceUtils {
 
           if (characterRefs.length === 0) {
             // Character not mentioned in this sentence, skip
+            console.log(
+              `Character ${characterName} not mentioned in sentence ${sentIndex}, skipping conflict check.`,
+            );
             continue;
           }
 
@@ -797,6 +814,10 @@ export class CoreferenceUtils {
 
               console.log(
                 `Found ${detectedConflicts.length} conflicts for ${characterName} in sentence ${sentIndex}`,
+              );
+            } else {
+              console.log(
+                `No conflicts found for ${characterName} in sentence ${sentIndex}`,
               );
             }
           } catch (error) {

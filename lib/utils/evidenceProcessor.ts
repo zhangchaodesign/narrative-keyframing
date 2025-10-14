@@ -3,7 +3,7 @@
  *
  * New three-phase approach:
  * Phase 1: Extract indicator phrases
- * Phase 2: Classify phrases (matching/conflicting/irrelevant)
+ * Phase 2: Classify phrases (relevant/irrelevant)
  * Phase 3: Infer attributes for irrelevant phrases
  */
 
@@ -375,7 +375,7 @@ export class EvidenceProcessor {
 
             // Create attribute evidence refs for each occurrence
             for (const relativeIndex of phrasePositions) {
-              if (classification.result === "matching") {
+              if (classification.result === "relevant") {
                 // Link to existing attribute
                 const [category, attrName] = (
                   classification.matchedAttributeId || ""

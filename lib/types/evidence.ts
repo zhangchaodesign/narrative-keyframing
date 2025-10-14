@@ -19,7 +19,7 @@ export type ExtractedPhrase = {
  * Classification result from Phase 2
  */
 export type ClassificationResult = {
-  result: "matching" | "conflicting" | "irrelevant";
+  result: "relevant" | "irrelevant";
   matchedAttributeId?: string; // Format: "category-name"
   conflictAttributeId?: string;
   conflictReason?: string;

@@ -13,7 +13,7 @@ const ClassificationSchema = z.object({
     .string()
     .optional()
     .describe(
-      "If matching: the ID/key of the matched attribute (format: 'category-name'); empty if none",
+      "If relevant: the ID/key of the matched attribute (format: 'category-name'); empty if none",
     ),
 });
 

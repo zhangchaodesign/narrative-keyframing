@@ -93,12 +93,7 @@ ${
       schema: SentenceConflictSchema,
       prompt: `You are an expert in detecting narrative inconsistencies and character development contradictions.
 
-Your task: Analyze a NEW SENTENCE to see if it contains any evidence that CONTRADICTS existing established character attributes.
-
-IMPORTANT DISTINCTION:
-- DO NOT identify new attributes in the sentence
-- DO NOT compare new attributes with old attributes
-- ONLY identify if the sentence content contradicts what we already know about the character
+Your task: Analyze a SENTENCE to see if it contains any evidence that CONTRADICTS existing established character attributes.
 
 CONFLICT TYPES:
 1. Direct Contradiction: Sentence states something opposite to established attribute
@@ -118,15 +113,9 @@ SEVERITY LEVELS:
 - MEDIUM: Strong inconsistency (requires explanation)
 - LOW: Minor tension (could be explained by context)
 
-WHAT TO IGNORE:
-- Natural complexity: "nervous" person can act "bravely" in crisis
-- Contextual variation: "quiet" person can be "loud" when angry
-- Character growth: Traits can evolve naturally over time
-- Situational behavior: Different contexts warrant different responses
-
 CHARACTER: ${characterName}
 
-NEW SENTENCE TO ANALYZE:
+SENTENCE TO ANALYZE:
 "${sentence}"
 
 EXISTING ESTABLISHED ATTRIBUTES:
@@ -135,11 +124,11 @@ ${attributesSummary}
 Identify ANY parts of the new sentence that contradict the established attributes. Return empty array if no conflicts.`,
     });
 
-    // console.log(
-    //   "Sentence conflict detection result:",
-    //   attributesSummary,
-    //   object,
-    // );
+    console.log(
+      "Sentence conflict detection result:",
+      attributesSummary,
+      object,
+    );
 
     return NextResponse.json(object);
   } catch (error) {
