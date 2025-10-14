@@ -153,7 +153,7 @@ export function CharacterSidebar({
         </div>
 
         {/* Character list with multi-select toggles */}
-        {characters.length > 0 && (
+        {/* {characters.length > 0 && (
           <div className="space-y-2 px-4">
             {characters.map((char) => {
               const isSelected = selectedSet.has(char.name);
@@ -194,10 +194,10 @@ export function CharacterSidebar({
               );
             })}
           </div>
-        )}
+        )} */}
 
         {/* Relationship Visualization Section */}
-        {/* {characters.length > 0 && (
+        {characters.length > 0 && (
           <div className="px-4">
             <div className="bg-white/80 backdrop-blur border border-zinc-100 rounded">
               <RelationshipGraph
@@ -207,7 +207,7 @@ export function CharacterSidebar({
               />
             </div>
           </div>
-        )} */}
+        )}
 
         {/* Multiple CharacterSheets */}
         {selectedList.length > 0 && (

@@ -10,6 +10,7 @@ import {
   Background,
   useNodesState,
   useEdgesState,
+  useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
@@ -58,9 +59,22 @@ const getLayoutedElements = (
 };
 
 // Define custom node types
-const nodeTypes = {
-  custom: CustomNode,
-};
+const nodeTypes = { custom: CustomNode };
+
+function AutoFitOnChange({ deps }: { deps: React.DependencyList }) {
+  const { fitView } = useReactFlow();
+  React.useEffect(() => {
+    // wait for nodes/edges to be in the DOM
+    requestAnimationFrame(() => {
+      // if your nodes have images/dynamic size, a tiny timeout helps
+      setTimeout(() => {
+        fitView({ padding: 0.2, duration: 300 });
+      }, 0);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+  return null;
+}
 
 export default function RelationshipGraph({
   relationships,
@@ -69,108 +83,88 @@ export default function RelationshipGraph({
 }: RelationshipGraphProps) {
   const proOptions = { hideAttribution: true };
 
-  // Convert relationships to nodes and edges
-  const { initialNodes, initialEdges } = useMemo(() => {
-    // Start with all character names (from characters prop)
+  // Build initial nodes/edges from props
+  const { initialNodes, initialEdges } = React.useMemo(() => {
     const characterSet = new Set<string>(characters.map((c) => c.name));
-
-    // Also add characters from relationships (in case relationships reference characters not in the list)
     relationships.forEach((rel) => {
       characterSet.add(rel.source);
       characterSet.add(rel.target);
     });
 
-    // Create nodes for each character
     const nodes: Node[] = Array.from(characterSet).map((char) => ({
       id: char,
       type: "custom",
       data: { label: char },
-      position: { x: 0, y: 0 }, // Will be set by layout
+      position: { x: 0, y: 0 },
     }));
 
-    // Deduplicate bidirectional edges - keep only one edge per pair
+    // dedupe and make STABLE ids
     const edgeMap = new Map<string, Relationship>();
-
     relationships.forEach((rel) => {
-      // Create a sorted key so A-B and B-A map to same key
-      const key = [rel.source, rel.target].sort().join("-");
-
-      // Keep the first relationship for this pair
-      if (!edgeMap.has(key)) {
-        edgeMap.set(key, rel);
-      }
+      const a = rel.source;
+      const b = rel.target;
+      const key = [a, b].sort().join("__"); // stable key
+      if (!edgeMap.has(key)) edgeMap.set(key, rel);
     });
 
-    // Create edges from deduplicated relationships
-    const edges: Edge[] = Array.from(edgeMap.values()).map((rel, idx) => {
-      return {
-        id: `${rel.source}-${rel.target}-${idx}`,
-        source: rel.source,
-        target: rel.target,
-        label: rel.type,
-        animated: true, // Animated flow
-        style: {
-          stroke: "#6b7280", // Gray color
-          strokeWidth: 2,
-          strokeDasharray: "5, 5", // Dashed line
-        },
-        labelStyle: {
-          fill: "#6b7280", // Gray color
-          fontWeight: 600,
-          fontSize: "12px",
-        },
-        labelBgStyle: {
-          fill: "#ffffff",
-          fillOpacity: 0.9,
-        },
-        data: { description: rel.description },
-      };
-    });
+    const edges: Edge[] = Array.from(edgeMap.entries()).map(([key, rel]) => ({
+      id: key, // <-- stable id
+      source: rel.source,
+      target: rel.target,
+      label: rel.type,
+      animated: true,
+      style: { stroke: "#6b7280", strokeWidth: 2, strokeDasharray: "5, 5" },
+      labelStyle: { fill: "#6b7280", fontWeight: 600, fontSize: "12px" },
+      labelBgStyle: { fill: "#ffffff", fillOpacity: 0.9 },
+      data: { description: rel.description },
+    }));
 
     return { initialNodes: nodes, initialEdges: edges };
   }, [relationships, characters]);
 
-  // Apply auto-layout
-  const { nodes: layoutedNodes, edges: layoutedEdges } = useMemo(
+  // Lay out from dagre
+  const { nodes: layoutedNodes, edges: layoutedEdges } = React.useMemo(
     () => getLayoutedElements(initialNodes, initialEdges),
     [initialNodes, initialEdges],
   );
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges);
-  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(
+  // Keep state controlled & resync when layout/source changes
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [selectedNodeIds, setSelectedNodeIds] = React.useState<Set<string>>(
     new Set(),
   );
 
-  // Update node data to include custom selected state
+  // When layout changes, push it into state while preserving selection flags
+  React.useEffect(() => {
+    setNodes((prev) =>
+      layoutedNodes.map((n) => {
+        const prevSelected =
+          prev.find((p) => p.id === n.id)?.data?.isSelected ?? false;
+        return { ...n, data: { ...n.data, isSelected: prevSelected } };
+      }),
+    );
+    setEdges(layoutedEdges);
+  }, [layoutedNodes, layoutedEdges, setNodes, setEdges]);
+
+  // Keep selection in node data
   React.useEffect(() => {
     setNodes((nds) =>
       nds.map((node) => ({
         ...node,
-        data: {
-          ...node.data,
-          isSelected: selectedNodeIds.has(node.id),
-        },
+        data: { ...node.data, isSelected: selectedNodeIds.has(node.id) },
       })),
     );
   }, [selectedNodeIds, setNodes]);
 
-  // Handle node click - toggle selection and highlight character in editor
-  const onNodeClick = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
+  const onNodeClick = React.useCallback(
+    (_e: React.MouseEvent, node: Node) => {
       setSelectedNodeIds((prev) => {
-        const newSet = new Set(prev);
-        if (newSet.has(node.id)) {
-          newSet.delete(node.id);
-        } else {
-          newSet.add(node.id);
-        }
-        return newSet;
+        const next = new Set(prev);
+        next.has(node.id) ? next.delete(node.id) : next.add(node.id);
+        return next;
       });
-
-      if (onCharacterClick) {
-        onCharacterClick(node.id);
-      }
+      onCharacterClick?.(node.id);
     },
     [onCharacterClick],
   );
@@ -178,7 +172,8 @@ export default function RelationshipGraph({
   if (characters.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500 text-sm px-4">
-        No characters yet. Add characters manually or extract them from your story.
+        No characters yet. Add characters manually or extract them from your
+        story.
       </div>
     );
   }
@@ -195,13 +190,12 @@ export default function RelationshipGraph({
         proOptions={proOptions}
         fitView
         fitViewOptions={{ padding: 0.2 }}
-        panOnDrag={true}
+        panOnDrag
         selectionOnDrag={false}
         multiSelectionKeyCode={null}
       >
         <Controls />
-        {/* <MiniMap /> */}
-        {/* <Background /> */}
+        <AutoFitOnChange deps={[layoutedNodes, layoutedEdges]} />
       </ReactFlow>
     </div>
   );

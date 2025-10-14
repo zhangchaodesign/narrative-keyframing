@@ -78,7 +78,7 @@ Target character: ${characterName}
 Extract all "${indicatorType}" phrases about ${characterName} from this sentence.`,
     });
 
-    console.log("Extracted evidence phrases:", object.phrases);
+    // console.log("Extracted evidence phrases:", object.phrases);
 
     return NextResponse.json({ phrases: object.phrases });
   } catch (error) {
