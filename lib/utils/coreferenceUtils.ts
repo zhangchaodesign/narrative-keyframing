@@ -131,28 +131,6 @@ export class CoreferenceUtils {
     return normalized;
   }
 
-  static addEvidenceIfNewByText(
-    existingAttr: CharacterAttribute,
-    newRef: AttributeEvidence,
-  ): void {
-    const a = TextUtils.prepareStringForMatching(newRef.text) ?? "";
-    if (!a) return;
-
-    const isDup = existingAttr.evidence.some((e) => {
-      const b = TextUtils.prepareStringForMatching(e.text) ?? "";
-      if (!b) return false;
-
-      // Fallback using word-boundary matcher
-      // console.log(`Checking evidence duplication: "${a}" vs "${b}"`);
-      const ab = TextUtils.findAllWordMatches(b, a);
-      const ba = TextUtils.findAllWordMatches(a, b);
-      // if ab or ba has ANY matches, consider it a dup
-      return ab.length > 0 || ba.length > 0;
-    });
-
-    if (!isDup) existingAttr.evidence.push(newRef);
-  }
-
   /**
    * Consolidate duplicate attributes by grouping same category+name and merging evidence
    * Example: Two "calm" psychology attributes become one with combined evidence
@@ -232,6 +210,28 @@ export class CoreferenceUtils {
     }
 
     return attributesByCharacter;
+  }
+
+  static addEvidenceIfNewByText(
+    existingAttr: CharacterAttribute,
+    newRef: AttributeEvidence,
+  ): void {
+    const a = TextUtils.prepareStringForMatching(newRef.text) ?? "";
+    if (!a) return;
+
+    const isDup = existingAttr.evidence.some((e) => {
+      const b = TextUtils.prepareStringForMatching(e.text) ?? "";
+      if (!b) return false;
+
+      // Fallback using word-boundary matcher
+      // console.log(`Checking evidence duplication: "${a}" vs "${b}"`);
+      const ab = TextUtils.findAllWordMatches(b, a);
+      const ba = TextUtils.findAllWordMatches(a, b);
+      // if ab or ba has ANY matches, consider it a dup
+      return ab.length > 0 || ba.length > 0;
+    });
+
+    if (!isDup) existingAttr.evidence.push(newRef);
   }
 
   /**
