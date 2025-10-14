@@ -244,7 +244,7 @@ export class CoreferenceUtils {
    * @param existingAttributes - All previously accumulated attributes for character
    * @returns Array of detected conflicts
    */
-  private static async detectSentenceConflicts(
+  static async detectSentenceConflicts(
     characterName: string,
     sentence: string,
     sentenceIndex: number,

@@ -133,7 +133,7 @@ export function Toolbar({
   return (
     <button
       type="button"
-      className="px-3 py-1.5 bg-zinc-600 text-white rounded hover:bg-zinc-700 font-medium text-xs cursor-pointer"
+      className="text-blue-700 bg-blue-50 border border-blue-300 w-full rounded px-3 py-2 text-xs font-semibold transition hover:bg-blue-100"
       onClick={handleExtractCharacters}
     >
       Analyze

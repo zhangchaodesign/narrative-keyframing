@@ -1,9 +1,13 @@
 "use client";
 
 import { ConflictCard } from "@/components/ConflictsSidebar/ConflictCard";
-import { type Character } from "@/lib/stores/characterStore";
+import { type Character, useCharacterStore } from "@/lib/stores/characterStore";
 import { type AttributeConflict } from "@/lib/types/conflicts";
-import React, { useMemo } from "react";
+import { useEditorStore } from "@/lib/stores/editorStore";
+import { CoreferenceUtils } from "@/lib/utils/coreferenceUtils";
+import { TextUtils } from "@/lib/utils/textUtils";
+import { SlateUtils } from "@/lib/utils/slateUtils";
+import React, { useCallback, useMemo, useState } from "react";
 
 interface ConflictsSidebarProps {
   /** ✅ multi-select */
@@ -19,6 +23,7 @@ export function ConflictsSidebar({
   selectedConflictId,
   onConflictClick,
 }: ConflictsSidebarProps) {
+  const [isDetecting, setIsDetecting] = useState(false);
   const { selectedList, totalConflicts } = useMemo(() => {
     const selectedSet = new Set(selectedCharacters);
     const sel = characters.filter((c) => selectedSet.has(c.name));
@@ -29,6 +34,105 @@ export function ConflictsSidebar({
     return { selectedList: sel, totalConflicts: total };
   }, [selectedCharacters, characters]);
 
+  const handleDetectConflicts = useCallback(async () => {
+    if (isDetecting) return;
+
+    setIsDetecting(true);
+    try {
+      const editorState = useEditorStore.getState();
+      const story = SlateUtils.stateToText(editorState.value as any);
+
+      if (!story || story.trim().length === 0) {
+        alert("Add story text before running conflict detection.");
+        return;
+      }
+
+      const sentences = TextUtils.splitIntoSentences(story);
+      if (sentences.length === 0) {
+        alert("Unable to split story into sentences.");
+        return;
+      }
+
+      const conflictsByCharacter = new Map<string, AttributeConflict[]>();
+
+      for (
+        let sentenceIndex = 0;
+        sentenceIndex < sentences.length;
+        sentenceIndex++
+      ) {
+        const sentence = sentences[sentenceIndex];
+        const sentenceText = sentence.text.trim();
+        if (!sentenceText) continue;
+
+        for (const character of characters) {
+          const attributes = character.attributes ?? [];
+          if (attributes.length === 0) continue;
+
+          const hasMatches = (character.coreferenceMatches ?? []).length > 0;
+          const mentionedInSentence = hasMatches
+            ? character.coreferenceMatches.some(
+                (match) => match.sentenceIndex === sentenceIndex,
+              )
+            : true;
+
+          if (!mentionedInSentence) continue;
+
+          const detected = await CoreferenceUtils.detectSentenceConflicts(
+            character.name,
+            sentence.text,
+            sentenceIndex,
+            sentence.startIndex,
+            attributes,
+          );
+
+          if (detected.length === 0) continue;
+
+          const existing = conflictsByCharacter.get(character.name) ?? [];
+          const merged = [...existing];
+
+          for (const conflict of detected) {
+            const isDuplicate = merged.some(
+              (existingConflict) =>
+                existingConflict.establishedAttribute.name ===
+                  conflict.establishedAttribute.name &&
+                existingConflict.category === conflict.category &&
+                existingConflict.conflictingEvidence.startIndex ===
+                  conflict.conflictingEvidence.startIndex &&
+                existingConflict.conflictingEvidence.endIndex ===
+                  conflict.conflictingEvidence.endIndex,
+            );
+
+            if (!isDuplicate) {
+              merged.push(conflict);
+            }
+          }
+
+          conflictsByCharacter.set(character.name, merged);
+        }
+      }
+
+      const { updateCharacterConflicts } = useCharacterStore.getState();
+
+      characters.forEach((character) => {
+        const conflicts = conflictsByCharacter.get(character.name) ?? [];
+        updateCharacterConflicts(character.name, conflicts);
+      });
+
+      if (
+        Array.from(conflictsByCharacter.values()).every(
+          (list) => list.length === 0,
+        )
+      ) {
+        alert("No conflicts detected.");
+      }
+    } catch (error) {
+      console.error("Failed to detect conflicts", error);
+      alert("Failed to detect conflicts. Check the console for details.");
+    } finally {
+      setIsDetecting(false);
+    }
+  }, [characters, isDetecting]);
+
   // Always render the sidebar to maintain layout
   return (
     <div className="w-80 relative flex-shrink-0">
@@ -38,9 +142,17 @@ export function ConflictsSidebar({
             ⚠️ Conflicts
             {typeof totalConflicts === "number" ? ` (${totalConflicts})` : ""}
           </h3>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 mt-1 mb-3">
             Click a conflict to highlight evidence
           </p>
+          <button
+            type="button"
+            onClick={handleDetectConflicts}
+            className="w-full rounded bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isDetecting}
+          >
+            {isDetecting ? "Detecting…" : "Detect Conflicts"}
+          </button>
         </div>
 
         {/* Nothing selected or no conflicts */}

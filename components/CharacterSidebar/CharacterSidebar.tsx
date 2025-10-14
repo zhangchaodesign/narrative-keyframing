@@ -135,26 +135,25 @@ export function CharacterSidebar({
         <div className="p-4 bg-white/80 backdrop-blur border border-zinc-100 rounded">
           <div className="w-full flex justify-between ">
             <h2 className="text-lg font-bold text-gray-800">Characters</h2>
-            <Toolbar
-              value={value}
-              sentenceCaches={sentenceCaches}
-              cachedCharacterNames={cachedCharacterNames}
-              existingCharacters={characters}
-              onExtractComplete={handleExtractComplete}
-            />
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="px-3 py-1.5 bg-zinc-600 text-white rounded hover:bg-zinc-700 font-medium text-xs cursor-pointer"
+            >
+              + Add
+            </button>
           </div>
 
           <p className="text-xs text-gray-500 mt-1 mb-3">
             Select one or more characters to view attributes.
           </p>
-
-          <button
-            type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className="w-full px-3 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-300 rounded hover:bg-blue-100 transition-colors"
-          >
-            + Add Character
-          </button>
+          <Toolbar
+            value={value}
+            sentenceCaches={sentenceCaches}
+            cachedCharacterNames={cachedCharacterNames}
+            existingCharacters={characters}
+            onExtractComplete={handleExtractComplete}
+          />
         </div>
 
         {/* Character list with multi-select toggles */}
