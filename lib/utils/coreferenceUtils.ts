@@ -146,6 +146,28 @@ export class CoreferenceUtils {
     return normalized;
   }
 
+  static addEvidenceIfNewByText(
+    existingAttr: CharacterAttribute,
+    newRef: AttributeEvidence,
+  ): void {
+    const a = TextUtils.prepareStringForMatching(newRef.text) ?? "";
+    if (!a) return;
+
+    const isDup = existingAttr.evidence.some((e) => {
+      const b = TextUtils.prepareStringForMatching(e.text) ?? "";
+      if (!b) return false;
+
+      // Fallback using word-boundary matcher
+      console.log(`Checking evidence duplication: "${a}" vs "${b}"`);
+      const ab = TextUtils.findAllWordMatches(b, a);
+      const ba = TextUtils.findAllWordMatches(a, b);
+      // if ab or ba has ANY matches, consider it a dup
+      return ab.length > 0 || ba.length > 0;
+    });
+
+    if (!isDup) existingAttr.evidence.push(newRef);
+  }
+
   /**
    * Consolidate duplicate attributes by grouping same category+name and merging evidence
    * Example: Two "calm" psychology attributes become one with combined evidence
@@ -164,7 +186,9 @@ export class CoreferenceUtils {
       if (attributeMap.has(key)) {
         // Merge evidence into existing attribute
         const existing = attributeMap.get(key)!;
-        existing.evidence = [...existing.evidence, ...attr.evidence];
+        for (const ev of attr.evidence) {
+          this.addEvidenceIfNewByText(existing, ev);
+        }
       } else {
         // First occurrence - create new entry with evidence copy
         // Use original name (not normalized) for display
@@ -852,36 +876,5 @@ export class CoreferenceUtils {
       characters,
       sentenceCaches: newCache,
     };
-  }
-
-  /**
-   * Extract coreference mentions for all characters (legacy method without caching)
-   * Use extractAllCoreferencesWithCache for better performance
-   */
-  static async extractAllCoreferences(
-    story: string,
-    characterNames: string[],
-  ): Promise<Character[]> {
-    const result = await this.extractAllCoreferencesWithCache(
-      story,
-      characterNames,
-    );
-    return result.characters;
-  }
-
-  /**
-   * Extract coreference mentions for a single character
-   * @param story - The full story text
-   * @param characterName - The character name to track
-   * @returns Character object with coreference matches
-   */
-  static async extractCharacterCoreferences(
-    story: string,
-    characterName: string,
-  ): Promise<Character> {
-    const [character] = await this.extractAllCoreferences(story, [
-      characterName,
-    ]);
-    return character;
   }
 }

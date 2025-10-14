@@ -22,6 +22,16 @@ export class TextUtils {
     return indices;
   }
 
+  /**
+   * Clean up a string to make it easier to be matched against
+   * @param str
+   * @param replacement
+   * @returns
+   */
+  static prepareStringForMatching(str: string, replacement = " "): string {
+    return str.replace(/[^a-zA-Z0-9]/g, replacement).toLocaleLowerCase();
+  }
+
   private static escapeRegex(s: string) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }

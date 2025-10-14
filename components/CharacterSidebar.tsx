@@ -9,6 +9,7 @@ import { Toolbar } from "@/components/Toolbar";
 import { CharacterSheet } from "@/components/CharacterSheet";
 import { AddCharacterModal } from "@/components/AddCharacterModal";
 import RelationshipGraph from "@/components/RelationshipGraph";
+import { CoreferenceUtils } from "@/lib/utils/coreferenceUtils";
 
 interface CharacterSidebarProps {
   characters: Character[];
@@ -60,9 +61,13 @@ export function CharacterSidebar({
 
             if (existingAttr) {
               // Same attribute exists - merge evidence
+              const attrProxy = existingAttr;
+              for (const ev of aiAttr.evidence) {
+                CoreferenceUtils.addEvidenceIfNewByText(attrProxy, ev);
+              }
               return {
                 ...aiAttr,
-                evidence: [...existingAttr.evidence, ...aiAttr.evidence],
+                evidence: attrProxy.evidence,
               };
             }
             return aiAttr; // New AI attribute

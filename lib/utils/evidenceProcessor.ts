@@ -161,6 +161,28 @@ export class EvidenceProcessor {
     }
   }
 
+  private static addEvidenceIfNewByText(
+    existingAttr: SentenceAttribute,
+    newRef: AttributeEvidenceRef,
+  ): void {
+    const a = TextUtils.prepareStringForMatching(newRef.text) ?? "";
+    if (!a) return;
+
+    const isDup = existingAttr.evidence.some((e) => {
+      const b = TextUtils.prepareStringForMatching(e.text) ?? "";
+      if (!b) return false;
+
+      // Fallback using word-boundary matcher
+      console.log(`Checking evidence duplication: "${a}" vs "${b}"`);
+      const ab = TextUtils.findAllWordMatches(b, a);
+      const ba = TextUtils.findAllWordMatches(a, b);
+      // if ab or ba has ANY matches, consider it a dup
+      return ab.length > 0 || ba.length > 0;
+    });
+
+    if (!isDup) existingAttr.evidence.push(newRef);
+  }
+
   /**
    * Process a single sentence using evidence-first approach
    * Now staged so that ALL /api/coreference calls finish before any other API calls run.
@@ -393,7 +415,7 @@ export class EvidenceProcessor {
                   };
 
                   if (existingAttr) {
-                    existingAttr.evidence.push(evidenceRef);
+                    this.addEvidenceIfNewByText(existingAttr, evidenceRef);
                   } else {
                     attributes[attrCategory].push({
                       category: attrCategory,
@@ -417,7 +439,7 @@ export class EvidenceProcessor {
                     };
 
                     if (existingAttr) {
-                      existingAttr.evidence.push(evidenceRef);
+                      this.addEvidenceIfNewByText(existingAttr, evidenceRef);
                     } else {
                       attributes[inference.category].push({
                         category: inference.category,
