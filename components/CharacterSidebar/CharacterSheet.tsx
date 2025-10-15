@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { TbPencil, TbX } from "react-icons/tb";
 import { type Character, useCharacterStore } from "@/lib/stores/characterStore";
 import { AttributeEditor } from "./AttributeEditor";
 
@@ -20,6 +21,7 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
   }) => {
     const {
       addAttributeToCharacter,
+      renameAttributeForCharacter,
       removeAttributeFromCharacter,
       removeCharacter,
     } = useCharacterStore();
@@ -39,6 +41,36 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
 
     const handleRemoveAttribute = (category: string, value: string) => {
       removeAttributeFromCharacter(character.name, category, value);
+    };
+
+    const handleRenameAttribute = (category: string, oldValue: string) => {
+      const proposedValue = prompt(
+        "Enter a new name for this attribute:",
+        oldValue,
+      );
+      if (proposedValue === null) return;
+
+      const trimmedValue = proposedValue.trim();
+      if (!trimmedValue) {
+        alert("Attribute name cannot be empty.");
+        return;
+      }
+      if (trimmedValue === oldValue) return;
+
+      const duplicate = character.attributes.some(
+        (attr) => attr.category === category && attr.name === trimmedValue,
+      );
+      if (duplicate) {
+        alert("An attribute with that name already exists.");
+        return;
+      }
+
+      renameAttributeForCharacter(
+        character.name,
+        category,
+        oldValue,
+        trimmedValue,
+      );
     };
 
     const handleDeleteCharacter = () => {
@@ -103,7 +135,7 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
             return (
               <div
                 key={`${prefix}-${attr.name}`}
-                className="flex items-center gap-1"
+                className="relative inline-flex group"
               >
                 <button
                   type="button"
@@ -114,14 +146,34 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
                   {attr.name} ({attr.evidence.length})
                 </button>
                 {enableEditing && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveAttribute(category, attr.name)}
-                    className="text-red-500 hover:text-red-700 text-xs cursor-pointer"
-                    title="Remove attribute"
-                  >
-                    ×
-                  </button>
+                  <div className="absolute right-1 top-1/2 z-10 hidden -translate-y-1/2 items-center gap-0.5 group-hover:flex">
+                    <button
+                      type="button"
+                      aria-label="Rename attribute"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        handleRenameAttribute(category, attr.name);
+                      }}
+                      className="pointer-events-auto rounded bg-white/80 p-0.5 text-gray-500 shadow-sm hover:bg-white hover:text-gray-700 cursor-pointer"
+                      title="Rename attribute"
+                    >
+                      <TbPencil size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Remove attribute"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        handleRemoveAttribute(category, attr.name);
+                      }}
+                      className="pointer-events-auto rounded bg-white/80 p-0.5 text-red-500 shadow-sm hover:bg-white hover:text-red-700  cursor-pointer"
+                      title="Remove attribute"
+                    >
+                      <TbX size={12} />
+                    </button>
+                  </div>
                 )}
               </div>
             );

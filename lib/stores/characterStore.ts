@@ -63,6 +63,12 @@ type CharacterState = {
     category: string,
     value: string,
   ) => void;
+  renameAttributeForCharacter: (
+    characterName: string,
+    category: string,
+    oldValue: string,
+    newValue: string,
+  ) => void;
   removeAttributeFromCharacter: (
     characterName: string,
     category: string,
@@ -338,7 +344,59 @@ export const useCharacterStore = create<CharacterState>()(
             };
           }),
         })),
+      renameAttributeForCharacter: (
+        characterName: string,
+        category: string,
+        oldValue: string,
+        newValue: string,
+      ) =>
+        set((state) => ({
+          characters: state.characters.map((char) => {
+            if (char.name !== characterName) return char;
 
+            const trimmedNewValue = newValue.trim();
+            if (!trimmedNewValue || oldValue === trimmedNewValue) {
+              return char;
+            }
+
+            const duplicate = char.attributes.some(
+              (attr) =>
+                attr.category === category && attr.name === trimmedNewValue,
+            );
+            if (duplicate) {
+              return char;
+            }
+
+            const updatedAttributes = char.attributes.map((attr) => {
+              if (attr.category === category && attr.name === oldValue) {
+                return { ...attr, name: trimmedNewValue };
+              }
+              return attr;
+            });
+
+            const updatedConflicts = char.conflicts.map((conflict) => {
+              if (
+                conflict.category === category &&
+                conflict.establishedAttribute.name === oldValue
+              ) {
+                return {
+                  ...conflict,
+                  establishedAttribute: {
+                    ...conflict.establishedAttribute,
+                    name: trimmedNewValue,
+                  },
+                };
+              }
+              return conflict;
+            });
+
+            return {
+              ...char,
+              attributes: updatedAttributes,
+              conflicts: updatedConflicts,
+            };
+          }),
+        })),
       removeAttributeFromCharacter: (
         characterName: string,
         category: string,
