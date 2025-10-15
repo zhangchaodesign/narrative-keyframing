@@ -364,6 +364,7 @@ export default function TextEditor({
             story: storyText,
             characterName: payload.characterName,
             attributes: payload.attributes,
+            instruction: payload.instruction,
           }),
         });
 

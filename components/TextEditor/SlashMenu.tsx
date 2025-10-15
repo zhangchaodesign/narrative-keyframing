@@ -44,6 +44,7 @@ export type AttributeEvidenceSelection = {
 export type SlashCommandPayload = {
   characterName: string;
   attributes: AttributeEvidenceSelection[];
+  instruction: string;
 };
 
 const getAttributeKey = (attribute: CharacterAttribute) =>
@@ -77,12 +78,14 @@ export function SlashCommandMenu({
   const [attributeEvidence, setAttributeEvidence] = useState<
     Record<string, Set<IndicatorType>>
   >({});
+  const [customInstruction, setCustomInstruction] = useState<string>("");
 
   useEffect(() => {
     if (!isOpen) {
       setSelectedCharacterName("");
       setSelectedAttributes(new Set());
       setAttributeEvidence({});
+      setCustomInstruction("");
     }
   }, [isOpen]);
 
@@ -190,6 +193,7 @@ export function SlashCommandMenu({
     onSubmit({
       characterName: selectedCharacter.name,
       attributes,
+      instruction: customInstruction.trim(),
     });
   };
 
@@ -226,7 +230,7 @@ export function SlashCommandMenu({
         </button>
       </div>
 
-      <div className="max-h-[240px] space-y-4 overflow-y-auto px-4 py-4 text-sm">
+      <div className="max-h-[300px] space-y-4 overflow-y-auto px-4 py-4 text-sm">
         <div className="space-y-2">
           <label className="block text-xs font-semibold uppercase text-zinc-500">
             Character
@@ -248,6 +252,20 @@ export function SlashCommandMenu({
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-xs font-semibold uppercase text-zinc-500">
+            Custom instruction{" "}
+            <span className="text-zinc-400 lowercase">(optional)</span>
+          </label>
+          <textarea
+            className="textarea textarea-bordered textarea-sm w-full resize-none"
+            rows={3}
+            placeholder="E.g. focus on a tense standoff or mention the storm outside…"
+            value={customInstruction}
+            onChange={(event) => setCustomInstruction(event.target.value)}
+          />
         </div>
 
         {selectedCharacter && (

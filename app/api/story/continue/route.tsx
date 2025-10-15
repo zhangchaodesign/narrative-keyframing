@@ -35,6 +35,7 @@ const RequestSchema = z.object({
   story: z.string().min(1),
   characterName: z.string().min(1),
   attributes: z.array(AttributeSelectionSchema).min(1),
+  instruction: z.string().max(400).optional(),
 });
 
 const ContinuationSchema = z.object({
@@ -75,12 +76,16 @@ function buildAttributeSection(
           ? attribute.evidenceSnippets
               .map(
                 (snippet, idx) =>
-                  `  ${index + 1}.${idx + 1}. (${INDICATOR_LABELS[snippet.indicatorType]}) ${snippet.text}`,
+                  `  ${index + 1}.${idx + 1}. (${
+                    INDICATOR_LABELS[snippet.indicatorType]
+                  }) ${snippet.text}`,
               )
               .join("\n")
           : "  No direct evidence snippets available; you may invent fitting evidence.";
 
-      return `Attribute ${index + 1}: ${attribute.name} (${CATEGORY_LABELS[attribute.category]})
+      return `Attribute ${index + 1}: ${attribute.name} (${
+        CATEGORY_LABELS[attribute.category]
+      })
 Evidence styles required: ${evidenceTypes}
 Reference evidence snippets:
 ${evidenceExamples}`;
@@ -98,7 +103,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { story, characterName, attributes } = payload.data;
+    const { story, characterName, attributes, instruction } = payload.data;
     const trimmedStory = story.trim();
     if (!trimmedStory) {
       return NextResponse.json(
@@ -114,6 +119,10 @@ export async function POST(request: Request) {
         : trimmedStory;
 
     const attributeSection = buildAttributeSection(attributes);
+    const customInstruction = (instruction ?? "").trim();
+    const customInstructionSection = customInstruction
+      ? `\nAdditional guidance from the user:\n${customInstruction}`
+      : "";
 
     const prompt = `You are an expert fiction ghostwriter continuing a story.
 
@@ -125,7 +134,7 @@ Write exactly ONE new sentence that continues the narrative.
 The sentence must feature ${characterName} and demonstrate the requested attributes using the specified evidence styles.
 
 Attributes to highlight:
-${attributeSection}
+${attributeSection}${customInstructionSection}
 
 Guidelines:
 - Maintain the existing narrative voice, tense, and point of view.
