@@ -12,7 +12,6 @@
     "@types/dagre": "^0.7.53",
     "@xyflow/react": "^12.8.6",
     "ai": "^5.0.68",
-    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dagre": "^0.8.5",
     "diff": "^8.0.2",

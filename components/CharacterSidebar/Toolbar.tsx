@@ -139,7 +139,7 @@ export function Toolbar({
   return (
     <button
       type="button"
-      className="w-full rounded bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+      className="w-full rounded btn btn-primary btn-sm"
       onClick={handleExtractCharacters}
       disabled={isAnalyzing}
     >

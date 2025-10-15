@@ -107,7 +107,7 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
               >
                 <button
                   type="button"
-                  className={`${base} ${stateClass}`}
+                  className={`${base} ${stateClass} cursor-pointer`}
                   onClick={() => onAttributeClick(attr.name)}
                 >
                   {conflict && "⚠️ "}
@@ -117,7 +117,7 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
                   <button
                     type="button"
                     onClick={() => handleRemoveAttribute(category, attr.name)}
-                    className="text-red-500 hover:text-red-700 text-xs"
+                    className="text-red-500 hover:text-red-700 text-xs cursor-pointer"
                     title="Remove attribute"
                   >
                     ×

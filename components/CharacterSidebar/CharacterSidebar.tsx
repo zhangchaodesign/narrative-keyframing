@@ -138,7 +138,7 @@ export function CharacterSidebar({
             <button
               type="button"
               onClick={() => setIsAddModalOpen(true)}
-              className="px-3 py-1.5 bg-zinc-600 text-white rounded hover:bg-zinc-700 font-medium text-xs cursor-pointer"
+              className="btn btn-neutral btn-xs rounded"
             >
               + Add
             </button>

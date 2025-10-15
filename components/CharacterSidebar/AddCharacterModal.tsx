@@ -37,7 +37,7 @@ export function AddCharacterModal({
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       onClick={handleBackdropClick}
     >
-      <div className="bg-white rounded-lg shadow-xl p-6 w-96">
+      <div className="bg-white rounded-lg shadow-lg p-6 w-96">
         <h2 className="text-xl font-bold mb-4 text-gray-800">
           Add New Character
         </h2>

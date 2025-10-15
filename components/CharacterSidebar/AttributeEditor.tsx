@@ -45,7 +45,7 @@ export function AttributeEditor({
       <button
         type="button"
         onClick={() => setIsEditing(true)}
-        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+        className="text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
       >
         + Add trait
       </button>
