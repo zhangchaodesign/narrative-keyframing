@@ -27,8 +27,6 @@ export type AttributeConflict = {
   conflictingEvidence: {
     text: string; // The conflicting text from the sentence
     sentenceIndex: number; // Which sentence contains the conflict
-    startIndex: number; // Absolute position in story
-    endIndex: number; // Absolute position in story
   };
 
   severity: ConflictSeverity;

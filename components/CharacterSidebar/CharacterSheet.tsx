@@ -559,12 +559,9 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
                     return;
                   }
 
-                  const startIndex = finalSentence.startIndex + matchIndex;
                   updatedEvidence[mapping.originalIndex] = {
                     text: searchText,
                     indicatorType: mapping.indicatorType,
-                    startIndex,
-                    endIndex: startIndex + searchText.length,
                     sentenceIndex: update.sentenceIndex,
                   };
                 });
@@ -604,14 +601,24 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
 
         editorState.applySuggestion();
 
-        pendingStoryUpdate.updates.forEach((update) => {
+        const sortedUpdates = [...pendingStoryUpdate.updates].sort(
+          (a, b) => a.sentenceIndex - b.sentenceIndex,
+        );
+
+        let cumulativeDelta = 0;
+        sortedUpdates.forEach((update) => {
+          const adjustedStart = update.sentenceStart + cumulativeDelta;
+
           removeSentenceData(update.sentenceIndex);
           shiftIndicesAfterSentenceChange(
             update.sentenceIndex,
-            update.sentenceStart,
+            adjustedStart,
             update.originalSentence.length,
             update.revisedSentence.length,
           );
+
+          cumulativeDelta +=
+            update.revisedSentence.length - update.originalSentence.length;
         });
 
         updateCharacterAttributes(character.name, updatedAttributesList);

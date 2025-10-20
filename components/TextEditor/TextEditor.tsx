@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   createEditor,
   Range,
@@ -21,6 +21,7 @@ import {
 import { withHistory, HistoryEditor } from "slate-history";
 import { Leaf } from "@/components/TextEditor/Leaf";
 import { SlateUtils } from "@/lib/utils/slateUtils";
+import { TextUtils } from "@/lib/utils/textUtils";
 import { useEditorStore } from "@/lib/stores/editorStore";
 import { type Character } from "@/lib/stores/characterStore";
 import isHotkey from "is-hotkey";
@@ -85,6 +86,158 @@ export default function TextEditor({
     payload: SlashCommandPayload;
   } | null>(null);
 
+  const storyText = useMemo(
+    () => SlateUtils.stateToText(value as any),
+    [value],
+  );
+
+  const sentenceEntries = useMemo(
+    () => TextUtils.splitIntoSentences(storyText),
+    [storyText],
+  );
+
+  type AttributeHighlightRange = {
+    start: number;
+    end: number;
+    indicatorType: string;
+  };
+
+  const attributeHighlightRanges = useMemo<AttributeHighlightRange[]>(() => {
+    if (!selectedAttribute || selectedCharacters.length === 0) return [];
+
+    const selectedSet = new Set(selectedCharacters);
+    const relevantCharacters = characters.filter((c) =>
+      selectedSet.has(c.name),
+    );
+
+    const sentenceUsage = new Map<number, Array<{ start: number; end: number }>>();
+    const globalUsage: Array<{ start: number; end: number }> = [];
+
+    const getUsageList = (
+      sentenceIndex: number | null,
+    ): Array<{ start: number; end: number }> => {
+      if (sentenceIndex === null) return globalUsage;
+      if (!sentenceUsage.has(sentenceIndex)) {
+        sentenceUsage.set(sentenceIndex, []);
+      }
+      return sentenceUsage.get(sentenceIndex)!;
+    };
+
+    const registerUsage = (
+      sentenceIndex: number | null,
+      start: number,
+      end: number,
+    ) => {
+      const usageList = getUsageList(sentenceIndex);
+      usageList.push({ start, end });
+    };
+
+    const findMatchWithoutOverlap = (
+      matchOffsets: number[],
+      baseStart: number,
+      length: number,
+      sentenceIndex: number | null,
+    ): { start: number; end: number } | null => {
+      if (matchOffsets.length === 0) return null;
+      const usageList = getUsageList(sentenceIndex);
+      for (const offset of matchOffsets) {
+        const start = baseStart + offset;
+        const end = start + length;
+        const overlaps = usageList.some(
+          (range) => start < range.end && end > range.start,
+        );
+        if (!overlaps) {
+          return { start, end };
+        }
+      }
+      return null;
+    };
+
+    const ranges: AttributeHighlightRange[] = [];
+
+    for (const character of relevantCharacters) {
+      const attribute = character.attributes?.find(
+        (a) => a.name === selectedAttribute,
+      );
+      if (!attribute) continue;
+
+      for (const evidence of attribute.evidence ?? []) {
+        const trimmedText = evidence.text?.trim();
+        if (!trimmedText) continue;
+
+        const evidenceLength = trimmedText.length;
+        if (evidenceLength === 0) continue;
+
+        const sentenceIndex =
+          typeof evidence.sentenceIndex === "number"
+            ? evidence.sentenceIndex
+            : null;
+        const sentence = sentenceIndex !== null ? sentenceEntries[sentenceIndex] : undefined;
+
+        const legacyStart = (evidence as any)?.startIndex;
+        const legacyEnd = (evidence as any)?.endIndex;
+        if (
+          typeof legacyStart === "number" &&
+          typeof legacyEnd === "number" &&
+          legacyEnd > legacyStart
+        ) {
+          registerUsage(sentenceIndex, legacyStart, legacyEnd);
+          ranges.push({
+            start: legacyStart,
+            end: legacyEnd,
+            indicatorType: evidence.indicatorType,
+          });
+          continue;
+        }
+
+        let matchResult: { start: number; end: number } | null = null;
+
+        if (sentence) {
+          const localMatches = TextUtils.findAllMatches(
+            sentence.text,
+            trimmedText,
+          );
+          matchResult = findMatchWithoutOverlap(
+            localMatches,
+            sentence.startIndex,
+            evidenceLength,
+            sentenceIndex,
+          );
+        }
+
+        if (!matchResult) {
+          const globalMatches = TextUtils.findAllMatches(
+            storyText,
+            trimmedText,
+          );
+          matchResult = findMatchWithoutOverlap(
+            globalMatches,
+            0,
+            evidenceLength,
+            null,
+          );
+        }
+
+        if (matchResult) {
+          registerUsage(sentenceIndex, matchResult.start, matchResult.end);
+          ranges.push({
+            start: matchResult.start,
+            end: matchResult.end,
+            indicatorType: evidence.indicatorType,
+          });
+        }
+      }
+    }
+
+    return ranges;
+  }, [
+    selectedAttribute,
+    selectedCharacters,
+    characters,
+    sentenceEntries,
+    storyText,
+  ]);
+
   const decorate = useCallback(
     ([node, path]: NodeEntry): Range[] => {
       const ranges: Range[] = [];
@@ -109,36 +262,26 @@ export default function TextEditor({
       }
 
       // 2) Attribute evidence across ALL selected characters (if attribute chosen)
-      if (selectedAttribute && selectedCharacters.length > 0) {
-        const selectedSet = new Set(selectedCharacters);
-        const selectedChars = characters.filter((c) => selectedSet.has(c.name));
-
-        for (const character of selectedChars) {
-          const attribute = character.attributes?.find(
-            (a) => a.name === selectedAttribute,
-          );
-          if (!attribute) continue;
-
-          for (const evidence of attribute.evidence ?? []) {
-            if (
-              evidence.startIndex < nodeEnd &&
-              evidence.endIndex > nodeStart
-            ) {
-              const anchor = SlateUtils.toSlatePoint(
-                value as any,
-                evidence.startIndex,
-              );
-              const focus = SlateUtils.toSlatePoint(
-                value as any,
-                evidence.endIndex,
-              );
-              if (anchor && focus) {
-                ranges.push({
-                  anchor,
-                  focus,
-                  [evidence.indicatorType]: true, // same color-by-indicator behavior
-                } as any);
-              }
+      if (attributeHighlightRanges.length > 0) {
+        for (const evidenceRange of attributeHighlightRanges) {
+          if (
+            evidenceRange.start < nodeEnd &&
+            evidenceRange.end > nodeStart
+          ) {
+            const anchor = SlateUtils.toSlatePoint(
+              value as any,
+              evidenceRange.start,
+            );
+            const focus = SlateUtils.toSlatePoint(
+              value as any,
+              evidenceRange.end,
+            );
+            if (anchor && focus) {
+              ranges.push({
+                anchor,
+                focus,
+                [evidenceRange.indicatorType]: true,
+              } as any);
             }
           }
         }
@@ -163,9 +306,7 @@ export default function TextEditor({
     [
       matches,
       value,
-      selectedAttribute,
-      selectedCharacters,
-      characters,
+      attributeHighlightRanges,
       conflictHighlight,
     ],
   );

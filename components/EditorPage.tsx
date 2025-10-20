@@ -8,6 +8,8 @@ import TextEditor from "@/components/TextEditor/TextEditor";
 import { useEditorStore } from "@/lib/stores/editorStore";
 import { useCharacterStore } from "@/lib/stores/characterStore";
 import { type AttributeConflict } from "@/lib/types/conflicts";
+import { SlateUtils } from "@/lib/utils/slateUtils";
+import { TextUtils } from "@/lib/utils/textUtils";
 
 export function EditorPage() {
   const { characters } = useCharacterStore();
@@ -95,16 +97,70 @@ export function EditorPage() {
   /** Conflict click (still tied to whichever conflict card is clicked) */
   const handleConflictClick = useCallback(
     (conflict: AttributeConflict) => {
-      if (selectedConflictId === conflict.id) {
+      const currentlySelected = selectedConflictId === conflict.id;
+      if (currentlySelected) {
         setSelectedConflictId(null);
         setConflictHighlight(null);
         return;
       }
+
+      const editorState = useEditorStore.getState();
+      const storyText = SlateUtils.stateToText(editorState.value as any);
+      const sentences = TextUtils.splitIntoSentences(storyText);
+      const conflictText = conflict.conflictingEvidence.text?.trim() ?? "";
+
+      if (!conflictText) {
+        setSelectedConflictId(conflict.id);
+        setConflictHighlight(null);
+        return;
+      }
+
+      let matchStart = -1;
+      let matchEnd = -1;
+
+      const sentence =
+        sentences[conflict.conflictingEvidence.sentenceIndex] ?? null;
+
+      const tryRegisterMatch = (baseStart: number, offset: number) => {
+        if (offset >= 0) {
+          matchStart = baseStart + offset;
+          matchEnd = matchStart + conflictText.length;
+          return true;
+        }
+        return false;
+      };
+
+      if (sentence) {
+        const localIndex = sentence.text.indexOf(conflictText);
+        if (!tryRegisterMatch(sentence.startIndex, localIndex)) {
+          const fallbackIndex = TextUtils.findAllMatches(
+            sentence.text,
+            conflictText,
+          )[0];
+          tryRegisterMatch(
+            sentence.startIndex,
+            typeof fallbackIndex === "number" ? fallbackIndex : -1,
+          );
+        }
+      }
+
+      if (matchStart === -1) {
+        const globalIndex = storyText.indexOf(conflictText);
+        if (!tryRegisterMatch(0, globalIndex)) {
+          const fallbackGlobal = TextUtils.findAllMatches(
+            storyText,
+            conflictText,
+          )[0];
+          tryRegisterMatch(0, typeof fallbackGlobal === "number" ? fallbackGlobal : -1);
+        }
+      }
+
       setSelectedConflictId(conflict.id);
-      setConflictHighlight({
-        start: conflict.conflictingEvidence.startIndex,
-        end: conflict.conflictingEvidence.endIndex,
-      });
+      setConflictHighlight(
+        matchStart >= 0 && matchEnd >= 0
+          ? { start: matchStart, end: matchEnd }
+          : null,
+      );
     },
     [selectedConflictId],
   );

@@ -169,7 +169,6 @@ export class CoreferenceUtils {
   private static sentenceCacheToAttributes(
     sentenceCache: SentenceCache,
     sentenceIndex: number,
-    sentenceStartIndex: number,
   ): Map<string, CharacterAttribute[]> {
     const attributesByCharacter = new Map<string, CharacterAttribute[]>();
 
@@ -189,12 +188,10 @@ export class CoreferenceUtils {
         const categoryAttrs = sentenceAttrs[category] || [];
 
         for (const attr of categoryAttrs) {
-          // Convert evidence to absolute indices
+          // Capture evidence text; positions are resolved on demand
           const evidence: AttributeEvidence[] = attr.evidence.map((ev) => ({
             text: ev.text,
             indicatorType: ev.indicatorType,
-            startIndex: sentenceStartIndex + ev.relativeIndex,
-            endIndex: sentenceStartIndex + ev.relativeIndex + ev.text.length,
             sentenceIndex,
           }));
 
@@ -317,9 +314,6 @@ export class CoreferenceUtils {
             conflictingEvidence: {
               text: conflictingText,
               sentenceIndex,
-              startIndex: sentenceStartIndex + relativeIndex,
-              endIndex:
-                sentenceStartIndex + relativeIndex + conflictingText.length,
             },
             severity: conflictData.severity as ConflictSeverity,
             explanation: conflictData.explanation,
@@ -562,7 +556,6 @@ export class CoreferenceUtils {
       const attributes = this.sentenceCacheToAttributes(
         sentenceCache,
         sentIndex,
-        sentences[sentIndex].startIndex,
       );
 
       console.log(

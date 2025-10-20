@@ -53,15 +53,21 @@ export function ConflictCard({
         }
 
         const sentences = TextUtils.splitIntoSentences(baseStory);
+        const conflictText = conflict.conflictingEvidence.text?.trim() ?? "";
         let targetSentence: { text: string; startIndex: number } | undefined =
           sentences[conflict.conflictingEvidence.sentenceIndex];
 
-        if (!targetSentence) {
-          targetSentence = sentences.find(
-            (sentence) =>
-              conflict.conflictingEvidence.startIndex >= sentence.startIndex &&
-              conflict.conflictingEvidence.startIndex <
-                sentence.startIndex + sentence.text.length,
+        if (
+          targetSentence &&
+          conflictText &&
+          !targetSentence.text.includes(conflictText)
+        ) {
+          targetSentence = undefined;
+        }
+
+        if (!targetSentence && conflictText) {
+          targetSentence = sentences.find((sentence) =>
+            sentence.text.includes(conflictText),
           );
         }
 
@@ -136,7 +142,6 @@ export function ConflictCard({
       characterName,
       conflict.category,
       conflict.conflictingEvidence.sentenceIndex,
-      conflict.conflictingEvidence.startIndex,
       conflict.conflictingEvidence.text,
       conflict.establishedAttribute.evidence.text,
       conflict.establishedAttribute.name,

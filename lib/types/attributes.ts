@@ -17,13 +17,11 @@ export type AttributeEvidenceRef = {
 };
 
 /**
- * Evidence for an attribute with absolute position (stored in characterStore)
+ * Evidence for an attribute stored in characterStore (positions resolved on demand)
  */
 export type AttributeEvidence = {
   text: string; // Verbatim text from sentence
   indicatorType: IndicatorType; // Which indicator type this evidence represents
-  startIndex: number; // Absolute position in story
-  endIndex: number; // Absolute position in story
   sentenceIndex: number; // Which sentence this evidence is from
 };
 

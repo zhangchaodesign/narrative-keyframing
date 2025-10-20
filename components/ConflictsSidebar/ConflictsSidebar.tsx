@@ -124,10 +124,10 @@ export function ConflictsSidebar({
                 existingConflict.establishedAttribute.name ===
                   conflict.establishedAttribute.name &&
                 existingConflict.category === conflict.category &&
-                existingConflict.conflictingEvidence.startIndex ===
-                  conflict.conflictingEvidence.startIndex &&
-                existingConflict.conflictingEvidence.endIndex ===
-                  conflict.conflictingEvidence.endIndex,
+                existingConflict.conflictingEvidence.sentenceIndex ===
+                  conflict.conflictingEvidence.sentenceIndex &&
+                existingConflict.conflictingEvidence.text ===
+                  conflict.conflictingEvidence.text,
             );
 
             if (!isDuplicate) {

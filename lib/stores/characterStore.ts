@@ -197,79 +197,44 @@ export const useCharacterStore = create<CharacterState>()(
               return match;
             });
 
-          const adjustEvidenceList = <
+          const adjustIndicatorList = <
             T extends {
               startIndex: number;
               endIndex: number;
               sentenceIndex: number;
             },
           >(
-            evidence: T[],
+            matches: T[],
           ): T[] =>
-            evidence.map((ev) => {
+            matches.map((item) => {
               const { start, end } = adjustRange(
-                ev.startIndex,
-                ev.endIndex,
-                ev.sentenceIndex,
+                item.startIndex,
+                item.endIndex,
+                item.sentenceIndex,
               );
-              if (start !== ev.startIndex || end !== ev.endIndex) {
-                return { ...ev, startIndex: start, endIndex: end };
+              if (start !== item.startIndex || end !== item.endIndex) {
+                return { ...item, startIndex: start, endIndex: end };
               }
-              return ev;
+              return item;
             });
 
           const adjustIndicators = (
             indicators: CharacterIndicators,
           ): CharacterIndicators => ({
-            directDefinition: adjustEvidenceList(indicators.directDefinition),
-            actions: adjustEvidenceList(indicators.actions),
-            speech: adjustEvidenceList(indicators.speech),
-            appearance: adjustEvidenceList(indicators.appearance),
-            environment: adjustEvidenceList(indicators.environment),
+            directDefinition: adjustIndicatorList(indicators.directDefinition),
+            actions: adjustIndicatorList(indicators.actions),
+            speech: adjustIndicatorList(indicators.speech),
+            appearance: adjustIndicatorList(indicators.appearance),
+            environment: adjustIndicatorList(indicators.environment),
           });
 
           const adjustedCharacters = state.characters.map((char) => {
             const updatedCorefs = adjustMatches(char.coreferenceMatches);
             const updatedIndicators = adjustIndicators(char.indicatorMatches);
-            const updatedAttributes = char.attributes.map((attr) => ({
-              ...attr,
-              evidence: adjustEvidenceList(attr.evidence),
-            }));
-            const updatedConflicts = char.conflicts.map((conflict) => {
-              const established = adjustRange(
-                conflict.establishedAttribute.evidence.startIndex,
-                conflict.establishedAttribute.evidence.endIndex,
-                conflict.establishedAttribute.evidence.sentenceIndex,
-              );
-              const conflicting = adjustRange(
-                conflict.conflictingEvidence.startIndex,
-                conflict.conflictingEvidence.endIndex,
-                conflict.conflictingEvidence.sentenceIndex,
-              );
-              return {
-                ...conflict,
-                establishedAttribute: {
-                  ...conflict.establishedAttribute,
-                  evidence: {
-                    ...conflict.establishedAttribute.evidence,
-                    startIndex: established.start,
-                    endIndex: established.end,
-                  },
-                },
-                conflictingEvidence: {
-                  ...conflict.conflictingEvidence,
-                  startIndex: conflicting.start,
-                  endIndex: conflicting.end,
-                },
-              };
-            });
-
             return {
               ...char,
               coreferenceMatches: updatedCorefs,
               indicatorMatches: updatedIndicators,
-              attributes: updatedAttributes,
-              conflicts: updatedConflicts,
             };
           });
 
