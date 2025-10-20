@@ -497,84 +497,100 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
         let failedEvidence = false;
         let attributeFound = false;
 
-        const updatedAttributesList = latestCharacter.attributes.map(
-          (attr) => {
-            if (
-              attr.category === pendingStoryUpdate.attributeCategory &&
-              attr.name === pendingStoryUpdate.attributeName
-            ) {
-              attributeFound = true;
-              const updatedEvidence = [...attr.evidence];
+        const updatedAttributesList = latestCharacter.attributes.map((attr) => {
+          if (
+            attr.category === pendingStoryUpdate.attributeCategory &&
+            attr.name === pendingStoryUpdate.attributeName
+          ) {
+            attributeFound = true;
+            const updatedEvidence = [...attr.evidence];
 
-              pendingStoryUpdate.updates.forEach((update) => {
-                const finalSentence = finalSentences[update.sentenceIndex];
-                if (!finalSentence) {
+            pendingStoryUpdate.updates.forEach((update) => {
+              const finalSentence = finalSentences[update.sentenceIndex];
+              if (!finalSentence) {
+                failedEvidence = true;
+                return;
+              }
+
+              const sentenceText = finalSentence.text;
+              const usedRanges: Array<{ start: number; end: number }> = [];
+
+              update.evidenceMappings.forEach((mapping) => {
+                if (
+                  mapping.originalIndex < 0 ||
+                  mapping.originalIndex >= updatedEvidence.length
+                ) {
                   failedEvidence = true;
                   return;
                 }
 
-                const sentenceText = finalSentence.text;
-                const usedRanges: Array<{ start: number; end: number }> = [];
+                const searchText = mapping.text;
+                if (!searchText) {
+                  failedEvidence = true;
+                  return;
+                }
 
-                update.evidenceMappings.forEach((mapping) => {
-                  if (
-                    mapping.originalIndex < 0 ||
-                    mapping.originalIndex >= updatedEvidence.length
-                  ) {
-                    failedEvidence = true;
-                    return;
+                let matchIndex = -1;
+                let searchStart = 0;
+
+                while (searchStart <= sentenceText.length) {
+                  const idx = sentenceText.indexOf(searchText, searchStart);
+                  if (idx === -1) break;
+
+                  const overlaps = usedRanges.some(
+                    (range) =>
+                      idx < range.end && idx + searchText.length > range.start,
+                  );
+                  if (!overlaps) {
+                    matchIndex = idx;
+                    usedRanges.push({
+                      start: idx,
+                      end: idx + searchText.length,
+                    });
+                    break;
                   }
+                  searchStart = idx + 1;
+                }
 
-                  const searchText = mapping.text;
-                  if (!searchText) {
-                    failedEvidence = true;
-                    return;
-                  }
+                if (matchIndex === -1) {
+                  failedEvidence = true;
+                  return;
+                }
 
-                  let matchIndex = -1;
-                  let searchStart = 0;
-
-                  while (searchStart <= sentenceText.length) {
-                    const idx = sentenceText.indexOf(searchText, searchStart);
-                    if (idx === -1) break;
-
-                    const overlaps = usedRanges.some(
-                      (range) =>
-                        idx < range.end &&
-                        idx + searchText.length > range.start,
-                    );
-                    if (!overlaps) {
-                      matchIndex = idx;
-                      usedRanges.push({
-                        start: idx,
-                        end: idx + searchText.length,
-                      });
-                      break;
-                    }
-                    searchStart = idx + 1;
-                  }
-
-                  if (matchIndex === -1) {
-                    failedEvidence = true;
-                    return;
-                  }
-
-                  updatedEvidence[mapping.originalIndex] = {
-                    text: searchText,
-                    indicatorType: mapping.indicatorType,
-                    sentenceIndex: update.sentenceIndex,
-                  };
-                });
+                updatedEvidence[mapping.originalIndex] = {
+                  text: searchText,
+                  indicatorType: mapping.indicatorType,
+                  sentenceIndex: update.sentenceIndex,
+                };
               });
+            });
 
-              return {
-                ...attr,
-                evidence: updatedEvidence,
-              };
-            }
+            return {
+              ...attr,
+              evidence: updatedEvidence,
+            };
+          }
+          return attr;
+        });
+
+        const cleanedAttributesList = updatedAttributesList.map((attr) => {
+          const prunedEvidence = attr.evidence.filter((evidence) => {
+            const trimmedText = evidence.text?.trim();
+            if (!trimmedText) return false;
+            const sentence = finalSentences[evidence.sentenceIndex];
+            if (!sentence) return false;
+            return TextUtils.findAllMatches(sentence.text, trimmedText).length > 0;
+          });
+
+          if (prunedEvidence.length === attr.evidence.length) {
             return attr;
-          },
-        );
+          }
+
+          return {
+            ...attr,
+            evidence: prunedEvidence,
+          };
+        });
 
         if (!attributeFound) {
           throw new Error(
@@ -621,7 +637,7 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
             update.revisedSentence.length - update.originalSentence.length;
         });
 
-        updateCharacterAttributes(character.name, updatedAttributesList);
+        updateCharacterAttributes(character.name, cleanedAttributesList);
 
         setPendingStoryUpdate(null);
         setStoryUpdateError(null);
