@@ -44,13 +44,10 @@ body {
   inset: 0;
   height: 100%;
   width: 100%;
-  background-color: var(--color-base-100);
-  background-image: radial-gradient(
-    color-mix(in oklab, var(--color-base-200) 70%, transparent) 1px,
-    transparent 1px
-  );
+  background-color: white;
+  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
   background-size: 16px 16px;
-  color: var(--color-base-content);
+  color: var(--color-neutral);
   font-family: var(--font-geist-sans);
 }
 
