@@ -233,7 +233,7 @@ export function ConflictCard({
           type="button"
           onClick={handleResolveClick}
           disabled={isResolving}
-          className="rounded border border-red-400 px-2 py-1 text-[10px] font-semibold text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-70"
+          className="rounded border border-red-400 px-2 py-1 text-[10px] font-semibold text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
         >
           {isResolving ? "Resolving…" : "Resolve"}
         </button>
