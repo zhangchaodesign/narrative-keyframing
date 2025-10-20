@@ -289,13 +289,11 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
                   })
                   .filter(
                     (
-                      entry:
-                        | {
-                            originalIndex: number;
-                            indicatorType: IndicatorType;
-                            text: string;
-                          }
-                        | null,
+                      entry: {
+                        originalIndex: number;
+                        indicatorType: IndicatorType;
+                        text: string;
+                      } | null,
                     ): entry is {
                       originalIndex: number;
                       indicatorType: IndicatorType;
@@ -323,17 +321,15 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
           })
           .filter(
             (
-              entry:
-                | {
-                    sentenceIndex: number;
-                    sentenceStart: number;
-                    originalSentence: string;
-                    originalLength: number;
-                    revisedSentence: string;
-                    rationale?: string;
-                    evidenceMappings: PendingEvidenceMapping[];
-                  }
-                | null,
+              entry: {
+                sentenceIndex: number;
+                sentenceStart: number;
+                originalSentence: string;
+                originalLength: number;
+                revisedSentence: string;
+                rationale?: string;
+                evidenceMappings: PendingEvidenceMapping[];
+              } | null,
             ): entry is {
               sentenceIndex: number;
               sentenceStart: number;
@@ -579,7 +575,9 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
             if (!trimmedText) return false;
             const sentence = finalSentences[evidence.sentenceIndex];
             if (!sentence) return false;
-            return TextUtils.findAllMatches(sentence.text, trimmedText).length > 0;
+            return (
+              TextUtils.findAllMatches(sentence.text, trimmedText).length > 0
+            );
           });
 
           if (prunedEvidence.length === attr.evidence.length) {
@@ -607,8 +605,7 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
         const editorState = useEditorStore.getState();
         if (
           !editorState.suggestion ||
-          editorState.suggestion.conflictId !==
-            pendingStoryUpdate.suggestionId
+          editorState.suggestion.conflictId !== pendingStoryUpdate.suggestionId
         ) {
           throw new Error(
             "Story suggestion is no longer available. Regenerate before applying.",
@@ -855,32 +852,32 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
           isProcessing={isProcessingDelete}
         />
         {pendingStoryUpdate && (
-          <div className="rounded border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
-            <p className="font-semibold">
-              Story changes pending review for "{pendingStoryUpdate.attributeName}"
-              . Review highlights in the editor, then apply or discard the update.
+          <div className="rounded border border-blue-200 bg-blue-50 p-2 text-blue-900">
+            <p className="text-[10px]">
+              Suggested changes for "{pendingStoryUpdate.attributeName}" are
+              highlighted in the editor. Approve to apply or discard to revert.
             </p>
             {storyUpdateError && (
               <p className="mt-2 rounded border border-red-200 bg-red-50 p-2 text-red-600">
                 {storyUpdateError}
               </p>
             )}
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2 flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleApproveStoryUpdate}
                 disabled={isProcessingStoryUpdate}
-                className="rounded bg-blue-600 px-3 py-1.5 font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
+                className="rounded bg-green-600 px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-green-700 cursor-pointer"
               >
-                Apply story changes
+                Approve
               </button>
               <button
                 type="button"
                 onClick={handleRejectStoryUpdate}
                 disabled={isProcessingStoryUpdate}
-                className="rounded border border-blue-200 px-3 py-1.5 font-medium text-blue-700 transition hover:bg-blue-100 disabled:opacity-60"
+                className="rounded bg-zinc-200 px-3 py-1 text-[10px] font-semibold text-zinc-800 transition hover:bg-zinc-300 cursor-pointer"
               >
-                Discard story changes
+                Discard
               </button>
             </div>
           </div>

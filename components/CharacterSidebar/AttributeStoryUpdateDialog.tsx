@@ -46,15 +46,15 @@ export function AttributeStoryUpdateDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-      <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
-        <div className="border-b px-5 py-3">
-          <h2 className="text-base font-semibold text-gray-800">
+      <div className="w-full max-w-md rounded border border-zinc-200 bg-white shadow-lg">
+        <div className="border-b border-zinc-200 px-4 py-2">
+          <h2 className="text-sm font-semibold text-zinc-900">
             Rename Attribute
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          {/* <p className="mt-1 text-sm text-gray-500">
             Update the attribute name and choose whether to revise the story to
             reflect this change.
-          </p>
+          </p> */}
         </div>
         <form
           className="space-y-5 px-5 py-4"
@@ -65,10 +65,10 @@ export function AttributeStoryUpdateDialog({
             onSubmit({ newName: trimmedName, updateStory });
           }}
         >
-          <div>
+          <div className="space-y-2">
             <label
               htmlFor="attribute-name"
-              className="text-xs font-medium uppercase tracking-wide text-gray-600"
+              className="block text-xs font-semibold uppercase text-zinc-500"
             >
               Attribute Name
             </label>
@@ -79,10 +79,7 @@ export function AttributeStoryUpdateDialog({
               onChange={(event) => setNewName(event.target.value)}
               onBlur={() => setTouched(true)}
               disabled={isProcessing}
-              className={cn(
-                "mt-1 w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500",
-                showValidation && "border-red-400 focus:ring-red-500",
-              )}
+              className="input w-full"
               placeholder="e.g. Disciplined"
               autoFocus
             />
@@ -93,11 +90,11 @@ export function AttributeStoryUpdateDialog({
             )}
           </div>
 
-          <fieldset>
-            <legend className="text-xs font-medium uppercase tracking-wide text-gray-600">
+          <fieldset className="space-y-2">
+            <legend className="block text-xs font-semibold uppercase text-zinc-500">
               Update Story?
             </legend>
-            <div className="mt-2 grid gap-2">
+            <div className="grid gap-2">
               {updateOptions.map((option) => (
                 <label
                   key={option.value ? "update-story" : "leave-story"}
@@ -129,22 +126,19 @@ export function AttributeStoryUpdateDialog({
             </div>
           )}
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex items-center justify-end gap-2 border-zinc-200 pt-2">
             <button
               type="button"
               onClick={onCancel}
               disabled={isProcessing}
-              className="rounded border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+              className="btn btn-sm btn-ghost rounded"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isProcessing || trimmedName.length === 0}
-              className={cn(
-                "rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white transition",
-                isProcessing ? "opacity-60" : "hover:bg-blue-700",
-              )}
+              className="btn btn-sm btn-neutral rounded"
             >
               {isProcessing ? "Saving..." : "Save Changes"}
             </button>

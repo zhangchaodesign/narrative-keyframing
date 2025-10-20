@@ -22,9 +22,9 @@ export function ConfirmAttributeDeleteDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
-      <div className="w-full max-w-sm rounded-lg bg-white shadow-xl">
-        <div className="border-b px-5 py-3">
-          <h2 className="text-base font-semibold text-gray-800">
+      <div className="w-full max-w-md rounded border border-zinc-200 bg-white shadow-lg">
+        <div className="border-b border-zinc-200 px-4 py-2">
+          <h2 className="text-sm font-semibold text-zinc-900">
             Remove Attribute
           </h2>
         </div>
@@ -36,12 +36,13 @@ export function ConfirmAttributeDeleteDialog({
             </span>
             ? This action cannot be undone.
           </p>
-          <div className="flex justify-end gap-2 pt-1">
+
+          <div className="flex items-center justify-end gap-2 border-zinc-200 pt-2">
             <button
               type="button"
               onClick={onCancel}
               disabled={isProcessing}
-              className="rounded border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+              className="btn btn-sm btn-ghost rounded"
             >
               Cancel
             </button>
@@ -49,10 +50,7 @@ export function ConfirmAttributeDeleteDialog({
               type="button"
               onClick={onConfirm}
               disabled={isProcessing}
-              className={cn(
-                "rounded bg-red-600 px-3 py-2 text-sm font-medium text-white transition",
-                isProcessing ? "opacity-60" : "hover:bg-red-700",
-              )}
+              className="btn btn-sm btn-neutral rounded"
             >
               Delete attribute
             </button>

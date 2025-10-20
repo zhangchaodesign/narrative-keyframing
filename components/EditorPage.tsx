@@ -151,7 +151,10 @@ export function EditorPage() {
             storyText,
             conflictText,
           )[0];
-          tryRegisterMatch(0, typeof fallbackGlobal === "number" ? fallbackGlobal : -1);
+          tryRegisterMatch(
+            0,
+            typeof fallbackGlobal === "number" ? fallbackGlobal : -1,
+          );
         }
       }
 

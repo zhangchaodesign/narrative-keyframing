@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  useMemo,
+} from "react";
 import {
   createEditor,
   Range,
@@ -110,7 +116,10 @@ export default function TextEditor({
       selectedSet.has(c.name),
     );
 
-    const sentenceUsage = new Map<number, Array<{ start: number; end: number }>>();
+    const sentenceUsage = new Map<
+      number,
+      Array<{ start: number; end: number }>
+    >();
     const globalUsage: Array<{ start: number; end: number }> = [];
 
     const getUsageList = (
@@ -172,7 +181,8 @@ export default function TextEditor({
           typeof evidence.sentenceIndex === "number"
             ? evidence.sentenceIndex
             : null;
-        const sentence = sentenceIndex !== null ? sentenceEntries[sentenceIndex] : undefined;
+        const sentence =
+          sentenceIndex !== null ? sentenceEntries[sentenceIndex] : undefined;
 
         const legacyStart = (evidence as any)?.startIndex;
         const legacyEnd = (evidence as any)?.endIndex;
@@ -264,10 +274,7 @@ export default function TextEditor({
       // 2) Attribute evidence across ALL selected characters (if attribute chosen)
       if (attributeHighlightRanges.length > 0) {
         for (const evidenceRange of attributeHighlightRanges) {
-          if (
-            evidenceRange.start < nodeEnd &&
-            evidenceRange.end > nodeStart
-          ) {
+          if (evidenceRange.start < nodeEnd && evidenceRange.end > nodeStart) {
             const anchor = SlateUtils.toSlatePoint(
               value as any,
               evidenceRange.start,
@@ -303,12 +310,7 @@ export default function TextEditor({
 
       return ranges;
     },
-    [
-      matches,
-      value,
-      attributeHighlightRanges,
-      conflictHighlight,
-    ],
+    [matches, value, attributeHighlightRanges, conflictHighlight],
   );
 
   useEffect(() => {
@@ -724,14 +726,12 @@ export default function TextEditor({
           onSubmit={handleSlashSubmit}
         />
         {slashSuggestion && (
-          <div className="pointer-events-auto absolute bottom-6 right-6 flex flex-col gap-2 rounded border border-zinc-200 bg-white p-4 shadow-lg">
-            <span className="text-xs font-medium text-zinc-500">
-              AI sentence pending approval
-            </span>
-            <div className="flex flex-wrap gap-2">
+          <div className="absolute bottom-6 right-6 rounded border border-blue-200 bg-blue-50 p-2 text-blue-900">
+            <p className="text-[10px]">AI continuation pending approval</p>
+            <div className="mt-2 flex items-center gap-2">
               <button
                 type="button"
-                className="btn btn-sm btn-success rounded w-20"
+                className="rounded bg-green-600 px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-green-700 cursor-pointer"
                 onClick={handleApproveSuggestion}
                 disabled={isGenerating}
               >
@@ -739,19 +739,19 @@ export default function TextEditor({
               </button>
               <button
                 type="button"
-                className="btn btn-sm btn-error rounded w-20"
-                onClick={handleRejectSuggestion}
-                disabled={isGenerating}
-              >
-                Reject
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm btn-warning rounded w-20"
+                className="rounded bg-blue-600 px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-blue-700 cursor-pointer"
                 onClick={handleRegenerateSuggestion}
                 disabled={isGenerating}
               >
                 Regenerate
+              </button>
+              <button
+                type="button"
+                className="rounded bg-zinc-200 px-3 py-1 text-[10px] font-semibold text-zinc-800 transition hover:bg-zinc-300 cursor-pointer"
+                onClick={handleRejectSuggestion}
+                disabled={isGenerating}
+              >
+                Discard
               </button>
             </div>
           </div>

@@ -139,10 +139,7 @@ export class TextUtils {
       return `${trimmed} `;
     }
 
-    const newlinePortion = trailingWhitespaceMatch[0].replace(
-      /[^\r\n]+/g,
-      "",
-    );
+    const newlinePortion = trailingWhitespaceMatch[0].replace(/[^\r\n]+/g, "");
 
     if (!newlinePortion) {
       return `${trimmed} `;

@@ -263,28 +263,28 @@ export function ConflictCard({
       </div>
 
       {isActiveSuggestion && (
-        <>
-          <p className="mt-3 text-[10px] text-gray-600">
+        <div className="rounded border border-blue-200 bg-blue-50 p-3 text-blue-900 mt-4">
+          <p className="text-[10px]">
             Suggested changes are highlighted in the editor. Approve to apply or
-            reject to revert.
+            discard to revert.
           </p>
           <div className="mt-2 flex items-center gap-2">
             <button
               type="button"
               onClick={handleApprove}
-              className="rounded bg-green-600 px-3 py-1 text-[11px] font-semibold text-white transition hover:bg-green-700"
+              className="rounded bg-green-600 px-3 py-1 text-[10px] font-semibold text-white transition hover:bg-green-700 cursor-pointer"
             >
               Approve
             </button>
             <button
               type="button"
               onClick={handleReject}
-              className="rounded bg-gray-300 px-3 py-1 text-[11px] font-semibold text-gray-800 transition hover:bg-gray-400"
+              className="rounded bg-zinc-200 px-3 py-1 text-[10px] font-semibold text-zinc-800 transition hover:bg-zinc-300 cursor-pointer"
             >
-              Reject
+              Discard
             </button>
           </div>
-        </>
+        </div>
       )}
 
       {error && (
