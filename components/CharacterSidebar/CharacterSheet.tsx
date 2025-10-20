@@ -1,9 +1,42 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { TbPencil, TbX } from "react-icons/tb";
 import { type Character, useCharacterStore } from "@/lib/stores/characterStore";
 import { AttributeEditor } from "./AttributeEditor";
+import { AttributeStoryUpdateDialog } from "./AttributeStoryUpdateDialog";
+import { ConfirmAttributeDeleteDialog } from "./ConfirmAttributeDeleteDialog";
+import { useEditorStore } from "@/lib/stores/editorStore";
+import { SlateUtils } from "@/lib/utils/slateUtils";
+import { TextUtils } from "@/lib/utils/textUtils";
+import { type CharacterAttribute } from "@/lib/types/attributes";
+import { type IndicatorType } from "@/lib/types/indicators";
+import { diffWords, type Change } from "diff";
+
+type PendingEvidenceMapping = {
+  originalIndex: number;
+  indicatorType: IndicatorType;
+  text: string;
+};
+
+type PendingSentenceUpdate = {
+  sentenceIndex: number;
+  sentenceStart: number;
+  originalSentence: string;
+  originalLength: number;
+  revisedSentence: string;
+  rationale?: string;
+  evidenceMappings: PendingEvidenceMapping[];
+};
+
+type PendingStoryUpdate = {
+  suggestionId: string;
+  originalStory: string;
+  updatedStory: string;
+  attributeCategory: string;
+  attributeName: string;
+  updates: PendingSentenceUpdate[];
+};
 
 type CharacterSheetProps = {
   character: Character;
@@ -24,7 +57,29 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
       renameAttributeForCharacter,
       removeAttributeFromCharacter,
       removeCharacter,
+      removeSentenceData,
+      shiftIndicesAfterSentenceChange,
+      updateCharacterAttributes,
     } = useCharacterStore();
+    const [pendingRename, setPendingRename] = useState<{
+      category: string;
+      originalName: string;
+      snapshot: CharacterAttribute;
+    } | null>(null);
+    const [isProcessingRename, setIsProcessingRename] = useState(false);
+    const [renameError, setRenameError] = useState<string | null>(null);
+    const [pendingStoryUpdate, setPendingStoryUpdate] =
+      useState<PendingStoryUpdate | null>(null);
+    const [storyUpdateError, setStoryUpdateError] = useState<string | null>(
+      null,
+    );
+    const [isProcessingStoryUpdate, setIsProcessingStoryUpdate] =
+      useState(false);
+    const [pendingDelete, setPendingDelete] = useState<{
+      category: string;
+      name: string;
+    } | null>(null);
+    const [isProcessingDelete, setIsProcessingDelete] = useState(false);
 
     const grouped = useMemo(() => {
       const attrs = character?.attributes ?? [];
@@ -40,37 +95,39 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
     };
 
     const handleRemoveAttribute = (category: string, value: string) => {
-      removeAttributeFromCharacter(character.name, category, value);
+      if (pendingStoryUpdate) {
+        setStoryUpdateError(
+          "Resolve the pending story update before deleting an attribute.",
+        );
+        return;
+      }
+      setStoryUpdateError(null);
+      setPendingDelete({ category, name: value });
     };
 
     const handleRenameAttribute = (category: string, oldValue: string) => {
-      const proposedValue = prompt(
-        "Enter a new name for this attribute:",
-        oldValue,
-      );
-      if (proposedValue === null) return;
-
-      const trimmedValue = proposedValue.trim();
-      if (!trimmedValue) {
-        alert("Attribute name cannot be empty.");
-        return;
-      }
-      if (trimmedValue === oldValue) return;
-
-      const duplicate = character.attributes.some(
-        (attr) => attr.category === category && attr.name === trimmedValue,
-      );
-      if (duplicate) {
-        alert("An attribute with that name already exists.");
+      if (pendingStoryUpdate) {
+        setStoryUpdateError(
+          "Resolve the pending story update before renaming another attribute.",
+        );
         return;
       }
 
-      renameAttributeForCharacter(
-        character.name,
+      const targetAttribute = character.attributes.find(
+        (attr) => attr.category === category && attr.name === oldValue,
+      );
+      if (!targetAttribute) return;
+
+      const snapshot = JSON.parse(
+        JSON.stringify(targetAttribute),
+      ) as CharacterAttribute;
+
+      setRenameError(null);
+      setPendingRename({
         category,
-        oldValue,
-        trimmedValue,
-      );
+        originalName: oldValue,
+        snapshot,
+      });
     };
 
     const handleDeleteCharacter = () => {
@@ -83,6 +140,507 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
       character?.conflicts?.some(
         (conflict) => conflict.establishedAttribute.name === attrName,
       );
+
+    const syncStoryWithAttribute = useCallback(
+      async (snapshot: CharacterAttribute, newName: string) => {
+        const editorStore = useEditorStore.getState();
+        const existingSuggestion = editorStore.suggestion;
+        if (existingSuggestion) {
+          throw new Error(
+            "Resolve the pending story suggestion before aligning another attribute.",
+          );
+        }
+
+        const storyText = SlateUtils.stateToText(
+          editorStore.value as any,
+        ).trim();
+
+        if (!storyText) {
+          throw new Error(
+            "Story text is empty. Add narrative content before syncing.",
+          );
+        }
+
+        if (!snapshot.evidence || snapshot.evidence.length === 0) {
+          throw new Error(
+            "This attribute does not have any linked evidence to update.",
+          );
+        }
+
+        const sentences = TextUtils.splitIntoSentences(storyText);
+        const evidenceMap = new Map<
+          number,
+          {
+            sentenceIndex: number;
+            sentenceText: string;
+            sentenceStart: number;
+            originalLength: number;
+            evidence: Array<{
+              originalIndex: number;
+              text: string;
+              indicatorType: IndicatorType;
+            }>;
+          }
+        >();
+
+        snapshot.evidence.forEach((ev, evidenceIndex) => {
+          const sentence = sentences[ev.sentenceIndex];
+          if (!sentence) return;
+
+          if (!evidenceMap.has(ev.sentenceIndex)) {
+            evidenceMap.set(ev.sentenceIndex, {
+              sentenceIndex: ev.sentenceIndex,
+              sentenceText: sentence.text,
+              sentenceStart: sentence.startIndex,
+              originalLength: sentence.text.length,
+              evidence: [],
+            });
+          }
+
+          evidenceMap.get(ev.sentenceIndex)!.evidence.push({
+            originalIndex: evidenceIndex,
+            text: ev.text,
+            indicatorType: ev.indicatorType,
+          });
+        });
+
+        if (evidenceMap.size === 0) {
+          throw new Error(
+            "Unable to locate the supporting sentences in the story.",
+          );
+        }
+
+        const evidenceEntries = Array.from(evidenceMap.values()).sort(
+          (a, b) => a.sentenceIndex - b.sentenceIndex,
+        );
+
+        const response = await fetch("/api/story/align-attribute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            story: storyText,
+            characterName: character.name,
+            attributeCategory: snapshot.category,
+            oldAttributeName: snapshot.name,
+            newAttributeName: newName,
+            evidenceSentences: evidenceEntries.map(
+              ({ sentenceIndex, sentenceText, evidence }) => ({
+                sentenceIndex,
+                sentenceText,
+                evidence: evidence.map((evidenceEntry) => ({
+                  text: evidenceEntry.text,
+                  indicatorType: evidenceEntry.indicatorType,
+                })),
+              }),
+            ),
+          }),
+        });
+
+        const responseData = await response
+          .json()
+          .catch(() => ({ error: "Unknown error" }));
+
+        if (!response.ok) {
+          throw new Error(
+            responseData.error ||
+              "Failed to align the story with the updated attribute.",
+          );
+        }
+
+        const updates = Array.isArray(responseData.updates)
+          ? responseData.updates
+          : [];
+
+        if (updates.length === 0) {
+          throw new Error("The AI did not return any sentence updates.");
+        }
+
+        const updatesWithContext = updates
+          .map((update: any) => {
+            const context = evidenceMap.get(update.sentenceIndex);
+            if (!context) return null;
+
+            const revisedSentence = String(update.revisedSentence || "").trim();
+            if (!revisedSentence) return null;
+
+            const updatedEvidenceList: PendingEvidenceMapping[] = Array.isArray(
+              update.updatedEvidence,
+            )
+              ? update.updatedEvidence
+                  .map((evidenceEntry: unknown, evidenceIdx: number) => {
+                    const base = context.evidence[evidenceIdx];
+                    if (!base) return null;
+
+                    const rawText =
+                      typeof evidenceEntry === "string"
+                        ? evidenceEntry
+                        : (evidenceEntry as Record<string, unknown>)?.text;
+                    const trimmedText = String(rawText || "").trim();
+                    if (!trimmedText) return null;
+
+                    return {
+                      originalIndex: base.originalIndex,
+                      indicatorType: base.indicatorType,
+                      text: trimmedText,
+                    };
+                  })
+                  .filter(
+                    (
+                      entry:
+                        | {
+                            originalIndex: number;
+                            indicatorType: IndicatorType;
+                            text: string;
+                          }
+                        | null,
+                    ): entry is {
+                      originalIndex: number;
+                      indicatorType: IndicatorType;
+                      text: string;
+                    } => Boolean(entry),
+                  )
+              : [];
+
+            if (context.evidence.length !== updatedEvidenceList.length) {
+              return null;
+            }
+
+            return {
+              sentenceIndex: context.sentenceIndex,
+              sentenceStart: context.sentenceStart,
+              originalSentence: context.sentenceText,
+              originalLength: context.originalLength,
+              revisedSentence,
+              rationale:
+                typeof update.rationale === "string"
+                  ? update.rationale
+                  : undefined,
+              evidenceMappings: updatedEvidenceList,
+            };
+          })
+          .filter(
+            (
+              entry:
+                | {
+                    sentenceIndex: number;
+                    sentenceStart: number;
+                    originalSentence: string;
+                    originalLength: number;
+                    revisedSentence: string;
+                    rationale?: string;
+                    evidenceMappings: PendingEvidenceMapping[];
+                  }
+                | null,
+            ): entry is {
+              sentenceIndex: number;
+              sentenceStart: number;
+              originalSentence: string;
+              originalLength: number;
+              revisedSentence: string;
+              rationale?: string;
+              evidenceMappings: PendingEvidenceMapping[];
+            } => Boolean(entry),
+          );
+
+        if (updatesWithContext.length === 0) {
+          throw new Error(
+            "Unable to match AI revisions to the original sentences.",
+          );
+        }
+
+        let updatedStory = storyText;
+        for (const update of [...updatesWithContext].sort(
+          (a, b) => b.sentenceStart - a.sentenceStart,
+        )) {
+          updatedStory =
+            updatedStory.slice(0, update.sentenceStart) +
+            update.revisedSentence +
+            updatedStory.slice(
+              update.sentenceStart + update.originalSentence.length,
+            );
+        }
+
+        const diff = diffWords(storyText, updatedStory) as Change[];
+        const diffSegments = diff.map((part) => ({
+          text: part.value,
+          added: Boolean(part.added),
+          removed: Boolean(part.removed),
+        }));
+
+        const hasChange = diff.some((part) => part.added || part.removed);
+        if (!hasChange) {
+          throw new Error("Model did not suggest any meaningful changes.");
+        }
+
+        const suggestionId = `attribute-rename-${character.name}-${Date.now()}`;
+        editorStore.beginSuggestion({
+          conflictId: suggestionId,
+          sentenceStart: 0,
+          originalSentence: storyText,
+          revisedSentence: updatedStory,
+          sentenceIndex: -1,
+          diffSegments,
+        });
+
+        return {
+          suggestionId,
+          originalStory: storyText,
+          updatedStory,
+          attributeCategory: snapshot.category,
+          attributeName: newName,
+          updates: updatesWithContext,
+        } satisfies PendingStoryUpdate;
+      },
+      [character.name],
+    );
+
+    const handleRenameSubmit = async ({
+      newName,
+      updateStory,
+    }: {
+      newName: string;
+      updateStory: boolean;
+    }) => {
+      if (!pendingRename) return;
+
+      setRenameError(null);
+      setStoryUpdateError(null);
+
+      if (newName === pendingRename.originalName) {
+        setPendingRename(null);
+        return;
+      }
+
+      const duplicate = character.attributes.some(
+        (attr) =>
+          attr.category === pendingRename.category && attr.name === newName,
+      );
+
+      if (duplicate) {
+        setRenameError("An attribute with that name already exists.");
+        return;
+      }
+
+      if (pendingStoryUpdate) {
+        setRenameError(
+          "Resolve the pending story update before renaming another attribute.",
+        );
+        return;
+      }
+
+      setIsProcessingRename(true);
+
+      try {
+        let storyUpdate: PendingStoryUpdate | null = null;
+        if (updateStory) {
+          storyUpdate = await syncStoryWithAttribute(
+            pendingRename.snapshot,
+            newName,
+          );
+        }
+
+        renameAttributeForCharacter(
+          character.name,
+          pendingRename.category,
+          pendingRename.originalName,
+          newName,
+        );
+
+        setPendingRename(null);
+
+        if (storyUpdate) {
+          setPendingStoryUpdate(storyUpdate);
+        }
+      } catch (error: unknown) {
+        console.error(error);
+        setRenameError(
+          error instanceof Error
+            ? error.message
+            : "Failed to update story for the new attribute.",
+        );
+        useEditorStore.getState().clearSuggestion();
+      } finally {
+        setIsProcessingRename(false);
+      }
+    };
+
+    const handleRejectStoryUpdate = () => {
+      if (!pendingStoryUpdate) return;
+      useEditorStore.getState().clearSuggestion();
+      setPendingStoryUpdate(null);
+      setStoryUpdateError(null);
+    };
+
+    const handleApproveStoryUpdate = async () => {
+      if (!pendingStoryUpdate) return;
+
+      setIsProcessingStoryUpdate(true);
+      setStoryUpdateError(null);
+
+      try {
+        const characterState = useCharacterStore.getState();
+        const latestCharacter = characterState.characters.find(
+          (c) => c.name === character.name,
+        );
+
+        if (!latestCharacter) {
+          throw new Error("Character could not be found.");
+        }
+
+        const finalSentences = TextUtils.splitIntoSentences(
+          pendingStoryUpdate.updatedStory,
+        );
+
+        let failedEvidence = false;
+        let attributeFound = false;
+
+        const updatedAttributesList = latestCharacter.attributes.map(
+          (attr) => {
+            if (
+              attr.category === pendingStoryUpdate.attributeCategory &&
+              attr.name === pendingStoryUpdate.attributeName
+            ) {
+              attributeFound = true;
+              const updatedEvidence = [...attr.evidence];
+
+              pendingStoryUpdate.updates.forEach((update) => {
+                const finalSentence = finalSentences[update.sentenceIndex];
+                if (!finalSentence) {
+                  failedEvidence = true;
+                  return;
+                }
+
+                const sentenceText = finalSentence.text;
+                const usedRanges: Array<{ start: number; end: number }> = [];
+
+                update.evidenceMappings.forEach((mapping) => {
+                  if (
+                    mapping.originalIndex < 0 ||
+                    mapping.originalIndex >= updatedEvidence.length
+                  ) {
+                    failedEvidence = true;
+                    return;
+                  }
+
+                  const searchText = mapping.text;
+                  if (!searchText) {
+                    failedEvidence = true;
+                    return;
+                  }
+
+                  let matchIndex = -1;
+                  let searchStart = 0;
+
+                  while (searchStart <= sentenceText.length) {
+                    const idx = sentenceText.indexOf(searchText, searchStart);
+                    if (idx === -1) break;
+
+                    const overlaps = usedRanges.some(
+                      (range) =>
+                        idx < range.end &&
+                        idx + searchText.length > range.start,
+                    );
+                    if (!overlaps) {
+                      matchIndex = idx;
+                      usedRanges.push({
+                        start: idx,
+                        end: idx + searchText.length,
+                      });
+                      break;
+                    }
+                    searchStart = idx + 1;
+                  }
+
+                  if (matchIndex === -1) {
+                    failedEvidence = true;
+                    return;
+                  }
+
+                  const startIndex = finalSentence.startIndex + matchIndex;
+                  updatedEvidence[mapping.originalIndex] = {
+                    text: searchText,
+                    indicatorType: mapping.indicatorType,
+                    startIndex,
+                    endIndex: startIndex + searchText.length,
+                    sentenceIndex: update.sentenceIndex,
+                  };
+                });
+              });
+
+              return {
+                ...attr,
+                evidence: updatedEvidence,
+              };
+            }
+            return attr;
+          },
+        );
+
+        if (!attributeFound) {
+          throw new Error(
+            "Updated attribute could not be located after rename.",
+          );
+        }
+
+        if (failedEvidence) {
+          throw new Error(
+            "Unable to locate one or more evidence phrases in the revised sentences.",
+          );
+        }
+
+        const editorState = useEditorStore.getState();
+        if (
+          !editorState.suggestion ||
+          editorState.suggestion.conflictId !==
+            pendingStoryUpdate.suggestionId
+        ) {
+          throw new Error(
+            "Story suggestion is no longer available. Regenerate before applying.",
+          );
+        }
+
+        editorState.applySuggestion();
+
+        pendingStoryUpdate.updates.forEach((update) => {
+          removeSentenceData(update.sentenceIndex);
+          shiftIndicesAfterSentenceChange(
+            update.sentenceIndex,
+            update.sentenceStart,
+            update.originalSentence.length,
+            update.revisedSentence.length,
+          );
+        });
+
+        updateCharacterAttributes(character.name, updatedAttributesList);
+
+        setPendingStoryUpdate(null);
+        setStoryUpdateError(null);
+      } catch (error: unknown) {
+        console.error(error);
+        setStoryUpdateError(
+          error instanceof Error
+            ? error.message
+            : "Failed to apply story updates.",
+        );
+      } finally {
+        setIsProcessingStoryUpdate(false);
+      }
+    };
+
+    const handleConfirmDelete = () => {
+      if (!pendingDelete) return;
+      setIsProcessingDelete(true);
+      try {
+        removeAttributeFromCharacter(
+          character.name,
+          pendingDelete.category,
+          pendingDelete.name,
+        );
+        setPendingDelete(null);
+      } finally {
+        setIsProcessingDelete(false);
+      }
+    };
 
     // For AI-extracted characters with no attributes, show extraction prompt
     if (
@@ -246,6 +804,59 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
               <span className="indicator-appearance px-1">Appearance</span>{" "}
               <span className="indicator-environment px-1">Environment</span>
             </p>
+          </div>
+        )}
+        <AttributeStoryUpdateDialog
+          isOpen={Boolean(pendingRename)}
+          originalName={pendingRename?.originalName ?? ""}
+          onCancel={() => {
+            if (isProcessingRename) return;
+            setPendingRename(null);
+            setRenameError(null);
+          }}
+          onSubmit={handleRenameSubmit}
+          isProcessing={isProcessingRename}
+          error={renameError}
+        />
+        <ConfirmAttributeDeleteDialog
+          isOpen={Boolean(pendingDelete)}
+          attributeName={pendingDelete?.name ?? ""}
+          onCancel={() => {
+            if (isProcessingDelete) return;
+            setPendingDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          isProcessing={isProcessingDelete}
+        />
+        {pendingStoryUpdate && (
+          <div className="rounded border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+            <p className="font-semibold">
+              Story changes pending review for "{pendingStoryUpdate.attributeName}"
+              . Review highlights in the editor, then apply or discard the update.
+            </p>
+            {storyUpdateError && (
+              <p className="mt-2 rounded border border-red-200 bg-red-50 p-2 text-red-600">
+                {storyUpdateError}
+              </p>
+            )}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleApproveStoryUpdate}
+                disabled={isProcessingStoryUpdate}
+                className="rounded bg-blue-600 px-3 py-1.5 font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
+              >
+                Apply story changes
+              </button>
+              <button
+                type="button"
+                onClick={handleRejectStoryUpdate}
+                disabled={isProcessingStoryUpdate}
+                className="rounded border border-blue-200 px-3 py-1.5 font-medium text-blue-700 transition hover:bg-blue-100 disabled:opacity-60"
+              >
+                Discard story changes
+              </button>
+            </div>
           </div>
         )}
       </div>
