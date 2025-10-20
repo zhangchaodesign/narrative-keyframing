@@ -260,8 +260,11 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = React.memo(
             const context = evidenceMap.get(update.sentenceIndex);
             if (!context) return null;
 
-            const revisedSentence = String(update.revisedSentence || "").trim();
-            if (!revisedSentence) return null;
+            const revisedSentence = TextUtils.ensureSentenceTrailingSpace(
+              String(update.revisedSentence || ""),
+              context.sentenceText,
+            );
+            if (!revisedSentence.trim()) return null;
 
             const updatedEvidenceList: PendingEvidenceMapping[] = Array.isArray(
               update.updatedEvidence,

@@ -120,4 +120,34 @@ export class TextUtils {
 
     return sentences;
   }
+
+  /**
+   * Normalize an AI-rewritten sentence so it always includes a trailing space
+   * while preserving any original line breaks that followed the sentence.
+   */
+  static ensureSentenceTrailingSpace(
+    revisedSentence: string,
+    originalSentence?: string,
+  ): string {
+    const trimmed = revisedSentence.trim();
+    if (trimmed.length === 0) {
+      return "";
+    }
+
+    const trailingWhitespaceMatch = originalSentence?.match(/\s+$/);
+    if (!trailingWhitespaceMatch) {
+      return `${trimmed} `;
+    }
+
+    const newlinePortion = trailingWhitespaceMatch[0].replace(
+      /[^\r\n]+/g,
+      "",
+    );
+
+    if (!newlinePortion) {
+      return `${trimmed} `;
+    }
+
+    return `${trimmed} ${newlinePortion}`;
+  }
 }

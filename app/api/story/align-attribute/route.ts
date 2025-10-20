@@ -35,7 +35,11 @@ const AlignmentResponseSchema = z.object({
           .array(
             z
               .object({
-                text: z.string().describe("Verbatim evidence phrase that supports the attribute"),
+                text: z
+                  .string()
+                  .describe(
+                    "Verbatim evidence phrase that supports the attribute",
+                  ),
               })
               .passthrough(),
           )

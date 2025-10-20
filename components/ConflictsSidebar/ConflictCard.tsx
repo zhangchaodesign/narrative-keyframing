@@ -91,8 +91,12 @@ export function ConflictCard({
           throw new Error(responseData.error || "Failed to generate revision");
         }
 
-        const revisedSentence = (responseData.revisedSentence || "").trim();
-        if (!revisedSentence) {
+        const revisedSentence = TextUtils.ensureSentenceTrailingSpace(
+          String(responseData.revisedSentence || ""),
+          targetSentence.text,
+        );
+
+        if (!revisedSentence.trim()) {
           setError("Model did not return a revised sentence.");
           return;
         }
