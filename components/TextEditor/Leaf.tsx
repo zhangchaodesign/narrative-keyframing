@@ -7,7 +7,6 @@ export function Leaf(props: any) {
   if (props.leaf.highlight) classes.push("highlight");
   if (props.leaf.conflictHighlight) classes.push("conflict-highlight");
 
-  // Indicator highlights (different colors for each type)
   if (props.leaf.directDefinition) classes.push("indicator-direct");
   if (props.leaf.actions) classes.push("indicator-actions");
   if (props.leaf.speech) classes.push("indicator-speech");
