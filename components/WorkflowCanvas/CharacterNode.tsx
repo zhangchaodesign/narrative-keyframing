@@ -402,7 +402,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                           aria-label={`Edit ${label} trait`}
                         />
                       ) : (
-                        <span className="flex-1 leading-snug pr-10 px-2 py-1">
+                        <span className="flex-1 leading-snug pr-10 px-2 py-1 font-medium">
                           {trait}
                         </span>
                       )}
