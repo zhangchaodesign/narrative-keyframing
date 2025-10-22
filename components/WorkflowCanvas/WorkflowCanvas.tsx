@@ -25,6 +25,7 @@ import {
   type WorkflowEdge,
   type WorkflowNode,
 } from "./workflow.constants";
+import { random } from "nanoid";
 
 const nodeTypes: NodeTypes = {
   event: EventNode,
@@ -44,6 +45,32 @@ export function WorkflowCanvas() {
   const [edges, setEdges, onEdgesChange] =
     useEdgesState<WorkflowEdge>(initialEdges);
 
+  const handleAddCharacterNode = useCallback(() => {
+    setNodes((currentNodes) => {
+      const characterCount = currentNodes.filter(
+        (node) => node.type === "character",
+      ).length;
+      const newId = `character-${Date.now()}`;
+      const newNode: WorkflowNode = {
+        id: newId,
+        type: "character",
+        position: {
+          x: 120 + Math.random() * 200,
+          y: 450 + characterCount * 140,
+        },
+        data: {
+          name: `New Character ${characterCount + 1}`,
+          traits: {
+            physiology: [],
+            psychology: [],
+            sociology: [],
+          },
+        },
+      };
+      return [...currentNodes, newNode];
+    });
+  }, [setNodes]);
+
   const onConnect = useCallback(
     (connection: Connection) => {
       setEdges((prevEdges) =>
@@ -62,7 +89,16 @@ export function WorkflowCanvas() {
   );
 
   return (
-    <div className="h-full min-h-0 w-full">
+    <div className="h-full min-h-0 w-full relative">
+      <div className="absolute left-3 top-3 z-20">
+        <button
+          type="button"
+          onClick={handleAddCharacterNode}
+          className="btn-neutral btn-xs btn"
+        >
+          Add Character
+        </button>
+      </div>
       <ReactFlow
         nodes={nodes}
         edges={edges}
