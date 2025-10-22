@@ -18,8 +18,23 @@ import type {
 
 const EVENT_HORIZONTAL_GAP = 300;
 
+const parseEventTimelineIndex = (timeline?: string | null) => {
+  if (!timeline) {
+    return null;
+  }
+
+  const match = timeline.match(/(\d+)/);
+  if (!match) {
+    return null;
+  }
+
+  return Number.parseInt(match[1], 10);
+};
+
+const formatEventTimeline = (index: number) => `Event ${index}`;
+
 export function EventNode({ id, data }: NodeProps<EventNodeType>) {
-  const { setNodes, setEdges, getNode, getNodes } = useReactFlow<
+  const { setNodes, setEdges, getNode } = useReactFlow<
     WorkflowNode,
     WorkflowEdge
   >();
@@ -39,54 +54,269 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         return;
       }
 
-      const newNodeId = `event-${Date.now()}`;
-      const eventCount = getNodes().filter(
-        (node) => node.type === "event",
-      ).length;
-      const xOffset =
-        direction === "before" ? -EVENT_HORIZONTAL_GAP : EVENT_HORIZONTAL_GAP;
+      const timestamp = Date.now();
+      const newEventId = `event-${timestamp}`;
+      const newNarrationId = `narration-${timestamp}`;
+      let eventSequence: string[] = [];
+      let narrationSequence: string[] = [];
 
-      const newNode: EventNodeType = {
-        id: newNodeId,
-        type: "event",
-        position: {
-          x: referenceNode.position.x + xOffset,
-          y: referenceNode.position.y,
-        },
-        data: {
-          timeline: `Event ${eventCount + 1}`,
-          description: "",
-        },
-        draggable: false,
-      };
-
-      setNodes((nodes) => [...nodes, newNode] as WorkflowNode[]);
-      const newEdge: WorkflowEdge = {
-        id: `edge-${
-          direction === "before" ? `${newNodeId}-${id}` : `${id}-${newNodeId}`
-        }-${Date.now()}`,
-        source: direction === "before" ? newNodeId : id,
-        target: direction === "before" ? id : newNodeId,
-        sourceHandle: "event-next",
-        targetHandle: "event-prev",
-        type: "customEdge",
-        animated: true,
-      };
-      setEdges((edgesState) => {
-        const alreadyExists = edgesState.some(
-          (edge) =>
-            edge.source === newEdge.source &&
-            edge.target === newEdge.target &&
-            edge.sourceHandle === newEdge.sourceHandle &&
-            edge.targetHandle === newEdge.targetHandle,
+      setNodes((nodesState) => {
+        const eventNodes = nodesState.filter(
+          (nodeState) => nodeState.type === "event",
         );
-        if (alreadyExists) {
-          return edgesState;
+        const narrationNodes = nodesState.filter(
+          (nodeState) => nodeState.type === "narration",
+        );
+
+        const eventRowY = referenceNode.position.y;
+        const narrationRowY =
+          narrationNodes[0]?.position.y ?? eventRowY + 160;
+        const startPositionX =
+          direction === "before"
+            ? referenceNode.position.x - EVENT_HORIZONTAL_GAP
+            : referenceNode.position.x + EVENT_HORIZONTAL_GAP;
+
+        const existingIndices = eventNodes
+          .map((nodeState) =>
+            parseEventTimelineIndex(
+              (nodeState.data as EventNodeType["data"])?.timeline,
+            ),
+          )
+          .filter((value): value is number => value != null);
+        const highestIndex =
+          existingIndices.length > 0
+            ? Math.max(...existingIndices)
+            : eventNodes.length;
+        const newTimelineIndex =
+          direction === "before" ? 1 : highestIndex + 1;
+
+        const updatedNodes: WorkflowNode[] = nodesState.map((nodeState) => {
+          if (nodeState.type !== "event" || direction !== "before") {
+            return nodeState;
+          }
+
+          const currentIndex = parseEventTimelineIndex(
+            (nodeState.data as EventNodeType["data"])?.timeline,
+          );
+          if (currentIndex == null) {
+            return nodeState;
+          }
+
+          const eventData =
+            (nodeState.data as EventNodeType["data"]) ?? {
+              timeline: "",
+              description: "",
+            };
+
+          return {
+            ...nodeState,
+            data: {
+              ...eventData,
+              timeline: formatEventTimeline(currentIndex + 1),
+            },
+          } as WorkflowNode;
+        });
+
+        const newEventNode: WorkflowNode = {
+          id: newEventId,
+          type: "event",
+          position: {
+            x: startPositionX,
+            y: eventRowY,
+          },
+          data: {
+            timeline: formatEventTimeline(newTimelineIndex),
+            description: "",
+          },
+          draggable: false,
+        };
+
+        const newNarrationNode: WorkflowNode = {
+          id: newNarrationId,
+          type: "narration",
+          position: {
+            x: startPositionX,
+            y: narrationRowY,
+          },
+          data: {
+            narrator: `Narrator ${narrationNodes.length + 1}`,
+            reflection: "Write the next reflection...",
+          },
+          draggable: false,
+        };
+
+        const nodesWithNew = [
+          ...updatedNodes,
+          newEventNode,
+          newNarrationNode,
+        ];
+
+        const eventRowNodesWithNew = nodesWithNew.filter(
+          (nodeState) => nodeState.type === "event",
+        );
+        if (eventRowNodesWithNew.length === 0) {
+          return nodesWithNew;
         }
-        return [...edgesState, newEdge];
+
+        const startX = Math.min(
+          ...eventRowNodesWithNew.map((nodeState) => nodeState.position.x),
+        );
+
+        const sortedEventNodes = [...eventRowNodesWithNew].sort((a, b) => {
+          const indexA = parseEventTimelineIndex(
+            (a.data as EventNodeType["data"])?.timeline,
+          );
+          const indexB = parseEventTimelineIndex(
+            (b.data as EventNodeType["data"])?.timeline,
+          );
+
+          if (indexA != null && indexB != null) {
+            return indexA - indexB;
+          }
+          if (indexA != null) {
+            return -1;
+          }
+          if (indexB != null) {
+            return 1;
+          }
+          return a.position.x - b.position.x;
+        });
+
+        const eventPositionMap = new Map<string, { x: number; y: number }>();
+        sortedEventNodes.forEach((nodeState, indexPosition) => {
+          eventPositionMap.set(nodeState.id, {
+            x: startX + indexPosition * EVENT_HORIZONTAL_GAP,
+            y: eventRowY,
+          });
+        });
+        eventSequence = sortedEventNodes.map((nodeState) => nodeState.id);
+
+        const narrationRowNodesWithNew = nodesWithNew.filter(
+          (nodeState) => nodeState.type === "narration",
+        );
+        const narrationPositionMap = new Map<
+          string,
+          { x: number; y: number }
+        >();
+
+        if (narrationRowNodesWithNew.length > 0) {
+          const sortedNarrationNodes = [...narrationRowNodesWithNew].sort(
+            (a, b) => a.position.x - b.position.x,
+          );
+
+          sortedNarrationNodes.forEach((nodeState, indexPosition) => {
+            const relatedEvent = sortedEventNodes[indexPosition];
+            const fallbackX =
+              startX + indexPosition * EVENT_HORIZONTAL_GAP;
+            const eventPosition = relatedEvent
+              ? eventPositionMap.get(relatedEvent.id)
+              : undefined;
+
+            narrationPositionMap.set(nodeState.id, {
+              x: eventPosition?.x ?? fallbackX,
+              y: narrationRowY,
+            });
+          });
+          narrationSequence = sortedNarrationNodes.map(
+            (nodeState) => nodeState.id,
+          );
+        }
+
+        return nodesWithNew.map((nodeState) => {
+          if (nodeState.type === "event") {
+            const newPosition = eventPositionMap.get(nodeState.id);
+            if (newPosition) {
+              return {
+                ...nodeState,
+                position: {
+                  ...nodeState.position,
+                  ...newPosition,
+                },
+              };
+            }
+          }
+
+          if (nodeState.type === "narration") {
+            const newPosition = narrationPositionMap.get(nodeState.id);
+            if (newPosition) {
+              return {
+                ...nodeState,
+                position: {
+                  ...nodeState.position,
+                  ...newPosition,
+                },
+              };
+            }
+          }
+
+          return nodeState;
+        });
+      });
+
+      setEdges((edgesState) => {
+        const baseEdgeId = `edge-${timestamp}`;
+        const preservedEdges = edgesState.filter(
+          (edge) =>
+            !(
+              (edge.sourceHandle === "event-next" &&
+                edge.targetHandle === "event-prev") ||
+              (edge.sourceHandle === "narration" &&
+                edge.targetHandle === "event") ||
+              (edge.sourceHandle === "narration-next" &&
+                edge.targetHandle === "narration-prev")
+            ),
+        );
+
+        const rebuiltEdges: WorkflowEdge[] = [];
+
+        for (let index = 0; index < eventSequence.length - 1; index += 1) {
+          rebuiltEdges.push({
+            id: `${baseEdgeId}-event-${index}`,
+            source: eventSequence[index]!,
+            target: eventSequence[index + 1]!,
+            sourceHandle: "event-next",
+            targetHandle: "event-prev",
+            type: "customEdge",
+            animated: true,
+          });
+        }
+
+        const pairCount = Math.min(
+          eventSequence.length,
+          narrationSequence.length,
+        );
+        for (let index = 0; index < pairCount; index += 1) {
+          rebuiltEdges.push({
+            id: `${baseEdgeId}-event-narration-${index}`,
+            source: eventSequence[index]!,
+            target: narrationSequence[index]!,
+            sourceHandle: "narration",
+            targetHandle: "event",
+            type: "customEdge",
+            animated: true,
+          });
+        }
+
+        for (
+          let index = 0;
+          index < narrationSequence.length - 1;
+          index += 1
+        ) {
+          rebuiltEdges.push({
+            id: `${baseEdgeId}-narration-${index}`,
+            source: narrationSequence[index]!,
+            target: narrationSequence[index + 1]!,
+            sourceHandle: "narration-next",
+            targetHandle: "narration-prev",
+            type: "customEdge",
+            animated: true,
+          });
+        }
+
+        return [...preservedEdges, ...rebuiltEdges];
       });
     },
-    [getNode, getNodes, id, setEdges, setNodes],
+    [getNode, id, setEdges, setNodes],
   );
 
   const handleDescriptionChange = useCallback(

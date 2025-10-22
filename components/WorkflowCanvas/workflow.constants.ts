@@ -30,7 +30,10 @@ export type WorkflowNode =
   | NarrationNodeType
   | CharacterNodeType;
 
-export type WorkflowEdge = Edge;
+export type WorkflowEdge = Edge & {
+  sourceHandle?: string | null;
+  targetHandle?: string | null;
+};
 
 export const initialNodes: WorkflowNode[] = [
   {
