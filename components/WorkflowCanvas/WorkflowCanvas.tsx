@@ -108,6 +108,8 @@ export function WorkflowCanvas() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         proOptions={proOptions}
+        snapToGrid
+        snapGrid={[10, 10]}
         fitView
       >
         <Background />
