@@ -13,6 +13,7 @@ import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { TbCheck, TbPlus, TbX } from "react-icons/tb";
 import { CustomHandle } from "./CustomHandle";
 import { AttributeHandle } from "./AttributeHandle";
+import { NodeActionMenu } from "./NodeActionMenu";
 import type { CharacterNodeType, CharacterTraits } from "./workflow.constants";
 
 type TraitCategory = keyof CharacterTraits;
@@ -232,8 +233,9 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   return (
     <div
       ref={containerRef}
-      className="relative flex w-56 flex-col gap-3 rounded-lg border-2 border-yellow-300 p-3 text-xs bg-white hover:shadow-lg"
+      className="group relative flex w-56 flex-col gap-3 rounded-lg border-2 border-yellow-300 p-3 text-xs bg-white hover:shadow-lg"
     >
+      <NodeActionMenu nodeId={id} />
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
           🧙 Character

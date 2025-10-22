@@ -4,6 +4,7 @@ import { useCallback, type ChangeEvent } from "react";
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { CustomHandle } from "./CustomHandle";
 import { EventHandle } from "./EventHandle";
+import { NodeActionMenu } from "./NodeActionMenu";
 import type { EventNodeType } from "./workflow.constants";
 
 export function EventNode({ id, data }: NodeProps<EventNodeType>) {
@@ -30,7 +31,8 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
   );
 
   return (
-    <div className="w-56 rounded-lg border-2 border-zinc-500 p-3 text-xs bg-white hover:shadow-lg">
+    <div className="group relative w-56 rounded-lg border-2 border-zinc-500 p-3 text-xs bg-white hover:shadow-lg">
+      <NodeActionMenu nodeId={id} />
       <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
         📜 {data?.timeline}
       </div>

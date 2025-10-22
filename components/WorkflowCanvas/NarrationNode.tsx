@@ -3,11 +3,16 @@
 import { Position, type NodeProps } from "@xyflow/react";
 import { CustomHandle } from "./CustomHandle";
 import { NarrationHandle } from "./NarrationHandle";
+import { NodeActionMenu } from "./NodeActionMenu";
 import type { NarrationNodeType } from "./workflow.constants";
 
-export function NarrationNode({ data }: NodeProps<NarrationNodeType>) {
+export function NarrationNode({
+  id,
+  data,
+}: NodeProps<NarrationNodeType>) {
   return (
-    <div className="relative flex h-44 w-56 flex-col rounded-md border-2 border-indigo-400 bg-white p-3 text-xs hover:shadow-lg">
+    <div className="group relative flex h-44 w-56 flex-col rounded-md border-2 border-indigo-400 bg-white p-3 text-xs hover:shadow-lg">
+      <NodeActionMenu nodeId={id} />
       <div className="flex justify-between w-full">
         <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
           💬 Narration
