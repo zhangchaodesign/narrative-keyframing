@@ -25,13 +25,13 @@ export type WorkflowEdge = Edge;
 export const initialNodes: WorkflowNode[] = [
   {
     id: "1",
-    position: { x: 100, y: 100 },
+    position: { x: 100, y: 200 },
     data: { amount: 10 },
     type: "paymentInit",
   },
   {
     id: "2",
-    position: { x: 320, y: 20 },
+    position: { x: 320, y: 120 },
     data: {
       currency: "$",
       country: "United States",
@@ -41,7 +41,7 @@ export const initialNodes: WorkflowNode[] = [
   },
   {
     id: "3",
-    position: { x: 320, y: 220 },
+    position: { x: 320, y: 320 },
     data: {
       currency: "£",
       country: "England",
@@ -51,19 +51,19 @@ export const initialNodes: WorkflowNode[] = [
   },
   {
     id: "4",
-    position: { x: 600, y: -40 },
+    position: { x: 600, y: 60 },
     data: { name: "Google Pay", code: "Gp" },
     type: "paymentProvider",
   },
   {
     id: "5",
-    position: { x: 600, y: 120 },
+    position: { x: 600, y: 220 },
     data: { name: "Stripe", code: "St" },
     type: "paymentProvider",
   },
   {
     id: "6",
-    position: { x: 600, y: 320 },
+    position: { x: 600, y: 420 },
     data: { name: "Apple Pay", code: "Ap" },
     type: "paymentProvider",
   },

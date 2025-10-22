@@ -72,7 +72,7 @@ export function WorkflowCanvas() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         proOptions={proOptions}
-        fitView
+        // fitView
       >
         <Background />
         <Controls position="top-left" />
