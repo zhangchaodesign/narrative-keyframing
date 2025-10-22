@@ -39,7 +39,7 @@ export const initialNodes: WorkflowNode[] = [
     position: { x: 120, y: 80 },
     data: {
       description: "Describe the inciting incident...",
-      timeline: "Event I",
+      timeline: "Event 1",
     },
   },
   {
@@ -48,7 +48,7 @@ export const initialNodes: WorkflowNode[] = [
     position: { x: 420, y: 80 },
     data: {
       description: "Describe the rising conflict...",
-      timeline: "Event II",
+      timeline: "Event 2",
     },
   },
   {
@@ -57,7 +57,7 @@ export const initialNodes: WorkflowNode[] = [
     position: { x: 720, y: 80 },
     data: {
       description: "Describe the climactic choice...",
-      timeline: "Event III",
+      timeline: "Event 3",
     },
   },
   {

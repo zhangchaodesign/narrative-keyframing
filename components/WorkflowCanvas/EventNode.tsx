@@ -31,7 +31,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
   );
 
   return (
-    <div className="group relative w-56 rounded-lg border-2 border-zinc-500 p-3 text-xs bg-white hover:shadow-lg">
+    <div className="group relative w-64 rounded-lg border-2 border-zinc-500 p-3 text-xs bg-white hover:shadow-lg">
       <NodeActionMenu nodeId={id} />
       <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
         📜 {data?.timeline}
@@ -41,7 +41,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         onChange={handleDescriptionChange}
         placeholder="Describe the event..."
         rows={4}
-        className="mt-2 w-full resize-none rounded border border-zinc-300 bg-white/70 px-2 py-1 text-[10px] leading-snug text-zinc-700 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
+        className="mt-2 w-full resize-none rounded border border-zinc-300 bg-white/70 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
       />
       <EventHandle type="target" position={Position.Left} id="event-prev" />
       <EventHandle type="source" position={Position.Right} id="event-next" />
