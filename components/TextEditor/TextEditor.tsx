@@ -668,9 +668,9 @@ export default function TextEditor({
   return (
     <div
       ref={editorContainerRef}
-      className="h-full overflow-y-auto relative bg-white border border-zinc-200 rounded"
+      className="h-full overflow-y-auto relative bg-white border-r border-zinc-100"
     >
-      <div className="px-24 py-12">
+      <div className="px-16 py-8">
         <Slate
           editor={editor}
           initialValue={useEditorStore.getState().value}
