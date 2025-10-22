@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -10,7 +11,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
-import { TbCheck, TbPlus, TbX } from "react-icons/tb";
+import { TbCheck, TbPencil, TbPlus, TbX } from "react-icons/tb";
 import { CustomHandle } from "./CustomHandle";
 import { AttributeHandle } from "./AttributeHandle";
 import { NodeActionMenu } from "./NodeActionMenu";
@@ -56,6 +57,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const traitRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const editingInputRef = useRef<HTMLInputElement | null>(null);
 
   const [draftTraits, setDraftTraits] = useState<Record<TraitCategory, string>>(
     () => ({
@@ -67,6 +69,11 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   const [activeCategory, setActiveCategory] = useState<TraitCategory | null>(
     null,
   );
+  const [editingTrait, setEditingTrait] = useState<{
+    category: TraitCategory;
+    index: number;
+    value: string;
+  } | null>(null);
   const [traitPositions, setTraitPositions] = useState<Record<string, number>>(
     {},
   );
@@ -154,6 +161,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   );
 
   const toggleAddInput = useCallback((category: TraitCategory) => {
+    setEditingTrait(null);
     setActiveCategory((current) => (current === category ? null : category));
   }, []);
 
@@ -170,6 +178,9 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
 
   const handleRemoveTrait = useCallback(
     (category: TraitCategory, index: number) => {
+      setEditingTrait((current) =>
+        current && current.category === category ? null : current,
+      );
       updateNodeData((currentTraits, currentName) => ({
         name: currentName,
         traits: {
@@ -183,6 +194,83 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     [updateNodeData],
   );
 
+  const handleUpdateTrait = useCallback(
+    (category: TraitCategory, index: number, nextValue: string) => {
+      const trimmed = nextValue.trim();
+      if (!trimmed) {
+        return;
+      }
+
+      updateNodeData((currentTraits, currentName) => {
+        const categoryTraits = [...(currentTraits[category] ?? [])];
+        if (index < 0 || index >= categoryTraits.length) {
+          return {
+            name: currentName,
+            traits: currentTraits,
+          };
+        }
+
+        categoryTraits[index] = trimmed;
+
+        return {
+          name: currentName,
+          traits: {
+            ...currentTraits,
+            [category]: categoryTraits,
+          },
+        };
+      });
+    },
+    [updateNodeData],
+  );
+
+  const handleStartEdit = useCallback(
+    (category: TraitCategory, index: number, value: string) => {
+      setActiveCategory(null);
+      setEditingTrait({ category, index, value });
+    },
+    [],
+  );
+
+  const handleEditChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const { value } = event.target;
+      setEditingTrait((prev) => (prev ? { ...prev, value } : prev));
+    },
+    [],
+  );
+
+  const handleEditCancel = useCallback(() => {
+    setEditingTrait(null);
+  }, []);
+
+  const handleEditConfirm = useCallback(() => {
+    if (!editingTrait) {
+      return;
+    }
+
+    const trimmed = editingTrait.value.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    handleUpdateTrait(editingTrait.category, editingTrait.index, trimmed);
+    setEditingTrait(null);
+  }, [editingTrait, handleUpdateTrait]);
+
+  const onEditInputKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        handleEditConfirm();
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        handleEditCancel();
+      }
+    },
+    [handleEditCancel, handleEditConfirm],
+  );
+
   const onTraitInputKeyDown = useCallback(
     (category: TraitCategory, event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === "Enter") {
@@ -192,6 +280,13 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     },
     [handleAddTrait],
   );
+
+  useEffect(() => {
+    if (editingTrait) {
+      editingInputRef.current?.focus();
+      editingInputRef.current?.select();
+    }
+  }, [editingTrait]);
 
   useLayoutEffect(() => {
     const measure = () => {
@@ -215,7 +310,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     return () => {
       window.removeEventListener("resize", measure);
     };
-  }, [traits, activeCategory]);
+  }, [traits, activeCategory, editingTrait]);
 
   const traitHandles = useMemo(() => {
     return TRAIT_CATEGORIES.flatMap(({ key }) =>
@@ -278,32 +373,85 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                   }
                 >
                   {activeCategory === key ? (
-                    <TbX className="h-3 w-3" />
+                    <TbX size={12} />
                   ) : (
-                    <TbPlus className="h-3 w-3" />
+                    <TbPlus size={12} />
                   )}
                 </button>
               </div>
               <div className="mt-2 flex flex-col gap-2">
                 {(traits[key] ?? []).map((trait, index) => {
                   const traitBaseId = `${id}-${key}-${index}`;
+                  const isEditing =
+                    editingTrait?.category === key &&
+                    editingTrait.index === index;
 
                   return (
                     <div
                       key={`${key}-${trait}-${index}`}
                       ref={registerTraitRef(traitBaseId)}
-                      className={`group relative flex items-center rounded border-none px-2 py-1 text-[10px] transition ${chipClass}`}
+                      className={`group/trait relative flex items-center rounded border-none text-[10px] transition ${chipClass}`}
                     >
-                      <span className="flex-1 leading-snug pr-6">{trait}</span>
-                      <div className="absolute right-1 top-1/2 z-10 hidden -translate-y-1/2 items-center gap-0.5 group-hover:flex">
-                        <button
-                          onClick={() => handleRemoveTrait(key, index)}
-                          className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
-                          title="Remove attribute"
-                          aria-label={`Remove ${label} trait`}
-                        >
-                          <TbX className="h-3 w-3" />
-                        </button>
+                      {isEditing ? (
+                        <input
+                          ref={editingInputRef}
+                          value={editingTrait.value}
+                          onChange={handleEditChange}
+                          onKeyDown={onEditInputKeyDown}
+                          className="flex-1 rounded border border-zinc-300 bg-white/80 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
+                          aria-label={`Edit ${label} trait`}
+                        />
+                      ) : (
+                        <span className="flex-1 leading-snug pr-10 px-2 py-1">
+                          {trait}
+                        </span>
+                      )}
+                      <div
+                        className={`absolute right-1 top-1/2 z-10 -translate-y-1/2 items-center ${
+                          isEditing
+                            ? "flex"
+                            : "hidden group-hover/trait:flex group-focus-within/trait:flex"
+                        }`}
+                      >
+                        {isEditing ? (
+                          <>
+                            <button
+                              onClick={handleEditConfirm}
+                              className="pointer-events-auto rounded p-0.5 text-green-500 hover:text-green-700 cursor-pointer"
+                              title="Save attribute"
+                              aria-label={`Save ${label} trait`}
+                            >
+                              <TbCheck size={12} />
+                            </button>
+                            <button
+                              onClick={handleEditCancel}
+                              className="pointer-events-auto rounded p-0.5 text-zinc-500 hover:text-zinc-700 cursor-pointer"
+                              title="Cancel editing"
+                              aria-label={`Cancel editing ${label} trait`}
+                            >
+                              <TbX size={12} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleStartEdit(key, index, trait)}
+                              className="pointer-events-auto rounded p-0.5 text-zinc-600 hover:text-zinc-800 cursor-pointer"
+                              title="Edit attribute"
+                              aria-label={`Edit ${label} trait`}
+                            >
+                              <TbPencil size={12} />
+                            </button>
+                            <button
+                              onClick={() => handleRemoveTrait(key, index)}
+                              className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
+                              title="Remove attribute"
+                              aria-label={`Remove ${label} trait`}
+                            >
+                              <TbX size={12} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   );

@@ -68,7 +68,7 @@ export function NodeActionMenu({ nodeId }: NodeActionMenuProps) {
   }, [nodeId, setNodes]);
 
   return (
-    <div className="pointer-events-none absolute -top-10 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-1.5 py-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+    <div className="pointer-events-none absolute -top-10 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
       <button
         type="button"
         onClick={handleDuplicate}
@@ -76,7 +76,7 @@ export function NodeActionMenu({ nodeId }: NodeActionMenuProps) {
         title="Duplicate node"
         aria-label="Duplicate node"
       >
-        <TbCopy className="h-3.5 w-3.5" />
+        <TbCopy size={12} />
       </button>
       <button
         type="button"
@@ -85,7 +85,7 @@ export function NodeActionMenu({ nodeId }: NodeActionMenuProps) {
         title="Delete node"
         aria-label="Delete node"
       >
-        <TbTrash className="h-3.5 w-3.5" />
+        <TbTrash size={12} />
       </button>
     </div>
   );
