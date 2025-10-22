@@ -29,7 +29,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
   );
 
   return (
-    <div className="w-56 rounded-lg border border-zinc-500 p-3 text-xs bg-zinc-50">
+    <div className="w-56 rounded-lg border-2 border-zinc-500 p-3 text-xs bg-white">
       <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
         📜 {data?.timeline}
       </div>
