@@ -138,7 +138,7 @@ export function CharacterSidebar({
             <button
               type="button"
               onClick={() => setIsAddModalOpen(true)}
-              className="btn btn-neutral btn-xs rounded"
+              className="btn btn-neutral btn-xs"
             >
               + Add
             </button>

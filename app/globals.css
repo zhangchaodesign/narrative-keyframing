@@ -1,13 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes: emerald --default;
+}
 
 @layer base {
-  body {
-    background-color: var(--color-base-100);
-    color: var(--color-base-content);
-  }
-
   /* Apply to everything that can scroll */
   * {
     scrollbar-width: thin; /* Firefox */
@@ -36,7 +33,7 @@
 }
 
 @utility btn {
-  @apply shadow-none;
+  @apply shadow-none rounded;
 }
 
 body {

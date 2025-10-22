@@ -131,14 +131,14 @@ export function AttributeStoryUpdateDialog({
               type="button"
               onClick={onCancel}
               disabled={isProcessing}
-              className="btn btn-sm btn-ghost rounded"
+              className="btn btn-sm btn-ghost"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isProcessing || trimmedName.length === 0}
-              className="btn btn-sm btn-neutral rounded"
+              className="btn btn-sm btn-neutral"
             >
               {isProcessing ? "Saving..." : "Save Changes"}
             </button>

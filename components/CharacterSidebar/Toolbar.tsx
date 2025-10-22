@@ -139,7 +139,7 @@ export function Toolbar({
   return (
     <button
       type="button"
-      className="w-full rounded btn btn-primary btn-sm"
+      className="w-full btn btn-primary btn-sm"
       onClick={handleExtractCharacters}
       disabled={isAnalyzing}
     >

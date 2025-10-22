@@ -176,7 +176,7 @@ export function ConflictsSidebar({
           <button
             type="button"
             onClick={handleDetectConflicts}
-            className="w-full rounded btn btn-secondary btn-sm"
+            className="w-full btn btn-secondary btn-sm"
             disabled={isDetecting}
           >
             {isDetecting ? "Detecting…" : "Detect Conflicts"}

@@ -42,7 +42,7 @@ export function ConfirmAttributeDeleteDialog({
               type="button"
               onClick={onCancel}
               disabled={isProcessing}
-              className="btn btn-sm btn-ghost rounded"
+              className="btn btn-sm btn-ghost"
             >
               Cancel
             </button>
@@ -50,7 +50,7 @@ export function ConfirmAttributeDeleteDialog({
               type="button"
               onClick={onConfirm}
               disabled={isProcessing}
-              className="btn btn-sm btn-neutral rounded"
+              className="btn btn-sm btn-neutral"
             >
               Delete attribute
             </button>

@@ -373,7 +373,7 @@ export function SlashCommandMenu({
       <div className="flex items-center justify-end gap-2 border-t border-zinc-200 px-4 py-2">
         <button
           type="button"
-          className="btn btn-sm btn-ghost rounded"
+          className="btn btn-sm btn-ghost"
           onClick={onClose}
           disabled={isGenerating}
         >
@@ -381,7 +381,7 @@ export function SlashCommandMenu({
         </button>
         <button
           type="button"
-          className="btn btn-sm btn-neutral rounded"
+          className="btn btn-sm btn-neutral"
           disabled={isSubmitDisabled || isGenerating}
           onClick={handleSubmit}
         >
