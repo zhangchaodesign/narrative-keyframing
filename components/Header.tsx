@@ -19,7 +19,7 @@ export function Header() {
   };
 
   return (
-    <div className="flex flex-row w-full justify-between items-center px-3 py-2 bg-base-200">
+    <div className="flex flex-row w-full justify-between items-center px-3 py-2 bg-zinc-100">
       <h1 className={cn(geistMono.className, "font-extrabold text-lg")}>
         <Link href="/">Characify</Link>
       </h1>
