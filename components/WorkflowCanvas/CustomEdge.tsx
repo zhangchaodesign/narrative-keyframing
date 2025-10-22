@@ -63,7 +63,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
     targetPosition,
   });
 
-  const canInsertNode = useMemo(() => {
+  const isEventEdge = useMemo(() => {
     const sourceNode = getNode(source);
     const targetNode = getNode(target);
 
@@ -72,6 +72,31 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
     }
 
     return sourceNode.type === "event" && targetNode.type === "event";
+  }, [getNode, source, target]);
+
+  const isEventNarrationEdge = useMemo(() => {
+    const sourceNode = getNode(source);
+    const targetNode = getNode(target);
+
+    if (!sourceNode || !targetNode) {
+      return false;
+    }
+
+    return (
+      (sourceNode.type === "event" && targetNode.type === "narration") ||
+      (sourceNode.type === "narration" && targetNode.type === "event")
+    );
+  }, [getNode, source, target]);
+
+  const isNarrationEdge = useMemo(() => {
+    const sourceNode = getNode(source);
+    const targetNode = getNode(target);
+
+    if (!sourceNode || !targetNode) {
+      return false;
+    }
+
+    return sourceNode.type === "narration" && targetNode.type === "narration";
   }, [getNode, source, target]);
 
   const handleDeleteEdge = useCallback(
@@ -175,11 +200,10 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
             currentTimelineIndex != null &&
             currentTimelineIndex >= insertTimelineIndex
           ) {
-            const eventData =
-              (nodeState.data as EventNodeType["data"]) ?? {
-                timeline: "",
-                description: "",
-              };
+            const eventData = (nodeState.data as EventNodeType["data"]) ?? {
+              timeline: "",
+              description: "",
+            };
             return {
               ...nodeState,
               data: {
@@ -192,11 +216,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
           return nodeState;
         });
 
-        const nodesWithNew = [
-          ...updatedNodes,
-          newEventNode,
-          newNarrationNode,
-        ];
+        const nodesWithNew = [...updatedNodes, newEventNode, newNarrationNode];
 
         const eventRowNodes = nodesWithNew.filter(
           (node) => node.type === "event",
@@ -343,11 +363,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
           });
         }
 
-        for (
-          let index = 0;
-          index < narrationSequence.length - 1;
-          index += 1
-        ) {
+        for (let index = 0; index < narrationSequence.length - 1; index += 1) {
           rebuiltEdges.push({
             id: `${baseEdgeId}-narration-${index}`,
             source: narrationSequence[index]!,
@@ -364,16 +380,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
 
       setIsHovered(false);
     },
-    [
-      animated,
-      getNode,
-      id,
-      setEdges,
-      setNodes,
-      source,
-      target,
-      type,
-    ],
+    [animated, getNode, id, setEdges, setNodes, source, target, type],
   );
 
   return (
@@ -392,7 +399,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
                 pointerEvents: "all",
               }}
             >
-              {canInsertNode && (
+              {isEventEdge && (
                 <button
                   type="button"
                   aria-label="Insert node"
@@ -402,14 +409,16 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
                   <TbPlus />
                 </button>
               )}
-              <button
-                type="button"
-                aria-label="Delete edge"
-                className="btn btn-circle btn-xs bg-transparent shadow-none border-0 text-red-500 hover:bg-red-500 hover:text-white hover:border-white rounded-full"
-                onClick={handleDeleteEdge}
-              >
-                <TbX />
-              </button>
+              {!isEventEdge && !isEventNarrationEdge && !isNarrationEdge && (
+                <button
+                  type="button"
+                  aria-label="Delete edge"
+                  className="btn btn-circle btn-xs bg-transparent shadow-none border-0 text-red-500 hover:bg-red-500 hover:text-white hover:border-white rounded-full"
+                  onClick={handleDeleteEdge}
+                >
+                  <TbX />
+                </button>
+              )}
             </div>
           )}
         </EdgeLabelRenderer>
