@@ -293,13 +293,13 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
       const container = containerRef.current;
       if (!container) return;
 
-      const containerRect = container.getBoundingClientRect();
       const nextPositions: Record<string, number> = {};
 
       Object.entries(traitRefs.current).forEach(([traitId, element]) => {
         if (!element) return;
-        const rect = element.getBoundingClientRect();
-        nextPositions[traitId] = rect.top - containerRect.top + rect.height / 2;
+        // Use offsetTop/offsetHeight which are not affected by zoom transforms
+        // This ensures handles are positioned correctly regardless of canvas zoom level
+        nextPositions[traitId] = element.offsetTop + element.offsetHeight / 2;
       });
 
       setTraitPositions(nextPositions);
