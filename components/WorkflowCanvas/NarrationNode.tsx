@@ -1,7 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
-import { Position, type NodeProps, useStore } from "@xyflow/react";
+import { useCallback, useMemo } from "react";
+import {
+  Position,
+  type NodeProps,
+  useReactFlow,
+  useStore,
+} from "@xyflow/react";
 import { CustomHandle } from "./CustomHandle";
 import { NarrationHandle } from "./NarrationHandle";
 import { NodeActionMenu } from "./NodeActionMenu";
@@ -9,11 +14,85 @@ import type {
   CharacterNodeType,
   EventNodeType,
   NarrationNodeType,
+  WorkflowEdge,
+  WorkflowNode,
 } from "./workflow.constants";
 
+const NARRATION_HORIZONTAL_GAP = 300;
+
 export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
+  const { setNodes, setEdges, getNode, getNodes } = useReactFlow<
+    WorkflowNode,
+    WorkflowEdge
+  >();
   const edges = useStore((store) => store.edges);
   const nodes = useStore((store) => store.nodes);
+
+  const hasPreviousNarration = edges.some(
+    (edge) => edge.target === id && edge.targetHandle === "narration-prev",
+  );
+  const hasNextNarration = edges.some(
+    (edge) => edge.source === id && edge.sourceHandle === "narration-next",
+  );
+
+  const handleAddAdjacentNarration = useCallback(
+    (direction: "before" | "after") => {
+      const referenceNode = getNode(id);
+      if (!referenceNode) {
+        return;
+      }
+
+      const newNodeId = `narration-${Date.now()}`;
+      const narrationCount = getNodes().filter(
+        (node) => node.type === "narration",
+      ).length;
+      const xOffset =
+        direction === "before"
+          ? -NARRATION_HORIZONTAL_GAP
+          : NARRATION_HORIZONTAL_GAP;
+
+      const newNode: NarrationNodeType = {
+        id: newNodeId,
+        type: "narration",
+        position: {
+          x: referenceNode.position.x + xOffset,
+          y: referenceNode.position.y,
+        },
+        data: {
+          narrator: `Narrator ${narrationCount + 1}`,
+          reflection: "Write the next reflection...",
+        },
+        draggable: false,
+      };
+
+      setNodes((nodesState) => [...nodesState, newNode] as WorkflowNode[]);
+      const newEdge: WorkflowEdge = {
+        id: `edge-${
+          direction === "before" ? `${newNodeId}-${id}` : `${id}-${newNodeId}`
+        }-${Date.now()}`,
+        source: direction === "before" ? newNodeId : id,
+        target: direction === "before" ? id : newNodeId,
+        sourceHandle: "narration-next",
+        targetHandle: "narration-prev",
+        type: "customEdge",
+        animated: true,
+      };
+      setEdges((edgesState) => {
+        const alreadyExists = edgesState.some(
+          (edge) =>
+            edge.source === newEdge.source &&
+            edge.target === newEdge.target &&
+            edge.sourceHandle === newEdge.sourceHandle &&
+            edge.targetHandle === newEdge.targetHandle,
+        );
+        if (alreadyExists) {
+          return edgesState;
+        }
+        return [...edgesState, newEdge];
+      });
+    },
+    [getNode, getNodes, id, setEdges, setNodes],
+  );
 
   const connectedEventLabel = useMemo(() => {
     const eventEdge = edges.find(
@@ -109,6 +188,30 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
 
   return (
     <div className="group relative flex h-44 w-64 flex-col rounded-lg border-2 border-indigo-400 bg-white p-3 text-xs hover:shadow-lg">
+      {!hasPreviousNarration && (
+        <button
+          type="button"
+          onClick={() => handleAddAdjacentNarration("before")}
+          className="absolute left-[-320px] top-1/2 z-10 flex h-full w-full -translate-y-1/2 flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-100/70 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 opacity-0 transition hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 group-hover:opacity-100"
+          title="Add narration before"
+          aria-label="Add narration before"
+        >
+          <span className="text-lg leading-none">＋</span>
+          <span>Add Narration</span>
+        </button>
+      )}
+      {!hasNextNarration && (
+        <button
+          type="button"
+          onClick={() => handleAddAdjacentNarration("after")}
+          className="absolute right-[-320px] top-1/2 z-10 flex h-full w-full -translate-y-1/2 flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-100/70 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 opacity-0 transition hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 group-hover:opacity-100"
+          title="Add narration after"
+          aria-label="Add narration after"
+        >
+          <span className="text-lg leading-none">＋</span>
+          <span>Add Narration</span>
+        </button>
+      )}
       <NodeActionMenu nodeId={id} />
       <div className="flex w-full flex-wrap items-center gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase">
         <span className="flex items-center">💬 Narration</span>

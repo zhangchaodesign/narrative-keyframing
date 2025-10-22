@@ -37,6 +37,7 @@ export const initialNodes: WorkflowNode[] = [
     id: "event-1",
     type: "event",
     position: { x: 120, y: 80 },
+    draggable: false,
     data: {
       description: "Describe the inciting incident...",
       timeline: "Event 1",
@@ -46,6 +47,7 @@ export const initialNodes: WorkflowNode[] = [
     id: "event-2",
     type: "event",
     position: { x: 420, y: 80 },
+    draggable: false,
     data: {
       description: "Describe the rising conflict...",
       timeline: "Event 2",
@@ -55,6 +57,7 @@ export const initialNodes: WorkflowNode[] = [
     id: "event-3",
     type: "event",
     position: { x: 720, y: 80 },
+    draggable: false,
     data: {
       description: "Describe the climactic choice...",
       timeline: "Event 3",
@@ -64,6 +67,7 @@ export const initialNodes: WorkflowNode[] = [
     id: "narration-1",
     type: "narration",
     position: { x: 120, y: 240 },
+    draggable: false,
     data: {
       narrator: "Aria",
       reflection: "I had never seen the elders tremble until that day.",
@@ -73,6 +77,7 @@ export const initialNodes: WorkflowNode[] = [
     id: "narration-2",
     type: "narration",
     position: { x: 420, y: 240 },
+    draggable: false,
     data: {
       narrator: "Aria",
       reflection:
@@ -83,6 +88,7 @@ export const initialNodes: WorkflowNode[] = [
     id: "narration-3",
     type: "narration",
     position: { x: 720, y: 240 },
+    draggable: false,
     data: {
       narrator: "Aria",
       reflection: "I gave up the relic, but what I gained was far greater.",
