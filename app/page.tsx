@@ -10,6 +10,7 @@ import { useCharacterStore } from "@/lib/stores/characterStore";
 import { type AttributeConflict } from "@/lib/types/conflicts";
 import { SlateUtils } from "@/lib/utils/slateUtils";
 import { TextUtils } from "@/lib/utils/textUtils";
+import { WorkflowCanvas } from "@/components/WorkflowCanvas/WorkflowCanvas";
 
 export default function Page() {
   const { characters } = useCharacterStore();
@@ -192,7 +193,7 @@ export default function Page() {
       {/* Main area: fills remaining height, no page scrolling */}
       <div className="flex-1 overflow-hidden">
         <div className="h-full">
-          <div className="flex h-full items-stretch gap-4 overflow-hidden">
+          <div className="flex h-full items-stretch overflow-hidden">
             {/* Left: TextEditor */}
             <div className="w-[640px] shrink-0 h-full overflow-y-auto">
               <DynamicTextEditor
@@ -203,7 +204,10 @@ export default function Page() {
               />
             </div>
 
-            {/* Left: Canvas */}
+            {/* Canvas: takes remaining width */}
+            <div className="flex-1 min-w-0 overflow-hidden h-full">
+              <WorkflowCanvas />
+            </div>
           </div>
         </div>
       </div>

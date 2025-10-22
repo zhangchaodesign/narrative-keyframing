@@ -35,10 +35,10 @@ export function Header() {
       {isCardVisible && (
         <>
           <div
-            className="fixed inset-0 bg-black/50 cursor-default z-[99999]"
+            className="fixed inset-0 bg-black/50 cursor-default z-99999"
             onClick={handleClose}
           ></div>
-          <div className="fixed inset-0 flex justify-center items-center z-[100000]">
+          <div className="fixed inset-0 flex justify-center items-center z-100000">
             <div className="bg-white p-4 rounded shadow-lg space-y-4 max-w-2xl max-h-[80vh] overflow-y-auto">
               <div className="flex flex-row items-center justify-between mb-4">
                 <p className="font-semibold text-lg"></p>

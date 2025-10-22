@@ -11,10 +11,6 @@
   }
 
   body {
-    background-color: white;
-    background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-    background-size: 16px 16px;
-
     color: var(--color-neutral);
     font-family: var(--font-geist-sans);
   }
