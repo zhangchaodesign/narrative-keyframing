@@ -16,9 +16,9 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { CustomEdge } from "./CustomEdge";
-import { PaymentCountryNode } from "./PaymentCountryNode";
-import { PaymentInitNode } from "./PaymentInitNode";
-import { PaymentProviderNode } from "./PaymentProviderNode";
+import { CharacterNode } from "./CharacterNode";
+import { EventNode } from "./EventNode";
+import { NarrationNode } from "./NarrationNode";
 import {
   initialEdges,
   initialNodes,
@@ -27,9 +27,9 @@ import {
 } from "./workflow.constants";
 
 const nodeTypes: NodeTypes = {
-  paymentInit: PaymentInitNode,
-  paymentCountry: PaymentCountryNode,
-  paymentProvider: PaymentProviderNode,
+  event: EventNode,
+  narration: NarrationNode,
+  character: CharacterNode,
 };
 
 const edgeTypes: EdgeTypes = {
@@ -72,10 +72,10 @@ export function WorkflowCanvas() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         proOptions={proOptions}
-        // fitView
+        fitView
       >
         <Background />
-        <Controls position="top-left" />
+        <Controls position="bottom-left" />
         <MiniMap pannable zoomable />
       </ReactFlow>
     </div>
