@@ -1,13 +1,13 @@
 import React from "react";
 import { Handle, type HandleProps } from "@xyflow/react";
 
-export const CustomHandle: React.FC<HandleProps> = ({ style, ...props }) => {
+export const AttributeHandle: React.FC<HandleProps> = ({ style, ...props }) => {
   return (
     <Handle
       style={{
-        width: 12,
-        height: 12,
-        background: "lightgray",
+        width: 10,
+        height: 10,
+        background: "#fcd34d",
         ...style,
       }}
       {...props}

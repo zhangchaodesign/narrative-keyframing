@@ -2,7 +2,9 @@
 
 import {
   useCallback,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type ChangeEvent,
   type KeyboardEvent,
@@ -10,6 +12,7 @@ import {
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { TbCheck, TbPlus, TbX } from "react-icons/tb";
 import { CustomHandle } from "./CustomHandle";
+import { AttributeHandle } from "./AttributeHandle";
 import type { CharacterNodeType, CharacterTraits } from "./workflow.constants";
 
 type TraitCategory = keyof CharacterTraits;
@@ -50,6 +53,9 @@ const TRAIT_CATEGORIES: Array<{
 export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   const { setNodes } = useReactFlow();
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const traitRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
   const [draftTraits, setDraftTraits] = useState<Record<TraitCategory, string>>(
     () => ({
       physiology: "",
@@ -59,6 +65,9 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   );
   const [activeCategory, setActiveCategory] = useState<TraitCategory | null>(
     null,
+  );
+  const [traitPositions, setTraitPositions] = useState<Record<string, number>>(
+    {},
   );
 
   const traits = useMemo<CharacterTraits>(() => {
@@ -147,6 +156,17 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     setActiveCategory((current) => (current === category ? null : category));
   }, []);
 
+  const registerTraitRef = useCallback(
+    (traitId: string) => (element: HTMLDivElement | null) => {
+      if (element) {
+        traitRefs.current[traitId] = element;
+      } else {
+        delete traitRefs.current[traitId];
+      }
+    },
+    [],
+  );
+
   const handleRemoveTrait = useCallback(
     (category: TraitCategory, index: number) => {
       updateNodeData((currentTraits, currentName) => ({
@@ -172,8 +192,48 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     [handleAddTrait],
   );
 
+  useLayoutEffect(() => {
+    const measure = () => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const nextPositions: Record<string, number> = {};
+
+      Object.entries(traitRefs.current).forEach(([traitId, element]) => {
+        if (!element) return;
+        const rect = element.getBoundingClientRect();
+        nextPositions[traitId] = rect.top - containerRect.top + rect.height / 2;
+      });
+
+      setTraitPositions(nextPositions);
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+    };
+  }, [traits, activeCategory]);
+
+  const traitHandles = useMemo(() => {
+    return TRAIT_CATEGORIES.flatMap(({ key }) =>
+      (traits[key] ?? []).map((_trait, index) => {
+        const traitBaseId = `${id}-${key}-${index}`;
+        const traitCenter = traitPositions[traitBaseId];
+        return {
+          baseId: traitBaseId,
+          top: traitCenter,
+        };
+      }),
+    );
+  }, [id, traitPositions, traits]);
+
   return (
-    <div className="flex w-56 flex-col gap-3 rounded-lg border border-yellow-300 p-3 text-xs bg-yellow-50">
+    <div
+      ref={containerRef}
+      className="relative flex w-56 flex-col gap-3 rounded-lg border-2 border-yellow-300 p-3 text-xs bg-white hover:shadow-lg"
+    >
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
           🧙 Character
@@ -205,7 +265,9 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                   type="button"
                   onClick={() => toggleAddInput(key)}
                   className={`flex cursor-pointer items-center justify-center rounded-full bg-white transition ${
-                    activeCategory === key ? "text-red-500" : "text-yellow-700"
+                    activeCategory === key
+                      ? "text-red-500 hover:text-red-700"
+                      : "text-yellow-500 hover:text-yellow-700"
                   }`}
                   aria-label={
                     activeCategory === key
@@ -220,25 +282,30 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                   )}
                 </button>
               </div>
-              <div className="mt-2 flex flex-wrap items-start gap-1">
-                {(traits[key] ?? []).map((trait, index) => (
-                  <div
-                    key={`${key}-${trait}-${index}`}
-                    className={`group inline-flex relative items-center gap-1 rounded border px-2 py-1 text-[10px] transition ${chipClass}`}
-                  >
-                    <span className="leading-snug">{trait}</span>
-                    <div className="absolute right-1 top-1/2 z-10 hidden -translate-y-1/2 items-center gap-0.5 group-hover:flex">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTrait(key, index)}
-                        className="pointer-events-auto rounded bg-white/80 p-0.5 text-red-500 shadow-sm hover:bg-white hover:text-red-700  cursor-pointer"
-                        aria-label={`Remove ${label} trait`}
-                      >
-                        <TbX className="h-3 w-3" />
-                      </button>
+              <div className="mt-2 flex flex-col gap-2">
+                {(traits[key] ?? []).map((trait, index) => {
+                  const traitBaseId = `${id}-${key}-${index}`;
+
+                  return (
+                    <div
+                      key={`${key}-${trait}-${index}`}
+                      ref={registerTraitRef(traitBaseId)}
+                      className={`group relative flex items-center rounded border-none px-2 py-1 text-[10px] transition ${chipClass}`}
+                    >
+                      <span className="flex-1 leading-snug pr-6">{trait}</span>
+                      <div className="absolute right-1 top-1/2 z-10 hidden -translate-y-1/2 items-center gap-0.5 group-hover:flex">
+                        <button
+                          onClick={() => handleRemoveTrait(key, index)}
+                          className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
+                          title="Remove attribute"
+                          aria-label={`Remove ${label} trait`}
+                        >
+                          <TbX className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {(traits[key] ?? []).length === 0 && (
                   <span
                     className={`rounded border border-dashed bg-white/70 px-2 py-1 text-[10px] ${emptyClass}`}
@@ -259,7 +326,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                   <button
                     type="button"
                     onClick={() => handleAddTrait(key)}
-                    className="flex cursor-pointer items-center justify-center rounded-full bg-white text-green-700"
+                    className="flex cursor-pointer items-center justify-center rounded-full bg-white text-green-500 hover:text-green-700"
                     aria-label={`Confirm ${label} trait`}
                   >
                     <TbCheck size={12} />
@@ -270,8 +337,23 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
           ),
         )}
       </div>
-
-      <CustomHandle type="target" position={Position.Top} id="narration" />
+      {traitHandles.flatMap(({ baseId, top }) => [
+        <AttributeHandle
+          key={`${baseId}-target`}
+          type="target"
+          position={Position.Left}
+          id={`${baseId}-left`}
+          style={top != null ? { top: top } : undefined}
+        />,
+        <AttributeHandle
+          key={`${baseId}-source`}
+          type="source"
+          position={Position.Right}
+          id={`${baseId}-right`}
+          style={top != null ? { top: top } : undefined}
+        />,
+      ])}
+      <CustomHandle type="source" position={Position.Top} id="narration" />
     </div>
   );
 }
