@@ -5,6 +5,20 @@
 }
 
 @layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    background-color: white;
+    background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+    background-size: 16px 16px;
+
+    color: var(--color-neutral);
+    font-family: var(--font-geist-sans);
+  }
+
   /* Apply to everything that can scroll */
   * {
     scrollbar-width: thin; /* Firefox */
@@ -34,18 +48,6 @@
 
 @utility btn {
   @apply shadow-none rounded;
-}
-
-body {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  width: 100%;
-  background-color: white;
-  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-  background-size: 16px 16px;
-  color: var(--color-neutral);
-  font-family: var(--font-geist-sans);
 }
 
 .suggest-addition {
