@@ -16,9 +16,9 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { CustomEdge } from "./CustomEdge";
-import { CharacterNode } from "./CharacterNode";
-import { EventNode } from "./EventNode";
-import { NarrationNode } from "./NarrationNode";
+import { CharacterNode } from "./CharacterNode/CharacterNode";
+import { EventNode } from "./EventNode/EventNode";
+import { NarrationNode } from "./NarrationNode/NarrationNode";
 import {
   initialEdges,
   initialNodes,
@@ -110,7 +110,7 @@ export function WorkflowCanvas() {
         proOptions={proOptions}
         snapToGrid
         snapGrid={[10, 10]}
-        fitView
+        // fitView
       >
         <Background />
         <Controls position="bottom-left" />

@@ -7,14 +7,14 @@ import {
   useReactFlow,
   useStore,
 } from "@xyflow/react";
-import { CustomHandle } from "./CustomHandle";
+import { CustomHandle } from "../CustomHandle";
 import { EventHandle } from "./EventHandle";
-import { NodeActionMenu } from "./NodeActionMenu";
+import { NodeActionMenu } from "../NodeActionMenu";
 import type {
   EventNodeType,
   WorkflowEdge,
   WorkflowNode,
-} from "./workflow.constants";
+} from "../workflow.constants";
 
 const EVENT_HORIZONTAL_GAP = 300;
 
@@ -69,8 +69,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         );
 
         const eventRowY = referenceNode.position.y;
-        const narrationRowY =
-          narrationNodes[0]?.position.y ?? eventRowY + 160;
+        const narrationRowY = narrationNodes[0]?.position.y ?? eventRowY + 160;
         const startPositionX =
           direction === "before"
             ? referenceNode.position.x - EVENT_HORIZONTAL_GAP
@@ -87,8 +86,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           existingIndices.length > 0
             ? Math.max(...existingIndices)
             : eventNodes.length;
-        const newTimelineIndex =
-          direction === "before" ? 1 : highestIndex + 1;
+        const newTimelineIndex = direction === "before" ? 1 : highestIndex + 1;
 
         const updatedNodes: WorkflowNode[] = nodesState.map((nodeState) => {
           if (nodeState.type !== "event" || direction !== "before") {
@@ -102,11 +100,10 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
             return nodeState;
           }
 
-          const eventData =
-            (nodeState.data as EventNodeType["data"]) ?? {
-              timeline: "",
-              description: "",
-            };
+          const eventData = (nodeState.data as EventNodeType["data"]) ?? {
+            timeline: "",
+            description: "",
+          };
 
           return {
             ...nodeState,
@@ -145,11 +142,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           draggable: false,
         };
 
-        const nodesWithNew = [
-          ...updatedNodes,
-          newEventNode,
-          newNarrationNode,
-        ];
+        const nodesWithNew = [...updatedNodes, newEventNode, newNarrationNode];
 
         const eventRowNodesWithNew = nodesWithNew.filter(
           (nodeState) => nodeState.type === "event",
@@ -206,8 +199,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
 
           sortedNarrationNodes.forEach((nodeState, indexPosition) => {
             const relatedEvent = sortedEventNodes[indexPosition];
-            const fallbackX =
-              startX + indexPosition * EVENT_HORIZONTAL_GAP;
+            const fallbackX = startX + indexPosition * EVENT_HORIZONTAL_GAP;
             const eventPosition = relatedEvent
               ? eventPositionMap.get(relatedEvent.id)
               : undefined;
@@ -297,11 +289,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           });
         }
 
-        for (
-          let index = 0;
-          index < narrationSequence.length - 1;
-          index += 1
-        ) {
+        for (let index = 0; index < narrationSequence.length - 1; index += 1) {
           rebuiltEdges.push({
             id: `${baseEdgeId}-narration-${index}`,
             source: narrationSequence[index]!,

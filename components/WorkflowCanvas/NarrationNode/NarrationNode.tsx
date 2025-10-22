@@ -7,16 +7,16 @@ import {
   useReactFlow,
   useStore,
 } from "@xyflow/react";
-import { CustomHandle } from "./CustomHandle";
+import { CustomHandle } from "../CustomHandle";
 import { NarrationHandle } from "./NarrationHandle";
-import { NodeActionMenu } from "./NodeActionMenu";
+import { NodeActionMenu } from "../NodeActionMenu";
 import type {
   CharacterNodeType,
   EventNodeType,
   NarrationNodeType,
   WorkflowEdge,
   WorkflowNode,
-} from "./workflow.constants";
+} from "../workflow.constants";
 
 const NARRATION_HORIZONTAL_GAP = 300;
 

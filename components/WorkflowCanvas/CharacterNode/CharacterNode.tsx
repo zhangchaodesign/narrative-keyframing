@@ -12,10 +12,10 @@ import {
 } from "react";
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { TbCheck, TbPencil, TbPlus, TbX } from "react-icons/tb";
-import { CustomHandle } from "./CustomHandle";
+import { CustomHandle } from "../CustomHandle";
 import { AttributeHandle } from "./AttributeHandle";
-import { NodeActionMenu } from "./NodeActionMenu";
-import type { CharacterNodeType, CharacterTraits } from "./workflow.constants";
+import { NodeActionMenu } from "../NodeActionMenu";
+import type { CharacterNodeType, CharacterTraits } from "../workflow.constants";
 
 type TraitCategory = keyof CharacterTraits;
 
