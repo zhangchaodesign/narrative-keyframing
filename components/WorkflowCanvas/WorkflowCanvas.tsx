@@ -11,6 +11,7 @@ import {
   useEdgesState,
   useNodesState,
   type EdgeTypes,
+  type NodeDragHandler,
   type NodeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -43,7 +44,7 @@ export function WorkflowCanvas() {
   const [nodes, setNodes, onNodesChange] =
     useNodesState<WorkflowNode>(initialNodes);
   const [edges, setEdges, onEdgesChange] =
-    useEdgesState<WorkflowEdge>(initialEdges);
+  useEdgesState<WorkflowEdge>(initialEdges);
 
   const handleAddCharacterNode = useCallback(() => {
     setNodes((currentNodes) => {
@@ -70,6 +71,43 @@ export function WorkflowCanvas() {
       return [...currentNodes, newNode];
     });
   }, [setNodes]);
+
+  const snapCharacterPosition = useCallback(({ x, y }: { x: number; y: number }) => {
+    const baseX = 120;
+    const baseY = 450;
+    const stepX = 300;
+    const stepY = 140;
+
+    const alignedX = Math.round((x - baseX) / stepX) * stepX + baseX;
+    const alignedY = Math.round((y - baseY) / stepY) * stepY + baseY;
+
+    return {
+      x: Number.isFinite(alignedX) ? alignedX : x,
+      y: Number.isFinite(alignedY) ? alignedY : y,
+    };
+  }, []);
+
+  const handleNodeDragStop = useCallback<NodeDragHandler>(
+    (_event, node) => {
+      if (node.type !== "character") {
+        return;
+      }
+
+      const snappedPosition = snapCharacterPosition(node.position);
+
+      setNodes((nodesState) =>
+        nodesState.map((currentNode) =>
+          currentNode.id === node.id
+            ? {
+                ...currentNode,
+                position: snappedPosition,
+              }
+            : currentNode,
+        ),
+      );
+    },
+    [setNodes, snapCharacterPosition],
+  );
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -105,6 +143,7 @@ export function WorkflowCanvas() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeDragStop={handleNodeDragStop}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         proOptions={proOptions}
