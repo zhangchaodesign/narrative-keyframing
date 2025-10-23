@@ -147,6 +147,7 @@ const buildTasksSection = (tasks: z.infer<typeof NarrationTaskSchema>[]) => {
     hasTransitions: boolean;
     prevCheckpointIndex: number | null;
     nextCheckpointIndex: number | null;
+    checkpointOrdinal: number | null;
   };
 
   const taskMetaList: TaskMeta[] = tasks.map((task) => ({
@@ -155,7 +156,17 @@ const buildTasksSection = (tasks: z.infer<typeof NarrationTaskSchema>[]) => {
     hasTransitions: Boolean(task.traitTransitions?.length),
     prevCheckpointIndex: null,
     nextCheckpointIndex: null,
+    checkpointOrdinal: null,
   }));
+
+  let checkpointOrdinalCounter = 0;
+  taskMetaList.forEach((meta) => {
+    if (!meta.hasSnapshots) {
+      return;
+    }
+    meta.checkpointOrdinal = checkpointOrdinalCounter;
+    checkpointOrdinalCounter += 1;
+  });
 
   let lastCheckpointIndex: number | null = null;
   taskMetaList.forEach((meta, index) => {
@@ -176,33 +187,64 @@ const buildTasksSection = (tasks: z.infer<typeof NarrationTaskSchema>[]) => {
     meta.nextCheckpointIndex = lastCheckpointIndex;
   }
 
-  const summarizeCheckpoint = (checkpointIndex: number | null) => {
-    if (checkpointIndex == null) {
-      return "the prior checkpoint state";
+  const sanitizeCheckpointLabel = (label?: string | null) => {
+    if (!label) {
+      return null;
     }
+    const stripped = label.replace(/^Checkpoint\s+\d+:\s*/i, "").trim();
+    return stripped.length > 0 ? stripped : null;
+  };
 
-    const checkpointTask = taskMetaList[checkpointIndex]?.task;
-    if (!checkpointTask) {
-      return "the prior checkpoint state";
-    }
+  const getSnapshotDescriptor = (
+    snapshot: z.infer<typeof CharacterSnapshotSchema>,
+  ) => {
+    return (
+      sanitizeCheckpointLabel(snapshot.stageLabel) ||
+      snapshot.name?.trim() ||
+      null
+    );
+  };
 
-    const snapshots = checkpointTask.characterSnapshots ?? [];
+  const buildCheckpointLabel = (meta: TaskMeta, index: number) => {
+    const ordinalLabel =
+      meta.checkpointOrdinal != null
+        ? `Checkpoint ${meta.checkpointOrdinal + 1}`
+        : `Task ${index + 1}`;
+
+    const snapshots = meta.task.characterSnapshots ?? [];
     if (snapshots.length === 0) {
-      return `Task ${checkpointIndex + 1}`;
+      return ordinalLabel;
     }
 
-    const labels = snapshots
-      .map(
-        (snapshot) =>
-          snapshot.stageLabel?.trim() || snapshot.name?.trim() || null,
-      )
-      .filter((label): label is string => Boolean(label));
+    const descriptors = snapshots
+      .map((snapshot) => getSnapshotDescriptor(snapshot))
+      .filter((value): value is string => Boolean(value));
 
-    if (labels.length === 0) {
-      return `Task ${checkpointIndex + 1}`;
+    if (descriptors.length === 0) {
+      return ordinalLabel;
     }
 
-    return labels.join(" / ");
+    return `${ordinalLabel}: ${descriptors.join(" / ")}`;
+  };
+
+  const summarizeCheckpoint = (
+    checkpointIndex: number | null,
+    direction: "prev" | "next",
+  ) => {
+    if (checkpointIndex == null) {
+      return direction === "prev"
+        ? "the previous checkpoint state"
+        : "the next checkpoint state";
+    }
+
+    const checkpointMeta = taskMetaList[checkpointIndex];
+    if (!checkpointMeta) {
+      return direction === "prev"
+        ? "the previous checkpoint state"
+        : "the next checkpoint state";
+    }
+
+    return buildCheckpointLabel(checkpointMeta, checkpointIndex);
   };
 
   const sequenceInfo = new Map<
@@ -224,8 +266,14 @@ const buildTasksSection = (tasks: z.infer<typeof NarrationTaskSchema>[]) => {
 
     const firstTaskIndex = currentSequence[0]!;
     const firstMeta = taskMetaList[firstTaskIndex]!;
-    const prevSummary = summarizeCheckpoint(firstMeta.prevCheckpointIndex);
-    const nextSummary = summarizeCheckpoint(firstMeta.nextCheckpointIndex);
+    const prevSummary = summarizeCheckpoint(
+      firstMeta.prevCheckpointIndex,
+      "prev",
+    );
+    const nextSummary = summarizeCheckpoint(
+      firstMeta.nextCheckpointIndex,
+      "next",
+    );
 
     currentSequence.forEach((taskIndex, sequenceOffset) => {
       sequenceInfo.set(taskIndex, {
@@ -259,9 +307,27 @@ const buildTasksSection = (tasks: z.infer<typeof NarrationTaskSchema>[]) => {
     .map((meta, taskIndex) => {
       const { task } = meta;
 
-      const snapshotSection = task.characterSnapshots?.length
+      const snapshotsForDisplay =
+        meta.hasSnapshots && task.characterSnapshots
+          ? task.characterSnapshots.length === 1 &&
+            meta.checkpointOrdinal != null
+            ? task.characterSnapshots.map((snapshot) => {
+                const ordinalIndex = meta.checkpointOrdinal ?? 0;
+                const descriptor = getSnapshotDescriptor(snapshot);
+                const stageLabel = descriptor
+                  ? `Checkpoint ${ordinalIndex + 1}: ${descriptor}`
+                  : `Checkpoint ${ordinalIndex + 1}`;
+                return {
+                  ...snapshot,
+                  stageLabel,
+                };
+              })
+            : task.characterSnapshots
+          : null;
+
+      const snapshotSection = snapshotsForDisplay?.length
         ? `Character snapshots to embody:
-${task.characterSnapshots
+${snapshotsForDisplay
   .map((snapshot, snapshotIndex) =>
     buildSnapshotSection(snapshot, snapshotIndex),
   )
@@ -292,7 +358,6 @@ This is transition beat ${coordinationMetadata.position} of ${coordinationMetada
         .join("\n\n");
 
       return `Task ${taskIndex + 1}
-Narration ID: ${task.id}
 Event: ${task.eventLabel} — ${task.eventObjective}
 Narrator: ${task.narrator}
 ${guidanceBlocks}`.trim();
@@ -328,9 +393,9 @@ ${eventSequence
 
     const tasksSection = buildTasksSection(narrations);
 
-    const prompt = `You are a narrative designer crafting first-person story beats.
+    const prompt = `You are a narrative writer crafting first-person story beats.
 
-${timelineSection}For each task that follows, write a vivid first-person narration (not analysis or reflection) delivered by the specified narrator:
+${timelineSection}For each task that follows, write a vivid first-person narration of the assigned event from the perspective of the specified narrator:
 - Anchor the scene in the objective event description.
 - Use 2-4 sentences rich with sensory or emotional detail.
 - If character snapshots are supplied, embody the narrator exactly as those checkpoints describe.

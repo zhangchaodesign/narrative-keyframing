@@ -335,7 +335,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         <button
           type="button"
           onClick={() => handleAddAdjacentEvent("before")}
-          className="absolute left-[-320px] top-1/2 z-10 flex h-full w-full -translate-y-1/2 flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-100/70 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 opacity-0 transition hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 group-hover:opacity-100"
+          className="absolute -left-80 top-1/2 z-10 flex h-full w-full -translate-y-1/2 flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-100/70 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 opacity-0 transition hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 group-hover:opacity-100"
           title="Add event before"
           aria-label="Add event before"
         >
@@ -347,7 +347,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         <button
           type="button"
           onClick={() => handleAddAdjacentEvent("after")}
-          className="absolute right-[-320px] top-1/2 z-10 flex h-full w-full -translate-y-1/2 flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-100/70 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 opacity-0 transition hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 group-hover:opacity-100"
+          className="absolute -right-80 top-1/2 z-10 flex h-full w-full -translate-y-1/2 flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-100/70 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 opacity-0 transition hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 group-hover:opacity-100"
           title="Add event after"
           aria-label="Add event after"
         >

@@ -306,35 +306,35 @@ export function WorkflowCanvas() {
 
           if (indexA != null && indexB != null && indexA !== indexB) {
             return indexA - indexB;
-        }
+          }
 
-        if (indexA != null) return -1;
-        if (indexB != null) return 1;
+          if (indexA != null) return -1;
+          if (indexB != null) return 1;
 
-        return nodeA.position.x - nodeB.position.x;
-      });
+          return nodeA.position.x - nodeB.position.x;
+        });
 
-      const eventOrderMap = new Map(
-        sortedEventNodes.map((eventNode, indexPosition) => [
-          eventNode.id,
-          indexPosition,
-        ]),
-      );
+        const eventOrderMap = new Map(
+          sortedEventNodes.map((eventNode, indexPosition) => [
+            eventNode.id,
+            indexPosition,
+          ]),
+        );
 
-      const eventSequence = sortedEventNodes.map((eventNode) => {
-        const timeline = eventNode.data?.timeline?.trim();
-        const description = eventNode.data?.description?.trim();
-        const safeDescription =
-          description && description.length > 0
-            ? description
-            : "No description provided.";
+        const eventSequence = sortedEventNodes.map((eventNode) => {
+          const timeline = eventNode.data?.timeline?.trim();
+          const description = eventNode.data?.description?.trim();
+          const safeDescription =
+            description && description.length > 0
+              ? description
+              : "No description provided.";
 
-        const label =
-          timeline && timeline.length > 0
-            ? timeline
-            : description && description.length > 0
-            ? description
-            : eventNode.id;
+          const label =
+            timeline && timeline.length > 0
+              ? timeline
+              : description && description.length > 0
+              ? description
+              : eventNode.id;
 
           return {
             label,
@@ -347,205 +347,214 @@ export function WorkflowCanvas() {
             ? new Set(targetNodeIds)
             : null;
 
-      const relevantNarrationNodes = targetIdSet
-        ? narrationNodes.filter((node) => targetIdSet.has(node.id))
-        : narrationNodes;
+        const relevantNarrationNodes = targetIdSet
+          ? narrationNodes.filter((node) => targetIdSet.has(node.id))
+          : narrationNodes;
 
-      const tasksWithOrdering = relevantNarrationNodes
-        .map(
-          (
-            narrationNode,
-          ): {
-            order: number;
-            secondaryOrder: number;
-            task: NarrationTaskPayload;
-          } | null => {
-          const eventEdge = edges.find(
-            (edge) =>
-              edge.target === narrationNode.id && edge.targetHandle === "event",
-          );
-          if (!eventEdge) {
-            return null;
-          }
-
-          const eventNode = nodes.find(
-            (node): node is EventNodeType =>
-              node.id === eventEdge.source && node.type === "event",
-          );
-          if (!eventNode) {
-            return null;
-          }
-
-          const eventOrder =
-            eventOrderMap.get(eventNode.id) ?? Number.MAX_SAFE_INTEGER;
-
-          const characterEdges = edges.filter((edge) => {
-            if (edge.target === narrationNode.id) {
-              return edge.targetHandle === "character";
-            }
-            if (edge.source === narrationNode.id) {
-              return edge.sourceHandle === "character";
-            }
-            return false;
-          });
-
-          const eventLabel =
-            eventNode.data?.timeline?.trim() ||
-            eventNode.data?.description?.trim() ||
-            eventNode.id;
-          const rawObjective = eventNode.data?.description?.trim();
-          const eventObjective =
-            rawObjective && rawObjective.length > 0
-              ? rawObjective
-              : `Describe what happens during ${eventLabel}.`;
-
-          const fallbackNarratorName =
-            narrationNode.data?.narrator?.trim() || "Narrator";
-
-          let characterSnapshots = characterEdges
-            .map((characterEdge) => {
-              const connectedId =
-                characterEdge.source === narrationNode.id
-                  ? characterEdge.target
-                  : characterEdge.source;
-              const characterNode = nodes.find(
-                (node): node is CharacterNodeType =>
-                  node.id === connectedId && node.type === "character",
+        const tasksWithOrdering = relevantNarrationNodes
+          .map(
+            (
+              narrationNode,
+            ): {
+              order: number;
+              secondaryOrder: number;
+              task: NarrationTaskPayload;
+            } | null => {
+              const eventEdge = edges.find(
+                (edge) =>
+                  edge.target === narrationNode.id &&
+                  edge.targetHandle === "event",
               );
-
-              if (!characterNode) {
+              if (!eventEdge) {
                 return null;
               }
 
-              const name = characterNode.data?.name?.trim() || characterNode.id;
-              const traits = characterNode.data?.traits ?? {
-                physiology: [],
-                psychology: [],
-                sociology: [],
-              };
-
-              return {
-                id: characterNode.id,
-                name,
-                positionX: characterNode.position.x,
-                traits: {
-                  physiology: traits.physiology ?? [],
-                  psychology: traits.psychology ?? [],
-                  sociology: traits.sociology ?? [],
-                },
-              };
-            })
-            .filter(
-              (
-                snapshot,
-              ): snapshot is PositionedCharacterSnapshot & { id: string } =>
-                snapshot != null,
-            )
-            .reduce<
-              Array<
-                PositionedCharacterSnapshot & {
-                  id: string;
-                }
-              >
-            >((accumulator, snapshot) => {
-              if (accumulator.some((item) => item.id === snapshot.id)) {
-                return accumulator;
+              const eventNode = nodes.find(
+                (node): node is EventNodeType =>
+                  node.id === eventEdge.source && node.type === "event",
+              );
+              if (!eventNode) {
+                return null;
               }
-              accumulator.push(snapshot);
-              return accumulator;
-            }, [])
-            .sort((a, b) => a.positionX - b.positionX)
-            .map((snapshot, index) => {
-              const { positionX: _ignore, id: _omitId, ...rest } = snapshot;
-              return {
-                ...rest,
-                stageLabel: `Checkpoint ${index + 1}: ${snapshot.name}`,
-              };
-            });
 
-          let traitTransitionsForTask: TraitTransitionPayload[] | undefined;
+              const eventOrder =
+                eventOrderMap.get(eventNode.id) ?? Number.MAX_SAFE_INTEGER;
 
-          if (characterSnapshots.length === 0) {
-            traitTransitionsForTask = globalTraitTransitions;
+              const characterEdges = edges.filter((edge) => {
+                if (edge.target === narrationNode.id) {
+                  return edge.targetHandle === "character";
+                }
+                if (edge.source === narrationNode.id) {
+                  return edge.sourceHandle === "character";
+                }
+                return false;
+              });
 
-            if (!traitTransitionsForTask || traitTransitionsForTask.length === 0) {
-              characterSnapshots = [
-                {
-                  name: fallbackNarratorName,
-                  stageLabel: `Narrator baseline for ${eventLabel}`,
-                  traits: {
+              const eventLabel =
+                eventNode.data?.timeline?.trim() ||
+                eventNode.data?.description?.trim() ||
+                eventNode.id;
+              const rawObjective = eventNode.data?.description?.trim();
+              const eventObjective =
+                rawObjective && rawObjective.length > 0
+                  ? rawObjective
+                  : `Describe what happens during ${eventLabel}.`;
+
+              const fallbackNarratorName =
+                narrationNode.data?.narrator?.trim() || "Narrator";
+
+              let characterSnapshots = characterEdges
+                .map((characterEdge) => {
+                  const connectedId =
+                    characterEdge.source === narrationNode.id
+                      ? characterEdge.target
+                      : characterEdge.source;
+                  const characterNode = nodes.find(
+                    (node): node is CharacterNodeType =>
+                      node.id === connectedId && node.type === "character",
+                  );
+
+                  if (!characterNode) {
+                    return null;
+                  }
+
+                  const name =
+                    characterNode.data?.name?.trim() || characterNode.id;
+                  const traits = characterNode.data?.traits ?? {
                     physiology: [],
                     psychology: [],
                     sociology: [],
-                  },
-                },
-              ];
+                  };
+
+                  return {
+                    id: characterNode.id,
+                    name,
+                    positionX: characterNode.position.x,
+                    traits: {
+                      physiology: traits.physiology ?? [],
+                      psychology: traits.psychology ?? [],
+                      sociology: traits.sociology ?? [],
+                    },
+                  };
+                })
+                .filter(
+                  (
+                    snapshot,
+                  ): snapshot is PositionedCharacterSnapshot & { id: string } =>
+                    snapshot != null,
+                )
+                .reduce<
+                  Array<
+                    PositionedCharacterSnapshot & {
+                      id: string;
+                    }
+                  >
+                >((accumulator, snapshot) => {
+                  if (accumulator.some((item) => item.id === snapshot.id)) {
+                    return accumulator;
+                  }
+                  accumulator.push(snapshot);
+                  return accumulator;
+                }, [])
+                .sort((a, b) => a.positionX - b.positionX)
+                .map((snapshot, index) => {
+                  const { positionX: _ignore, id: _omitId, ...rest } = snapshot;
+                  return {
+                    ...rest,
+                    stageLabel: `Checkpoint ${index + 1}: ${snapshot.name}`,
+                  };
+                });
+
+              let traitTransitionsForTask: TraitTransitionPayload[] | undefined;
+
+              if (characterSnapshots.length === 0) {
+                traitTransitionsForTask = globalTraitTransitions;
+
+                if (
+                  !traitTransitionsForTask ||
+                  traitTransitionsForTask.length === 0
+                ) {
+                  characterSnapshots = [
+                    {
+                      name: fallbackNarratorName,
+                      stageLabel: `Narrator baseline for ${eventLabel}`,
+                      traits: {
+                        physiology: [],
+                        psychology: [],
+                        sociology: [],
+                      },
+                    },
+                  ];
+                }
+              }
+
+              const narratorName =
+                characterSnapshots[0]?.name || fallbackNarratorName;
+
+              const payload: NarrationTaskPayload = {
+                id: narrationNode.id,
+                narrator: narratorName,
+                eventLabel,
+                eventObjective,
+              };
+
+              if (characterSnapshots.length > 0) {
+                payload.characterSnapshots = characterSnapshots;
+              }
+
+              if (
+                traitTransitionsForTask &&
+                traitTransitionsForTask.length > 0
+              ) {
+                payload.traitTransitions = traitTransitionsForTask;
+              }
+
+              if (!payload.characterSnapshots && !payload.traitTransitions) {
+                return null;
+              }
+
+              return {
+                order: eventOrder,
+                secondaryOrder: narrationNode.position.x,
+                task: payload,
+              };
+            },
+          )
+          .filter(
+            (
+              entry,
+            ): entry is {
+              order: number;
+              secondaryOrder: number;
+              task: NarrationTaskPayload;
+            } => entry != null,
+          );
+
+        if (tasksWithOrdering.length === 0) {
+          setRunStatus({
+            type: "error",
+            message: "No narration nodes were eligible for generation.",
+          });
+          return;
+        }
+
+        const tasks = tasksWithOrdering
+          .sort((a, b) => {
+            if (a.order !== b.order) {
+              return a.order - b.order;
             }
-          }
+            if (a.secondaryOrder !== b.secondaryOrder) {
+              return a.secondaryOrder - b.secondaryOrder;
+            }
+            return a.task.id.localeCompare(b.task.id);
+          })
+          .map((entry) => entry.task);
 
-          const narratorName =
-            characterSnapshots[0]?.name || fallbackNarratorName;
-
-          const payload: NarrationTaskPayload = {
-            id: narrationNode.id,
-            narrator: narratorName,
-            eventLabel,
-            eventObjective,
-          };
-
-          if (characterSnapshots.length > 0) {
-            payload.characterSnapshots = characterSnapshots;
-          }
-
-          if (traitTransitionsForTask && traitTransitionsForTask.length > 0) {
-            payload.traitTransitions = traitTransitionsForTask;
-          }
-
-          if (!payload.characterSnapshots && !payload.traitTransitions) {
-            return null;
-          }
-
-          return {
-            order: eventOrder,
-            secondaryOrder: narrationNode.position.x,
-            task: payload,
-          };
-        })
-        .filter(
-          (
-            entry,
-          ): entry is {
-            order: number;
-            secondaryOrder: number;
-            task: NarrationTaskPayload;
-          } => entry != null,
-        );
-
-      if (tasksWithOrdering.length === 0) {
-        setRunStatus({
-          type: "error",
-          message: "No narration nodes were eligible for generation.",
-        });
-        return;
-      }
-
-      const tasks = tasksWithOrdering
-        .sort((a, b) => {
-          if (a.order !== b.order) {
-            return a.order - b.order;
-          }
-          if (a.secondaryOrder !== b.secondaryOrder) {
-            return a.secondaryOrder - b.secondaryOrder;
-          }
-          return a.task.id.localeCompare(b.task.id);
-        })
-        .map((entry) => entry.task);
-
-      loadingNodeIds = new Set(tasks.map((task) => task.id));
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          if (node.type !== "narration") {
-            return node;
+        loadingNodeIds = new Set(tasks.map((task) => task.id));
+        setNodes((currentNodes) =>
+          currentNodes.map((node) => {
+            if (node.type !== "narration") {
+              return node;
             }
 
             const existingData = node.data as NarrationNodeType["data"];
@@ -559,7 +568,7 @@ export function WorkflowCanvas() {
           }),
         );
 
-        const response = await fetch("/api/narration/run", {
+        const response = await fetch("/api/narration", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
