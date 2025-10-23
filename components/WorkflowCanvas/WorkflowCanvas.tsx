@@ -8,24 +8,17 @@ import {
   Controls,
   MiniMap,
   ReactFlow,
-  useEdgesState,
-  useNodesState,
   type EdgeTypes,
   type NodeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
+import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { CustomEdge } from "./CustomEdge";
 import { CharacterNode } from "./CharacterNode/CharacterNode";
 import { EventNode } from "./EventNode/EventNode";
 import { NarrationNode } from "./NarrationNode/NarrationNode";
-import {
-  initialEdges,
-  initialNodes,
-  type WorkflowEdge,
-  type WorkflowNode,
-} from "./workflow.constants";
-import { random } from "nanoid";
+import { type WorkflowNode } from "./workflow.constants";
 
 const nodeTypes: NodeTypes = {
   event: EventNode,
@@ -40,10 +33,12 @@ const edgeTypes: EdgeTypes = {
 export function WorkflowCanvas() {
   const proOptions = { hideAttribution: true };
 
-  const [nodes, setNodes, onNodesChange] =
-    useNodesState<WorkflowNode>(initialNodes);
-  const [edges, setEdges, onEdgesChange] =
-    useEdgesState<WorkflowEdge>(initialEdges);
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
+  const onNodesChange = useWorkflowStore((state) => state.onNodesChange);
+  const onEdgesChange = useWorkflowStore((state) => state.onEdgesChange);
+  const setNodes = useWorkflowStore((state) => state.setNodes);
+  const setEdges = useWorkflowStore((state) => state.setEdges);
 
   const handleAddCharacterNode = useCallback(() => {
     setNodes((currentNodes) => {
@@ -110,7 +105,7 @@ export function WorkflowCanvas() {
         proOptions={proOptions}
         snapToGrid
         snapGrid={[10, 10]}
-        // fitView
+        fitView
       >
         <Background />
         <Controls position="bottom-left" />
