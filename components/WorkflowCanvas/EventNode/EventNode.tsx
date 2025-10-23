@@ -355,7 +355,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           <span>Add Event</span>
         </button>
       )}
-      <NodeActionMenu nodeId={id} />
+      <NodeActionMenu nodeId={id} nodeType="event" />
       <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
         📜 {data?.timeline}
       </div>

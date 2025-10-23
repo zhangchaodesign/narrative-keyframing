@@ -330,7 +330,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
       ref={containerRef}
       className="group relative flex w-64 flex-col gap-3 rounded-lg border-2 border-yellow-300 p-3 text-xs bg-white hover:shadow-lg"
     >
-      <NodeActionMenu nodeId={id} />
+      <NodeActionMenu nodeId={id} nodeType="character" />
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
           🧙 Character

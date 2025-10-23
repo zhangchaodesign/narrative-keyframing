@@ -118,35 +118,16 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
     "inline-flex items-center rounded bg-yellow-50 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-yellow-600";
 
   return (
-    <div className="group relative flex h-44 w-64 flex-col rounded-lg border-2 border-indigo-400 bg-white p-3 text-xs hover:shadow-lg">
+    <div className="group relative flex h-44 w-64 flex-col rounded-lg border-2 border-secondary bg-white p-3 text-xs hover:shadow-lg">
       {isLoading && (
         <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
-          <svg
-            className="h-6 w-6 animate-spin text-indigo-500"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-              fill="none"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-            />
-          </svg>
-          <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-500">
+          <span className="loading loading-spinner text-secondary"></span>
+          <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-secondary">
             Preparing narration...
           </span>
         </div>
       )}
-      <NodeActionMenu nodeId={id} />
+      <NodeActionMenu nodeId={id} nodeType="narration" />
       <div className="flex w-full flex-wrap items-center gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase">
         <span className="flex items-center">💬 Narration</span>
       </div>

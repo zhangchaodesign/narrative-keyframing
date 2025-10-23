@@ -272,6 +272,29 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
             (a, b) => a.position.x - b.position.x,
           );
 
+          const newEventIndex = sortedEventRowNodes.findIndex(
+            (node) => node.id === newEventId,
+          );
+          const newNarrationIndex = sortedNarrationNodes.findIndex(
+            (node) => node.id === newNarrationId,
+          );
+
+          if (
+            newEventIndex >= 0 &&
+            newNarrationIndex >= 0 &&
+            newNarrationIndex !== newEventIndex
+          ) {
+            const [newNarration] = sortedNarrationNodes.splice(
+              newNarrationIndex,
+              1,
+            );
+            const targetIndex = Math.min(
+              sortedNarrationNodes.length,
+              newEventIndex,
+            );
+            sortedNarrationNodes.splice(targetIndex, 0, newNarration);
+          }
+
           sortedNarrationNodes.forEach((node, index) => {
             const relatedEvent = sortedEventRowNodes[index];
             const fallbackX = startX + index * NARRATION_HORIZONTAL_GAP;

@@ -7,7 +7,7 @@ export const NarrationHandle: React.FC<HandleProps> = ({ style, ...props }) => {
       style={{
         width: 10,
         height: 10,
-        background: "#6366f1",
+        background: "#377CFB",
         ...style,
       }}
       {...props}

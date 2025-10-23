@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useContext, useMemo } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { TbCopy, TbTrash } from "react-icons/tb";
+import { TbCopy, TbPlayerPlay, TbTrash } from "react-icons/tb";
 
+import { RunNarrationContext } from "./RunNarrationContext";
 import type { WorkflowEdge, WorkflowNode } from "./workflow.constants";
 
 type NodeActionMenuProps = {
   nodeId: string;
+  nodeType: WorkflowNode["type"];
 };
 
 const CLONE_OFFSET = 40;
@@ -24,8 +26,11 @@ function cloneData<DataType>(data: DataType): DataType {
   }
 }
 
-export function NodeActionMenu({ nodeId }: NodeActionMenuProps) {
+export function NodeActionMenu({ nodeId, nodeType }: NodeActionMenuProps) {
   const { setNodes, setEdges } = useReactFlow<WorkflowNode, WorkflowEdge>();
+  const runNarrations = useContext(RunNarrationContext);
+
+  const isNarrationNode = useMemo(() => nodeType === "narration", [nodeType]);
 
   const handleDelete = useCallback(() => {
     setNodes((nodes) => nodes.filter((node) => node.id !== nodeId));
@@ -67,12 +72,30 @@ export function NodeActionMenu({ nodeId }: NodeActionMenuProps) {
     });
   }, [nodeId, setNodes]);
 
+  const handleRun = useCallback(() => {
+    if (!isNarrationNode) {
+      return;
+    }
+    runNarrations();
+  }, [isNarrationNode, runNarrations]);
+
   return (
-    <div className="pointer-events-none absolute -top-10 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+    <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+      {isNarrationNode && (
+        <button
+          type="button"
+          onClick={handleRun}
+          className="pointer-events-auto rounded-full p-1 transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 cursor-pointer"
+          title="Run narration"
+          aria-label="Run narration"
+        >
+          <TbPlayerPlay size={12} />
+        </button>
+      )}
       <button
         type="button"
         onClick={handleDuplicate}
-        className="pointer-events-auto rounded-full p-1 transition hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500"
+        className="pointer-events-auto rounded-full p-1 transition hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500 cursor-pointer"
         title="Duplicate node"
         aria-label="Duplicate node"
       >
@@ -81,7 +104,7 @@ export function NodeActionMenu({ nodeId }: NodeActionMenuProps) {
       <button
         type="button"
         onClick={handleDelete}
-        className="pointer-events-auto rounded-full p-1 text-red-500 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-red-500"
+        className="pointer-events-auto rounded-full p-1 text-red-500 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-red-500 cursor-pointer"
         title="Delete node"
         aria-label="Delete node"
       >

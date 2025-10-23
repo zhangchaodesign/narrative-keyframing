@@ -18,6 +18,7 @@ import { CustomEdge } from "./CustomEdge";
 import { CharacterNode } from "./CharacterNode/CharacterNode";
 import { EventNode } from "./EventNode/EventNode";
 import { NarrationNode } from "./NarrationNode/NarrationNode";
+import { RunNarrationContext } from "./RunNarrationContext";
 import {
   type CharacterNodeType,
   type EventNodeType,
@@ -180,84 +181,131 @@ export function WorkflowCanvas() {
     [setEdges],
   );
 
-  const handleGenerateNarrations = useCallback(async () => {
-    if (isGenerating) {
-      return;
-    }
+  const handleGenerateNarrations = useCallback(
+    async (targetNodeIds?: string[]) => {
+      if (isGenerating) {
+        return;
+      }
 
-    setRunStatus(null);
-    setIsGenerating(true);
-    let loadingNodeIds: Set<string> | null = null;
+      setRunStatus(null);
+      setIsGenerating(true);
+      let loadingNodeIds: Set<string> | null = null;
 
-    try {
-      const eventNodes = nodes.filter(
-        (node): node is EventNodeType => node.type === "event",
-      );
-      const narrationNodes = nodes.filter(
-        (node): node is NarrationNodeType => node.type === "narration",
-      );
-      const characterNodes = nodes.filter(
-        (node): node is CharacterNodeType => node.type === "character",
-      );
-
-      const characterNodeMap = new Map(
-        characterNodes.map((node) => [node.id, node]),
-      );
-
-      const traitTransitionMap = new Map<string, TraitTransitionPayload>();
-
-      edges.forEach((edge) => {
-        const sourceDetails = parseTraitHandleId(edge.sourceHandle);
-        const targetDetails = parseTraitHandleId(edge.targetHandle);
-        if (!sourceDetails || !targetDetails) {
-          return;
-        }
-
-        if (sourceDetails.category !== targetDetails.category) {
-          return;
-        }
-
-        const sourceNode = characterNodeMap.get(edge.source);
-        const targetNode = characterNodeMap.get(edge.target);
-        if (!sourceNode || !targetNode) {
-          return;
-        }
-
-        const fromCharacter = sourceNode.data?.name?.trim() || sourceNode.id;
-        const toCharacter = targetNode.data?.name?.trim() || targetNode.id;
-        const fromTrait = getTraitValue(
-          sourceNode,
-          sourceDetails.category,
-          sourceDetails.index,
+      try {
+        const eventNodes = nodes.filter(
+          (node): node is EventNodeType => node.type === "event",
         );
-        const toTrait = getTraitValue(
-          targetNode,
-          targetDetails.category,
-          targetDetails.index,
+        const narrationNodes = nodes.filter(
+          (node): node is NarrationNodeType => node.type === "narration",
+        );
+        const characterNodes = nodes.filter(
+          (node): node is CharacterNodeType => node.type === "character",
         );
 
-        const key = `${edge.sourceHandle ?? ""}->${edge.targetHandle ?? ""}`;
-        if (traitTransitionMap.has(key)) {
-          return;
-        }
+        const characterNodeMap = new Map(
+          characterNodes.map((node) => [node.id, node]),
+        );
 
-        traitTransitionMap.set(key, {
-          fromCharacter,
-          toCharacter,
-          category: sourceDetails.category,
-          fromTrait: fromTrait ?? undefined,
-          toTrait: toTrait ?? undefined,
+        const traitTransitionMap = new Map<string, TraitTransitionPayload>();
+        const connectedSourceHandles = new Set<string>();
+
+        edges.forEach((edge) => {
+          const sourceDetails = parseTraitHandleId(edge.sourceHandle);
+          const targetDetails = parseTraitHandleId(edge.targetHandle);
+          if (edge.sourceHandle) {
+            connectedSourceHandles.add(edge.sourceHandle);
+          }
+          if (!sourceDetails || !targetDetails) {
+            return;
+          }
+
+          if (sourceDetails.category !== targetDetails.category) {
+            return;
+          }
+
+          const sourceNode = characterNodeMap.get(edge.source);
+          const targetNode = characterNodeMap.get(edge.target);
+          if (!sourceNode || !targetNode) {
+            return;
+          }
+
+          const fromCharacter = sourceNode.data?.name?.trim() || sourceNode.id;
+          const toCharacter = targetNode.data?.name?.trim() || targetNode.id;
+          const fromTrait = getTraitValue(
+            sourceNode,
+            sourceDetails.category,
+            sourceDetails.index,
+          );
+          const toTrait = getTraitValue(
+            targetNode,
+            targetDetails.category,
+            targetDetails.index,
+          );
+
+          const key = `${edge.sourceHandle ?? ""}->${edge.targetHandle ?? ""}`;
+          if (traitTransitionMap.has(key)) {
+            return;
+          }
+
+          traitTransitionMap.set(key, {
+            fromCharacter,
+            toCharacter,
+            category: sourceDetails.category,
+            fromTrait: fromTrait ?? undefined,
+            toTrait: toTrait ?? undefined,
+          });
         });
-      });
 
-      const globalTraitTransitions = Array.from(traitTransitionMap.values());
+        characterNodes.forEach((characterNode) => {
+          const characterName =
+            characterNode.data?.name?.trim() || characterNode.id;
+          const traitsByCategory = characterNode.data?.traits ?? {
+            physiology: [],
+            psychology: [],
+            sociology: [],
+          };
 
-      const sortedEventNodes = [...eventNodes].sort((nodeA, nodeB) => {
-        const indexA = parseEventTimelineIndex(nodeA.data?.timeline);
-        const indexB = parseEventTimelineIndex(nodeB.data?.timeline);
+          const hasOutgoingAttributeEdge = edges.some((edge) => {
+            if (edge.source !== characterNode.id) {
+              return false;
+            }
+            return parseTraitHandleId(edge.sourceHandle) != null;
+          });
 
-        if (indexA != null && indexB != null && indexA !== indexB) {
-          return indexA - indexB;
+          if (!hasOutgoingAttributeEdge) {
+            return;
+          }
+
+          (Object.keys(traitsByCategory) as TraitCategory[]).forEach(
+            (category) => {
+              const traitList = traitsByCategory[category] ?? [];
+              traitList.forEach((traitValue, index) => {
+                const rightHandleId = `${characterNode.id}-${category}-${index}-right`;
+                if (!connectedSourceHandles.has(rightHandleId)) {
+                  const key = `disappear-${rightHandleId}`;
+                  if (!traitTransitionMap.has(key)) {
+                    traitTransitionMap.set(key, {
+                      fromCharacter: characterName,
+                      toCharacter: characterName,
+                      category,
+                      fromTrait: traitValue,
+                      toTrait: "(disappears)",
+                    });
+                  }
+                }
+              });
+            },
+          );
+        });
+
+        const globalTraitTransitions = Array.from(traitTransitionMap.values());
+
+        const sortedEventNodes = [...eventNodes].sort((nodeA, nodeB) => {
+          const indexA = parseEventTimelineIndex(nodeA.data?.timeline);
+          const indexB = parseEventTimelineIndex(nodeB.data?.timeline);
+
+          if (indexA != null && indexB != null && indexA !== indexB) {
+            return indexA - indexB;
         }
 
         if (indexA != null) return -1;
@@ -265,6 +313,13 @@ export function WorkflowCanvas() {
 
         return nodeA.position.x - nodeB.position.x;
       });
+
+      const eventOrderMap = new Map(
+        sortedEventNodes.map((eventNode, indexPosition) => [
+          eventNode.id,
+          indexPosition,
+        ]),
+      );
 
       const eventSequence = sortedEventNodes.map((eventNode) => {
         const timeline = eventNode.data?.timeline?.trim();
@@ -281,14 +336,30 @@ export function WorkflowCanvas() {
             ? description
             : eventNode.id;
 
-        return {
-          label,
-          description: safeDescription,
-        };
-      });
+          return {
+            label,
+            description: safeDescription,
+          };
+        });
 
-      const tasks = narrationNodes
-        .map((narrationNode): NarrationTaskPayload | null => {
+        const targetIdSet =
+          targetNodeIds && targetNodeIds.length > 0
+            ? new Set(targetNodeIds)
+            : null;
+
+      const relevantNarrationNodes = targetIdSet
+        ? narrationNodes.filter((node) => targetIdSet.has(node.id))
+        : narrationNodes;
+
+      const tasksWithOrdering = relevantNarrationNodes
+        .map(
+          (
+            narrationNode,
+          ): {
+            order: number;
+            secondaryOrder: number;
+            task: NarrationTaskPayload;
+          } | null => {
           const eventEdge = edges.find(
             (edge) =>
               edge.target === narrationNode.id && edge.targetHandle === "event",
@@ -304,6 +375,9 @@ export function WorkflowCanvas() {
           if (!eventNode) {
             return null;
           }
+
+          const eventOrder =
+            eventOrderMap.get(eventNode.id) ?? Number.MAX_SAFE_INTEGER;
 
           const characterEdges = edges.filter((edge) => {
             if (edge.target === narrationNode.id) {
@@ -431,108 +505,47 @@ export function WorkflowCanvas() {
             return null;
           }
 
-          return payload;
+          return {
+            order: eventOrder,
+            secondaryOrder: narrationNode.position.x,
+            task: payload,
+          };
         })
-        .filter((task): task is NarrationTaskPayload => task != null);
+        .filter(
+          (
+            entry,
+          ): entry is {
+            order: number;
+            secondaryOrder: number;
+            task: NarrationTaskPayload;
+          } => entry != null,
+        );
 
-      if (tasks.length === 0) {
+      if (tasksWithOrdering.length === 0) {
         setRunStatus({
           type: "error",
-          message:
-            "No narration nodes were eligible for generation.",
+          message: "No narration nodes were eligible for generation.",
         });
         return;
       }
+
+      const tasks = tasksWithOrdering
+        .sort((a, b) => {
+          if (a.order !== b.order) {
+            return a.order - b.order;
+          }
+          if (a.secondaryOrder !== b.secondaryOrder) {
+            return a.secondaryOrder - b.secondaryOrder;
+          }
+          return a.task.id.localeCompare(b.task.id);
+        })
+        .map((entry) => entry.task);
 
       loadingNodeIds = new Set(tasks.map((task) => task.id));
       setNodes((currentNodes) =>
         currentNodes.map((node) => {
           if (node.type !== "narration") {
             return node;
-          }
-
-          const existingData = node.data as NarrationNodeType["data"];
-          return {
-            ...node,
-            data: {
-              ...existingData,
-              isLoading: loadingNodeIds?.has(node.id) ?? false,
-            },
-          };
-        }),
-      );
-
-      const response = await fetch("/api/narration/run", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          eventSequence,
-          narrations: tasks,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => null);
-        const errorMessage =
-          (errorBody && errorBody.error) ||
-          `Failed to generate narrations (${response.status}).`;
-        throw new Error(errorMessage);
-      }
-
-      const data = (await response.json()) as GenerateNarrationResponse;
-      const updates = new Map<string, string>(
-        (data?.narrations ?? []).map((item) => [item.id, item.reflection]),
-      );
-
-      if (updates.size === 0) {
-        setRunStatus({
-          type: "error",
-          message: "No narration updates were returned.",
-        });
-        return;
-      }
-
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          if (node.type === "narration" && updates.has(node.id)) {
-            const reflection = updates.get(node.id) ?? "";
-            const existingData = node.data as NarrationNodeType["data"];
-            return {
-              ...node,
-              data: {
-                ...existingData,
-                reflection,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-
-      setRunStatus({
-        type: "success",
-        message: "Narrations updated with fresh first-person passages.",
-      });
-    } catch (error) {
-      console.error("Error generating narrations:", error);
-      setRunStatus({
-        type: "error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Unexpected error generating narrations.",
-      });
-    } finally {
-      if (loadingNodeIds) {
-        setNodes((currentNodes) =>
-          currentNodes.map((node) => {
-            if (node.type !== "narration") {
-              return node;
-            }
-            if (!loadingNodeIds?.has(node.id)) {
-              return node;
             }
 
             const existingData = node.data as NarrationNodeType["data"];
@@ -540,61 +553,132 @@ export function WorkflowCanvas() {
               ...node,
               data: {
                 ...existingData,
-                isLoading: false,
+                isLoading: loadingNodeIds?.has(node.id) ?? false,
               },
             };
           }),
         );
+
+        const response = await fetch("/api/narration/run", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            eventSequence,
+            narrations: tasks,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => null);
+          const errorMessage =
+            (errorBody && errorBody.error) ||
+            `Failed to generate narrations (${response.status}).`;
+          throw new Error(errorMessage);
+        }
+
+        const data = (await response.json()) as GenerateNarrationResponse;
+        const updates = new Map<string, string>(
+          (data?.narrations ?? []).map((item) => [item.id, item.reflection]),
+        );
+
+        if (updates.size === 0) {
+          setRunStatus({
+            type: "error",
+            message: "No narration updates were returned.",
+          });
+          return;
+        }
+
+        setNodes((currentNodes) =>
+          currentNodes.map((node) => {
+            if (node.type === "narration" && updates.has(node.id)) {
+              const reflection = updates.get(node.id) ?? "";
+              const existingData = node.data as NarrationNodeType["data"];
+              return {
+                ...node,
+                data: {
+                  ...existingData,
+                  reflection,
+                },
+              };
+            }
+            return node;
+          }),
+        );
+
+        setRunStatus(null);
+      } catch (error) {
+        console.error("Error generating narrations:", error);
+        setRunStatus({
+          type: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unexpected error generating narrations.",
+        });
+      } finally {
+        if (loadingNodeIds) {
+          setNodes((currentNodes) =>
+            currentNodes.map((node) => {
+              if (node.type !== "narration") {
+                return node;
+              }
+              if (!loadingNodeIds?.has(node.id)) {
+                return node;
+              }
+
+              const existingData = node.data as NarrationNodeType["data"];
+              return {
+                ...node,
+                data: {
+                  ...existingData,
+                  isLoading: false,
+                },
+              };
+            }),
+          );
+        }
+        setIsGenerating(false);
       }
-      setIsGenerating(false);
-    }
-  }, [edges, isGenerating, nodes, setNodes]);
+    },
+    [edges, isGenerating, nodes, setNodes],
+  );
 
   return (
-    <div className="h-full min-h-0 w-full relative">
-      <div className="absolute left-3 top-3 z-20 flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={handleGenerateNarrations}
-          disabled={isGenerating}
-          className="btn btn-primary btn-xs disabled:opacity-70"
-        >
-          {isGenerating ? "Running..." : "Run"}
-        </button>
-        <button
-          type="button"
-          onClick={handleAddCharacterNode}
-          className="btn-neutral btn-xs btn"
-        >
-          Add Character
-        </button>
-        {runStatus && (
-          <p
-            className={`text-[11px] ${
-              runStatus.type === "error" ? "text-red-500" : "text-green-600"
-            }`}
+    <RunNarrationContext.Provider value={handleGenerateNarrations}>
+      <div className="h-full min-h-0 w-full relative">
+        <div className="absolute left-3 top-3 z-20 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={handleAddCharacterNode}
+            className="btn-neutral btn-xs btn"
           >
-            {runStatus.message}
-          </p>
-        )}
+            Add Character
+          </button>
+          {runStatus && (
+            <p className="text-[11px] text-red-500">{runStatus.message}</p>
+          )}
+        </div>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          proOptions={proOptions}
+          snapToGrid
+          snapGrid={[10, 10]}
+          fitView
+        >
+          <Background />
+          <Controls position="bottom-left" />
+          <MiniMap pannable zoomable />
+        </ReactFlow>
       </div>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        proOptions={proOptions}
-        snapToGrid
-        snapGrid={[10, 10]}
-        fitView
-      >
-        <Background />
-        <Controls position="bottom-left" />
-        <MiniMap pannable zoomable />
-      </ReactFlow>
-    </div>
+    </RunNarrationContext.Provider>
   );
 }
