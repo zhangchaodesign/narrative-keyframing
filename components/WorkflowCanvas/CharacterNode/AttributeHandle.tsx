@@ -45,7 +45,7 @@ export const AttributeHandle: React.FC<HandleProps> = ({
       style={{
         width: 10,
         height: 10,
-        background: "#fcd34d",
+        background: "#67CC8A",
         transition: "transform 150ms ease",
         ...restStyle,
         transform: combinedTransform,

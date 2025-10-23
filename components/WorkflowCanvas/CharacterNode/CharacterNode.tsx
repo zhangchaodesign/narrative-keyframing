@@ -45,10 +45,10 @@ const TRAIT_CATEGORIES: Array<{
   {
     key: "sociology",
     label: "Sociology",
-    titleClass: "text-green-700",
+    titleClass: "text-amber-700",
     chipClass:
-      "border-green-200 bg-green-50 text-green-900 hover:bg-green-100 focus-visible:ring focus-visible:ring-green-200",
-    emptyClass: "border-green-200 text-green-700",
+      "border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 focus-visible:ring focus-visible:ring-amber-200",
+    emptyClass: "border-amber-200 text-amber-700",
   },
 ];
 
@@ -328,7 +328,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   return (
     <div
       ref={containerRef}
-      className="group relative flex w-64 flex-col gap-3 rounded-lg border-2 border-yellow-300 p-3 text-xs bg-white hover:shadow-lg"
+      className="group relative flex w-64 flex-col gap-3 rounded-lg border-2 border-primary p-3 text-xs bg-white hover:shadow-lg"
     >
       <NodeActionMenu nodeId={id} nodeType="character" />
       <div className="flex items-center justify-between">
@@ -363,8 +363,8 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                   onClick={() => toggleAddInput(key)}
                   className={`flex cursor-pointer items-center justify-center rounded-full bg-white transition ${
                     activeCategory === key
-                      ? "text-red-500 hover:text-red-700"
-                      : "text-yellow-500 hover:text-yellow-700"
+                      ? "text-amber-500 hover:text-amber-700"
+                      : "text-zinc-500 hover:text-zinc-700"
                   }`}
                   aria-label={
                     activeCategory === key
@@ -444,7 +444,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                             </button>
                             <button
                               onClick={() => handleRemoveTrait(key, index)}
-                              className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
+                              className="pointer-events-auto rounded p-0.5 text-amber-500 hover:text-amber-700 cursor-pointer"
                               title="Remove attribute"
                               aria-label={`Remove ${label} trait`}
                             >
