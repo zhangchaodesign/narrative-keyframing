@@ -140,9 +140,125 @@ const buildTransitionSection = (
   To ${afterLabel}`;
 };
 
-const buildTasksSection = (tasks: z.infer<typeof NarrationTaskSchema>[]) =>
-  tasks
-    .map((task, taskIndex) => {
+const buildTasksSection = (tasks: z.infer<typeof NarrationTaskSchema>[]) => {
+  type TaskMeta = {
+    task: z.infer<typeof NarrationTaskSchema>;
+    hasSnapshots: boolean;
+    hasTransitions: boolean;
+    prevCheckpointIndex: number | null;
+    nextCheckpointIndex: number | null;
+  };
+
+  const taskMetaList: TaskMeta[] = tasks.map((task) => ({
+    task,
+    hasSnapshots: Boolean(task.characterSnapshots?.length),
+    hasTransitions: Boolean(task.traitTransitions?.length),
+    prevCheckpointIndex: null,
+    nextCheckpointIndex: null,
+  }));
+
+  let lastCheckpointIndex: number | null = null;
+  taskMetaList.forEach((meta, index) => {
+    if (meta.hasSnapshots) {
+      lastCheckpointIndex = index;
+      return;
+    }
+    meta.prevCheckpointIndex = lastCheckpointIndex;
+  });
+
+  lastCheckpointIndex = null;
+  for (let index = taskMetaList.length - 1; index >= 0; index -= 1) {
+    const meta = taskMetaList[index]!;
+    if (meta.hasSnapshots) {
+      lastCheckpointIndex = index;
+      continue;
+    }
+    meta.nextCheckpointIndex = lastCheckpointIndex;
+  }
+
+  const summarizeCheckpoint = (checkpointIndex: number | null) => {
+    if (checkpointIndex == null) {
+      return "the prior checkpoint state";
+    }
+
+    const checkpointTask = taskMetaList[checkpointIndex]?.task;
+    if (!checkpointTask) {
+      return "the prior checkpoint state";
+    }
+
+    const snapshots = checkpointTask.characterSnapshots ?? [];
+    if (snapshots.length === 0) {
+      return `Task ${checkpointIndex + 1}`;
+    }
+
+    const labels = snapshots
+      .map(
+        (snapshot) =>
+          snapshot.stageLabel?.trim() || snapshot.name?.trim() || null,
+      )
+      .filter((label): label is string => Boolean(label));
+
+    if (labels.length === 0) {
+      return `Task ${checkpointIndex + 1}`;
+    }
+
+    return labels.join(" / ");
+  };
+
+  const sequenceInfo = new Map<
+    number,
+    {
+      position: number;
+      length: number;
+      prevSummary: string;
+      nextSummary: string;
+    }
+  >();
+
+  let currentSequence: number[] = [];
+  const finalizeSequence = () => {
+    if (currentSequence.length <= 1) {
+      currentSequence = [];
+      return;
+    }
+
+    const firstTaskIndex = currentSequence[0]!;
+    const firstMeta = taskMetaList[firstTaskIndex]!;
+    const prevSummary = summarizeCheckpoint(firstMeta.prevCheckpointIndex);
+    const nextSummary = summarizeCheckpoint(firstMeta.nextCheckpointIndex);
+
+    currentSequence.forEach((taskIndex, sequenceOffset) => {
+      sequenceInfo.set(taskIndex, {
+        position: sequenceOffset + 1,
+        length: currentSequence.length,
+        prevSummary,
+        nextSummary,
+      });
+    });
+
+    currentSequence = [];
+  };
+
+  taskMetaList.forEach((meta, index) => {
+    const isBetweenCheckpoints =
+      !meta.hasSnapshots &&
+      meta.hasTransitions &&
+      meta.prevCheckpointIndex != null &&
+      meta.nextCheckpointIndex != null;
+
+    if (isBetweenCheckpoints) {
+      currentSequence.push(index);
+      return;
+    }
+
+    finalizeSequence();
+  });
+  finalizeSequence();
+
+  return taskMetaList
+    .map((meta, taskIndex) => {
+      const { task } = meta;
+
       const snapshotSection = task.characterSnapshots?.length
         ? `Character snapshots to embody:
 ${task.characterSnapshots
@@ -161,7 +277,17 @@ ${task.traitTransitions
   .join("\n\n")}`
         : null;
 
-      const guidanceBlocks = [snapshotSection, transitionsSection]
+      const coordinationMetadata = sequenceInfo.get(taskIndex);
+      const transitionCoordinationSection = coordinationMetadata
+        ? `Transition coordination:
+This is transition beat ${coordinationMetadata.position} of ${coordinationMetadata.length} that bridges ${coordinationMetadata.prevSummary} to ${coordinationMetadata.nextSummary}. Build on the earlier beats, highlight a distinct facet of the shift, and avoid repeating or undoing progress in the listed transitions.`
+        : null;
+
+      const guidanceBlocks = [
+        snapshotSection,
+        transitionsSection,
+        transitionCoordinationSection,
+      ]
         .filter((section): section is string => Boolean(section))
         .join("\n\n");
 
@@ -172,6 +298,7 @@ Narrator: ${task.narrator}
 ${guidanceBlocks}`.trim();
     })
     .join("\n\n");
+};
 
 export async function POST(request: Request) {
   try {
@@ -208,6 +335,7 @@ ${timelineSection}For each task that follows, write a vivid first-person narrati
 - Use 2-4 sentences rich with sensory or emotional detail.
 - If character snapshots are supplied, embody the narrator exactly as those checkpoints describe.
 - If trait transitions are supplied, portray how the narrator shifts from the "from" traits to the "to" traits within the moment.
+- When several transition-only tasks appear consecutively between checkpoints, treat them as sequential beats of one transformation: progress the change together, avoid repeating identical beats, and never revert to traits that have already shifted.
 - Keep the progression consistent with previously established facts.
 
 Return each result as a JSON object that satisfies the provided schema.

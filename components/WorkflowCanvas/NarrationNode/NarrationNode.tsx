@@ -113,9 +113,9 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
     return findNarrator(id) ?? "Unknown narrator";
   }, [edges, id, nodes]);
   const eventBadgeClass =
-    "inline-flex items-center rounded bg-zinc-50 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-zinc-600";
+    "inline-flex items-center rounded bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-600";
   const narratorBadgeClass =
-    "inline-flex items-center rounded bg-yellow-50 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-yellow-600";
+    "inline-flex items-center rounded bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-warning";
 
   return (
     <div className="group relative flex h-44 w-64 flex-col rounded-lg border-2 border-secondary bg-white p-3 text-xs hover:shadow-lg">
