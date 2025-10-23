@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   addEdge,
   Background,
@@ -18,7 +18,53 @@ import { CustomEdge } from "./CustomEdge";
 import { CharacterNode } from "./CharacterNode/CharacterNode";
 import { EventNode } from "./EventNode/EventNode";
 import { NarrationNode } from "./NarrationNode/NarrationNode";
-import { type WorkflowNode } from "./workflow.constants";
+import {
+  type CharacterNodeType,
+  type EventNodeType,
+  type NarrationNodeType,
+  type WorkflowNode,
+  type CharacterTraits,
+} from "./workflow.constants";
+
+type TraitCategory = keyof CharacterTraits;
+
+type CharacterSnapshotPayload = {
+  name: string;
+  stageLabel?: string;
+  traits: {
+    physiology: string[];
+    psychology: string[];
+    sociology: string[];
+  };
+};
+
+type PositionedCharacterSnapshot = CharacterSnapshotPayload & {
+  positionX: number;
+};
+
+type TraitTransitionPayload = {
+  fromCharacter: string;
+  toCharacter: string;
+  category: TraitCategory;
+  fromTrait?: string;
+  toTrait?: string;
+};
+
+type NarrationTaskPayload = {
+  id: string;
+  narrator: string;
+  eventLabel: string;
+  eventObjective: string;
+  characterSnapshots?: CharacterSnapshotPayload[];
+  traitTransitions?: TraitTransitionPayload[];
+};
+
+type GenerateNarrationResponse = {
+  narrations: Array<{
+    id: string;
+    reflection: string;
+  }>;
+};
 
 const nodeTypes: NodeTypes = {
   event: EventNode,
@@ -30,6 +76,52 @@ const edgeTypes: EdgeTypes = {
   customEdge: CustomEdge,
 };
 
+const parseEventTimelineIndex = (timeline?: string | null) => {
+  if (!timeline) {
+    return null;
+  }
+
+  const match = timeline.match(/(\d+)/);
+  if (!match) {
+    return null;
+  }
+
+  return Number.parseInt(match[1] ?? "", 10);
+};
+
+const TRAIT_HANDLE_PATTERN =
+  /^(.*)-(physiology|psychology|sociology)-(\d+)-(left|right)$/;
+
+const parseTraitHandleId = (handleId?: string | null) => {
+  if (!handleId) {
+    return null;
+  }
+
+  const match = handleId.match(TRAIT_HANDLE_PATTERN);
+  if (!match) {
+    return null;
+  }
+
+  const [, nodeId, category, index] = match;
+  return {
+    nodeId,
+    category: category as TraitCategory,
+    index: Number.parseInt(index, 10),
+  };
+};
+
+const getTraitValue = (
+  node: CharacterNodeType,
+  category: TraitCategory,
+  index: number,
+) => {
+  const traits = node.data?.traits?.[category] ?? [];
+  if (index < 0 || index >= traits.length) {
+    return null;
+  }
+  return traits[index] ?? null;
+};
+
 export function WorkflowCanvas() {
   const proOptions = { hideAttribution: true };
 
@@ -39,6 +131,11 @@ export function WorkflowCanvas() {
   const onEdgesChange = useWorkflowStore((state) => state.onEdgesChange);
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const setEdges = useWorkflowStore((state) => state.setEdges);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [runStatus, setRunStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const handleAddCharacterNode = useCallback(() => {
     setNodes((currentNodes) => {
@@ -83,9 +180,387 @@ export function WorkflowCanvas() {
     [setEdges],
   );
 
+  const handleGenerateNarrations = useCallback(async () => {
+    if (isGenerating) {
+      return;
+    }
+
+    setRunStatus(null);
+    setIsGenerating(true);
+    let loadingNodeIds: Set<string> | null = null;
+
+    try {
+      const eventNodes = nodes.filter(
+        (node): node is EventNodeType => node.type === "event",
+      );
+      const narrationNodes = nodes.filter(
+        (node): node is NarrationNodeType => node.type === "narration",
+      );
+      const characterNodes = nodes.filter(
+        (node): node is CharacterNodeType => node.type === "character",
+      );
+
+      const characterNodeMap = new Map(
+        characterNodes.map((node) => [node.id, node]),
+      );
+
+      const traitTransitionMap = new Map<string, TraitTransitionPayload>();
+
+      edges.forEach((edge) => {
+        const sourceDetails = parseTraitHandleId(edge.sourceHandle);
+        const targetDetails = parseTraitHandleId(edge.targetHandle);
+        if (!sourceDetails || !targetDetails) {
+          return;
+        }
+
+        if (sourceDetails.category !== targetDetails.category) {
+          return;
+        }
+
+        const sourceNode = characterNodeMap.get(edge.source);
+        const targetNode = characterNodeMap.get(edge.target);
+        if (!sourceNode || !targetNode) {
+          return;
+        }
+
+        const fromCharacter = sourceNode.data?.name?.trim() || sourceNode.id;
+        const toCharacter = targetNode.data?.name?.trim() || targetNode.id;
+        const fromTrait = getTraitValue(
+          sourceNode,
+          sourceDetails.category,
+          sourceDetails.index,
+        );
+        const toTrait = getTraitValue(
+          targetNode,
+          targetDetails.category,
+          targetDetails.index,
+        );
+
+        const key = `${edge.sourceHandle ?? ""}->${edge.targetHandle ?? ""}`;
+        if (traitTransitionMap.has(key)) {
+          return;
+        }
+
+        traitTransitionMap.set(key, {
+          fromCharacter,
+          toCharacter,
+          category: sourceDetails.category,
+          fromTrait: fromTrait ?? undefined,
+          toTrait: toTrait ?? undefined,
+        });
+      });
+
+      const globalTraitTransitions = Array.from(traitTransitionMap.values());
+
+      const sortedEventNodes = [...eventNodes].sort((nodeA, nodeB) => {
+        const indexA = parseEventTimelineIndex(nodeA.data?.timeline);
+        const indexB = parseEventTimelineIndex(nodeB.data?.timeline);
+
+        if (indexA != null && indexB != null && indexA !== indexB) {
+          return indexA - indexB;
+        }
+
+        if (indexA != null) return -1;
+        if (indexB != null) return 1;
+
+        return nodeA.position.x - nodeB.position.x;
+      });
+
+      const eventSequence = sortedEventNodes.map((eventNode) => {
+        const timeline = eventNode.data?.timeline?.trim();
+        const description = eventNode.data?.description?.trim();
+        const safeDescription =
+          description && description.length > 0
+            ? description
+            : "No description provided.";
+
+        const label =
+          timeline && timeline.length > 0
+            ? timeline
+            : description && description.length > 0
+            ? description
+            : eventNode.id;
+
+        return {
+          label,
+          description: safeDescription,
+        };
+      });
+
+      const tasks = narrationNodes
+        .map((narrationNode): NarrationTaskPayload | null => {
+          const eventEdge = edges.find(
+            (edge) =>
+              edge.target === narrationNode.id && edge.targetHandle === "event",
+          );
+          if (!eventEdge) {
+            return null;
+          }
+
+          const eventNode = nodes.find(
+            (node): node is EventNodeType =>
+              node.id === eventEdge.source && node.type === "event",
+          );
+          if (!eventNode) {
+            return null;
+          }
+
+          const characterEdges = edges.filter((edge) => {
+            if (edge.target === narrationNode.id) {
+              return edge.targetHandle === "character";
+            }
+            if (edge.source === narrationNode.id) {
+              return edge.sourceHandle === "character";
+            }
+            return false;
+          });
+
+          const eventLabel =
+            eventNode.data?.timeline?.trim() ||
+            eventNode.data?.description?.trim() ||
+            eventNode.id;
+          const rawObjective = eventNode.data?.description?.trim();
+          const eventObjective =
+            rawObjective && rawObjective.length > 0
+              ? rawObjective
+              : `Describe what happens during ${eventLabel}.`;
+
+          const fallbackNarratorName =
+            narrationNode.data?.narrator?.trim() || "Narrator";
+
+          let characterSnapshots = characterEdges
+            .map((characterEdge) => {
+              const connectedId =
+                characterEdge.source === narrationNode.id
+                  ? characterEdge.target
+                  : characterEdge.source;
+              const characterNode = nodes.find(
+                (node): node is CharacterNodeType =>
+                  node.id === connectedId && node.type === "character",
+              );
+
+              if (!characterNode) {
+                return null;
+              }
+
+              const name = characterNode.data?.name?.trim() || characterNode.id;
+              const traits = characterNode.data?.traits ?? {
+                physiology: [],
+                psychology: [],
+                sociology: [],
+              };
+
+              return {
+                id: characterNode.id,
+                name,
+                positionX: characterNode.position.x,
+                traits: {
+                  physiology: traits.physiology ?? [],
+                  psychology: traits.psychology ?? [],
+                  sociology: traits.sociology ?? [],
+                },
+              };
+            })
+            .filter(
+              (
+                snapshot,
+              ): snapshot is PositionedCharacterSnapshot & { id: string } =>
+                snapshot != null,
+            )
+            .reduce<
+              Array<
+                PositionedCharacterSnapshot & {
+                  id: string;
+                }
+              >
+            >((accumulator, snapshot) => {
+              if (accumulator.some((item) => item.id === snapshot.id)) {
+                return accumulator;
+              }
+              accumulator.push(snapshot);
+              return accumulator;
+            }, [])
+            .sort((a, b) => a.positionX - b.positionX)
+            .map((snapshot, index) => {
+              const { positionX: _ignore, id: _omitId, ...rest } = snapshot;
+              return {
+                ...rest,
+                stageLabel: `Checkpoint ${index + 1}: ${snapshot.name}`,
+              };
+            });
+
+          let traitTransitionsForTask: TraitTransitionPayload[] | undefined;
+
+          if (characterSnapshots.length === 0) {
+            traitTransitionsForTask = globalTraitTransitions;
+
+            if (!traitTransitionsForTask || traitTransitionsForTask.length === 0) {
+              characterSnapshots = [
+                {
+                  name: fallbackNarratorName,
+                  stageLabel: `Narrator baseline for ${eventLabel}`,
+                  traits: {
+                    physiology: [],
+                    psychology: [],
+                    sociology: [],
+                  },
+                },
+              ];
+            }
+          }
+
+          const narratorName =
+            characterSnapshots[0]?.name || fallbackNarratorName;
+
+          const payload: NarrationTaskPayload = {
+            id: narrationNode.id,
+            narrator: narratorName,
+            eventLabel,
+            eventObjective,
+          };
+
+          if (characterSnapshots.length > 0) {
+            payload.characterSnapshots = characterSnapshots;
+          }
+
+          if (traitTransitionsForTask && traitTransitionsForTask.length > 0) {
+            payload.traitTransitions = traitTransitionsForTask;
+          }
+
+          if (!payload.characterSnapshots && !payload.traitTransitions) {
+            return null;
+          }
+
+          return payload;
+        })
+        .filter((task): task is NarrationTaskPayload => task != null);
+
+      if (tasks.length === 0) {
+        setRunStatus({
+          type: "error",
+          message:
+            "No narration nodes were eligible for generation.",
+        });
+        return;
+      }
+
+      loadingNodeIds = new Set(tasks.map((task) => task.id));
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.type !== "narration") {
+            return node;
+          }
+
+          const existingData = node.data as NarrationNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              isLoading: loadingNodeIds?.has(node.id) ?? false,
+            },
+          };
+        }),
+      );
+
+      const response = await fetch("/api/narration/run", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventSequence,
+          narrations: tasks,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null);
+        const errorMessage =
+          (errorBody && errorBody.error) ||
+          `Failed to generate narrations (${response.status}).`;
+        throw new Error(errorMessage);
+      }
+
+      const data = (await response.json()) as GenerateNarrationResponse;
+      const updates = new Map<string, string>(
+        (data?.narrations ?? []).map((item) => [item.id, item.reflection]),
+      );
+
+      if (updates.size === 0) {
+        setRunStatus({
+          type: "error",
+          message: "No narration updates were returned.",
+        });
+        return;
+      }
+
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.type === "narration" && updates.has(node.id)) {
+            const reflection = updates.get(node.id) ?? "";
+            const existingData = node.data as NarrationNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                reflection,
+              },
+            };
+          }
+          return node;
+        }),
+      );
+
+      setRunStatus({
+        type: "success",
+        message: "Narrations updated with fresh first-person passages.",
+      });
+    } catch (error) {
+      console.error("Error generating narrations:", error);
+      setRunStatus({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unexpected error generating narrations.",
+      });
+    } finally {
+      if (loadingNodeIds) {
+        setNodes((currentNodes) =>
+          currentNodes.map((node) => {
+            if (node.type !== "narration") {
+              return node;
+            }
+            if (!loadingNodeIds?.has(node.id)) {
+              return node;
+            }
+
+            const existingData = node.data as NarrationNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                isLoading: false,
+              },
+            };
+          }),
+        );
+      }
+      setIsGenerating(false);
+    }
+  }, [edges, isGenerating, nodes, setNodes]);
+
   return (
     <div className="h-full min-h-0 w-full relative">
-      <div className="absolute left-3 top-3 z-20">
+      <div className="absolute left-3 top-3 z-20 flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={handleGenerateNarrations}
+          disabled={isGenerating}
+          className="btn btn-primary btn-xs disabled:opacity-70"
+        >
+          {isGenerating ? "Running..." : "Run"}
+        </button>
         <button
           type="button"
           onClick={handleAddCharacterNode}
@@ -93,6 +568,15 @@ export function WorkflowCanvas() {
         >
           Add Character
         </button>
+        {runStatus && (
+          <p
+            className={`text-[11px] ${
+              runStatus.type === "error" ? "text-red-500" : "text-green-600"
+            }`}
+          >
+            {runStatus.message}
+          </p>
+        )}
       </div>
       <ReactFlow
         nodes={nodes}

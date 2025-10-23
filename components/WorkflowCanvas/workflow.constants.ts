@@ -8,6 +8,7 @@ export type EventNodeData = {
 export type NarrationNodeData = {
   narrator: string;
   reflection: string;
+  isLoading?: boolean;
 };
 
 export type CharacterTraits = {
@@ -42,7 +43,8 @@ export const initialNodes: WorkflowNode[] = [
     position: { x: 120, y: 80 },
     draggable: false,
     data: {
-      description: "Describe the inciting incident...",
+      description:
+        "At dawn, a band of raiders torches the outer granary; Aria breaks formation to drag a trapped child to safety while the rest hold the line.",
       timeline: "Event 1",
     },
   },
@@ -52,7 +54,8 @@ export const initialNodes: WorkflowNode[] = [
     position: { x: 420, y: 80 },
     draggable: false,
     data: {
-      description: "Describe the rising conflict...",
+      description:
+        "That afternoon, the council publicly reprimands Aria and demotes her to archive duty, placing her under the watch of the cautious historian Lysa.",
       timeline: "Event 2",
     },
   },
@@ -62,7 +65,8 @@ export const initialNodes: WorkflowNode[] = [
     position: { x: 720, y: 80 },
     draggable: false,
     data: {
-      description: "Describe the climactic choice...",
+      description:
+        "Night falls and the raiders return; drawing on what she learned in the archives, Aria coordinates an ambush that routes the attackers without further loss.",
       timeline: "Event 3",
     },
   },
@@ -73,7 +77,8 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       narrator: "Aria",
-      reflection: "I had never seen the elders tremble until that day.",
+      reflection: "",
+      isLoading: false,
     },
   },
   {
@@ -83,8 +88,8 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       narrator: "Aria",
-      reflection:
-        "Every echo in the caverns sounded like a warning meant for me.",
+      reflection: "",
+      isLoading: false,
     },
   },
   {
@@ -94,7 +99,8 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       narrator: "Aria",
-      reflection: "I gave up the relic, but what I gained was far greater.",
+      reflection: "",
+      isLoading: false,
     },
   },
   {
@@ -105,8 +111,8 @@ export const initialNodes: WorkflowNode[] = [
       name: "Aria",
       traits: {
         physiology: ["Quick-footed scout"],
-        psychology: ["Curious", "Wants to prove herself"],
-        sociology: ["Trusted by village elders"],
+        psychology: ["Impulsive", "Hungry to prove herself"],
+        sociology: ["Favored by the village guard captain"],
       },
     },
   },
@@ -117,9 +123,9 @@ export const initialNodes: WorkflowNode[] = [
     data: {
       name: "Aria",
       traits: {
-        physiology: ["Bearing relic's aura"],
-        psychology: ["Resolute protector"],
-        sociology: ["Guardian of the village"],
+        physiology: ["Wears a reinforced archivist's cloak"],
+        psychology: ["Strategic", "Protective without recklessness"],
+        sociology: ["Accepted voice on the village council"],
       },
     },
   },
@@ -204,6 +210,42 @@ export const initialEdges: WorkflowEdge[] = [
     target: "narration-3",
     sourceHandle: "narration",
     targetHandle: "character",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-attribute-physiology",
+    source: "character-start",
+    target: "character-end",
+    sourceHandle: "character-start-physiology-0-right",
+    targetHandle: "character-end-physiology-0-left",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-attribute-psychology-1",
+    source: "character-start",
+    target: "character-end",
+    sourceHandle: "character-start-psychology-0-right",
+    targetHandle: "character-end-psychology-0-left",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-attribute-psychology-2",
+    source: "character-start",
+    target: "character-end",
+    sourceHandle: "character-start-psychology-1-right",
+    targetHandle: "character-end-psychology-1-left",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-attribute-sociology",
+    source: "character-start",
+    target: "character-end",
+    sourceHandle: "character-start-sociology-0-right",
+    targetHandle: "character-end-sociology-0-left",
     type: "customEdge",
     animated: true,
   },

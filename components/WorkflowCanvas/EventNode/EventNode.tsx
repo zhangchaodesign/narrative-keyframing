@@ -138,6 +138,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           data: {
             narrator: `Narrator ${narrationNodes.length + 1}`,
             reflection: "Write the next reflection...",
+            isLoading: false,
           },
           draggable: false,
         };
@@ -363,6 +364,20 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         onChange={handleDescriptionChange}
         placeholder="Describe the event..."
         rows={4}
+        onWheel={(event) => {
+          if (event.ctrlKey || event.metaKey) {
+            return;
+          }
+          event.stopPropagation();
+          event.nativeEvent.stopImmediatePropagation?.();
+        }}
+        onWheelCapture={(event) => {
+          if (event.ctrlKey || event.metaKey) {
+            return;
+          }
+          event.stopPropagation();
+          event.nativeEvent.stopImmediatePropagation?.();
+        }}
         className="mt-2 w-full resize-none rounded border border-zinc-300 bg-white/70 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
       />
       <EventHandle type="target" position={Position.Left} id="event-prev" />

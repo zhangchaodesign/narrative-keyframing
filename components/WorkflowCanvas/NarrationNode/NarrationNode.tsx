@@ -23,6 +23,7 @@ const NARRATION_HORIZONTAL_GAP = 300;
 export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
   const edges = useStore((store) => store.edges);
   const nodes = useStore((store) => store.nodes);
+  const isLoading = data?.isLoading ?? false;
 
   const connectedEventLabel = useMemo(() => {
     const eventEdge = edges.find(
@@ -118,11 +119,54 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
 
   return (
     <div className="group relative flex h-44 w-64 flex-col rounded-lg border-2 border-indigo-400 bg-white p-3 text-xs hover:shadow-lg">
+      {isLoading && (
+        <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
+          <svg
+            className="h-6 w-6 animate-spin text-indigo-500"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            />
+          </svg>
+          <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-indigo-500">
+            Preparing narration...
+          </span>
+        </div>
+      )}
       <NodeActionMenu nodeId={id} />
       <div className="flex w-full flex-wrap items-center gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase">
         <span className="flex items-center">💬 Narration</span>
       </div>
-      <div className="mt-2 flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800">
+      <div
+        className="mt-2 flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800"
+        onWheel={(event) => {
+          if (event.ctrlKey || event.metaKey) {
+            return;
+          }
+          event.stopPropagation();
+          event.nativeEvent.stopImmediatePropagation?.();
+        }}
+        onWheelCapture={(event) => {
+          if (event.ctrlKey || event.metaKey) {
+            return;
+          }
+          event.stopPropagation();
+          event.nativeEvent.stopImmediatePropagation?.();
+        }}
+      >
         {data?.reflection}
       </div>
       <div className="mt-2 flex gap-2">
