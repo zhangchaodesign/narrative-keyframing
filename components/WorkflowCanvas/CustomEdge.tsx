@@ -183,7 +183,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
           },
           data: {
             narrator: `Narrator ${narrationCount + 1}`,
-            reflection: "Write the next reflection...",
+            reflection: "",
           },
           draggable: false,
         };

@@ -137,7 +137,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           },
           data: {
             narrator: `Narrator ${narrationNodes.length + 1}`,
-            reflection: "Write the next reflection...",
+            reflection: "",
             isLoading: false,
           },
           draggable: false,
