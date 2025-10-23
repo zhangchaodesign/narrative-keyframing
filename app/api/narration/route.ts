@@ -86,9 +86,9 @@ const CATEGORY_LABELS: Record<z.infer<typeof TraitCategorySchema>, string> = {
 
 const formatTraitCategory = (label: string, traits: string[]) => {
   if (!traits || traits.length === 0) {
-    return `${label}: (no specific traits provided)`;
+    return `- ${label}: (no specific traits provided)`;
   }
-  return `${label}: ${traits.join(", ")}`;
+  return `- ${label}: ${traits.join(", ")}`;
 };
 
 const buildSnapshotSection = (
@@ -340,7 +340,7 @@ ${task.traitTransitions
   .map((transition, transitionIndex) =>
     buildTransitionSection(transition, transitionIndex),
   )
-  .join("\n\n")}`
+  .join("\n")}`
         : null;
 
       const coordinationMetadata = sequenceInfo.get(taskIndex);

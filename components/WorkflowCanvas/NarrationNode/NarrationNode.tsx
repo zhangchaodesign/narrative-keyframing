@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   Position,
   type NodeProps,
@@ -21,6 +21,7 @@ import type {
 const NARRATION_HORIZONTAL_GAP = 300;
 
 export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
+  const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
   const edges = useStore((store) => store.edges);
   const nodes = useStore((store) => store.nodes);
   const isLoading = data?.isLoading ?? false;
@@ -53,7 +54,7 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
   }, [edges, id, nodes]);
 
   const eventLabel = connectedEventLabel?.trim() || "Event";
-  const narratorName = useMemo(() => {
+  const { narratorName, hasDirectCharacter, isFromPrevious } = useMemo(() => {
     const visited = new Set<string>();
 
     const getCharacterName = (narrationId: string) => {
@@ -73,7 +74,9 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
       return name || null;
     };
 
-    const findNarrator = (narrationId: string): string | null => {
+    const findNarrator = (
+      narrationId: string,
+    ): { name: string; originId: string } | null => {
       if (visited.has(narrationId)) {
         return null;
       }
@@ -81,7 +84,7 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
 
       const characterName = getCharacterName(narrationId);
       if (characterName) {
-        return characterName;
+        return { name: characterName, originId: narrationId };
       }
 
       const previousEdges = edges.filter(
@@ -107,11 +110,62 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
         (node) => node.id === narrationId && node.type === "narration",
       ) as NarrationNodeType | undefined;
       const fallbackName = currentNode?.data?.narrator?.trim();
-      return fallbackName || null;
+      if (!fallbackName) {
+        return null;
+      }
+
+      return { name: fallbackName, originId: narrationId };
     };
 
-    return findNarrator(id) ?? "Unknown narrator";
+    const narratorFromGraph = findNarrator(id);
+    const directCharacterName = getCharacterName(id);
+    const name = narratorFromGraph?.name ?? directCharacterName ?? "Unknown narrator";
+    const originId = narratorFromGraph?.originId ?? (directCharacterName ? id : null);
+
+    return {
+      narratorName: name,
+      hasDirectCharacter: Boolean(directCharacterName),
+      isFromPrevious: originId !== null && originId !== id,
+    };
   }, [edges, id, nodes]);
+  useEffect(() => {
+    if (hasDirectCharacter || !isFromPrevious) {
+      return;
+    }
+
+    const trimmedNarrator = narratorName.trim();
+    if (!trimmedNarrator || trimmedNarrator === "Unknown narrator") {
+      return;
+    }
+
+    const currentNarrator = data?.narrator?.trim() ?? "";
+    if (currentNarrator === trimmedNarrator) {
+      return;
+    }
+
+    setNodes((nodesState) =>
+      nodesState.map((node) => {
+        if (node.id !== id || node.type !== "narration") {
+          return node;
+        }
+
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            narrator: trimmedNarrator,
+          },
+        };
+      }),
+    );
+  }, [
+    data?.narrator,
+    hasDirectCharacter,
+    id,
+    isFromPrevious,
+    narratorName,
+    setNodes,
+  ]);
   const eventBadgeClass =
     "inline-flex items-center rounded bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-600";
   const narratorBadgeClass =
