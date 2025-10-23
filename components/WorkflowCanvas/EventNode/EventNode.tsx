@@ -364,6 +364,9 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         onChange={handleDescriptionChange}
         placeholder="Describe the event..."
         rows={4}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+        }}
         onWheel={(event) => {
           if (event.ctrlKey || event.metaKey) {
             return;
@@ -378,7 +381,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           event.stopPropagation();
           event.nativeEvent.stopImmediatePropagation?.();
         }}
-        className="mt-2 w-full resize-none rounded border border-zinc-300 bg-white/70 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
+        className="mt-2 w-full resize-none rounded border border-zinc-300 bg-white/70 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400 nodrag nopan"
       />
       <EventHandle type="target" position={Position.Left} id="event-prev" />
       <EventHandle type="source" position={Position.Right} id="event-next" />
