@@ -19,10 +19,7 @@ import { CharacterNode } from "@/components/WorkflowCanvas/CharacterNode/Charact
 import { EventNode } from "@/components/WorkflowCanvas/EventNode/EventNode";
 import { PerspectiveNode } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveNode";
 import { RunPerspectiveContext } from "@/components/WorkflowCanvas/RunPerspectiveContext";
-import {
-  type PerspectiveNodeType,
-  type WorkflowNode,
-} from "@/lib/types/workflow";
+import { type PerspectiveNodeType } from "@/lib/types/workflow";
 import {
   preparePerspectiveRequest,
   type GeneratePerspectiveResponse,
@@ -52,32 +49,6 @@ export function WorkflowCanvas() {
     type: "success" | "error";
     message: string;
   } | null>(null);
-
-  const handleAddCharacterNode = useCallback(() => {
-    setNodes((currentNodes) => {
-      const characterCount = currentNodes.filter(
-        (node) => node.type === "character",
-      ).length;
-      const newId = `character-${Date.now()}`;
-      const newNode: WorkflowNode = {
-        id: newId,
-        type: "character",
-        position: {
-          x: 120 + Math.random() * 200,
-          y: 450 + characterCount * 140,
-        },
-        data: {
-          name: `New Character ${characterCount + 1}`,
-          traits: {
-            physiology: [],
-            psychology: [],
-            sociology: [],
-          },
-        },
-      };
-      return [...currentNodes, newNode];
-    });
-  }, [setNodes]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -252,12 +223,8 @@ export function WorkflowCanvas() {
     <RunPerspectiveContext.Provider value={handleGeneratePerspectives}>
       <div className="h-full min-h-0 w-full relative">
         <div className="absolute left-3 top-3 z-20 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={handleAddCharacterNode}
-            className="btn-neutral btn-xs btn"
-          >
-            Add Character Snapshot
+          <button type="button" className="btn-neutral btn-xs btn">
+            Add a First-Person Limited Cluster
           </button>
           {runStatus && (
             <p className="text-[11px] text-red-500">{runStatus.message}</p>
