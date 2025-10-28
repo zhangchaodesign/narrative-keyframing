@@ -71,6 +71,17 @@ export const initialNodes: WorkflowNode[] = [
     },
   },
   {
+    id: "event-4",
+    type: "event",
+    position: { x: 1020, y: 80 },
+    draggable: false,
+    data: {
+      description:
+        "At week's end, Aria and Lysa present the ambush tactics to the council, earning a mandate to train scouts and archivists together.",
+      timeline: "Event 4",
+    },
+  },
+  {
     id: "narration-1",
     type: "narration",
     position: { x: 120, y: 240 },
@@ -104,6 +115,17 @@ export const initialNodes: WorkflowNode[] = [
     },
   },
   {
+    id: "narration-4",
+    type: "narration",
+    position: { x: 1020, y: 240 },
+    draggable: false,
+    data: {
+      narrator: "Aria",
+      reflection: "",
+      isLoading: false,
+    },
+  },
+  {
     id: "character-start",
     type: "character",
     position: { x: 120, y: 450 },
@@ -112,14 +134,17 @@ export const initialNodes: WorkflowNode[] = [
       traits: {
         physiology: ["Quick-footed scout"],
         psychology: ["Impulsive", "Hungry to prove herself"],
-        sociology: ["Favored by the village guard captain"],
+        sociology: [
+          "Favored by the village guard captain",
+          "Resented by the archive scribes",
+        ],
       },
     },
   },
   {
     id: "character-end",
     type: "character",
-    position: { x: 720, y: 450 },
+    position: { x: 1020, y: 450 },
     data: {
       name: "Aria",
       traits: {
@@ -145,6 +170,15 @@ export const initialEdges: WorkflowEdge[] = [
     id: "edge-event-2-3",
     source: "event-2",
     target: "event-3",
+    sourceHandle: "event-next",
+    targetHandle: "event-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-event-3-4",
+    source: "event-3",
+    target: "event-4",
     sourceHandle: "event-next",
     targetHandle: "event-prev",
     type: "customEdge",
@@ -178,6 +212,15 @@ export const initialEdges: WorkflowEdge[] = [
     animated: true,
   },
   {
+    id: "edge-event-4-narration-4",
+    source: "event-4",
+    target: "narration-4",
+    sourceHandle: "narration",
+    targetHandle: "event",
+    type: "customEdge",
+    animated: true,
+  },
+  {
     id: "edge-narration-1-2",
     source: "narration-1",
     target: "narration-2",
@@ -196,6 +239,15 @@ export const initialEdges: WorkflowEdge[] = [
     animated: true,
   },
   {
+    id: "edge-narration-3-4",
+    source: "narration-3",
+    target: "narration-4",
+    sourceHandle: "narration-next",
+    targetHandle: "narration-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
     id: "edge-character-start-narration-1",
     source: "character-start",
     target: "narration-1",
@@ -205,9 +257,9 @@ export const initialEdges: WorkflowEdge[] = [
     animated: true,
   },
   {
-    id: "edge-character-end-narration-3",
+    id: "edge-character-end-narration-4",
     source: "character-end",
-    target: "narration-3",
+    target: "narration-4",
     sourceHandle: "narration",
     targetHandle: "character",
     type: "customEdge",
