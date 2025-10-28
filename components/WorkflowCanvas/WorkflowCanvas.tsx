@@ -257,7 +257,7 @@ export function WorkflowCanvas() {
             onClick={handleAddCharacterNode}
             className="btn-neutral btn-xs btn"
           >
-            Add Character
+            Add Character Sheet
           </button>
           {runStatus && (
             <p className="text-[11px] text-red-500">{runStatus.message}</p>
