@@ -3,7 +3,6 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -13,7 +12,6 @@ import {
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { TbCheck, TbPencil, TbPlus, TbX } from "react-icons/tb";
 import { CustomHandle } from "../CustomHandle";
-import { AttributeHandle } from "./AttributeHandle";
 import { NodeActionMenu } from "../NodeActionMenu";
 import type { CharacterNodeType, CharacterTraits } from "../workflow.constants";
 
@@ -56,7 +54,6 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   const { setNodes } = useReactFlow();
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const traitRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const editingInputRef = useRef<HTMLInputElement | null>(null);
 
   const [draftTraits, setDraftTraits] = useState<Record<TraitCategory, string>>(
@@ -74,9 +71,6 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     index: number;
     value: string;
   } | null>(null);
-  const [traitPositions, setTraitPositions] = useState<Record<string, number>>(
-    {},
-  );
 
   const traits = useMemo<CharacterTraits>(() => {
     if (!data?.traits) {
@@ -164,17 +158,6 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     setEditingTrait(null);
     setActiveCategory((current) => (current === category ? null : category));
   }, []);
-
-  const registerTraitRef = useCallback(
-    (traitId: string) => (element: HTMLDivElement | null) => {
-      if (element) {
-        traitRefs.current[traitId] = element;
-      } else {
-        delete traitRefs.current[traitId];
-      }
-    },
-    [],
-  );
 
   const handleRemoveTrait = useCallback(
     (category: TraitCategory, index: number) => {
@@ -288,43 +271,6 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     }
   }, [editingTrait]);
 
-  useLayoutEffect(() => {
-    const measure = () => {
-      const container = containerRef.current;
-      if (!container) return;
-
-      const nextPositions: Record<string, number> = {};
-
-      Object.entries(traitRefs.current).forEach(([traitId, element]) => {
-        if (!element) return;
-        // Use offsetTop/offsetHeight which are not affected by zoom transforms
-        // This ensures handles are positioned correctly regardless of canvas zoom level
-        nextPositions[traitId] = element.offsetTop + element.offsetHeight / 2;
-      });
-
-      setTraitPositions(nextPositions);
-    };
-
-    measure();
-    window.addEventListener("resize", measure);
-    return () => {
-      window.removeEventListener("resize", measure);
-    };
-  }, [traits, activeCategory, editingTrait]);
-
-  const traitHandles = useMemo(() => {
-    return TRAIT_CATEGORIES.flatMap(({ key }) =>
-      (traits[key] ?? []).map((_trait, index) => {
-        const traitBaseId = `${id}-${key}-${index}`;
-        const traitCenter = traitPositions[traitBaseId];
-        return {
-          baseId: traitBaseId,
-          top: traitCenter,
-        };
-      }),
-    );
-  }, [id, traitPositions, traits]);
-
   return (
     <div
       ref={containerRef}
@@ -381,7 +327,6 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
               </div>
               <div className="mt-2 flex flex-col gap-2">
                 {(traits[key] ?? []).map((trait, index) => {
-                  const traitBaseId = `${id}-${key}-${index}`;
                   const isEditing =
                     editingTrait?.category === key &&
                     editingTrait.index === index;
@@ -389,7 +334,6 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                   return (
                     <div
                       key={`${key}-${trait}-${index}`}
-                      ref={registerTraitRef(traitBaseId)}
                       className={`group/trait relative flex items-center rounded border-none text-[10px] transition ${chipClass}`}
                     >
                       {isEditing ? (
@@ -487,22 +431,6 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
           ),
         )}
       </div>
-      {traitHandles.flatMap(({ baseId, top }) => [
-        <AttributeHandle
-          key={`${baseId}-target`}
-          type="target"
-          position={Position.Left}
-          id={`${baseId}-left`}
-          style={top != null ? { top: top } : undefined}
-        />,
-        <AttributeHandle
-          key={`${baseId}-source`}
-          type="source"
-          position={Position.Right}
-          id={`${baseId}-right`}
-          style={top != null ? { top: top } : undefined}
-        />,
-      ])}
       <CustomHandle type="source" position={Position.Top} id="narration" />
     </div>
   );

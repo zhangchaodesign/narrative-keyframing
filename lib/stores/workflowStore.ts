@@ -34,9 +34,22 @@ const deepClone = <T>(value: T): T => {
   return JSON.parse(JSON.stringify(value)) as T;
 };
 
+const ATTRIBUTE_HANDLE_PATTERN = /-(physiology|psychology|sociology)-/;
+const STORAGE_VERSION = 2;
+
+const sanitizeEdges = (edges: WorkflowEdge[]): WorkflowEdge[] =>
+  edges.filter((edge) => {
+    const sourceHandle = edge.sourceHandle ?? "";
+    const targetHandle = edge.targetHandle ?? "";
+    return (
+      !ATTRIBUTE_HANDLE_PATTERN.test(sourceHandle) &&
+      !ATTRIBUTE_HANDLE_PATTERN.test(targetHandle)
+    );
+  });
+
 const getInitialState = () => ({
   nodes: deepClone(initialNodes),
-  edges: deepClone(initialEdges),
+  edges: sanitizeEdges(deepClone(initialEdges)),
 });
 
 export const useWorkflowStore = create<WorkflowState>()(
@@ -54,12 +67,13 @@ export const useWorkflowStore = create<WorkflowState>()(
         })),
       setEdges: (updater) =>
         set((state) => ({
-          edges:
+          edges: sanitizeEdges(
             typeof updater === "function"
               ? (updater as (edges: WorkflowEdge[]) => WorkflowEdge[])(
                   state.edges,
                 )
               : updater,
+          ),
         })),
       onNodesChange: (changes) =>
         set({
@@ -67,13 +81,30 @@ export const useWorkflowStore = create<WorkflowState>()(
         }),
       onEdgesChange: (changes) =>
         set({
-          edges: applyEdgeChanges(changes, get().edges),
+          edges: sanitizeEdges(applyEdgeChanges(changes, get().edges)),
         }),
       reset: () => set(getInitialState()),
     }),
     {
       name: "workflow-canvas-storage",
-      version: 1,
+      version: STORAGE_VERSION,
+      migrate: (persistedState, version) => {
+        if (!persistedState) {
+          return getInitialState();
+        }
+
+        if (version < STORAGE_VERSION) {
+          return {
+            ...persistedState,
+            edges: sanitizeEdges(persistedState.edges ?? []),
+          };
+        }
+
+        return {
+          ...persistedState,
+          edges: sanitizeEdges(persistedState.edges ?? []),
+        };
+      },
       partialize: (state) => ({
         nodes: state.nodes,
         edges: state.edges,
