@@ -19,9 +19,11 @@ import type {
 } from "@/lib/types/workflow";
 
 const NARRATION_HORIZONTAL_GAP = 300;
+const CHARACTER_VERTICAL_GAP = 210;
 
 export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
-  const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
+  const { setNodes, setEdges, getNode } =
+    useReactFlow<WorkflowNode, WorkflowEdge>();
   const edges = useStore((store) => store.edges);
   const nodes = useStore((store) => store.nodes);
   const isLoading = data?.isLoading ?? false;
@@ -169,6 +171,74 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     narratorName,
     setNodes,
   ]);
+  const handleCreateCharacter = useCallback(() => {
+    const hasCharacterEdge = edges.some(
+      (edge) => edge.target === id && edge.targetHandle === "character",
+    );
+    if (hasCharacterEdge) {
+      return;
+    }
+
+    const perspectiveNode =
+      getNode(id) ??
+      (nodes.find(
+        (node) => node.id === id && node.type === "perspective",
+      ) as PerspectiveNodeType | undefined);
+    if (!perspectiveNode) {
+      return;
+    }
+
+    const timestamp = Date.now();
+    const newCharacterId = `character-${timestamp}`;
+    const newEdgeId = `edge-${newCharacterId}-${id}`;
+
+    setNodes((nodesState) => {
+      const characterNodes = nodesState.filter(
+        (nodeState): nodeState is CharacterNodeType =>
+          nodeState.type === "character",
+      );
+      const characterRowY =
+        characterNodes[0]?.position.y ??
+        perspectiveNode.position.y + CHARACTER_VERTICAL_GAP;
+      const trimmedNarrator = data?.narrator?.trim();
+      const defaultName =
+        trimmedNarrator && trimmedNarrator !== "Unknown narrator"
+          ? trimmedNarrator
+          : `New Character ${characterNodes.length + 1}`;
+
+      const newCharacterNode: WorkflowNode = {
+        id: newCharacterId,
+        type: "character",
+        position: {
+          x: perspectiveNode.position.x,
+          y: characterRowY,
+        },
+        data: {
+          name: defaultName,
+          traits: {
+            physiology: [],
+            psychology: [],
+            sociology: [],
+          },
+        },
+      };
+
+      return [...nodesState, newCharacterNode];
+    });
+
+    setEdges((edgesState) => [
+      ...edgesState,
+      {
+        id: newEdgeId,
+        source: newCharacterId,
+        target: id,
+        sourceHandle: "perspective",
+        targetHandle: "character",
+        type: "customEdge",
+        animated: true,
+      },
+    ]);
+  }, [data?.narrator, edges, getNode, id, nodes, setEdges, setNodes]);
   const eventBadgeClass =
     "inline-flex items-center rounded bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-600";
   const narratorBadgeClass =
@@ -221,6 +291,17 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         position={Position.Right}
         id="perspective-next"
       />
+      {!hasDirectCharacter && (
+        <button
+          type="button"
+          onClick={handleCreateCharacter}
+          disabled={isLoading}
+          className="absolute left-1/2 top-full z-10 mt-3 flex w-48 -translate-x-1/2 flex-col items-center justify-center rounded-lg border-2 border-dashed border-warning/50 bg-white/90 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-warning transition hover:bg-warning/10 hover:text-warning focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-warning disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <span className="text-lg leading-none">＋</span>
+          <span>Add Character Snapshot</span>
+        </button>
+      )}
       <CustomHandle type="target" position={Position.Top} id="event" />
       <CustomHandle type="target" position={Position.Bottom} id="character" />
     </div>
