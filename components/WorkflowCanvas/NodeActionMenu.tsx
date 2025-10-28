@@ -4,7 +4,7 @@ import { useCallback, useContext, useMemo } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { TbCopy, TbPlayerPlay, TbTrash } from "react-icons/tb";
 
-import { RunNarrationContext } from "./RunNarrationContext";
+import { RunPerspectiveContext } from "./RunPerspectiveContext";
 import type { WorkflowEdge, WorkflowNode } from "./workflow.constants";
 
 type NodeActionMenuProps = {
@@ -28,9 +28,12 @@ function cloneData<DataType>(data: DataType): DataType {
 
 export function NodeActionMenu({ nodeId, nodeType }: NodeActionMenuProps) {
   const { setNodes, setEdges } = useReactFlow<WorkflowNode, WorkflowEdge>();
-  const runNarrations = useContext(RunNarrationContext);
+  const runPerspectives = useContext(RunPerspectiveContext);
 
-  const isNarrationNode = useMemo(() => nodeType === "narration", [nodeType]);
+  const isPerspectiveNode = useMemo(
+    () => nodeType === "perspective",
+    [nodeType],
+  );
 
   const handleDelete = useCallback(() => {
     setNodes((nodes) => nodes.filter((node) => node.id !== nodeId));
@@ -73,15 +76,15 @@ export function NodeActionMenu({ nodeId, nodeType }: NodeActionMenuProps) {
   }, [nodeId, setNodes]);
 
   const handleRun = useCallback(() => {
-    if (!isNarrationNode) {
+    if (!isPerspectiveNode) {
       return;
     }
-    runNarrations();
-  }, [isNarrationNode, runNarrations]);
+    runPerspectives();
+  }, [isPerspectiveNode, runPerspectives]);
 
   return (
     <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
-      {isNarrationNode && (
+      {isPerspectiveNode && (
         <button
           type="button"
           onClick={handleRun}

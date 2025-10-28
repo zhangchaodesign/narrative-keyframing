@@ -5,7 +5,7 @@ export type EventNodeData = {
   timeline: string;
 };
 
-export type NarrationNodeData = {
+export type PerspectiveNodeData = {
   narrator: string;
   reflection: string;
   isLoading?: boolean;
@@ -23,12 +23,12 @@ export type CharacterNodeData = {
 };
 
 export type EventNodeType = Node<EventNodeData, "event">;
-export type NarrationNodeType = Node<NarrationNodeData, "narration">;
+export type PerspectiveNodeType = Node<PerspectiveNodeData, "perspective">;
 export type CharacterNodeType = Node<CharacterNodeData, "character">;
 
 export type WorkflowNode =
   | EventNodeType
-  | NarrationNodeType
+  | PerspectiveNodeType
   | CharacterNodeType;
 
 export type WorkflowEdge = Edge & {

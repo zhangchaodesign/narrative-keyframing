@@ -7,20 +7,20 @@ import {
   useReactFlow,
   useStore,
 } from "@xyflow/react";
-import { CustomHandle } from "../CustomHandle";
-import { NarrationHandle } from "./NarrationHandle";
-import { NodeActionMenu } from "../NodeActionMenu";
+import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
+import { PerspectiveHandle } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveHandle";
+import { NodeActionMenu } from "@/components/WorkflowCanvas/NodeActionMenu";
 import type {
   CharacterNodeType,
   EventNodeType,
-  NarrationNodeType,
+  PerspectiveNodeType,
   WorkflowEdge,
   WorkflowNode,
-} from "../workflow.constants";
+} from "@/lib/types/workflow";
 
 const NARRATION_HORIZONTAL_GAP = 300;
 
-export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
+export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
   const edges = useStore((store) => store.edges);
   const nodes = useStore((store) => store.nodes);
@@ -89,13 +89,14 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
 
       const previousEdges = edges.filter(
         (edge) =>
-          edge.target === narrationId && edge.targetHandle === "narration-prev",
+          edge.target === narrationId &&
+          edge.targetHandle === "perspective-prev",
       );
 
       for (const prevEdge of previousEdges) {
         const prevNode = nodes.find(
-          (node) => node.id === prevEdge.source && node.type === "narration",
-        ) as NarrationNodeType | undefined;
+          (node) => node.id === prevEdge.source && node.type === "perspective",
+        ) as PerspectiveNodeType | undefined;
         if (!prevNode) {
           continue;
         }
@@ -107,8 +108,8 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
       }
 
       const currentNode = nodes.find(
-        (node) => node.id === narrationId && node.type === "narration",
-      ) as NarrationNodeType | undefined;
+        (node) => node.id === narrationId && node.type === "perspective",
+      ) as PerspectiveNodeType | undefined;
       const fallbackName = currentNode?.data?.narrator?.trim();
       if (!fallbackName) {
         return null;
@@ -119,8 +120,10 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
 
     const narratorFromGraph = findNarrator(id);
     const directCharacterName = getCharacterName(id);
-    const name = narratorFromGraph?.name ?? directCharacterName ?? "Unknown narrator";
-    const originId = narratorFromGraph?.originId ?? (directCharacterName ? id : null);
+    const name =
+      narratorFromGraph?.name ?? directCharacterName ?? "Unknown narrator";
+    const originId =
+      narratorFromGraph?.originId ?? (directCharacterName ? id : null);
 
     return {
       narratorName: name,
@@ -145,7 +148,7 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
 
     setNodes((nodesState) =>
       nodesState.map((node) => {
-        if (node.id !== id || node.type !== "narration") {
+        if (node.id !== id || node.type !== "perspective") {
           return node;
         }
 
@@ -181,7 +184,7 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
           </span>
         </div>
       )}
-      <NodeActionMenu nodeId={id} nodeType="narration" />
+      <NodeActionMenu nodeId={id} nodeType="perspective" />
       <div className="flex w-full flex-wrap items-center gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase">
         <span className="flex items-center">💬 Perspective</span>
       </div>
@@ -208,15 +211,15 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
         <span className={eventBadgeClass}>{eventLabel}</span>
         <span className={narratorBadgeClass}>{narratorName}</span>
       </div>
-      <NarrationHandle
+      <PerspectiveHandle
         type="target"
         position={Position.Left}
-        id="narration-prev"
+        id="perspective-prev"
       />
-      <NarrationHandle
+      <PerspectiveHandle
         type="source"
         position={Position.Right}
-        id="narration-next"
+        id="perspective-next"
       />
       <CustomHandle type="target" position={Position.Top} id="event" />
       <CustomHandle type="target" position={Position.Bottom} id="character" />

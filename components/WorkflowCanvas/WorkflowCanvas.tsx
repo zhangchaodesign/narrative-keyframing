@@ -14,23 +14,23 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
-import { CustomEdge } from "./CustomEdge";
-import { CharacterNode } from "./CharacterNode/CharacterNode";
-import { EventNode } from "./EventNode/EventNode";
-import { NarrationNode } from "./NarrationNode/NarrationNode";
-import { RunNarrationContext } from "./RunNarrationContext";
+import { CustomEdge } from "@/components/WorkflowCanvas/CustomEdge";
+import { CharacterNode } from "@/components/WorkflowCanvas/CharacterNode/CharacterNode";
+import { EventNode } from "@/components/WorkflowCanvas/EventNode/EventNode";
+import { PerspectiveNode } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveNode";
+import { RunPerspectiveContext } from "@/components/WorkflowCanvas/RunPerspectiveContext";
 import {
-  type NarrationNodeType,
+  type PerspectiveNodeType,
   type WorkflowNode,
 } from "./workflow.constants";
 import {
-  prepareNarrationRequest,
-  type GenerateNarrationResponse,
-} from "@/lib/workflow/narration";
+  preparePerspectiveRequest,
+  type GeneratePerspectiveResponse,
+} from "@/lib/workflow/perspective";
 
 const nodeTypes: NodeTypes = {
   event: EventNode,
-  narration: NarrationNode,
+  perspective: PerspectiveNode,
   character: CharacterNode,
 };
 
@@ -96,7 +96,7 @@ export function WorkflowCanvas() {
     [setEdges],
   );
 
-  const handleGenerateNarrations = useCallback(
+  const handleGeneratePerspectives = useCallback(
     async (targetNodeIds?: string[]) => {
       if (isGenerating) {
         return;
@@ -107,7 +107,7 @@ export function WorkflowCanvas() {
       let loadingNodeIds: Set<string> | null = null;
 
       try {
-        const preparation = prepareNarrationRequest({
+        const preparation = preparePerspectiveRequest({
           nodes,
           edges,
           targetNodeIds,
@@ -116,7 +116,7 @@ export function WorkflowCanvas() {
         if (!preparation) {
           setRunStatus({
             type: "error",
-            message: "No narration nodes were eligible for generation.",
+            message: "No perspective nodes were eligible for generation.",
           });
           return;
         }
@@ -126,11 +126,11 @@ export function WorkflowCanvas() {
         loadingNodeIds = new Set(tasks.map((task) => task.id));
         setNodes((currentNodes) =>
           currentNodes.map((node) => {
-            if (node.type !== "narration") {
+            if (node.type !== "perspective") {
               return node;
             }
 
-            const existingData = node.data as NarrationNodeType["data"];
+            const existingData = node.data as PerspectiveNodeType["data"];
             return {
               ...node,
               data: {
@@ -141,7 +141,7 @@ export function WorkflowCanvas() {
           }),
         );
 
-        const response = await fetch("/api/narration", {
+        const response = await fetch("/api/perspective", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -160,10 +160,10 @@ export function WorkflowCanvas() {
           throw new Error(errorMessage);
         }
 
-        const data = (await response.json()) as GenerateNarrationResponse;
-        const narrations = data?.narrations ?? [];
+        const data = (await response.json()) as GeneratePerspectiveResponse;
+        const perspectives = data?.perspectives ?? [];
 
-        const orderedUpdates = narrations
+        const orderedUpdates = perspectives
           .map((item, index) => {
             const task = tasks[index];
             if (!task) {
@@ -176,17 +176,17 @@ export function WorkflowCanvas() {
         if (orderedUpdates.length === 0) {
           setRunStatus({
             type: "error",
-            message: "No narration updates were returned.",
+            message: "No perspective updates were returned.",
           });
           return;
         }
 
-        if (narrations.length !== tasks.length) {
+        if (perspectives.length !== tasks.length) {
           console.warn(
-            "Narration response count did not match requested tasks.",
+            "Perspective response count did not match requested tasks.",
             {
               requested: tasks.length,
-              received: narrations.length,
+              received: perspectives.length,
             },
           );
         }
@@ -195,9 +195,9 @@ export function WorkflowCanvas() {
 
         setNodes((currentNodes) =>
           currentNodes.map((node) => {
-            if (node.type === "narration" && updateMap.has(node.id)) {
+            if (node.type === "perspective" && updateMap.has(node.id)) {
               const reflection = updateMap.get(node.id) ?? "";
-              const existingData = node.data as NarrationNodeType["data"];
+              const existingData = node.data as PerspectiveNodeType["data"];
               return {
                 ...node,
                 data: {
@@ -224,14 +224,14 @@ export function WorkflowCanvas() {
         if (loadingNodeIds) {
           setNodes((currentNodes) =>
             currentNodes.map((node) => {
-              if (node.type !== "narration") {
+              if (node.type !== "perspective") {
                 return node;
               }
               if (!loadingNodeIds?.has(node.id)) {
                 return node;
               }
 
-              const existingData = node.data as NarrationNodeType["data"];
+              const existingData = node.data as PerspectiveNodeType["data"];
               return {
                 ...node,
                 data: {
@@ -249,7 +249,7 @@ export function WorkflowCanvas() {
   );
 
   return (
-    <RunNarrationContext.Provider value={handleGenerateNarrations}>
+    <RunPerspectiveContext.Provider value={handleGeneratePerspectives}>
       <div className="h-full min-h-0 w-full relative">
         <div className="absolute left-3 top-3 z-20 flex flex-col gap-2">
           <button
@@ -281,6 +281,6 @@ export function WorkflowCanvas() {
           <MiniMap pannable zoomable />
         </ReactFlow>
       </div>
-    </RunNarrationContext.Provider>
+    </RunPerspectiveContext.Provider>
   );
 }

@@ -1,7 +1,7 @@
 import type {
   CharacterNodeType,
   EventNodeType,
-  NarrationNodeType,
+  PerspectiveNodeType,
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
@@ -15,7 +15,7 @@ export type CharacterSnapshotPayload = {
   };
 };
 
-export type NarrationTaskPayload = {
+export type PerspectiveTaskPayload = {
   id: string;
   narrator: string;
   eventLabel: string;
@@ -23,18 +23,18 @@ export type NarrationTaskPayload = {
   characterSnapshots: CharacterSnapshotPayload[];
 };
 
-export type GenerateNarrationResponse = {
-  narrations: Array<{
+export type GeneratePerspectiveResponse = {
+  perspectives: Array<{
     reflection: string;
   }>;
 };
 
-export type NarrationPreparationResult = {
+export type PerspectivePreparationResult = {
   eventSequence: Array<{
     label: string;
     description: string;
   }>;
-  tasks: NarrationTaskPayload[];
+  tasks: PerspectiveTaskPayload[];
 };
 
 export const parseEventTimelineIndex = (timeline?: string | null) => {
@@ -54,7 +54,7 @@ type PositionedCharacterSnapshot = CharacterSnapshotPayload & {
   positionX: number;
 };
 
-export const prepareNarrationRequest = ({
+export const preparePerspectiveRequest = ({
   nodes,
   edges,
   targetNodeIds,
@@ -62,12 +62,12 @@ export const prepareNarrationRequest = ({
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
   targetNodeIds?: string[];
-}): NarrationPreparationResult | null => {
+}): PerspectivePreparationResult | null => {
   const eventNodes = nodes.filter(
     (node): node is EventNodeType => node.type === "event",
   );
-  const narrationNodes = nodes.filter(
-    (node): node is NarrationNodeType => node.type === "narration",
+  const perspectiveNodes = nodes.filter(
+    (node): node is PerspectiveNodeType => node.type === "perspective",
   );
 
   const sortedEventNodes = [...eventNodes].sort((nodeA, nodeB) => {
@@ -115,15 +115,15 @@ export const prepareNarrationRequest = ({
   const targetIdSet =
     targetNodeIds && targetNodeIds.length > 0 ? new Set(targetNodeIds) : null;
 
-  const relevantNarrationNodes = targetIdSet
-    ? narrationNodes.filter((node) => targetIdSet.has(node.id))
-    : narrationNodes;
+  const relevantPerspectiveNodes = targetIdSet
+    ? perspectiveNodes.filter((node) => targetIdSet.has(node.id))
+    : perspectiveNodes;
 
-  const tasksWithOrdering = relevantNarrationNodes
-    .map((narrationNode) => {
+  const tasksWithOrdering = relevantPerspectiveNodes
+    .map((perspectiveNode) => {
       const eventEdge = edges.find(
         (edge) =>
-          edge.target === narrationNode.id && edge.targetHandle === "event",
+          edge.target === perspectiveNode.id && edge.targetHandle === "event",
       );
       if (!eventEdge) {
         return null;
@@ -141,10 +141,10 @@ export const prepareNarrationRequest = ({
         eventOrderMap.get(eventNode.id) ?? Number.MAX_SAFE_INTEGER;
 
       const characterEdges = edges.filter((edge) => {
-        if (edge.target === narrationNode.id) {
+        if (edge.target === perspectiveNode.id) {
           return edge.targetHandle === "character";
         }
-        if (edge.source === narrationNode.id) {
+        if (edge.source === perspectiveNode.id) {
           return edge.sourceHandle === "character";
         }
         return false;
@@ -161,12 +161,12 @@ export const prepareNarrationRequest = ({
           : `Describe what happens during ${eventLabel}.`;
 
       const fallbackNarratorName =
-        narrationNode.data?.narrator?.trim() || "Narrator";
+        perspectiveNode.data?.narrator?.trim() || "Narrator";
 
       let characterSnapshots = characterEdges
         .map((characterEdge) => {
           const connectedId =
-            characterEdge.source === narrationNode.id
+            characterEdge.source === perspectiveNode.id
               ? characterEdge.target
               : characterEdge.source;
           const characterNode = nodes.find(
@@ -236,8 +236,8 @@ export const prepareNarrationRequest = ({
 
       const narratorName = characterSnapshots[0]?.name || fallbackNarratorName;
 
-      const payload: NarrationTaskPayload = {
-        id: narrationNode.id,
+      const payload: PerspectiveTaskPayload = {
+        id: perspectiveNode.id,
         narrator: narratorName,
         eventLabel,
         eventObjective,
@@ -246,7 +246,7 @@ export const prepareNarrationRequest = ({
 
       return {
         order: eventOrder,
-        secondaryOrder: narrationNode.position.x,
+        secondaryOrder: perspectiveNode.position.x,
         task: payload,
       };
     })
@@ -256,7 +256,7 @@ export const prepareNarrationRequest = ({
       ): entry is {
         order: number;
         secondaryOrder: number;
-        task: NarrationTaskPayload;
+        task: PerspectiveTaskPayload;
       } => entry != null,
     );
 

@@ -431,7 +431,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
           ),
         )}
       </div>
-      <CustomHandle type="source" position={Position.Top} id="narration" />
+      <CustomHandle type="source" position={Position.Top} id="perspective" />
     </div>
   );
 }

@@ -49,7 +49,7 @@ const NarrationResultSchema = z.object({
     .string()
     .min(1)
     .describe(
-      "First-person narration written by the specified narrator, rooted in the event objective and illustrating the highlighted character development.",
+      "First-person perspective written by the specified narrator, rooted in the event objective and illustrating the highlighted character development.",
     ),
 });
 
@@ -187,7 +187,7 @@ ${eventSequence
 
     const prompt = `You are a narrative writer crafting first-person story beats.
 
-${timelineSection}For each task that follows, write a vivid first-person narration of the assigned event from the perspective of the specified narrator:
+${timelineSection}For each task that follows, write a vivid first-person perspective of the assigned event from the perspective of the specified narrator:
 - Anchor the scene in the objective event description.
 - Use 2-4 sentences rich with sensory or emotional detail.
 - If character snapshots are supplied, embody the narrator exactly as those checkpoints describe.
@@ -198,7 +198,7 @@ Return each result as a JSON object that satisfies the provided schema.
 
 ${tasksSection}`;
 
-    console.log("Narration generation prompt:", prompt);
+    console.log("Perspective generation prompt:", prompt);
 
     const { object } = await generateObject({
       model: openai("gpt-4.1"),
@@ -215,7 +215,7 @@ ${tasksSection}`;
 
     return NextResponse.json(object);
   } catch (error) {
-    console.error("Error generating narration:", error);
+    console.error("Error generating perspective:", error);
     return NextResponse.json(
       { error: "Unable to generate narrations" },
       { status: 500 },

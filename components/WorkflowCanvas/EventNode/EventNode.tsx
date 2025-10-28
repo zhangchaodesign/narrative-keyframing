@@ -56,7 +56,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
 
       const timestamp = Date.now();
       const newEventId = `event-${timestamp}`;
-      const newNarrationId = `narration-${timestamp}`;
+      const newNarrationId = `perspective-${timestamp}`;
       let eventSequence: string[] = [];
       let narrationSequence: string[] = [];
 
@@ -65,7 +65,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           (nodeState) => nodeState.type === "event",
         );
         const narrationNodes = nodesState.filter(
-          (nodeState) => nodeState.type === "narration",
+          (nodeState) => nodeState.type === "perspective",
         );
 
         const eventRowY = referenceNode.position.y;
@@ -130,7 +130,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
 
         const newNarrationNode: WorkflowNode = {
           id: newNarrationId,
-          type: "narration",
+          type: "perspective",
           position: {
             x: startPositionX,
             y: narrationRowY,
@@ -186,7 +186,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         eventSequence = sortedEventNodes.map((nodeState) => nodeState.id);
 
         const narrationRowNodesWithNew = nodesWithNew.filter(
-          (nodeState) => nodeState.type === "narration",
+          (nodeState) => nodeState.type === "perspective",
         );
         const narrationPositionMap = new Map<
           string,
@@ -229,7 +229,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
             }
           }
 
-          if (nodeState.type === "narration") {
+          if (nodeState.type === "perspective") {
             const newPosition = narrationPositionMap.get(nodeState.id);
             if (newPosition) {
               return {
@@ -253,10 +253,10 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
             !(
               (edge.sourceHandle === "event-next" &&
                 edge.targetHandle === "event-prev") ||
-              (edge.sourceHandle === "narration" &&
+              (edge.sourceHandle === "perspective" &&
                 edge.targetHandle === "event") ||
-              (edge.sourceHandle === "narration-next" &&
-                edge.targetHandle === "narration-prev")
+              (edge.sourceHandle === "perspective-next" &&
+                edge.targetHandle === "perspective-prev")
             ),
         );
 
@@ -280,10 +280,10 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         );
         for (let index = 0; index < pairCount; index += 1) {
           rebuiltEdges.push({
-            id: `${baseEdgeId}-event-narration-${index}`,
+            id: `${baseEdgeId}-event-perspective-${index}`,
             source: eventSequence[index]!,
             target: narrationSequence[index]!,
-            sourceHandle: "narration",
+            sourceHandle: "perspective",
             targetHandle: "event",
             type: "customEdge",
             animated: true,
@@ -292,11 +292,11 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
 
         for (let index = 0; index < narrationSequence.length - 1; index += 1) {
           rebuiltEdges.push({
-            id: `${baseEdgeId}-narration-${index}`,
+            id: `${baseEdgeId}-perspective-${index}`,
             source: narrationSequence[index]!,
             target: narrationSequence[index + 1]!,
-            sourceHandle: "narration-next",
-            targetHandle: "narration-prev",
+            sourceHandle: "perspective-next",
+            targetHandle: "perspective-prev",
             type: "customEdge",
             animated: true,
           });
@@ -385,7 +385,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
       />
       <EventHandle type="target" position={Position.Left} id="event-prev" />
       <EventHandle type="source" position={Position.Right} id="event-next" />
-      <CustomHandle type="source" position={Position.Bottom} id="narration" />
+      <CustomHandle type="source" position={Position.Bottom} id="perspective" />
     </div>
   );
 }

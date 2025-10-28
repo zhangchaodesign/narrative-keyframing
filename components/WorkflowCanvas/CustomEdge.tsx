@@ -83,8 +83,8 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
     }
 
     return (
-      (sourceNode.type === "event" && targetNode.type === "narration") ||
-      (sourceNode.type === "narration" && targetNode.type === "event")
+      (sourceNode.type === "event" && targetNode.type === "perspective") ||
+      (sourceNode.type === "perspective" && targetNode.type === "event")
     );
   }, [getNode, source, target]);
 
@@ -96,7 +96,9 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
       return false;
     }
 
-    return sourceNode.type === "narration" && targetNode.type === "narration";
+    return (
+      sourceNode.type === "perspective" && targetNode.type === "perspective"
+    );
   }, [getNode, source, target]);
 
   const handleDeleteEdge = useCallback(
@@ -128,7 +130,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
 
       const timestamp = Date.now();
       const newEventId = `event-${timestamp}`;
-      const newNarrationId = `narration-${timestamp}`;
+      const newNarrationId = `perspective-${timestamp}`;
 
       const sourceTimelineIndex = parseEventTimelineIndex(
         (sourceNode.data as EventNodeType["data"])?.timeline,
@@ -145,12 +147,12 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
           (nodeState) => nodeState.type === "event",
         ).length;
         const narrationCount = nodesState.filter(
-          (nodeState) => nodeState.type === "narration",
+          (nodeState) => nodeState.type === "perspective",
         ).length;
 
         const eventRowY = sourceNode.position.y;
         const narrationRowY =
-          nodesState.find((node) => node.type === "narration")?.position.y ??
+          nodesState.find((node) => node.type === "perspective")?.position.y ??
           eventRowY + 160;
         const startPositionX = targetNode.position.x;
 
@@ -176,7 +178,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
 
         const newNarrationNode: WorkflowNode = {
           id: newNarrationId,
-          type: "narration",
+          type: "perspective",
           position: {
             x: startPositionX,
             y: narrationRowY,
@@ -260,7 +262,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
         eventSequence = sortedEventRowNodes.map((node) => node.id);
 
         const narrationRowNodes = nodesWithNew.filter(
-          (node) => node.type === "narration",
+          (node) => node.type === "perspective",
         );
         const narrationPositionMap = new Map<
           string,
@@ -324,7 +326,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
             }
           }
 
-          if (node.type === "narration") {
+          if (node.type === "perspective") {
             const newPosition = narrationPositionMap.get(node.id);
             if (newPosition) {
               return {
@@ -349,10 +351,10 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
               edge.id === id ||
               (edge.sourceHandle === "event-next" &&
                 edge.targetHandle === "event-prev") ||
-              (edge.sourceHandle === "narration" &&
+              (edge.sourceHandle === "perspective" &&
                 edge.targetHandle === "event") ||
-              (edge.sourceHandle === "narration-next" &&
-                edge.targetHandle === "narration-prev")
+              (edge.sourceHandle === "perspective-next" &&
+                edge.targetHandle === "perspective-prev")
             ),
         );
 
@@ -376,10 +378,10 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
         );
         for (let index = 0; index < pairCount; index += 1) {
           rebuiltEdges.push({
-            id: `${baseEdgeId}-event-narration-${index}`,
+            id: `${baseEdgeId}-event-perspective-${index}`,
             source: eventSequence[index]!,
             target: narrationSequence[index]!,
-            sourceHandle: "narration",
+            sourceHandle: "perspective",
             targetHandle: "event",
             type: type ?? "customEdge",
             animated,
@@ -388,11 +390,11 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
 
         for (let index = 0; index < narrationSequence.length - 1; index += 1) {
           rebuiltEdges.push({
-            id: `${baseEdgeId}-narration-${index}`,
+            id: `${baseEdgeId}-perspective-${index}`,
             source: narrationSequence[index]!,
             target: narrationSequence[index + 1]!,
-            sourceHandle: "narration-next",
-            targetHandle: "narration-prev",
+            sourceHandle: "perspective-next",
+            targetHandle: "perspective-prev",
             type: type ?? "customEdge",
             animated,
           });
