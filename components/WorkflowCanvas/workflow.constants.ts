@@ -5,7 +5,7 @@ import type {
   NarrationNodeType,
   WorkflowEdge,
   WorkflowNode,
-} from "@/lib/workflow/types";
+} from "@/lib/types/workflow";
 
 export type {
   EventNodeData,
@@ -17,7 +17,7 @@ export type {
   CharacterNodeType,
   WorkflowNode,
   WorkflowEdge,
-} from "@/lib/workflow/types";
+} from "@/lib/types/workflow";
 
 export const initialNodes: WorkflowNode[] = [
   {

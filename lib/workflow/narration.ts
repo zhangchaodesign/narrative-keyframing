@@ -5,7 +5,7 @@ import type {
   NarrationNodeType,
   WorkflowEdge,
   WorkflowNode,
-} from "./types";
+} from "@/lib/types/workflow";
 
 export type TraitCategory = keyof CharacterTraits;
 
@@ -119,7 +119,9 @@ export const prepareNarrationRequest = ({
     (node): node is CharacterNodeType => node.type === "character",
   );
 
-  const characterNodeMap = new Map(characterNodes.map((node) => [node.id, node]));
+  const characterNodeMap = new Map(
+    characterNodes.map((node) => [node.id, node]),
+  );
 
   const traitTransitionMap = new Map<string, TraitTransitionPayload>();
   const connectedSourceHandles = new Set<string>();
@@ -386,8 +388,7 @@ export const prepareNarrationRequest = ({
         }
       }
 
-      const narratorName =
-        characterSnapshots[0]?.name || fallbackNarratorName;
+      const narratorName = characterSnapshots[0]?.name || fallbackNarratorName;
 
       const payload: NarrationTaskPayload = {
         id: narrationNode.id,

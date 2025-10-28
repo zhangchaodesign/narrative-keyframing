@@ -171,9 +171,7 @@ export function WorkflowCanvas() {
             }
             return [task.id, item.reflection] as const;
           })
-          .filter(
-            (entry): entry is readonly [string, string] => entry != null,
-          );
+          .filter((entry): entry is readonly [string, string] => entry != null);
 
         if (orderedUpdates.length === 0) {
           setRunStatus({
