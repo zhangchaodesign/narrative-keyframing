@@ -17,13 +17,16 @@ import type {
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
+import { TbPlus } from "react-icons/tb";
 
 const NARRATION_HORIZONTAL_GAP = 300;
 const CHARACTER_VERTICAL_GAP = 210;
 
 export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
-  const { setNodes, setEdges, getNode } =
-    useReactFlow<WorkflowNode, WorkflowEdge>();
+  const { setNodes, setEdges, getNode } = useReactFlow<
+    WorkflowNode,
+    WorkflowEdge
+  >();
   const edges = useStore((store) => store.edges);
   const nodes = useStore((store) => store.nodes);
   const isLoading = data?.isLoading ?? false;
@@ -181,9 +184,9 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
 
     const perspectiveNode =
       getNode(id) ??
-      (nodes.find(
-        (node) => node.id === id && node.type === "perspective",
-      ) as PerspectiveNodeType | undefined);
+      (nodes.find((node) => node.id === id && node.type === "perspective") as
+        | PerspectiveNodeType
+        | undefined);
     if (!perspectiveNode) {
       return;
     }
@@ -296,9 +299,9 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           type="button"
           onClick={handleCreateCharacter}
           disabled={isLoading}
-          className="absolute left-1/2 top-full z-10 mt-3 flex w-48 -translate-x-1/2 flex-col items-center justify-center rounded-lg border-2 border-dashed border-warning/50 bg-white/90 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-warning transition hover:bg-warning/10 hover:text-warning focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-warning disabled:cursor-not-allowed disabled:opacity-60"
+          className="absolute left-1/2 top-full z-10 mt-10 flex w-64 h-48 -translate-x-1/2 flex-col gap-2 items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-100/70 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 opacity-0 transition hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 group-hover:opacity-100"
         >
-          <span className="text-lg leading-none">＋</span>
+          <TbPlus size={24} />
           <span>Add Character Snapshot</span>
         </button>
       )}

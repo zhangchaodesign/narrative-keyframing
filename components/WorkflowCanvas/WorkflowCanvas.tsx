@@ -22,7 +22,7 @@ import { RunPerspectiveContext } from "@/components/WorkflowCanvas/RunPerspectiv
 import {
   type PerspectiveNodeType,
   type WorkflowNode,
-} from "./workflow.constants";
+} from "@/lib/types/workflow";
 import {
   preparePerspectiveRequest,
   type GeneratePerspectiveResponse,

@@ -11,9 +11,9 @@ import {
 } from "react";
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { TbCheck, TbPencil, TbPlus, TbX } from "react-icons/tb";
-import { CustomHandle } from "../CustomHandle";
-import { NodeActionMenu } from "../NodeActionMenu";
-import type { CharacterNodeType, CharacterTraits } from "../workflow.constants";
+import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
+import { NodeActionMenu } from "@/components/WorkflowCanvas/NodeActionMenu";
+import type { CharacterNodeType, CharacterTraits } from "@/lib/types/workflow";
 
 type TraitCategory = keyof CharacterTraits;
 

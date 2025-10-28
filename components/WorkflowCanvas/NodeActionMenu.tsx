@@ -4,8 +4,8 @@ import { useCallback, useContext, useMemo } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { TbCopy, TbPlayerPlay, TbTrash } from "react-icons/tb";
 
-import { RunPerspectiveContext } from "./RunPerspectiveContext";
-import type { WorkflowEdge, WorkflowNode } from "./workflow.constants";
+import { RunPerspectiveContext } from "@/components/WorkflowCanvas/RunPerspectiveContext";
+import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
 
 type NodeActionMenuProps = {
   nodeId: string;

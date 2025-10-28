@@ -12,7 +12,7 @@ import type {
   EventNodeType,
   WorkflowEdge,
   WorkflowNode,
-} from "./workflow.constants";
+} from "@/lib/types/workflow";
 
 const parseEventTimelineIndex = (timeline?: string | null) => {
   if (!timeline) {
