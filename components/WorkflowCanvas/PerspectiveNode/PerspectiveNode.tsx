@@ -10,6 +10,7 @@ import {
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { PerspectiveHandle } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveHandle";
 import { NodeActionMenu } from "@/components/WorkflowCanvas/NodeActionMenu";
+import { AddCharacterButton } from "@/components/WorkflowCanvas/PerspectiveNode/AddCharacterButton";
 import type {
   CharacterNodeType,
   EventNodeType,
@@ -17,7 +18,6 @@ import type {
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
-import { TbPlus } from "react-icons/tb";
 
 const NARRATION_HORIZONTAL_GAP = 300;
 const CHARACTER_VERTICAL_GAP = 210;
@@ -295,15 +295,10 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         id="perspective-next"
       />
       {!hasDirectCharacter && (
-        <button
-          type="button"
+        <AddCharacterButton
           onClick={handleCreateCharacter}
           disabled={isLoading}
-          className="absolute left-1/2 top-full z-10 mt-10 flex w-64 h-48 -translate-x-1/2 flex-col gap-2 items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-100/70 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 opacity-0 transition hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 group-hover:opacity-100"
-        >
-          <TbPlus size={24} />
-          <span>Add Character Snapshot</span>
-        </button>
+        />
       )}
       <CustomHandle type="target" position={Position.Top} id="event" />
       <CustomHandle type="target" position={Position.Bottom} id="character" />

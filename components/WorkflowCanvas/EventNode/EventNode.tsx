@@ -10,12 +10,12 @@ import {
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { EventHandle } from "@/components/WorkflowCanvas/EventNode/EventHandle";
 import { NodeActionMenu } from "@/components/WorkflowCanvas/NodeActionMenu";
+import { AddEventButton } from "@/components/WorkflowCanvas/EventNode/AddEventButton";
 import type {
   EventNodeType,
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
-import { TbPlus } from "react-icons/tb";
 
 const EVENT_HORIZONTAL_GAP = 300;
 
@@ -342,28 +342,16 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
   return (
     <div className="group relative w-64 rounded-lg border-2 border-zinc-500 bg-white p-3 text-xs hover:shadow-lg">
       {!hasPreviousEvent && (
-        <button
-          type="button"
-          onClick={() => handleAddAdjacentEvent("before")}
-          className="absolute -left-80 top-1/2 z-10 flex h-full w-full -translate-y-1/2 flex-col gap-2 items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-100/70 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 opacity-0 transition hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 group-hover:opacity-100"
-          title="Add event before"
-          aria-label="Add event before"
-        >
-          <TbPlus size={24} />
-          <span>Add Event</span>
-        </button>
+        <AddEventButton
+          direction="before"
+          onAdd={handleAddAdjacentEvent}
+        />
       )}
       {!hasNextEvent && (
-        <button
-          type="button"
-          onClick={() => handleAddAdjacentEvent("after")}
-          className="absolute -right-80 top-1/2 z-10 flex h-full w-full -translate-y-1/2 flex-col gap-2 items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-100/70 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 opacity-0 transition hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 group-hover:opacity-100"
-          title="Add event after"
-          aria-label="Add event after"
-        >
-          <TbPlus size={24} />
-          <span>Add Event</span>
-        </button>
+        <AddEventButton
+          direction="after"
+          onAdd={handleAddAdjacentEvent}
+        />
       )}
       <NodeActionMenu nodeId={id} nodeType="event" />
       <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
