@@ -93,16 +93,18 @@ export const useWorkflowStore = create<WorkflowState>()(
           return getInitialState();
         }
 
+        const state = persistedState as Partial<WorkflowState>;
+
         if (version < STORAGE_VERSION) {
           return {
-            ...persistedState,
-            edges: sanitizeEdges(persistedState.edges ?? []),
+            ...state,
+            edges: sanitizeEdges(state.edges ?? []),
           };
         }
 
         return {
-          ...persistedState,
-          edges: sanitizeEdges(persistedState.edges ?? []),
+          ...state,
+          edges: sanitizeEdges(state.edges ?? []),
         };
       },
       partialize: (state) => ({
