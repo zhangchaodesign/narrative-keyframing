@@ -363,7 +363,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                   onClick={() => toggleAddInput(key)}
                   className={`flex cursor-pointer items-center justify-center rounded-full bg-white transition ${
                     activeCategory === key
-                      ? "text-green-500 hover:text-green-700"
+                      ? "text-red-500 hover:text-red-700"
                       : "text-zinc-500 hover:text-zinc-700"
                   }`}
                   aria-label={
@@ -425,7 +425,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                             </button>
                             <button
                               onClick={handleEditCancel}
-                              className="pointer-events-auto rounded p-0.5 text-zinc-500 hover:text-zinc-700 cursor-pointer"
+                              className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
                               title="Cancel editing"
                               aria-label={`Cancel editing ${label} trait`}
                             >
@@ -444,7 +444,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                             </button>
                             <button
                               onClick={() => handleRemoveTrait(key, index)}
-                              className="pointer-events-auto rounded p-0.5 text-green-500 hover:text-green-700 cursor-pointer"
+                              className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
                               title="Remove attribute"
                               aria-label={`Remove ${label} trait`}
                             >
