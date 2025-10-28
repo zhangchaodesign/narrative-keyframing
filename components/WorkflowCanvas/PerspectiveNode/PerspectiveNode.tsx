@@ -57,10 +57,10 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const { narratorName, hasDirectCharacter, isFromPrevious } = useMemo(() => {
     const visited = new Set<string>();
 
-    const getCharacterName = (narrationId: string) => {
+    const getCharacterName = (perspectiveId: string) => {
       const characterEdge = edges.find(
         (edge) =>
-          edge.target === narrationId && edge.targetHandle === "character",
+          edge.target === perspectiveId && edge.targetHandle === "character",
       );
       if (!characterEdge) {
         return null;
@@ -75,21 +75,21 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     };
 
     const findNarrator = (
-      narrationId: string,
+      perspectiveId: string,
     ): { name: string; originId: string } | null => {
-      if (visited.has(narrationId)) {
+      if (visited.has(perspectiveId)) {
         return null;
       }
-      visited.add(narrationId);
+      visited.add(perspectiveId);
 
-      const characterName = getCharacterName(narrationId);
+      const characterName = getCharacterName(perspectiveId);
       if (characterName) {
-        return { name: characterName, originId: narrationId };
+        return { name: characterName, originId: perspectiveId };
       }
 
       const previousEdges = edges.filter(
         (edge) =>
-          edge.target === narrationId &&
+          edge.target === perspectiveId &&
           edge.targetHandle === "perspective-prev",
       );
 
@@ -108,14 +108,14 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       }
 
       const currentNode = nodes.find(
-        (node) => node.id === narrationId && node.type === "perspective",
+        (node) => node.id === perspectiveId && node.type === "perspective",
       ) as PerspectiveNodeType | undefined;
       const fallbackName = currentNode?.data?.narrator?.trim();
       if (!fallbackName) {
         return null;
       }
 
-      return { name: fallbackName, originId: narrationId };
+      return { name: fallbackName, originId: perspectiveId };
     };
 
     const narratorFromGraph = findNarrator(id);

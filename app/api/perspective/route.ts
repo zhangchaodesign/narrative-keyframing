@@ -22,7 +22,7 @@ const CharacterSnapshotSchema = z.object({
     .optional(),
 });
 
-const NarrationTaskSchema = z
+const PerspectiveTaskSchema = z
   .object({
     id: z.string().min(1),
     narrator: z.string().min(1),
@@ -41,10 +41,10 @@ const RequestSchema = z.object({
       }),
     )
     .optional(),
-  narrations: z.array(NarrationTaskSchema).min(1),
+  perspectives: z.array(PerspectiveTaskSchema).min(1),
 });
 
-const NarrationResultSchema = z.object({
+const PerspectiveResultSchema = z.object({
   reflection: z
     .string()
     .min(1)
@@ -54,7 +54,7 @@ const NarrationResultSchema = z.object({
 });
 
 const ResponseSchema = z.object({
-  narrations: z.array(NarrationResultSchema),
+  perspectives: z.array(PerspectiveResultSchema),
 });
 
 const formatTraitCategory = (label: string, traits: string[]) => {
@@ -101,7 +101,7 @@ const buildSnapshotSection = (
   return [header, ...sectionLines, ...trailingNote].join("\n");
 };
 
-const buildTasksSection = (tasks: z.infer<typeof NarrationTaskSchema>[]) => {
+const buildTasksSection = (tasks: z.infer<typeof PerspectiveTaskSchema>[]) => {
   const snapshotHasDetails = (
     snapshot: z.infer<typeof CharacterSnapshotSchema>,
   ) => {
@@ -123,7 +123,7 @@ const buildTasksSection = (tasks: z.infer<typeof NarrationTaskSchema>[]) => {
   };
 
   type TaskMeta = {
-    task: z.infer<typeof NarrationTaskSchema>;
+    task: z.infer<typeof PerspectiveTaskSchema>;
     snapshots: z.infer<typeof CharacterSnapshotSchema>[];
   };
 
@@ -168,7 +168,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { eventSequence = [], narrations } = payload.data;
+    const { eventSequence = [], perspectives } = payload.data;
 
     const timelineSection =
       eventSequence.length > 0
@@ -183,7 +183,7 @@ ${eventSequence
 `
         : "";
 
-    const tasksSection = buildTasksSection(narrations);
+    const tasksSection = buildTasksSection(perspectives);
 
     const prompt = `You are a narrative writer crafting first-person story beats.
 
@@ -206,9 +206,9 @@ ${tasksSection}`;
       prompt,
     });
 
-    if (!object?.narrations || object.narrations.length === 0) {
+    if (!object?.perspectives || object.perspectives.length === 0) {
       return NextResponse.json(
-        { error: "Failed to generate narrations" },
+        { error: "Failed to generate perspectives" },
         { status: 500 },
       );
     }
@@ -217,7 +217,7 @@ ${tasksSection}`;
   } catch (error) {
     console.error("Error generating perspective:", error);
     return NextResponse.json(
-      { error: "Unable to generate narrations" },
+      { error: "Unable to generate perspectives" },
       { status: 500 },
     );
   }

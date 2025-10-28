@@ -74,7 +74,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
     return sourceNode.type === "event" && targetNode.type === "event";
   }, [getNode, source, target]);
 
-  const isEventNarrationEdge = useMemo(() => {
+  const isEventPerspectiveEdge = useMemo(() => {
     const sourceNode = getNode(source);
     const targetNode = getNode(target);
 
@@ -88,7 +88,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
     );
   }, [getNode, source, target]);
 
-  const isNarrationEdge = useMemo(() => {
+  const isPerspectiveEdge = useMemo(() => {
     const sourceNode = getNode(source);
     const targetNode = getNode(target);
 
@@ -130,7 +130,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
 
       const timestamp = Date.now();
       const newEventId = `event-${timestamp}`;
-      const newNarrationId = `perspective-${timestamp}`;
+      const newPerspectiveId = `perspective-${timestamp}`;
 
       const sourceTimelineIndex = parseEventTimelineIndex(
         (sourceNode.data as EventNodeType["data"])?.timeline,
@@ -140,18 +140,18 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
       );
 
       let eventSequence: string[] = [];
-      let narrationSequence: string[] = [];
+      let perspectiveSequence: string[] = [];
 
       setNodes((nodesState) => {
         const eventCount = nodesState.filter(
           (nodeState) => nodeState.type === "event",
         ).length;
-        const narrationCount = nodesState.filter(
+        const perspectiveCount = nodesState.filter(
           (nodeState) => nodeState.type === "perspective",
         ).length;
 
         const eventRowY = sourceNode.position.y;
-        const narrationRowY =
+        const perspectiveRowY =
           nodesState.find((node) => node.type === "perspective")?.position.y ??
           eventRowY + 160;
         const startPositionX = targetNode.position.x;
@@ -176,15 +176,15 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
           draggable: false,
         };
 
-        const newNarrationNode: WorkflowNode = {
-          id: newNarrationId,
+        const newPerspectiveNode: WorkflowNode = {
+          id: newPerspectiveId,
           type: "perspective",
           position: {
             x: startPositionX,
-            y: narrationRowY,
+            y: perspectiveRowY,
           },
           data: {
-            narrator: `Narrator ${narrationCount + 1}`,
+            narrator: `Narrator ${perspectiveCount + 1}`,
             reflection: "",
           },
           draggable: false,
@@ -218,7 +218,11 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
           return nodeState;
         });
 
-        const nodesWithNew = [...updatedNodes, newEventNode, newNarrationNode];
+        const nodesWithNew = [
+          ...updatedNodes,
+          newEventNode,
+          newPerspectiveNode,
+        ];
 
         const eventRowNodes = nodesWithNew.filter(
           (node) => node.type === "event",
@@ -261,55 +265,55 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
         });
         eventSequence = sortedEventRowNodes.map((node) => node.id);
 
-        const narrationRowNodes = nodesWithNew.filter(
+        const perspectiveRowNodes = nodesWithNew.filter(
           (node) => node.type === "perspective",
         );
-        const narrationPositionMap = new Map<
+        const perspectivePositionMap = new Map<
           string,
           { x: number; y: number }
         >();
 
-        if (narrationRowNodes.length > 0) {
-          const sortedNarrationNodes = [...narrationRowNodes].sort(
+        if (perspectiveRowNodes.length > 0) {
+          const sortedPerspectiveNodes = [...perspectiveRowNodes].sort(
             (a, b) => a.position.x - b.position.x,
           );
 
           const newEventIndex = sortedEventRowNodes.findIndex(
             (node) => node.id === newEventId,
           );
-          const newNarrationIndex = sortedNarrationNodes.findIndex(
-            (node) => node.id === newNarrationId,
+          const newPerspectiveIndex = sortedPerspectiveNodes.findIndex(
+            (node) => node.id === newPerspectiveId,
           );
 
           if (
             newEventIndex >= 0 &&
-            newNarrationIndex >= 0 &&
-            newNarrationIndex !== newEventIndex
+            newPerspectiveIndex >= 0 &&
+            newPerspectiveIndex !== newEventIndex
           ) {
-            const [newNarration] = sortedNarrationNodes.splice(
-              newNarrationIndex,
+            const [newPerspective] = sortedPerspectiveNodes.splice(
+              newPerspectiveIndex,
               1,
             );
             const targetIndex = Math.min(
-              sortedNarrationNodes.length,
+              sortedPerspectiveNodes.length,
               newEventIndex,
             );
-            sortedNarrationNodes.splice(targetIndex, 0, newNarration);
+            sortedPerspectiveNodes.splice(targetIndex, 0, newPerspective);
           }
 
-          sortedNarrationNodes.forEach((node, index) => {
+          sortedPerspectiveNodes.forEach((node, index) => {
             const relatedEvent = sortedEventRowNodes[index];
             const fallbackX = startX + index * NARRATION_HORIZONTAL_GAP;
             const targetPosition = relatedEvent
               ? eventPositionMap.get(relatedEvent.id)
               : undefined;
 
-            narrationPositionMap.set(node.id, {
+            perspectivePositionMap.set(node.id, {
               x: targetPosition?.x ?? fallbackX,
-              y: narrationRowY,
+              y: perspectiveRowY,
             });
           });
-          narrationSequence = sortedNarrationNodes.map((node) => node.id);
+          perspectiveSequence = sortedPerspectiveNodes.map((node) => node.id);
         }
 
         return nodesWithNew.map((node) => {
@@ -327,7 +331,7 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
           }
 
           if (node.type === "perspective") {
-            const newPosition = narrationPositionMap.get(node.id);
+            const newPosition = perspectivePositionMap.get(node.id);
             if (newPosition) {
               return {
                 ...node,
@@ -374,13 +378,13 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
 
         const pairCount = Math.min(
           eventSequence.length,
-          narrationSequence.length,
+          perspectiveSequence.length,
         );
         for (let index = 0; index < pairCount; index += 1) {
           rebuiltEdges.push({
             id: `${baseEdgeId}-event-perspective-${index}`,
             source: eventSequence[index]!,
-            target: narrationSequence[index]!,
+            target: perspectiveSequence[index]!,
             sourceHandle: "perspective",
             targetHandle: "event",
             type: type ?? "customEdge",
@@ -388,11 +392,15 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
           });
         }
 
-        for (let index = 0; index < narrationSequence.length - 1; index += 1) {
+        for (
+          let index = 0;
+          index < perspectiveSequence.length - 1;
+          index += 1
+        ) {
           rebuiltEdges.push({
             id: `${baseEdgeId}-perspective-${index}`,
-            source: narrationSequence[index]!,
-            target: narrationSequence[index + 1]!,
+            source: perspectiveSequence[index]!,
+            target: perspectiveSequence[index + 1]!,
             sourceHandle: "perspective-next",
             targetHandle: "perspective-prev",
             type: type ?? "customEdge",
@@ -434,16 +442,18 @@ export const CustomEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
                   <TbPlus />
                 </button>
               )}
-              {!isEventEdge && !isEventNarrationEdge && !isNarrationEdge && (
-                <button
-                  type="button"
-                  aria-label="Delete edge"
-                  className="btn btn-circle btn-xs bg-transparent shadow-none border-0 text-red-500 hover:bg-red-500 hover:text-white hover:border-white rounded-full"
-                  onClick={handleDeleteEdge}
-                >
-                  <TbX />
-                </button>
-              )}
+              {!isEventEdge &&
+                !isEventPerspectiveEdge &&
+                !isPerspectiveEdge && (
+                  <button
+                    type="button"
+                    aria-label="Delete edge"
+                    className="btn btn-circle btn-xs bg-transparent shadow-none border-0 text-red-500 hover:bg-red-500 hover:text-white hover:border-white rounded-full"
+                    onClick={handleDeleteEdge}
+                  >
+                    <TbX />
+                  </button>
+                )}
             </div>
           )}
         </EdgeLabelRenderer>

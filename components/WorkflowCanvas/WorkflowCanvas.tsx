@@ -148,7 +148,7 @@ export function WorkflowCanvas() {
           },
           body: JSON.stringify({
             eventSequence,
-            narrations: tasks,
+            perspectives: tasks,
           }),
         });
 
@@ -156,7 +156,7 @@ export function WorkflowCanvas() {
           const errorBody = await response.json().catch(() => null);
           const errorMessage =
             (errorBody && errorBody.error) ||
-            `Failed to generate narrations (${response.status}).`;
+            `Failed to generate perspectives (${response.status}).`;
           throw new Error(errorMessage);
         }
 
@@ -212,13 +212,13 @@ export function WorkflowCanvas() {
 
         setRunStatus(null);
       } catch (error) {
-        console.error("Error generating narrations:", error);
+        console.error("Error generating perspectives:", error);
         setRunStatus({
           type: "error",
           message:
             error instanceof Error
               ? error.message
-              : "Unexpected error generating narrations.",
+              : "Unexpected error generating perspectives.",
         });
       } finally {
         if (loadingNodeIds) {

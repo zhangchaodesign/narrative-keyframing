@@ -56,20 +56,21 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
 
       const timestamp = Date.now();
       const newEventId = `event-${timestamp}`;
-      const newNarrationId = `perspective-${timestamp}`;
+      const newPerspectiveId = `perspective-${timestamp}`;
       let eventSequence: string[] = [];
-      let narrationSequence: string[] = [];
+      let perspectiveSequence: string[] = [];
 
       setNodes((nodesState) => {
         const eventNodes = nodesState.filter(
           (nodeState) => nodeState.type === "event",
         );
-        const narrationNodes = nodesState.filter(
+        const perspectiveNodes = nodesState.filter(
           (nodeState) => nodeState.type === "perspective",
         );
 
         const eventRowY = referenceNode.position.y;
-        const narrationRowY = narrationNodes[0]?.position.y ?? eventRowY + 160;
+        const perspectiveRowY =
+          perspectiveNodes[0]?.position.y ?? eventRowY + 160;
         const startPositionX =
           direction === "before"
             ? referenceNode.position.x - EVENT_HORIZONTAL_GAP
@@ -128,22 +129,26 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           draggable: false,
         };
 
-        const newNarrationNode: WorkflowNode = {
-          id: newNarrationId,
+        const newPerspectiveNode: WorkflowNode = {
+          id: newPerspectiveId,
           type: "perspective",
           position: {
             x: startPositionX,
-            y: narrationRowY,
+            y: perspectiveRowY,
           },
           data: {
-            narrator: `Narrator ${narrationNodes.length + 1}`,
+            narrator: `Narrator ${perspectiveNodes.length + 1}`,
             reflection: "",
             isLoading: false,
           },
           draggable: false,
         };
 
-        const nodesWithNew = [...updatedNodes, newEventNode, newNarrationNode];
+        const nodesWithNew = [
+          ...updatedNodes,
+          newEventNode,
+          newPerspectiveNode,
+        ];
 
         const eventRowNodesWithNew = nodesWithNew.filter(
           (nodeState) => nodeState.type === "event",
@@ -185,32 +190,32 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         });
         eventSequence = sortedEventNodes.map((nodeState) => nodeState.id);
 
-        const narrationRowNodesWithNew = nodesWithNew.filter(
+        const perspectiveRowNodesWithNew = nodesWithNew.filter(
           (nodeState) => nodeState.type === "perspective",
         );
-        const narrationPositionMap = new Map<
+        const perspectivePositionMap = new Map<
           string,
           { x: number; y: number }
         >();
 
-        if (narrationRowNodesWithNew.length > 0) {
-          const sortedNarrationNodes = [...narrationRowNodesWithNew].sort(
+        if (perspectiveRowNodesWithNew.length > 0) {
+          const sortedPerspectiveNodes = [...perspectiveRowNodesWithNew].sort(
             (a, b) => a.position.x - b.position.x,
           );
 
-          sortedNarrationNodes.forEach((nodeState, indexPosition) => {
+          sortedPerspectiveNodes.forEach((nodeState, indexPosition) => {
             const relatedEvent = sortedEventNodes[indexPosition];
             const fallbackX = startX + indexPosition * EVENT_HORIZONTAL_GAP;
             const eventPosition = relatedEvent
               ? eventPositionMap.get(relatedEvent.id)
               : undefined;
 
-            narrationPositionMap.set(nodeState.id, {
+            perspectivePositionMap.set(nodeState.id, {
               x: eventPosition?.x ?? fallbackX,
-              y: narrationRowY,
+              y: perspectiveRowY,
             });
           });
-          narrationSequence = sortedNarrationNodes.map(
+          perspectiveSequence = sortedPerspectiveNodes.map(
             (nodeState) => nodeState.id,
           );
         }
@@ -230,7 +235,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           }
 
           if (nodeState.type === "perspective") {
-            const newPosition = narrationPositionMap.get(nodeState.id);
+            const newPosition = perspectivePositionMap.get(nodeState.id);
             if (newPosition) {
               return {
                 ...nodeState,
@@ -276,13 +281,13 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
 
         const pairCount = Math.min(
           eventSequence.length,
-          narrationSequence.length,
+          perspectiveSequence.length,
         );
         for (let index = 0; index < pairCount; index += 1) {
           rebuiltEdges.push({
             id: `${baseEdgeId}-event-perspective-${index}`,
             source: eventSequence[index]!,
-            target: narrationSequence[index]!,
+            target: perspectiveSequence[index]!,
             sourceHandle: "perspective",
             targetHandle: "event",
             type: "customEdge",
@@ -290,11 +295,15 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           });
         }
 
-        for (let index = 0; index < narrationSequence.length - 1; index += 1) {
+        for (
+          let index = 0;
+          index < perspectiveSequence.length - 1;
+          index += 1
+        ) {
           rebuiltEdges.push({
             id: `${baseEdgeId}-perspective-${index}`,
-            source: narrationSequence[index]!,
-            target: narrationSequence[index + 1]!,
+            source: perspectiveSequence[index]!,
+            target: perspectiveSequence[index + 1]!,
             sourceHandle: "perspective-next",
             targetHandle: "perspective-prev",
             type: "customEdge",
