@@ -65,7 +65,6 @@ const RequestSchema = z.object({
 });
 
 const NarrationResultSchema = z.object({
-  id: z.string().min(1),
   reflection: z
     .string()
     .min(1)

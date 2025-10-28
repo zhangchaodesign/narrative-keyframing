@@ -62,7 +62,6 @@ type NarrationTaskPayload = {
 
 type GenerateNarrationResponse = {
   narrations: Array<{
-    id: string;
     reflection: string;
   }>;
 };
@@ -588,11 +587,21 @@ export function WorkflowCanvas() {
         }
 
         const data = (await response.json()) as GenerateNarrationResponse;
-        const updates = new Map<string, string>(
-          (data?.narrations ?? []).map((item) => [item.id, item.reflection]),
-        );
+        const narrations = data?.narrations ?? [];
 
-        if (updates.size === 0) {
+        const orderedUpdates = narrations
+          .map((item, index) => {
+            const task = tasks[index];
+            if (!task) {
+              return null;
+            }
+            return [task.id, item.reflection] as const;
+          })
+          .filter(
+            (entry): entry is readonly [string, string] => entry != null,
+          );
+
+        if (orderedUpdates.length === 0) {
           setRunStatus({
             type: "error",
             message: "No narration updates were returned.",
@@ -600,10 +609,22 @@ export function WorkflowCanvas() {
           return;
         }
 
+        if (narrations.length !== tasks.length) {
+          console.warn(
+            "Narration response count did not match requested tasks.",
+            {
+              requested: tasks.length,
+              received: narrations.length,
+            },
+          );
+        }
+
+        const updateMap = new Map<string, string>(orderedUpdates);
+
         setNodes((currentNodes) =>
           currentNodes.map((node) => {
-            if (node.type === "narration" && updates.has(node.id)) {
-              const reflection = updates.get(node.id) ?? "";
+            if (node.type === "narration" && updateMap.has(node.id)) {
+              const reflection = updateMap.get(node.id) ?? "";
               const existingData = node.data as NarrationNodeType["data"];
               return {
                 ...node,
