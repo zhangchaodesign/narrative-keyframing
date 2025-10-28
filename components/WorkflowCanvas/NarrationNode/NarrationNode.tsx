@@ -177,13 +177,13 @@ export function NarrationNode({ id, data }: NodeProps<NarrationNodeType>) {
         <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
           <span className="loading loading-spinner text-secondary"></span>
           <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-secondary">
-            Preparing narration...
+            Preparing perspective...
           </span>
         </div>
       )}
       <NodeActionMenu nodeId={id} nodeType="narration" />
       <div className="flex w-full flex-wrap items-center gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase">
-        <span className="flex items-center">💬 Narration</span>
+        <span className="flex items-center">💬 Perspective</span>
       </div>
       <div
         className="mt-2 flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800"

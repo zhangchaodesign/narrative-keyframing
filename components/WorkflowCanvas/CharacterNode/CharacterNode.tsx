@@ -333,7 +333,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
       <NodeActionMenu nodeId={id} nodeType="character" />
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
-          🧙 Character
+          🧙 Character Snapshot
         </span>
       </div>
       <label>

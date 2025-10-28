@@ -86,8 +86,8 @@ export function NodeActionMenu({ nodeId, nodeType }: NodeActionMenuProps) {
           type="button"
           onClick={handleRun}
           className="pointer-events-auto rounded-full p-1 transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 cursor-pointer"
-          title="Run narration"
-          aria-label="Run narration"
+          title="Run perspective"
+          aria-label="Run perspective"
         >
           <TbPlayerPlay size={12} />
         </button>
