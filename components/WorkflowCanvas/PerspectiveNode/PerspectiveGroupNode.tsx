@@ -3,6 +3,7 @@
 import { useCallback, type ChangeEvent } from "react";
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
+import { PerspectiveGroupMenu } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveGroupMenu";
 import type {
   CharacterNodeType,
   GroupNodeType,
@@ -72,7 +73,8 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   );
 
   return (
-    <div className="relative h-full w-full rounded-lg border-4 border-zinc-100 bg-zinc-50/50 shadow">
+    <div className="group relative h-full w-full rounded-lg border-4 border-zinc-100 bg-zinc-50/50 shadow">
+      <PerspectiveGroupMenu nodeId={id} />
       <div className="absolute left-1 top-1 rounded bg-secondary px-2 py-1 text-xs font-semibold text-white">
         {data?.label}
       </div>
