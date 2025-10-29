@@ -294,6 +294,20 @@ export function useEventAdjacency(nodeId: string) {
           });
         });
         eventSequence = sortedEventNodes.map((nodeState) => nodeState.id);
+        const eventIndexMap = new Map<string, number>();
+        eventSequence.forEach((eventId, indexPosition) => {
+          eventIndexMap.set(eventId, indexPosition);
+        });
+        const getPerspectiveEventIndex = (nodeState: WorkflowNode) => {
+          const perspectiveData =
+            (nodeState.data as PerspectiveNodeType["data"] | undefined) ?? null;
+          const eventId = perspectiveData?.event?.trim();
+          if (!eventId) {
+            return null;
+          }
+          const index = eventIndexMap.get(eventId);
+          return index ?? null;
+        };
 
         const perspectivePositionMapsByGroup = new Map<
           string,
@@ -318,27 +332,52 @@ export function useEventAdjacency(nodeId: string) {
           }
 
           const sortedPerspectiveNodes = [...groupPerspectiveNodes].sort(
-            (a, b) => a.position.x - b.position.x,
+            (a, b) => {
+              const indexA = getPerspectiveEventIndex(a);
+              const indexB = getPerspectiveEventIndex(b);
+
+              if (indexA != null && indexB != null) {
+                if (indexA === indexB) {
+                  return a.position.x - b.position.x;
+                }
+                return indexA - indexB;
+              }
+              if (indexA != null) {
+                return -1;
+              }
+              if (indexB != null) {
+                return 1;
+              }
+              return a.position.x - b.position.x;
+            },
           );
 
           const positionMap = new Map<string, { x: number; y: number }>();
           sortedPerspectiveNodes.forEach((nodeState, indexPosition) => {
-            const relatedEvent = sortedEventNodes[indexPosition];
-            const fallbackX =
-              normalizedStartX + indexPosition * EVENT_HORIZONTAL_GAP;
-            const eventPosition = relatedEvent
-              ? eventPositionMap.get(relatedEvent.id)
+            const perspectiveIndex = getPerspectiveEventIndex(nodeState);
+            const fallbackIndex =
+              perspectiveIndex != null
+                ? perspectiveIndex
+                : eventSequence.length > 0
+                ? Math.min(indexPosition, eventSequence.length - 1)
+                : indexPosition;
+            const fallbackEventId =
+              eventSequence.length > 0
+                ? eventSequence[fallbackIndex] ?? eventSequence[0]
+                : null;
+            const eventPosition = fallbackEventId
+              ? eventPositionMap.get(fallbackEventId)
               : undefined;
+            const fallbackX =
+              normalizedStartX + fallbackIndex * EVENT_HORIZONTAL_GAP;
 
             positionMap.set(nodeState.id, {
               x: eventPosition?.x ?? fallbackX,
               y: nodeState.position.y,
             });
 
-            const mappedEventId =
-              relatedEvent?.id ?? eventSequence[indexPosition];
-            if (mappedEventId) {
-              perspectiveEventAssignments.set(nodeState.id, mappedEventId);
+            if (fallbackEventId) {
+              perspectiveEventAssignments.set(nodeState.id, fallbackEventId);
             }
           });
 
@@ -691,6 +730,20 @@ export function useEventAdjacency(nodeId: string) {
         });
       });
       eventSequence = sortedRemainingEvents.map((nodeState) => nodeState.id);
+      const eventIndexMap = new Map<string, number>();
+      eventSequence.forEach((eventId, indexPosition) => {
+        eventIndexMap.set(eventId, indexPosition);
+      });
+      const getPerspectiveEventIndexForGroup = (nodeState: WorkflowNode) => {
+        const perspectiveData =
+          (nodeState.data as PerspectiveNodeType["data"] | undefined) ?? null;
+        const eventId = perspectiveData?.event?.trim();
+        if (!eventId) {
+          return null;
+        }
+        const index = eventIndexMap.get(eventId);
+        return index ?? null;
+      };
 
       const narrationWidthUpdates = new Map<string, number>();
       const perspectivePositionMapsByGroup = new Map<
@@ -716,27 +769,52 @@ export function useEventAdjacency(nodeId: string) {
         }
 
         const sortedPerspectiveNodes = [...remainingPerspectiveNodes].sort(
-          (a, b) => a.position.x - b.position.x,
+          (a, b) => {
+            const indexA = getPerspectiveEventIndexForGroup(a);
+            const indexB = getPerspectiveEventIndexForGroup(b);
+
+            if (indexA != null && indexB != null) {
+              if (indexA === indexB) {
+                return a.position.x - b.position.x;
+              }
+              return indexA - indexB;
+            }
+            if (indexA != null) {
+              return -1;
+            }
+            if (indexB != null) {
+              return 1;
+            }
+            return a.position.x - b.position.x;
+          },
         );
 
         const positionMap = new Map<string, { x: number; y: number }>();
         sortedPerspectiveNodes.forEach((nodeState, indexPosition) => {
-          const relatedEvent = sortedRemainingEvents[indexPosition];
-          const fallbackX =
-            normalizedStartX + indexPosition * EVENT_HORIZONTAL_GAP;
-          const eventPosition = relatedEvent
-            ? eventPositionMap.get(relatedEvent.id)
+          const perspectiveIndex = getPerspectiveEventIndexForGroup(nodeState);
+          const fallbackIndex =
+            perspectiveIndex != null
+              ? perspectiveIndex
+              : eventSequence.length > 0
+              ? Math.min(indexPosition, eventSequence.length - 1)
+              : indexPosition;
+          const fallbackEventId =
+            eventSequence.length > 0
+              ? eventSequence[fallbackIndex] ?? eventSequence[0]
+              : null;
+          const eventPosition = fallbackEventId
+            ? eventPositionMap.get(fallbackEventId)
             : undefined;
+          const fallbackX =
+            normalizedStartX + fallbackIndex * EVENT_HORIZONTAL_GAP;
 
           positionMap.set(nodeState.id, {
             x: eventPosition?.x ?? fallbackX,
             y: nodeState.position.y,
           });
 
-          const mappedEventId =
-            relatedEvent?.id ?? eventSequence[indexPosition];
-          if (mappedEventId) {
-            perspectiveEventAssignments.set(nodeState.id, mappedEventId);
+          if (fallbackEventId) {
+            perspectiveEventAssignments.set(nodeState.id, fallbackEventId);
           }
         });
 
