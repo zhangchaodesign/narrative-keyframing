@@ -246,6 +246,8 @@ export function WorkflowCanvas() {
           snapToGrid
           snapGrid={[4, 4]}
           fitView
+          minZoom={0.1}
+          maxZoom={4}
         >
           <Background />
           <Controls position="bottom-left" />
