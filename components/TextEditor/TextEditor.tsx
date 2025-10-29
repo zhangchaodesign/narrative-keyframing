@@ -8,16 +8,12 @@ import { Leaf } from "@/components/TextEditor/Leaf";
 import { SlateUtils } from "@/lib/utils/slateUtils";
 import { useEditorStore } from "@/lib/stores/editorStore";
 import isHotkey from "is-hotkey";
-import { geistMono } from "@/app/fonts";
-import { cn } from "@/lib/utils/utils";
 
 interface TextEditorProps {
   conflictHighlight: { start: number; end: number } | null;
 }
 
-export default function TextEditor({
-  conflictHighlight,
-}: TextEditorProps) {
+export default function TextEditor({ conflictHighlight }: TextEditorProps) {
   const [editor] = useState(() => withHistory(withReact(createEditor())));
   const { normalizeNode } = editor;
   editor.normalizeNode = (entry) => {
@@ -104,17 +100,14 @@ export default function TextEditor({
 
   return (
     <div className="h-full overflow-y-auto bg-white border-r border-zinc-100">
-      <div className="px-16 py-8">
+      <div className="px-12 py-8">
         <Slate
           editor={editor}
           initialValue={useEditorStore.getState().value}
           onChange={setValue}
         >
           <Editable
-            className={cn(
-              geistMono.className,
-              "prose max-w-none focus:outline-none min-h-[600px] text-base leading-relaxed",
-            )}
+            className="prose max-w-none focus:outline-none min-h-[600px] text-base leading-relaxed"
             renderLeaf={(p: RenderLeafProps) => <Leaf {...p} />}
             decorate={decorate}
             readOnly={isReadOnly}

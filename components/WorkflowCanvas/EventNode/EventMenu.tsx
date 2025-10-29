@@ -27,15 +27,13 @@ function cloneData<DataType>(data: DataType): DataType {
 }
 
 export function EventMenu({ nodeId, nodeType }: EventMenuProps) {
-  const { setNodes, setEdges } = useReactFlow<WorkflowNode, WorkflowEdge>();
-  const { handleAddAdjacentEvent } = useEventAdjacency(nodeId);
+  const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
+  const { handleAddAdjacentEvent, handleRemoveEvent } =
+    useEventAdjacency(nodeId);
 
   const handleDelete = useCallback(() => {
-    setNodes((nodes) => nodes.filter((node) => node.id !== nodeId));
-    setEdges((edges) =>
-      edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
-    );
-  }, [nodeId, setEdges, setNodes]);
+    handleRemoveEvent();
+  }, [handleRemoveEvent]);
 
   const handleDuplicate = useCallback(() => {
     setNodes((nodes) => {

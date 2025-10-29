@@ -13,6 +13,9 @@ type PerspectiveMenuProps = {
 };
 
 const CLONE_OFFSET = 40;
+const PERSPECTIVE_NODE_WIDTH = 256;
+const NARRATION_GROUP_RIGHT_PADDING = 24;
+const DEFAULT_NARRATION_GROUP_WIDTH = 1200;
 
 function cloneData<DataType>(data: DataType): DataType {
   if (data == null) {
@@ -32,11 +35,103 @@ export function PerspectiveMenu({ nodeId, nodeType }: PerspectiveMenuProps) {
   const runPerspectives = useContext(RunPerspectiveContext);
 
   const handleDelete = useCallback(() => {
-    setNodes((nodes) => nodes.filter((node) => node.id !== nodeId));
-    setEdges((edges) =>
-      edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
+    const nodesSnapshot = getNodes();
+    const targetNode = nodesSnapshot.find(
+      (node) => node.id === nodeId && node.type === "perspective",
     );
-  }, [nodeId, setEdges, setNodes]);
+    if (!targetNode) {
+      return;
+    }
+
+    const parentId = (targetNode as { parentId?: string }).parentId ?? null;
+
+    const nodesWithoutTarget = nodesSnapshot.filter(
+      (node) => node.id !== nodeId,
+    );
+
+    let clusterSequence: string[] = [];
+    let adjustedNodes: WorkflowNode[] = nodesWithoutTarget;
+
+    if (parentId) {
+      const clusterNodes = nodesWithoutTarget
+        .filter(
+          (node): node is WorkflowNode & { parentId?: string } =>
+            node.type === "perspective" && node.parentId === parentId,
+        )
+        .sort((nodeA, nodeB) => nodeA.position.x - nodeB.position.x);
+
+      clusterSequence = clusterNodes.map((node) => node.id);
+
+      let nextWidth = DEFAULT_NARRATION_GROUP_WIDTH;
+      if (clusterNodes.length > 0) {
+        let rightmostEdge = 0;
+        clusterNodes.forEach((node) => {
+          rightmostEdge = Math.max(
+            rightmostEdge,
+            node.position.x + PERSPECTIVE_NODE_WIDTH,
+          );
+        });
+        nextWidth = Math.max(
+          DEFAULT_NARRATION_GROUP_WIDTH,
+          rightmostEdge + NARRATION_GROUP_RIGHT_PADDING,
+        );
+      }
+
+      adjustedNodes = nodesWithoutTarget.map((node) => {
+        if (node.type === "perspectiveGroup" && node.id === parentId) {
+          return {
+            ...node,
+            style: {
+              ...node.style,
+              width: nextWidth,
+            },
+          } as WorkflowNode;
+        }
+        return node;
+      });
+    }
+
+    setNodes(() => adjustedNodes);
+
+    setEdges((edges) => {
+      const clusterSet = new Set(clusterSequence);
+      const preservedEdges = edges.filter((edge) => {
+        if (edge.source === nodeId || edge.target === nodeId) {
+          return false;
+        }
+
+        const isClusterChainEdge =
+          edge.sourceHandle === "perspective-next" &&
+          edge.targetHandle === "perspective-prev" &&
+          clusterSet.has(edge.source) &&
+          clusterSet.has(edge.target);
+        if (isClusterChainEdge) {
+          return false;
+        }
+
+        return true;
+      });
+
+      if (!parentId || clusterSequence.length < 2) {
+        return preservedEdges;
+      }
+
+      const baseEdgeId = `edge-${parentId}-${Date.now()}`;
+      const rebuiltEdges: WorkflowEdge[] = clusterSequence
+        .slice(0, -1)
+        .map((sourceId, indexPosition) => ({
+          id: `${baseEdgeId}-${indexPosition}`,
+          source: sourceId,
+          target: clusterSequence[indexPosition + 1]!,
+          sourceHandle: "perspective-next",
+          targetHandle: "perspective-prev",
+          type: "customEdge",
+          animated: true,
+        }));
+
+      return [...preservedEdges, ...rebuiltEdges];
+    });
+  }, [getNodes, nodeId, setEdges, setNodes]);
 
   const handleDuplicate = useCallback(() => {
     setNodes((nodes) => {

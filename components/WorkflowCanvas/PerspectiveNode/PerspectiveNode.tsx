@@ -20,6 +20,8 @@ import type {
   WorkflowNode,
 } from "@/lib/types/workflow";
 import { parseEventTimelineIndex } from "@/lib/workflow/perspective";
+import { cn } from "@/lib/utils/utils";
+import { geistMono } from "@/app/fonts";
 
 const CHARACTER_VERTICAL_GAP = 210;
 const DEFAULT_NARRATION_GROUP_ID = "perspective-group";
@@ -34,6 +36,14 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const isLoading = data?.isLoading ?? false;
 
   const associatedEventLabel = useMemo(() => {
+    const perspectiveNode = nodes.find(
+      (node): node is PerspectiveNodeType =>
+        node.id === id && node.type === "perspective",
+    );
+    if (!perspectiveNode) {
+      return null;
+    }
+
     const eventNodes = nodes.filter(
       (node): node is EventNodeType => node.type === "event",
     );
@@ -55,49 +65,34 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       return nodeA.position.x - nodeB.position.x;
     });
 
-    const perspectiveNodes = nodes.filter(
-      (node): node is PerspectiveNodeType => node.type === "perspective",
-    );
-    if (perspectiveNodes.length === 0) {
-      return null;
-    }
-
-    const sortedPerspectiveNodes = [...perspectiveNodes].sort(
-      (nodeA, nodeB) => nodeA.position.x - nodeB.position.x,
-    );
-    const perspectiveIndex = sortedPerspectiveNodes.findIndex(
-      (node) => node.id === id,
-    );
-    if (perspectiveIndex === -1) {
-      return null;
-    }
-
-    const fallbackPerspective = sortedPerspectiveNodes[perspectiveIndex];
-    const initialEvent = sortedEventNodes[perspectiveIndex];
-
-    const matchedEvent =
-      initialEvent ??
-      sortedEventNodes.reduce<EventNodeType | null>((closest, current) => {
-        if (!fallbackPerspective) {
-          return closest;
-        }
-
+    const matchedEvent = sortedEventNodes.reduce<EventNodeType | null>(
+      (closest, current) => {
         const currentDistance = Math.abs(
-          current.position.x - fallbackPerspective.position.x,
+          current.position.x - perspectiveNode.position.x,
         );
         if (!closest) {
           return current;
         }
 
         const closestDistance = Math.abs(
-          closest.position.x - fallbackPerspective.position.x,
+          closest.position.x - perspectiveNode.position.x,
         );
         if (currentDistance < closestDistance) {
           return current;
         }
 
+        if (currentDistance === closestDistance) {
+          const currentIndex = parseEventTimelineIndex(current.data?.timeline);
+          const closestIndex = parseEventTimelineIndex(closest.data?.timeline);
+          if (currentIndex != null && closestIndex != null) {
+            return currentIndex < closestIndex ? current : closest;
+          }
+        }
+
         return closest;
-      }, null);
+      },
+      null,
+    );
 
     if (!matchedEvent) {
       return null;
@@ -408,7 +403,12 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         </div>
       )}
       <PerspectiveMenu nodeId={id} nodeType="perspective" />
-      <div className="flex w-full flex-wrap items-center gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase">
+      <div
+        className={cn(
+          geistMono.className,
+          "flex w-full flex-wrap items-center gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase",
+        )}
+      >
         <span className="flex items-center">💬 Perspective</span>
       </div>
       <div
@@ -431,7 +431,12 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         {data?.reflection}
       </div>
       <div className="mt-2 flex gap-2">
-        <span className="inline-flex items-center rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">
+        <span
+          className={cn(
+            geistMono.className,
+            "inline-flex items-center rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white",
+          )}
+        >
           {eventLabel}
         </span>
       </div>

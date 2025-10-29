@@ -12,6 +12,8 @@ import type {
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
+import { cn } from "@/lib/utils/utils";
+import { geistMono } from "@/app/fonts";
 
 export function EventNode({ id, data }: NodeProps<EventNodeType>) {
   const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
@@ -48,7 +50,12 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         <AddEventButton direction="after" onAdd={handleAddAdjacentEvent} />
       )}
       <EventMenu nodeId={id} nodeType="event" />
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
+      <div
+        className={cn(
+          geistMono.className,
+          "text-[10px] font-semibold uppercase tracking-wide text-zinc-800",
+        )}
+      >
         📜 {data?.timeline}
       </div>
       <textarea

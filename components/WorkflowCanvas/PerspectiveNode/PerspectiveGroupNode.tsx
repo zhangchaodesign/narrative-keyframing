@@ -11,6 +11,8 @@ import type {
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
+import { cn } from "@/lib/utils/utils";
+import { geistMono } from "@/app/fonts";
 
 export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
@@ -75,7 +77,12 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   return (
     <div className="group relative h-full w-full rounded-lg border-4 border-zinc-100 bg-zinc-50/50 shadow">
       <PerspectiveGroupMenu nodeId={id} />
-      <div className="absolute left-1 top-1 rounded bg-secondary px-2 py-1 text-xs font-semibold text-white">
+      <div
+        className={cn(
+          geistMono.className,
+          "absolute left-1 top-1 rounded bg-secondary px-2 py-1 text-xs font-bold text-white",
+        )}
+      >
         {data?.label}
       </div>
       <div className="absolute right-1 top-1 flex items-center gap-2 rounded bg-zinc-100 px-2 py-1 text-xs font-semibold tracking-wide text-zinc-800">

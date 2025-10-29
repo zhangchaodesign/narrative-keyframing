@@ -272,7 +272,12 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         <CharacterMenu nodeId={id} nodeType="character" />
         <div className="flex flex-1 flex-col gap-3 p-3 min-h-0">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
+            <span
+              className={cn(
+                geistMono.className,
+                "text-[10px] font-semibold uppercase tracking-wide text-zinc-800",
+              )}
+            >
               🧙 Character Snapshot
             </span>
           </div>
