@@ -17,11 +17,11 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "event-group",
     type: "eventGroup",
-    position: { x: 100, y: 20 },
+    position: { x: 200, y: 20 },
     data: { label: "Story Events" },
     style: {
       width: 1200,
-      height: 200,
+      height: 220,
       backgroundColor: "transparent",
       border: "none",
       padding: 0,
@@ -29,9 +29,9 @@ export const initialNodes: WorkflowNode[] = [
     },
   },
   {
-    id: "narration-group",
-    type: "narrationGroup",
-    position: { x: 100, y: 250 },
+    id: "perspective-group",
+    type: "perspectiveGroup",
+    position: { x: 0, y: 320 },
     data: {
       label: "First-Person Limited Cluster",
       characterName: "Aria",
@@ -48,7 +48,7 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "event-1",
     type: "event",
-    position: { x: 20, y: 50 },
+    position: { x: 20, y: 60 },
     draggable: false,
     data: {
       description:
@@ -61,7 +61,7 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "event-2",
     type: "event",
-    position: { x: 320, y: 50 },
+    position: { x: 320, y: 60 },
     draggable: false,
     data: {
       description:
@@ -74,7 +74,7 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "event-3",
     type: "event",
-    position: { x: 620, y: 50 },
+    position: { x: 620, y: 60 },
     draggable: false,
     data: {
       description:
@@ -87,7 +87,7 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "event-4",
     type: "event",
-    position: { x: 920, y: 50 },
+    position: { x: 920, y: 60 },
     draggable: false,
     data: {
       description:
@@ -100,53 +100,53 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "perspective-1",
     type: "perspective",
-    position: { x: 20, y: 50 },
+    position: { x: 20, y: 60 },
     draggable: false,
     data: {
       narrator: "Aria",
       reflection: "",
       isLoading: false,
     },
-    parentId: "narration-group",
+    parentId: "perspective-group",
     extent: "parent",
   },
   {
     id: "perspective-2",
     type: "perspective",
-    position: { x: 320, y: 50 },
+    position: { x: 320, y: 60 },
     draggable: false,
     data: {
       narrator: "Aria",
       reflection: "",
       isLoading: false,
     },
-    parentId: "narration-group",
+    parentId: "perspective-group",
     extent: "parent",
   },
   {
     id: "perspective-3",
     type: "perspective",
-    position: { x: 620, y: 50 },
+    position: { x: 620, y: 60 },
     draggable: false,
     data: {
       narrator: "Aria",
       reflection: "",
       isLoading: false,
     },
-    parentId: "narration-group",
+    parentId: "perspective-group",
     extent: "parent",
   },
   {
     id: "perspective-4",
     type: "perspective",
-    position: { x: 920, y: 50 },
+    position: { x: 920, y: 60 },
     draggable: false,
     data: {
       narrator: "Aria",
       reflection: "",
       isLoading: false,
     },
-    parentId: "narration-group",
+    parentId: "perspective-group",
     extent: "parent",
   },
   {
@@ -165,7 +165,7 @@ export const initialNodes: WorkflowNode[] = [
         ],
       },
     },
-    parentId: "narration-group",
+    parentId: "perspective-group",
     extent: "parent",
   },
   {
@@ -181,16 +181,16 @@ export const initialNodes: WorkflowNode[] = [
         sociology: ["Accepted voice on the village council"],
       },
     },
-    parentId: "narration-group",
+    parentId: "perspective-group",
     extent: "parent",
   },
 ];
 
 export const initialEdges: WorkflowEdge[] = [
   {
-    id: "edge-event-group-narration-group",
+    id: "edge-event-group-perspective-group",
     source: "event-group",
-    target: "narration-group",
+    target: "perspective-group",
     sourceHandle: "group-bridge",
     targetHandle: "group-bridge",
     type: "customEdge",

@@ -21,9 +21,8 @@ import type {
 } from "@/lib/types/workflow";
 import { parseEventTimelineIndex } from "@/lib/workflow/perspective";
 
-const NARRATION_HORIZONTAL_GAP = 300;
 const CHARACTER_VERTICAL_GAP = 210;
-const DEFAULT_NARRATION_GROUP_ID = "narration-group";
+const DEFAULT_NARRATION_GROUP_ID = "perspective-group";
 
 export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const { setNodes, setEdges, getNode } = useReactFlow<
@@ -329,7 +328,8 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         groupId != null
           ? nodesState.find(
               (nodeState): nodeState is NarrationGroupNodeType =>
-                nodeState.id === groupId && nodeState.type === "narrationGroup",
+                nodeState.id === groupId &&
+                nodeState.type === "perspectiveGroup",
             ) ?? null
           : null;
       const groupCharacterName = groupNode?.data?.characterName?.trim() ?? "";
@@ -337,7 +337,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         groupCharacterName ||
         (trimmedNarrator && trimmedNarrator !== "Unknown narrator"
           ? trimmedNarrator
-          : `New Character ${characterNodes.length + 1}`);
+          : `New Character`);
       const shouldSyncGroupName =
         groupId != null &&
         (!groupCharacterName || groupCharacterName.length === 0);
@@ -366,7 +366,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         ? nodesState.map((nodeState) => {
             if (
               nodeState.id === groupId &&
-              nodeState.type === "narrationGroup"
+              nodeState.type === "perspectiveGroup"
             ) {
               return {
                 ...nodeState,
@@ -396,10 +396,6 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       },
     ]);
   }, [edges, getNode, id, nodes, setEdges, setNodes]);
-  const eventBadgeClass =
-    "inline-flex items-center rounded bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-600";
-  const narratorBadgeClass =
-    "inline-flex items-center rounded bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-warning";
 
   return (
     <div className="group relative flex h-44 w-64 flex-col rounded-lg border-2 border-secondary bg-white p-3 text-xs hover:shadow-lg">
@@ -435,8 +431,9 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         {data?.reflection}
       </div>
       <div className="mt-2 flex gap-2">
-        <span className={eventBadgeClass}>{eventLabel}</span>
-        {/* <span className={narratorBadgeClass}>{narratorName}</span> */}
+        <span className="inline-flex items-center rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">
+          {eventLabel}
+        </span>
       </div>
       <PerspectiveHandle
         type="target"

@@ -267,7 +267,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     <div className="group relative w-64">
       <div
         ref={containerRef}
-        className="flex max-h-80 flex-col rounded-lg border-2 border-warning bg-white text-xs hover:shadow-lg"
+        className="flex max-h-88 flex-col rounded-lg border-2 border-warning bg-white text-xs hover:shadow-lg"
       >
         <CharacterMenu nodeId={id} nodeType="character" />
         <div

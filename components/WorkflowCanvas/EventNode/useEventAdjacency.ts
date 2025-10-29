@@ -13,7 +13,7 @@ const EVENT_NODE_WIDTH = 256;
 const EVENT_GROUP_RIGHT_PADDING = 24;
 const DEFAULT_EVENT_GROUP_WIDTH = 1200;
 const DEFAULT_EVENT_GROUP_ID = "event-group";
-const DEFAULT_NARRATION_GROUP_ID = "narration-group";
+const DEFAULT_NARRATION_GROUP_ID = "perspective-group";
 const PERSPECTIVE_NODE_WIDTH = 256;
 const NARRATION_GROUP_RIGHT_PADDING = 24;
 const DEFAULT_NARRATION_GROUP_WIDTH = 1200;
@@ -319,14 +319,14 @@ export function useEventAdjacency(nodeId: string) {
           computedGroupWidth,
         );
 
-        const narrationGroupNode = nodesWithNew.find(
+        const perspectiveGroupNode = nodesWithNew.find(
           (nodeState) =>
-            nodeState.type === "narrationGroup" &&
+            nodeState.type === "perspectiveGroup" &&
             nodeState.id === DEFAULT_NARRATION_GROUP_ID,
         );
         const currentNarrationWidth =
-          typeof narrationGroupNode?.style?.width === "number"
-            ? narrationGroupNode.style.width
+          typeof perspectiveGroupNode?.style?.width === "number"
+            ? perspectiveGroupNode.style.width
             : DEFAULT_NARRATION_GROUP_WIDTH;
         let computedNarrationWidth = DEFAULT_NARRATION_GROUP_WIDTH;
         if (perspectiveRowNodesWithNew.length > 0) {
@@ -407,7 +407,7 @@ export function useEventAdjacency(nodeId: string) {
           }
 
           if (
-            nodeState.type === "narrationGroup" &&
+            nodeState.type === "perspectiveGroup" &&
             nodeState.id === DEFAULT_NARRATION_GROUP_ID
           ) {
             return {

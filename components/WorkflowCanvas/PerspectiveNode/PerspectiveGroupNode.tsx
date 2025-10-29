@@ -19,7 +19,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       const nextName = event.target.value;
       setNodes((currentNodes) =>
         currentNodes.map((node) => {
-          if (node.id === id && node.type === "narrationGroup") {
+          if (node.id === id && node.type === "perspectiveGroup") {
             const groupData = node.data ?? {};
             if (
               (groupData as { characterName?: string }).characterName ===

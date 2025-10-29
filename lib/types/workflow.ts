@@ -31,7 +31,7 @@ export type EventNodeType = Node<EventNodeData, "event">;
 export type PerspectiveNodeType = Node<PerspectiveNodeData, "perspective">;
 export type CharacterNodeType = Node<CharacterNodeData, "character">;
 export type EventGroupNodeType = Node<GroupNodeData, "eventGroup">;
-export type NarrationGroupNodeType = Node<GroupNodeData, "narrationGroup">;
+export type NarrationGroupNodeType = Node<GroupNodeData, "perspectiveGroup">;
 
 // Deprecated: Use EventGroupNodeType instead
 export type GroupNodeType = Node<GroupNodeData, "group">;

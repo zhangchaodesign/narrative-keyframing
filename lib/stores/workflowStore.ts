@@ -64,12 +64,14 @@ const ensureNarrationGroupCharacterNames = (
   }
 
   return nodes.map((node) => {
-    if (node.type !== "narrationGroup") {
+    if (node.type !== "perspectiveGroup") {
       return node;
     }
 
     const groupData = node.data ?? {};
-    const existingName = (groupData as { characterName?: string }).characterName?.trim();
+    const existingName = (
+      groupData as { characterName?: string }
+    ).characterName?.trim();
     if (existingName && existingName.length > 0) {
       return node;
     }
@@ -92,7 +94,9 @@ const ensureNarrationGroupCharacterNames = (
     );
 
     const fallbackName =
-      fallbackNameFromCharacter ?? fallbackPerspective?.data?.narrator?.trim() ?? "";
+      fallbackNameFromCharacter ??
+      fallbackPerspective?.data?.narrator?.trim() ??
+      "";
 
     if (!fallbackName) {
       return node;
