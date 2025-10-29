@@ -31,7 +31,6 @@ const nodeTypes: NodeTypes = {
   event: EventNode,
   perspective: PerspectiveNode,
   character: CharacterNode,
-  group: EventGroupNode, // Deprecated, kept for backward compatibility
   eventGroup: EventGroupNode,
   narrationGroup: NarrationGroupNode,
 };

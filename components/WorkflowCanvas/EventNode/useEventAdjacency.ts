@@ -14,6 +14,9 @@ const EVENT_GROUP_RIGHT_PADDING = 24;
 const DEFAULT_EVENT_GROUP_WIDTH = 1200;
 const DEFAULT_EVENT_GROUP_ID = "event-group";
 const DEFAULT_NARRATION_GROUP_ID = "narration-group";
+const PERSPECTIVE_NODE_WIDTH = 256;
+const NARRATION_GROUP_RIGHT_PADDING = 24;
+const DEFAULT_NARRATION_GROUP_WIDTH = 1200;
 
 const parseEventTimelineIndex = (timeline?: string | null) => {
   if (!timeline) {
@@ -46,7 +49,8 @@ export function useEventAdjacency(nodeId: string) {
     useCallback(
       (store) =>
         store.edges.some(
-          (edge) => edge.target === nodeId && edge.targetHandle === "event-prev",
+          (edge) =>
+            edge.target === nodeId && edge.targetHandle === "event-prev",
         ),
       [nodeId],
     ),
@@ -55,7 +59,8 @@ export function useEventAdjacency(nodeId: string) {
     useCallback(
       (store) =>
         store.edges.some(
-          (edge) => edge.source === nodeId && edge.sourceHandle === "event-next",
+          (edge) =>
+            edge.source === nodeId && edge.sourceHandle === "event-next",
         ),
       [nodeId],
     ),
@@ -293,7 +298,7 @@ export function useEventAdjacency(nodeId: string) {
 
         const currentGroupNode = nodesWithNew.find(
           (nodeState) =>
-            nodeState.type === "group" && nodeState.id === eventGroupId,
+            nodeState.type === "eventGroup" && nodeState.id === eventGroupId,
         );
         const currentGroupWidth =
           typeof currentGroupNode?.style?.width === "number"
@@ -312,6 +317,37 @@ export function useEventAdjacency(nodeId: string) {
           DEFAULT_EVENT_GROUP_WIDTH,
           currentGroupWidth,
           computedGroupWidth,
+        );
+
+        const narrationGroupNode = nodesWithNew.find(
+          (nodeState) =>
+            nodeState.type === "narrationGroup" &&
+            nodeState.id === DEFAULT_NARRATION_GROUP_ID,
+        );
+        const currentNarrationWidth =
+          typeof narrationGroupNode?.style?.width === "number"
+            ? narrationGroupNode.style.width
+            : DEFAULT_NARRATION_GROUP_WIDTH;
+        let computedNarrationWidth = DEFAULT_NARRATION_GROUP_WIDTH;
+        if (perspectiveRowNodesWithNew.length > 0) {
+          let rightmostPerspectiveEdge = 0;
+          perspectiveRowNodesWithNew.forEach((nodeState) => {
+            const mappedPosition = perspectivePositionMap.get(nodeState.id);
+            const positionX = mappedPosition?.x ?? nodeState.position.x;
+            rightmostPerspectiveEdge = Math.max(
+              rightmostPerspectiveEdge,
+              positionX + PERSPECTIVE_NODE_WIDTH,
+            );
+          });
+          if (rightmostPerspectiveEdge > 0) {
+            computedNarrationWidth =
+              rightmostPerspectiveEdge + NARRATION_GROUP_RIGHT_PADDING;
+          }
+        }
+        const nextNarrationWidth = Math.max(
+          DEFAULT_NARRATION_GROUP_WIDTH,
+          currentNarrationWidth,
+          computedNarrationWidth,
         );
 
         return nodesWithNew.map((nodeState) => {
@@ -357,12 +393,28 @@ export function useEventAdjacency(nodeId: string) {
             };
           }
 
-          if (nodeState.type === "group" && nodeState.id === eventGroupId) {
+          if (
+            nodeState.type === "eventGroup" &&
+            nodeState.id === eventGroupId
+          ) {
             return {
               ...nodeState,
               style: {
                 ...nodeState.style,
                 width: nextGroupWidth,
+              },
+            };
+          }
+
+          if (
+            nodeState.type === "narrationGroup" &&
+            nodeState.id === DEFAULT_NARRATION_GROUP_ID
+          ) {
+            return {
+              ...nodeState,
+              style: {
+                ...nodeState.style,
+                width: nextNarrationWidth,
               },
             };
           }
@@ -439,4 +491,3 @@ export function useEventAdjacency(nodeId: string) {
 
   return { hasPreviousEvent, hasNextEvent, handleAddAdjacentEvent };
 }
-

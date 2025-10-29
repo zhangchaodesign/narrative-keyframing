@@ -16,7 +16,7 @@ export type {
 export const initialNodes: WorkflowNode[] = [
   {
     id: "event-group",
-    type: "group",
+    type: "eventGroup",
     position: { x: 100, y: 20 },
     data: { label: "Story Events" },
     style: {
