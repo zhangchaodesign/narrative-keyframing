@@ -18,6 +18,7 @@ import type {
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
+import { parseEventTimelineIndex } from "@/lib/workflow/perspective";
 
 const NARRATION_HORIZONTAL_GAP = 300;
 const CHARACTER_VERTICAL_GAP = 210;
@@ -32,22 +33,79 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const nodes = useStore((store) => store.nodes);
   const isLoading = data?.isLoading ?? false;
 
-  const connectedEventLabel = useMemo(() => {
-    const eventEdge = edges.find(
-      (edge) => edge.target === id && edge.targetHandle === "event",
+  const associatedEventLabel = useMemo(() => {
+    const eventNodes = nodes.filter(
+      (node): node is EventNodeType => node.type === "event",
     );
-    if (!eventEdge) {
+    if (eventNodes.length === 0) {
       return null;
     }
 
-    const eventNode = nodes.find(
-      (node) => node.id === eventEdge.source && node.type === "event",
-    ) as EventNodeType | undefined;
+    const sortedEventNodes = [...eventNodes].sort((nodeA, nodeB) => {
+      const indexA = parseEventTimelineIndex(nodeA.data?.timeline);
+      const indexB = parseEventTimelineIndex(nodeB.data?.timeline);
 
-    const timeline = eventNode?.data?.timeline?.trim();
-    const description = eventNode?.data?.description?.trim();
+      if (indexA != null && indexB != null && indexA !== indexB) {
+        return indexA - indexB;
+      }
 
-    const label = timeline || description || eventNode?.id;
+      if (indexA != null) return -1;
+      if (indexB != null) return 1;
+
+      return nodeA.position.x - nodeB.position.x;
+    });
+
+    const perspectiveNodes = nodes.filter(
+      (node): node is PerspectiveNodeType => node.type === "perspective",
+    );
+    if (perspectiveNodes.length === 0) {
+      return null;
+    }
+
+    const sortedPerspectiveNodes = [...perspectiveNodes].sort(
+      (nodeA, nodeB) => nodeA.position.x - nodeB.position.x,
+    );
+    const perspectiveIndex = sortedPerspectiveNodes.findIndex(
+      (node) => node.id === id,
+    );
+    if (perspectiveIndex === -1) {
+      return null;
+    }
+
+    const fallbackPerspective = sortedPerspectiveNodes[perspectiveIndex];
+    const initialEvent = sortedEventNodes[perspectiveIndex];
+
+    const matchedEvent =
+      initialEvent ??
+      sortedEventNodes.reduce<EventNodeType | null>((closest, current) => {
+        if (!fallbackPerspective) {
+          return closest;
+        }
+
+        const currentDistance = Math.abs(
+          current.position.x - fallbackPerspective.position.x,
+        );
+        if (!closest) {
+          return current;
+        }
+
+        const closestDistance = Math.abs(
+          closest.position.x - fallbackPerspective.position.x,
+        );
+        if (currentDistance < closestDistance) {
+          return current;
+        }
+
+        return closest;
+      }, null);
+
+    if (!matchedEvent) {
+      return null;
+    }
+
+    const timeline = matchedEvent.data?.timeline?.trim();
+    const description = matchedEvent.data?.description?.trim();
+    const label = timeline || description || matchedEvent.id;
     if (!label) {
       return null;
     }
@@ -57,9 +115,9 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     }
 
     return `Event ${label}`;
-  }, [edges, id, nodes]);
+  }, [id, nodes]);
 
-  const eventLabel = connectedEventLabel?.trim() || "Event";
+  const eventLabel = associatedEventLabel?.trim() || "Event";
   const { narratorName, hasDirectCharacter, isFromPrevious } = useMemo(() => {
     const visited = new Set<string>();
 
@@ -252,7 +310,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     "inline-flex items-center rounded bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-warning";
 
   return (
-    <div className="group relative flex h-44 w-64 flex-col rounded-lg border-2 border-primary bg-white p-3 text-xs hover:shadow-lg">
+    <div className="group relative flex h-44 w-64 flex-col rounded-lg border-2 border-secondary bg-white p-3 text-xs hover:shadow-lg">
       {isLoading && (
         <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
           <span className="loading loading-spinner text-primary"></span>
@@ -304,7 +362,6 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           disabled={isLoading}
         />
       )}
-      <CustomHandle type="target" position={Position.Top} id="event" />
       <CustomHandle type="target" position={Position.Bottom} id="character" />
     </div>
   );

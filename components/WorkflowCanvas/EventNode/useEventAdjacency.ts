@@ -430,8 +430,6 @@ export function useEventAdjacency(nodeId: string) {
             !(
               (edge.sourceHandle === "event-next" &&
                 edge.targetHandle === "event-prev") ||
-              (edge.sourceHandle === "perspective" &&
-                edge.targetHandle === "event") ||
               (edge.sourceHandle === "perspective-next" &&
                 edge.targetHandle === "perspective-prev")
             ),
@@ -446,22 +444,6 @@ export function useEventAdjacency(nodeId: string) {
             target: eventSequence[index + 1]!,
             sourceHandle: "event-next",
             targetHandle: "event-prev",
-            type: "customEdge",
-            animated: true,
-          });
-        }
-
-        const pairCount = Math.min(
-          eventSequence.length,
-          perspectiveSequence.length,
-        );
-        for (let index = 0; index < pairCount; index += 1) {
-          rebuiltEdges.push({
-            id: `${baseEdgeId}-event-perspective-${index}`,
-            source: eventSequence[index]!,
-            target: perspectiveSequence[index]!,
-            sourceHandle: "perspective",
-            targetHandle: "event",
             type: "customEdge",
             animated: true,
           });

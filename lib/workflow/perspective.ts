@@ -115,24 +115,68 @@ export const preparePerspectiveRequest = ({
   const targetIdSet =
     targetNodeIds && targetNodeIds.length > 0 ? new Set(targetNodeIds) : null;
 
+  const sortedPerspectiveNodes = [...perspectiveNodes].sort(
+    (nodeA, nodeB) => nodeA.position.x - nodeB.position.x,
+  );
+  const perspectiveOrderMap = new Map(
+    sortedPerspectiveNodes.map((node, indexPosition) => [
+      node.id,
+      indexPosition,
+    ]),
+  );
+
+  const findEventForPerspective = (
+    perspectiveNode: PerspectiveNodeType,
+  ): EventNodeType | null => {
+    const legacyEventEdge = edges.find(
+      (edge) =>
+        edge.target === perspectiveNode.id && edge.targetHandle === "event",
+    );
+    if (legacyEventEdge) {
+      const eventNode = nodes.find(
+        (node): node is EventNodeType =>
+          node.id === legacyEventEdge.source && node.type === "event",
+      );
+      if (eventNode) {
+        return eventNode;
+      }
+    }
+
+    const perspectiveIndex = perspectiveOrderMap.get(perspectiveNode.id);
+    if (perspectiveIndex != null) {
+      const indexedEvent = sortedEventNodes[perspectiveIndex];
+      if (indexedEvent) {
+        return indexedEvent;
+      }
+    }
+
+    if (sortedEventNodes.length === 0) {
+      return null;
+    }
+
+    let closestEvent: EventNodeType | null = null;
+    let smallestDistance = Number.POSITIVE_INFINITY;
+
+    for (const eventNode of sortedEventNodes) {
+      const distance = Math.abs(
+        eventNode.position.x - perspectiveNode.position.x,
+      );
+      if (distance < smallestDistance) {
+        closestEvent = eventNode;
+        smallestDistance = distance;
+      }
+    }
+
+    return closestEvent;
+  };
+
   const relevantPerspectiveNodes = targetIdSet
     ? perspectiveNodes.filter((node) => targetIdSet.has(node.id))
     : perspectiveNodes;
 
   const tasksWithOrdering = relevantPerspectiveNodes
     .map((perspectiveNode) => {
-      const eventEdge = edges.find(
-        (edge) =>
-          edge.target === perspectiveNode.id && edge.targetHandle === "event",
-      );
-      if (!eventEdge) {
-        return null;
-      }
-
-      const eventNode = nodes.find(
-        (node): node is EventNodeType =>
-          node.id === eventEdge.source && node.type === "event",
-      );
+      const eventNode = findEventForPerspective(perspectiveNode);
       if (!eventNode) {
         return null;
       }

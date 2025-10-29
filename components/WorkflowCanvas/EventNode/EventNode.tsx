@@ -40,7 +40,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
   );
 
   return (
-    <div className="group relative w-64 rounded-lg border-2 border-secondary bg-white p-3 text-xs hover:shadow-lg">
+    <div className="group relative w-64 rounded-lg border-2 border-primary bg-white p-3 text-xs hover:shadow-lg">
       {!hasPreviousEvent && (
         <AddEventButton direction="before" onAdd={handleAddAdjacentEvent} />
       )}
@@ -77,7 +77,6 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
       />
       <EventHandle type="target" position={Position.Left} id="event-prev" />
       <EventHandle type="source" position={Position.Right} id="event-next" />
-      <CustomHandle type="source" position={Position.Bottom} id="perspective" />
     </div>
   );
 }

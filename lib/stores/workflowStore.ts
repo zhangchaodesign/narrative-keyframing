@@ -43,7 +43,9 @@ const sanitizeEdges = (edges: WorkflowEdge[]): WorkflowEdge[] =>
     const targetHandle = edge.targetHandle ?? "";
     return (
       !ATTRIBUTE_HANDLE_PATTERN.test(sourceHandle) &&
-      !ATTRIBUTE_HANDLE_PATTERN.test(targetHandle)
+      !ATTRIBUTE_HANDLE_PATTERN.test(targetHandle) &&
+      sourceHandle !== "event" &&
+      targetHandle !== "event"
     );
   });
 

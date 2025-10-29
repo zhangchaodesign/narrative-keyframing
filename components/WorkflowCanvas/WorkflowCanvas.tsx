@@ -227,7 +227,7 @@ export function WorkflowCanvas() {
     <RunPerspectiveContext.Provider value={handleGeneratePerspectives}>
       <div className="h-full min-h-0 w-full relative">
         <div className="absolute left-3 top-3 z-20 flex flex-col gap-2">
-          <button type="button" className="btn-primary btn-xs btn">
+          <button type="button" className="btn-secondary btn-xs btn">
             Add a First-Person Limited Cluster
           </button>
           {runStatus && (
