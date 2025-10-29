@@ -18,6 +18,11 @@ import type {
 } from "@/lib/types/workflow";
 
 const EVENT_HORIZONTAL_GAP = 300;
+const EVENT_ROW_START_X = 20;
+const EVENT_NODE_WIDTH = 256;
+const EVENT_GROUP_RIGHT_PADDING = 24;
+const DEFAULT_EVENT_GROUP_WIDTH = 1200;
+const DEFAULT_EVENT_GROUP_ID = "event-group";
 
 const parseEventTimelineIndex = (timeline?: string | null) => {
   if (!timeline) {
@@ -54,6 +59,10 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
       if (!referenceNode) {
         return;
       }
+
+      const eventGroupId =
+        (referenceNode as { parentId?: string }).parentId ??
+        DEFAULT_EVENT_GROUP_ID;
 
       const timestamp = Date.now();
       const newEventId = `event-${timestamp}`;
@@ -128,6 +137,8 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
             description: "",
           },
           draggable: false,
+          parentId: eventGroupId,
+          extent: "parent",
         };
 
         const newPerspectiveNode: WorkflowNode = {
@@ -152,15 +163,19 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         ];
 
         const eventRowNodesWithNew = nodesWithNew.filter(
-          (nodeState) => nodeState.type === "event",
+          (nodeState) =>
+            nodeState.type === "event" &&
+            (((nodeState as { parentId?: string }).parentId ??
+              eventGroupId) === eventGroupId),
         );
         if (eventRowNodesWithNew.length === 0) {
           return nodesWithNew;
         }
 
-        const startX = Math.min(
+        const minEventX = Math.min(
           ...eventRowNodesWithNew.map((nodeState) => nodeState.position.x),
         );
+        const normalizedStartX = Math.max(EVENT_ROW_START_X, minEventX);
 
         const sortedEventNodes = [...eventRowNodesWithNew].sort((a, b) => {
           const indexA = parseEventTimelineIndex(
@@ -185,7 +200,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         const eventPositionMap = new Map<string, { x: number; y: number }>();
         sortedEventNodes.forEach((nodeState, indexPosition) => {
           eventPositionMap.set(nodeState.id, {
-            x: startX + indexPosition * EVENT_HORIZONTAL_GAP,
+            x: normalizedStartX + indexPosition * EVENT_HORIZONTAL_GAP,
             y: eventRowY,
           });
         });
@@ -206,7 +221,8 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
 
           sortedPerspectiveNodes.forEach((nodeState, indexPosition) => {
             const relatedEvent = sortedEventNodes[indexPosition];
-            const fallbackX = startX + indexPosition * EVENT_HORIZONTAL_GAP;
+            const fallbackX =
+              normalizedStartX + indexPosition * EVENT_HORIZONTAL_GAP;
             const eventPosition = relatedEvent
               ? eventPositionMap.get(relatedEvent.id)
               : undefined;
@@ -221,6 +237,29 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           );
         }
 
+        const currentGroupNode = nodesWithNew.find(
+          (nodeState) =>
+            nodeState.type === "group" && nodeState.id === eventGroupId,
+        );
+        const currentGroupWidth =
+          typeof currentGroupNode?.style?.width === "number"
+            ? currentGroupNode.style.width
+            : DEFAULT_EVENT_GROUP_WIDTH;
+
+        const rightmostEventEdge =
+          normalizedStartX +
+          (sortedEventNodes.length - 1) * EVENT_HORIZONTAL_GAP +
+          EVENT_NODE_WIDTH;
+        const computedGroupWidth =
+          sortedEventNodes.length > 0
+            ? rightmostEventEdge + EVENT_GROUP_RIGHT_PADDING
+            : DEFAULT_EVENT_GROUP_WIDTH;
+        const nextGroupWidth = Math.max(
+          DEFAULT_EVENT_GROUP_WIDTH,
+          currentGroupWidth,
+          computedGroupWidth,
+        );
+
         return nodesWithNew.map((nodeState) => {
           if (nodeState.type === "event") {
             const newPosition = eventPositionMap.get(nodeState.id);
@@ -231,8 +270,16 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
                   ...nodeState.position,
                   ...newPosition,
                 },
+                parentId: eventGroupId,
+                extent: "parent",
               };
             }
+
+            return {
+              ...nodeState,
+              parentId: eventGroupId,
+              extent: "parent",
+            };
           }
 
           if (nodeState.type === "perspective") {
@@ -246,6 +293,16 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
                 },
               };
             }
+          }
+
+          if (nodeState.type === "group" && nodeState.id === eventGroupId) {
+            return {
+              ...nodeState,
+              style: {
+                ...nodeState.style,
+                width: nextGroupWidth,
+              },
+            };
           }
 
           return nodeState;
