@@ -152,7 +152,7 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "character-start",
     type: "character",
-    position: { x: 20, y: 260 },
+    position: { x: 20, y: 280 },
     draggable: false,
     data: {
       name: "Aria",
@@ -171,7 +171,7 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "character-end",
     type: "character",
-    position: { x: 920, y: 260 },
+    position: { x: 920, y: 280 },
     draggable: false,
     data: {
       name: "Aria",

@@ -27,7 +27,8 @@ function cloneData<DataType>(data: DataType): DataType {
 }
 
 export function PerspectiveMenu({ nodeId, nodeType }: PerspectiveMenuProps) {
-  const { setNodes, setEdges } = useReactFlow<WorkflowNode, WorkflowEdge>();
+  const { setNodes, setEdges, getNode, getNodes } =
+    useReactFlow<WorkflowNode, WorkflowEdge>();
   const runPerspectives = useContext(RunPerspectiveContext);
 
   const handleDelete = useCallback(() => {
@@ -71,8 +72,36 @@ export function PerspectiveMenu({ nodeId, nodeType }: PerspectiveMenuProps) {
   }, [nodeId, setNodes]);
 
   const handleRun = useCallback(() => {
-    runPerspectives();
-  }, [runPerspectives]);
+    if (!runPerspectives) {
+      return;
+    }
+
+    const currentNode = getNode(nodeId);
+    if (!currentNode) {
+      runPerspectives();
+      return;
+    }
+
+    const parentId = (currentNode as { parentId?: string }).parentId;
+
+    if (!parentId) {
+      runPerspectives([nodeId]);
+      return;
+    }
+
+    const siblingPerspectiveIds = getNodes()
+      .filter(
+        (node) => node.type === "perspective" && node.parentId === parentId,
+      )
+      .map((node) => node.id);
+
+    if (siblingPerspectiveIds.length === 0) {
+      runPerspectives([nodeId]);
+      return;
+    }
+
+    runPerspectives(siblingPerspectiveIds);
+  }, [getNode, getNodes, nodeId, runPerspectives]);
 
   return (
     <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">

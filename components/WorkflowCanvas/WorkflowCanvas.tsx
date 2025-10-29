@@ -146,12 +146,6 @@ export function WorkflowCanvas() {
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const newGroupId = `perspective-group-${clusterSuffix}`;
-    const labelTemplate =
-      perspectiveGroups[0]?.data?.label ?? "First-Person Limited Cluster";
-    const newGroupLabel =
-      perspectiveGroups.length > 0
-        ? `${labelTemplate} ${perspectiveGroups.length + 1}`
-        : labelTemplate;
     const perspectiveRowY =
       perspectiveGroups.length > 0
         ? nodes.find(
@@ -188,7 +182,7 @@ export function WorkflowCanvas() {
         y: newGroupY,
       },
       data: {
-        label: newGroupLabel,
+        label: "First-Person Limited Cluster",
         characterName: "",
       },
       style: {
