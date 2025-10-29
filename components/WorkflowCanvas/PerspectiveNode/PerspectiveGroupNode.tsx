@@ -75,7 +75,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   );
 
   return (
-    <div className="group relative h-full w-full rounded-lg border-4 border-zinc-100 bg-zinc-50/50 shadow">
+    <div className="group relative h-full w-full rounded-lg border-4 border-blue-100 bg-blue-50/50 shadow">
       <PerspectiveGroupMenu nodeId={id} />
       <div
         className={cn(
@@ -85,14 +85,14 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       >
         {data?.label}
       </div>
-      <div className="absolute right-1 top-1 flex items-center gap-2 rounded bg-zinc-100 px-2 py-1 text-xs font-semibold tracking-wide text-zinc-800">
+      <div className="absolute right-1 top-1 flex items-center gap-2 rounded bg-white border border-zinc-300 px-2 py-1 text-xs font-semibold tracking-wide text-zinc-800">
         <label className="flex items-center gap-2">
           <span>Narrator</span>
           <input
             value={data?.characterName ?? ""}
             onChange={handleCharacterNameChange}
             placeholder="Name..."
-            className="w-28 rounded border border-zinc-300 bg-zinc-50 px-2 py-0.5 font-medium normal-case text-zinc-700 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400"
+            className="w-28 rounded border border-transparent bg-zinc-50 px-2 py-0.5 font-medium normal-case text-zinc-700 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400"
           />
         </label>
       </div>

@@ -46,6 +46,10 @@
   @apply shadow-none rounded;
 }
 
+.react-flow {
+  --xy-background-color: #f7f9fb;
+}
+
 .suggest-addition {
   color: #29350e;
   background-color: #e1fdc5;
