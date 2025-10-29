@@ -183,6 +183,8 @@ ${eventSequence
 `
         : "";
 
+    console.log("Generating perspectives for tasks:", perspectives);
+
     const tasksSection = buildTasksSection(perspectives);
 
     const prompt = `You are a narrative writer crafting first-person story beats.

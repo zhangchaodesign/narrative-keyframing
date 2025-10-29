@@ -167,6 +167,7 @@ export function WorkflowCanvas() {
           narrator: "",
           reflection: "",
           isLoading: false,
+          event: eventNode.id,
         },
         draggable: false,
         parentId: newGroupId,

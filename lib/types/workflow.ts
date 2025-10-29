@@ -9,6 +9,7 @@ export type PerspectiveNodeData = {
   narrator: string;
   reflection: string;
   isLoading?: boolean;
+  event: string;
 };
 
 export type CharacterTraits = {
@@ -20,6 +21,7 @@ export type CharacterTraits = {
 export type CharacterNodeData = {
   name: string;
   traits: CharacterTraits;
+  perspectiveId: string;
 };
 
 export type GroupNodeData = {

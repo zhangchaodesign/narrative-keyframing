@@ -194,7 +194,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           "flex w-full flex-wrap items-center gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase",
         )}
       >
-        <span className="flex items-center">💬 Perspective</span>
+        <span className="flex items-center">💬 {id}</span>
       </div>
       <div
         className="mt-2 flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800"

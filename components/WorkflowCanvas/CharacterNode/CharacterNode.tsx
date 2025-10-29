@@ -95,6 +95,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
       updater: (
         current: CharacterTraits,
         name: string,
+        perspectiveId: string,
       ) => CharacterNodeType["data"],
     ) => {
       setNodes((nodes) =>
@@ -112,7 +113,11 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
 
           return {
             ...node,
-            data: updater(currentTraits, currentData?.name ?? ""),
+            data: updater(
+              currentTraits,
+              currentData?.name ?? "",
+              currentData?.perspectiveId ?? "",
+            ),
           };
         }),
       );
@@ -133,12 +138,13 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
       const draftValue = draftTraits[category]?.trim();
       if (!draftValue) return;
 
-      updateNodeData((currentTraits, currentName) => ({
+      updateNodeData((currentTraits, currentName, currentPerspectiveId) => ({
         name: currentName,
         traits: {
           ...currentTraits,
           [category]: [...(currentTraits[category] ?? []), draftValue],
         },
+        perspectiveId: currentPerspectiveId,
       }));
 
       setDraftTraits((prev) => ({ ...prev, [category]: "" }));
@@ -156,7 +162,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
       setEditingTrait((current) =>
         current && current.category === category ? null : current,
       );
-      updateNodeData((currentTraits, currentName) => ({
+      updateNodeData((currentTraits, currentName, currentPerspectiveId) => ({
         name: currentName,
         traits: {
           ...currentTraits,
@@ -164,6 +170,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
             (_trait, traitIndex) => traitIndex !== index,
           ),
         },
+        perspectiveId: currentPerspectiveId,
       }));
     },
     [updateNodeData],
@@ -176,12 +183,13 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         return;
       }
 
-      updateNodeData((currentTraits, currentName) => {
+      updateNodeData((currentTraits, currentName, currentPerspectiveId) => {
         const categoryTraits = [...(currentTraits[category] ?? [])];
         if (index < 0 || index >= categoryTraits.length) {
           return {
             name: currentName,
             traits: currentTraits,
+            perspectiveId: currentPerspectiveId,
           };
         }
 
@@ -193,6 +201,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
             ...currentTraits,
             [category]: categoryTraits,
           },
+          perspectiveId: currentPerspectiveId,
         };
       });
     },

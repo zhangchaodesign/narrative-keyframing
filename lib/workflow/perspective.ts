@@ -84,6 +84,9 @@ export const preparePerspectiveRequest = ({
     return nodeA.position.x - nodeB.position.x;
   });
 
+  const eventNodeMap = new Map(
+    sortedEventNodes.map((eventNode) => [eventNode.id, eventNode]),
+  );
   const eventOrderMap = new Map(
     sortedEventNodes.map((eventNode, indexPosition) => [
       eventNode.id,
@@ -128,6 +131,14 @@ export const preparePerspectiveRequest = ({
   const findEventForPerspective = (
     perspectiveNode: PerspectiveNodeType,
   ): EventNodeType | null => {
+    const eventId = perspectiveNode.data?.event?.trim();
+    if (eventId) {
+      const explicitEvent = eventNodeMap.get(eventId);
+      if (explicitEvent) {
+        return explicitEvent;
+      }
+    }
+
     const legacyEventEdge = edges.find(
       (edge) =>
         edge.target === perspectiveNode.id && edge.targetHandle === "event",
