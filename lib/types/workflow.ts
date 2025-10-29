@@ -24,6 +24,7 @@ export type CharacterNodeData = {
 
 export type GroupNodeData = {
   label: string;
+  characterName?: string;
 };
 
 export type EventNodeType = Node<EventNodeData, "event">;

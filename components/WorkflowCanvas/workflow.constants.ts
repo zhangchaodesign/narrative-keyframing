@@ -32,7 +32,10 @@ export const initialNodes: WorkflowNode[] = [
     id: "narration-group",
     type: "narrationGroup",
     position: { x: 100, y: 250 },
-    data: { label: "First-Person Limited Cluster" },
+    data: {
+      label: "First-Person Limited Cluster",
+      characterName: "Aria",
+    },
     style: {
       width: 1200,
       height: 640,

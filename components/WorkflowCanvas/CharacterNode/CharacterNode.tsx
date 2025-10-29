@@ -14,6 +14,8 @@ import { TbCheck, TbPencil, TbPlus, TbX } from "react-icons/tb";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { CharacterMenu } from "@/components/WorkflowCanvas/CharacterNode/CharacterMenu";
 import type { CharacterNodeType, CharacterTraits } from "@/lib/types/workflow";
+import { cn } from "@/lib/utils/utils";
+import { geistMono } from "@/app/fonts";
 
 type TraitCategory = keyof CharacterTraits;
 
@@ -86,6 +88,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
       sociology: data.traits.sociology ?? [],
     };
   }, [data?.traits]);
+  const characterName = data?.name?.trim() ?? "";
 
   const updateNodeData = useCallback(
     (
@@ -115,17 +118,6 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
       );
     },
     [id, setNodes],
-  );
-
-  const handleNameChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const nextName = event.target.value;
-      updateNodeData((currentTraits) => ({
-        name: nextName,
-        traits: currentTraits,
-      }));
-    },
-    [updateNodeData],
   );
 
   const handleDraftChange = useCallback(
@@ -300,17 +292,25 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
               🧙 Character Snapshot
             </span>
           </div>
-          <label>
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
-              Name
+          <div>
+            <p
+              className={cn(
+                geistMono.className,
+                "text-base font-semibold tracking-wide text-zinc-800",
+              )}
+            >
+              {characterName ? characterName : "Unknown"}
             </p>
-            <input
-              value={data?.name ?? ""}
-              onChange={handleNameChange}
-              placeholder="Name this character..."
-              className="mt-2 w-full resize-none rounded border border-zinc-300 bg-white/70 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
-            />
-          </label>
+            {/* <div className="mt-2 w-full rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800">
+              {characterName ? (
+                characterName
+              ) : (
+                <span className="italic text-zinc-500">
+                  Set in the perspective cluster
+                </span>
+              )}
+            </div> */}
+          </div>
 
           <div className="space-y-3">
             {TRAIT_CATEGORIES.map(

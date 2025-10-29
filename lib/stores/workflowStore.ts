@@ -10,6 +10,8 @@ import {
 import {
   initialEdges,
   initialNodes,
+  type CharacterNodeType,
+  type PerspectiveNodeType,
   type WorkflowEdge,
   type WorkflowNode,
 } from "@/components/WorkflowCanvas/workflow.constants";
@@ -35,7 +37,7 @@ const deepClone = <T>(value: T): T => {
 };
 
 const ATTRIBUTE_HANDLE_PATTERN = /-(physiology|psychology|sociology)-/;
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3;
 
 const sanitizeEdges = (edges: WorkflowEdge[]): WorkflowEdge[] =>
   edges.filter((edge) => {
@@ -53,6 +55,58 @@ const getInitialState = () => ({
   nodes: deepClone(initialNodes),
   edges: sanitizeEdges(deepClone(initialEdges)),
 });
+
+const ensureNarrationGroupCharacterNames = (
+  nodes: WorkflowNode[] | undefined,
+): WorkflowNode[] => {
+  if (!nodes || nodes.length === 0) {
+    return nodes ?? [];
+  }
+
+  return nodes.map((node) => {
+    if (node.type !== "narrationGroup") {
+      return node;
+    }
+
+    const groupData = node.data ?? {};
+    const existingName = (groupData as { characterName?: string }).characterName?.trim();
+    if (existingName && existingName.length > 0) {
+      return node;
+    }
+
+    const parentId = node.id;
+    const fallbackCharacter = nodes.find(
+      (candidate): candidate is CharacterNodeType =>
+        candidate.parentId === parentId &&
+        candidate.type === "character" &&
+        Boolean(candidate.data?.name?.trim()),
+    );
+
+    const fallbackNameFromCharacter = fallbackCharacter?.data?.name?.trim();
+
+    const fallbackPerspective = nodes.find(
+      (candidate): candidate is PerspectiveNodeType =>
+        candidate.parentId === parentId &&
+        candidate.type === "perspective" &&
+        Boolean(candidate.data?.narrator?.trim()),
+    );
+
+    const fallbackName =
+      fallbackNameFromCharacter ?? fallbackPerspective?.data?.narrator?.trim() ?? "";
+
+    if (!fallbackName) {
+      return node;
+    }
+
+    return {
+      ...node,
+      data: {
+        ...groupData,
+        characterName: fallbackName,
+      },
+    };
+  });
+};
 
 export const useWorkflowStore = create<WorkflowState>()(
   persist(
@@ -96,16 +150,14 @@ export const useWorkflowStore = create<WorkflowState>()(
         }
 
         const state = persistedState as Partial<WorkflowState>;
-
-        if (version < STORAGE_VERSION) {
-          return {
-            ...state,
-            edges: sanitizeEdges(state.edges ?? []),
-          };
-        }
+        const shouldEnsureNames = version < STORAGE_VERSION;
+        const nodes = shouldEnsureNames
+          ? ensureNarrationGroupCharacterNames(state.nodes)
+          : state.nodes ?? [];
 
         return {
           ...state,
+          nodes,
           edges: sanitizeEdges(state.edges ?? []),
         };
       },

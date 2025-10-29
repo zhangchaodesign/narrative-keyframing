@@ -14,6 +14,7 @@ import { AddCharacterButton } from "@/components/WorkflowCanvas/PerspectiveNode/
 import type {
   CharacterNodeType,
   EventNodeType,
+  NarrationGroupNodeType,
   PerspectiveNodeType,
   WorkflowEdge,
   WorkflowNode,
@@ -306,6 +307,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       return;
     }
 
+    const groupId = perspectiveNode.parentId;
     const timestamp = Date.now();
     const newCharacterId = `character-${timestamp}`;
     const newEdgeId = `edge-${newCharacterId}-${id}`;
@@ -318,11 +320,27 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       const characterRowY =
         characterNodes[0]?.position.y ??
         perspectiveNode.position.y + CHARACTER_VERTICAL_GAP;
-      const trimmedNarrator = data?.narrator?.trim();
+      const targetPerspective = nodesState.find(
+        (nodeState): nodeState is PerspectiveNodeType =>
+          nodeState.id === id && nodeState.type === "perspective",
+      );
+      const trimmedNarrator = targetPerspective?.data?.narrator?.trim();
+      const groupNode =
+        groupId != null
+          ? nodesState.find(
+              (nodeState): nodeState is NarrationGroupNodeType =>
+                nodeState.id === groupId && nodeState.type === "narrationGroup",
+            ) ?? null
+          : null;
+      const groupCharacterName = groupNode?.data?.characterName?.trim() ?? "";
       const defaultName =
-        trimmedNarrator && trimmedNarrator !== "Unknown narrator"
+        groupCharacterName ||
+        (trimmedNarrator && trimmedNarrator !== "Unknown narrator"
           ? trimmedNarrator
-          : `New Character ${characterNodes.length + 1}`;
+          : `New Character ${characterNodes.length + 1}`);
+      const shouldSyncGroupName =
+        groupId != null &&
+        (!groupCharacterName || groupCharacterName.length === 0);
 
       const newCharacterNode: WorkflowNode = {
         id: newCharacterId,
@@ -340,11 +358,29 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           },
         },
         draggable: false,
-        parentId: DEFAULT_NARRATION_GROUP_ID,
+        parentId: groupId ?? DEFAULT_NARRATION_GROUP_ID,
         extent: "parent",
       };
 
-      return [...nodesState, newCharacterNode];
+      const maybeUpdatedNodes = shouldSyncGroupName
+        ? nodesState.map((nodeState) => {
+            if (
+              nodeState.id === groupId &&
+              nodeState.type === "narrationGroup"
+            ) {
+              return {
+                ...nodeState,
+                data: {
+                  ...(nodeState.data ?? {}),
+                  characterName: defaultName,
+                },
+              } as WorkflowNode;
+            }
+            return nodeState;
+          })
+        : nodesState;
+
+      return [...maybeUpdatedNodes, newCharacterNode];
     });
 
     setEdges((edgesState) => [
@@ -359,7 +395,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         animated: true,
       },
     ]);
-  }, [data?.narrator, edges, getNode, id, nodes, setEdges, setNodes]);
+  }, [edges, getNode, id, nodes, setEdges, setNodes]);
   const eventBadgeClass =
     "inline-flex items-center rounded bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-600";
   const narratorBadgeClass =
@@ -400,7 +436,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       </div>
       <div className="mt-2 flex gap-2">
         <span className={eventBadgeClass}>{eventLabel}</span>
-        <span className={narratorBadgeClass}>{narratorName}</span>
+        {/* <span className={narratorBadgeClass}>{narratorName}</span> */}
       </div>
       <PerspectiveHandle
         type="target"
