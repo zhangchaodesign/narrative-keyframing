@@ -798,8 +798,7 @@ export function useEventAdjacency(nodeId: string) {
       const eventPositions = sortedRemainingEvents
         .map((nodeState) => eventPositionMap.get(nodeState.id))
         .filter(
-          (position): position is { x: number; y: number } =>
-            position != null,
+          (position): position is { x: number; y: number } => position != null,
         );
       const eventStartX =
         eventPositions.length > 0
