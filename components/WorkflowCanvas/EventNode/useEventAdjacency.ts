@@ -13,6 +13,7 @@ const EVENT_NODE_WIDTH = 256;
 const EVENT_GROUP_RIGHT_PADDING = 24;
 const DEFAULT_EVENT_GROUP_WIDTH = 1200;
 const DEFAULT_EVENT_GROUP_ID = "event-group";
+const DEFAULT_NARRATION_GROUP_ID = "narration-group";
 
 const parseEventTimelineIndex = (timeline?: string | null) => {
   if (!timeline) {
@@ -202,6 +203,8 @@ export function useEventAdjacency(nodeId: string) {
             isLoading: false,
           },
           draggable: false,
+          parentId: DEFAULT_NARRATION_GROUP_ID,
+          extent: "parent",
         };
 
         const nodesWithNew = [
@@ -342,8 +345,16 @@ export function useEventAdjacency(nodeId: string) {
                   ...nodeState.position,
                   ...newPosition,
                 },
+                parentId: DEFAULT_NARRATION_GROUP_ID,
+                extent: "parent",
               };
             }
+
+            return {
+              ...nodeState,
+              parentId: DEFAULT_NARRATION_GROUP_ID,
+              extent: "parent",
+            };
           }
 
           if (nodeState.type === "group" && nodeState.id === eventGroupId) {

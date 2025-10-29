@@ -29,9 +29,23 @@ export const initialNodes: WorkflowNode[] = [
     },
   },
   {
+    id: "narration-group",
+    type: "narrationGroup",
+    position: { x: 100, y: 250 },
+    data: { label: "First-Person Limited Cluster" },
+    style: {
+      width: 1200,
+      height: 640,
+      backgroundColor: "transparent",
+      border: "none",
+      padding: 0,
+      boxShadow: "none",
+    },
+  },
+  {
     id: "event-1",
     type: "event",
-    position: { x: 20, y: 40 },
+    position: { x: 20, y: 50 },
     draggable: false,
     data: {
       description:
@@ -44,7 +58,7 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "event-2",
     type: "event",
-    position: { x: 320, y: 40 },
+    position: { x: 320, y: 50 },
     draggable: false,
     data: {
       description:
@@ -57,7 +71,7 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "event-3",
     type: "event",
-    position: { x: 620, y: 40 },
+    position: { x: 620, y: 50 },
     draggable: false,
     data: {
       description:
@@ -70,7 +84,7 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "event-4",
     type: "event",
-    position: { x: 920, y: 40 },
+    position: { x: 920, y: 50 },
     draggable: false,
     data: {
       description:
@@ -83,51 +97,60 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "perspective-1",
     type: "perspective",
-    position: { x: 120, y: 240 },
+    position: { x: 20, y: 50 },
     draggable: false,
     data: {
       narrator: "Aria",
       reflection: "",
       isLoading: false,
     },
+    parentId: "narration-group",
+    extent: "parent",
   },
   {
     id: "perspective-2",
     type: "perspective",
-    position: { x: 420, y: 240 },
+    position: { x: 320, y: 50 },
     draggable: false,
     data: {
       narrator: "Aria",
       reflection: "",
       isLoading: false,
     },
+    parentId: "narration-group",
+    extent: "parent",
   },
   {
     id: "perspective-3",
     type: "perspective",
-    position: { x: 720, y: 240 },
+    position: { x: 620, y: 50 },
     draggable: false,
     data: {
       narrator: "Aria",
       reflection: "",
       isLoading: false,
     },
+    parentId: "narration-group",
+    extent: "parent",
   },
   {
     id: "perspective-4",
     type: "perspective",
-    position: { x: 1020, y: 240 },
+    position: { x: 920, y: 50 },
     draggable: false,
     data: {
       narrator: "Aria",
       reflection: "",
       isLoading: false,
     },
+    parentId: "narration-group",
+    extent: "parent",
   },
   {
     id: "character-start",
     type: "character",
-    position: { x: 120, y: 450 },
+    position: { x: 20, y: 260 },
+    draggable: false,
     data: {
       name: "Aria",
       traits: {
@@ -139,11 +162,14 @@ export const initialNodes: WorkflowNode[] = [
         ],
       },
     },
+    parentId: "narration-group",
+    extent: "parent",
   },
   {
     id: "character-end",
     type: "character",
-    position: { x: 1020, y: 450 },
+    position: { x: 920, y: 260 },
+    draggable: false,
     data: {
       name: "Aria",
       traits: {
@@ -152,6 +178,8 @@ export const initialNodes: WorkflowNode[] = [
         sociology: ["Accepted voice on the village council"],
       },
     },
+    parentId: "narration-group",
+    extent: "parent",
   },
 ];
 

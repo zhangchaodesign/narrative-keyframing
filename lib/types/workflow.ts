@@ -29,12 +29,18 @@ export type GroupNodeData = {
 export type EventNodeType = Node<EventNodeData, "event">;
 export type PerspectiveNodeType = Node<PerspectiveNodeData, "perspective">;
 export type CharacterNodeType = Node<CharacterNodeData, "character">;
+export type EventGroupNodeType = Node<GroupNodeData, "eventGroup">;
+export type NarrationGroupNodeType = Node<GroupNodeData, "narrationGroup">;
+
+// Deprecated: Use EventGroupNodeType instead
 export type GroupNodeType = Node<GroupNodeData, "group">;
 
 export type WorkflowNode =
   | EventNodeType
   | PerspectiveNodeType
   | CharacterNodeType
+  | EventGroupNodeType
+  | NarrationGroupNodeType
   | GroupNodeType;
 
 export type WorkflowEdge = Edge & {

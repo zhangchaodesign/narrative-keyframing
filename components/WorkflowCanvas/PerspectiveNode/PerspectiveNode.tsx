@@ -21,6 +21,7 @@ import type {
 
 const NARRATION_HORIZONTAL_GAP = 300;
 const CHARACTER_VERTICAL_GAP = 210;
+const DEFAULT_NARRATION_GROUP_ID = "narration-group";
 
 export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const { setNodes, setEdges, getNode } = useReactFlow<
@@ -224,6 +225,9 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
             sociology: [],
           },
         },
+        draggable: false,
+        parentId: DEFAULT_NARRATION_GROUP_ID,
+        extent: "parent",
       };
 
       return [...nodesState, newCharacterNode];

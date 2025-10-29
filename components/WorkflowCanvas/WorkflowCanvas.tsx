@@ -19,6 +19,7 @@ import { CharacterNode } from "@/components/WorkflowCanvas/CharacterNode/Charact
 import { EventNode } from "@/components/WorkflowCanvas/EventNode/EventNode";
 import { PerspectiveNode } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveNode";
 import { EventGroupNode } from "@/components/WorkflowCanvas/EventNode/EventGroupNode";
+import { NarrationGroupNode } from "@/components/WorkflowCanvas/NarrationGroupNode";
 import { RunPerspectiveContext } from "@/components/WorkflowCanvas/RunPerspectiveContext";
 import { type PerspectiveNodeType } from "@/lib/types/workflow";
 import {
@@ -30,7 +31,9 @@ const nodeTypes: NodeTypes = {
   event: EventNode,
   perspective: PerspectiveNode,
   character: CharacterNode,
-  group: EventGroupNode,
+  group: EventGroupNode, // Deprecated, kept for backward compatibility
+  eventGroup: EventGroupNode,
+  narrationGroup: NarrationGroupNode,
 };
 
 const edgeTypes: EdgeTypes = {
