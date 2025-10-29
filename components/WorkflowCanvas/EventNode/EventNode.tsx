@@ -40,7 +40,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
   );
 
   return (
-    <div className="group relative w-64 rounded-lg border-2 border-zinc-500 bg-white p-3 text-xs hover:shadow-lg">
+    <div className="group relative w-64 rounded-lg border-2 border-secondary bg-white p-3 text-xs hover:shadow-lg">
       {!hasPreviousEvent && (
         <AddEventButton direction="before" onAdd={handleAddAdjacentEvent} />
       )}

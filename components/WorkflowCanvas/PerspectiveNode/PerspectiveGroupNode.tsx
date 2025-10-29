@@ -5,8 +5,8 @@ import type { GroupNodeType } from "@/lib/types/workflow";
 
 export function PerspectiveGroupNode({ data }: NodeProps<GroupNodeType>) {
   return (
-    <div className="relative h-full w-full rounded border-2 border-purple-300 bg-purple-50/30">
-      <div className="absolute left-1 top-1 rounded bg-purple-500 px-2 py-1 text-xs font-semibold text-white shadow-sm">
+    <div className="relative h-full w-full rounded-lg border-2 border-primary bg-primary/5">
+      <div className="absolute left-1 top-1 rounded bg-primary px-2 py-1 text-xs font-semibold text-white shadow-sm">
         {data?.label}
       </div>
     </div>
