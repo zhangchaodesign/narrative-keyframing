@@ -270,23 +270,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         className="flex max-h-88 flex-col rounded-lg border-2 border-warning bg-white text-xs hover:shadow-lg"
       >
         <CharacterMenu nodeId={id} nodeType="character" />
-        <div
-          className="flex flex-1 flex-col gap-3 overflow-y-auto p-3 min-h-0"
-          onWheel={(event) => {
-            if (event.ctrlKey || event.metaKey) {
-              return;
-            }
-            event.stopPropagation();
-            event.nativeEvent.stopImmediatePropagation?.();
-          }}
-          onWheelCapture={(event) => {
-            if (event.ctrlKey || event.metaKey) {
-              return;
-            }
-            event.stopPropagation();
-            event.nativeEvent.stopImmediatePropagation?.();
-          }}
-        >
+        <div className="flex flex-1 flex-col gap-3 p-3 min-h-0">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
               🧙 Character Snapshot
@@ -312,7 +296,23 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
             </div> */}
           </div>
 
-          <div className="space-y-3">
+          <div
+            className="flex-1 min-h-0 space-y-3 overflow-y-auto"
+            onWheel={(event) => {
+              if (event.ctrlKey || event.metaKey) {
+                return;
+              }
+              event.stopPropagation();
+              event.nativeEvent.stopImmediatePropagation?.();
+            }}
+            onWheelCapture={(event) => {
+              if (event.ctrlKey || event.metaKey) {
+                return;
+              }
+              event.stopPropagation();
+              event.nativeEvent.stopImmediatePropagation?.();
+            }}
+          >
             {TRAIT_CATEGORIES.map(
               ({ key, label, titleClass, chipClass, emptyClass }) => (
                 <section key={key} className="">
