@@ -233,6 +233,63 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     narratorName,
     setNodes,
   ]);
+  useEffect(() => {
+    const perspectiveNode = nodes.find(
+      (node): node is PerspectiveNodeType =>
+        node.id === id && node.type === "perspective",
+    );
+    if (!perspectiveNode) {
+      return;
+    }
+
+    const connectedCharacterIds = edges
+      .filter(
+        (edge) =>
+          edge.target === id &&
+          edge.targetHandle === "character" &&
+          edge.sourceHandle === "perspective",
+      )
+      .map((edge) => edge.source);
+    if (connectedCharacterIds.length === 0) {
+      return;
+    }
+
+    const uniqueCharacterIds = new Set(connectedCharacterIds);
+    const connectedCharacters = nodes.filter(
+      (node): node is CharacterNodeType =>
+        node.type === "character" && uniqueCharacterIds.has(node.id),
+    );
+    if (connectedCharacters.length === 0) {
+      return;
+    }
+
+    const targetX = perspectiveNode.position.x;
+    const needsAlignment = connectedCharacters.some(
+      (characterNode) =>
+        Math.abs(characterNode.position.x - targetX) > 0.5,
+    );
+    if (!needsAlignment) {
+      return;
+    }
+
+    setNodes((nodesState) =>
+      nodesState.map((nodeState) => {
+        if (
+          nodeState.type === "character" &&
+          uniqueCharacterIds.has(nodeState.id)
+        ) {
+          return {
+            ...nodeState,
+            position: {
+              ...nodeState.position,
+              x: targetX,
+            },
+          } as WorkflowNode;
+        }
+        return nodeState;
+      }),
+    );
+  }, [edges, id, nodes, setNodes]);
   const handleCreateCharacter = useCallback(() => {
     const hasCharacterEdge = edges.some(
       (edge) => edge.target === id && edge.targetHandle === "character",
