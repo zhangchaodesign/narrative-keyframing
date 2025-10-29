@@ -18,6 +18,7 @@ import { CustomEdge } from "@/components/WorkflowCanvas/CustomEdge";
 import { CharacterNode } from "@/components/WorkflowCanvas/CharacterNode/CharacterNode";
 import { EventNode } from "@/components/WorkflowCanvas/EventNode/EventNode";
 import { PerspectiveNode } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveNode";
+import { EventGroupNode } from "@/components/WorkflowCanvas/EventNode/EventGroupNode";
 import { RunPerspectiveContext } from "@/components/WorkflowCanvas/RunPerspectiveContext";
 import { type PerspectiveNodeType } from "@/lib/types/workflow";
 import {
@@ -29,6 +30,7 @@ const nodeTypes: NodeTypes = {
   event: EventNode,
   perspective: PerspectiveNode,
   character: CharacterNode,
+  group: EventGroupNode,
 };
 
 const edgeTypes: EdgeTypes = {
