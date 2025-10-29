@@ -13,13 +13,10 @@ import { PerspectiveMenu } from "@/components/WorkflowCanvas/PerspectiveNode/Per
 import { AddCharacterButton } from "@/components/WorkflowCanvas/PerspectiveNode/AddCharacterButton";
 import type {
   CharacterNodeType,
-  EventNodeType,
-  NarrationGroupNodeType,
   PerspectiveNodeType,
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
-import { parseEventTimelineIndex } from "@/lib/workflow/perspective";
 import { cn } from "@/lib/utils/utils";
 import { geistMono } from "@/app/fonts";
 
@@ -35,199 +32,15 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const nodes = useStore((store) => store.nodes);
   const isLoading = data?.isLoading ?? false;
 
-  const associatedEventLabel = useMemo(() => {
-    const perspectiveNode = nodes.find(
-      (node): node is PerspectiveNodeType =>
-        node.id === id && node.type === "perspective",
-    );
-    if (!perspectiveNode) {
-      return null;
-    }
+  const hasDirectCharacter = useMemo(() => {
+    const characterNode = nodes.find(
+      (node) => node.data?.perspectiveId === id && node.type === "character",
+    ) as CharacterNodeType | undefined;
 
-    const eventNodes = nodes.filter(
-      (node): node is EventNodeType => node.type === "event",
-    );
-    if (eventNodes.length === 0) {
-      return null;
-    }
-
-    const sortedEventNodes = [...eventNodes].sort((nodeA, nodeB) => {
-      const indexA = parseEventTimelineIndex(nodeA.data?.timeline);
-      const indexB = parseEventTimelineIndex(nodeB.data?.timeline);
-
-      if (indexA != null && indexB != null && indexA !== indexB) {
-        return indexA - indexB;
-      }
-
-      if (indexA != null) return -1;
-      if (indexB != null) return 1;
-
-      return nodeA.position.x - nodeB.position.x;
-    });
-
-    const matchedEvent = sortedEventNodes.reduce<EventNodeType | null>(
-      (closest, current) => {
-        const currentDistance = Math.abs(
-          current.position.x - perspectiveNode.position.x,
-        );
-        if (!closest) {
-          return current;
-        }
-
-        const closestDistance = Math.abs(
-          closest.position.x - perspectiveNode.position.x,
-        );
-        if (currentDistance < closestDistance) {
-          return current;
-        }
-
-        if (currentDistance === closestDistance) {
-          const currentIndex = parseEventTimelineIndex(current.data?.timeline);
-          const closestIndex = parseEventTimelineIndex(closest.data?.timeline);
-          if (currentIndex != null && closestIndex != null) {
-            return currentIndex < closestIndex ? current : closest;
-          }
-        }
-
-        return closest;
-      },
-      null,
-    );
-
-    if (!matchedEvent) {
-      return null;
-    }
-
-    const timeline = matchedEvent.data?.timeline?.trim();
-    const description = matchedEvent.data?.description?.trim();
-    const label = timeline || description || matchedEvent.id;
-    if (!label) {
-      return null;
-    }
-
-    if (label.startsWith("Event")) {
-      return label;
-    }
-
-    return `Event ${label}`;
+    return Boolean(characterNode);
   }, [id, nodes]);
 
-  const eventLabel = associatedEventLabel?.trim() || "Event";
-  const { narratorName, hasDirectCharacter, isFromPrevious } = useMemo(() => {
-    const visited = new Set<string>();
-
-    const getCharacterName = (perspectiveId: string) => {
-      const characterEdge = edges.find(
-        (edge) =>
-          edge.target === perspectiveId && edge.targetHandle === "character",
-      );
-      if (!characterEdge) {
-        return null;
-      }
-
-      const characterNode = nodes.find(
-        (node) => node.id === characterEdge.source && node.type === "character",
-      ) as CharacterNodeType | undefined;
-
-      const name = characterNode?.data?.name?.trim();
-      return name || null;
-    };
-
-    const findNarrator = (
-      perspectiveId: string,
-    ): { name: string; originId: string } | null => {
-      if (visited.has(perspectiveId)) {
-        return null;
-      }
-      visited.add(perspectiveId);
-
-      const characterName = getCharacterName(perspectiveId);
-      if (characterName) {
-        return { name: characterName, originId: perspectiveId };
-      }
-
-      const previousEdges = edges.filter(
-        (edge) =>
-          edge.target === perspectiveId &&
-          edge.targetHandle === "perspective-prev",
-      );
-
-      for (const prevEdge of previousEdges) {
-        const prevNode = nodes.find(
-          (node) => node.id === prevEdge.source && node.type === "perspective",
-        ) as PerspectiveNodeType | undefined;
-        if (!prevNode) {
-          continue;
-        }
-
-        const narratorFromPrev = findNarrator(prevNode.id);
-        if (narratorFromPrev) {
-          return narratorFromPrev;
-        }
-      }
-
-      const currentNode = nodes.find(
-        (node) => node.id === perspectiveId && node.type === "perspective",
-      ) as PerspectiveNodeType | undefined;
-      const fallbackName = currentNode?.data?.narrator?.trim();
-      if (!fallbackName) {
-        return null;
-      }
-
-      return { name: fallbackName, originId: perspectiveId };
-    };
-
-    const narratorFromGraph = findNarrator(id);
-    const directCharacterName = getCharacterName(id);
-    const name =
-      narratorFromGraph?.name ?? directCharacterName ?? "Unknown narrator";
-    const originId =
-      narratorFromGraph?.originId ?? (directCharacterName ? id : null);
-
-    return {
-      narratorName: name,
-      hasDirectCharacter: Boolean(directCharacterName),
-      isFromPrevious: originId !== null && originId !== id,
-    };
-  }, [edges, id, nodes]);
-  useEffect(() => {
-    if (hasDirectCharacter || !isFromPrevious) {
-      return;
-    }
-
-    const trimmedNarrator = narratorName.trim();
-    if (!trimmedNarrator || trimmedNarrator === "Unknown narrator") {
-      return;
-    }
-
-    const currentNarrator = data?.narrator?.trim() ?? "";
-    if (currentNarrator === trimmedNarrator) {
-      return;
-    }
-
-    setNodes((nodesState) =>
-      nodesState.map((node) => {
-        if (node.id !== id || node.type !== "perspective") {
-          return node;
-        }
-
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            narrator: trimmedNarrator,
-          },
-        };
-      }),
-    );
-  }, [
-    data?.narrator,
-    hasDirectCharacter,
-    id,
-    isFromPrevious,
-    narratorName,
-    setNodes,
-  ]);
+  // keep character nodes aligned with perspective node
   useEffect(() => {
     const perspectiveNode = nodes.find(
       (node): node is PerspectiveNodeType =>
@@ -284,6 +97,8 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       }),
     );
   }, [edges, id, nodes, setNodes]);
+
+  // function to create a new character node linked to this perspective
   const handleCreateCharacter = useCallback(() => {
     const hasCharacterEdge = edges.some(
       (edge) => edge.target === id && edge.targetHandle === "character",
@@ -319,23 +134,10 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           nodeState.id === id && nodeState.type === "perspective",
       );
       const trimmedNarrator = targetPerspective?.data?.narrator?.trim();
-      const groupNode =
-        groupId != null
-          ? nodesState.find(
-              (nodeState): nodeState is NarrationGroupNodeType =>
-                nodeState.id === groupId &&
-                nodeState.type === "perspectiveGroup",
-            ) ?? null
-          : null;
-      const groupCharacterName = groupNode?.data?.characterName?.trim() ?? "";
       const defaultName =
-        groupCharacterName ||
-        (trimmedNarrator && trimmedNarrator !== "Unknown narrator"
+        trimmedNarrator && trimmedNarrator !== "Unknown narrator"
           ? trimmedNarrator
-          : `New Character`);
-      const shouldSyncGroupName =
-        groupId != null &&
-        (!groupCharacterName || groupCharacterName.length === 0);
+          : `New Character`;
 
       const newCharacterNode: WorkflowNode = {
         id: newCharacterId,
@@ -351,31 +153,14 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
             psychology: [],
             sociology: [],
           },
+          perspectiveId: id,
         },
         draggable: false,
         parentId: groupId ?? DEFAULT_NARRATION_GROUP_ID,
         extent: "parent",
       };
 
-      const maybeUpdatedNodes = shouldSyncGroupName
-        ? nodesState.map((nodeState) => {
-            if (
-              nodeState.id === groupId &&
-              nodeState.type === "perspectiveGroup"
-            ) {
-              return {
-                ...nodeState,
-                data: {
-                  ...(nodeState.data ?? {}),
-                  characterName: defaultName,
-                },
-              } as WorkflowNode;
-            }
-            return nodeState;
-          })
-        : nodesState;
-
-      return [...maybeUpdatedNodes, newCharacterNode];
+      return [...nodesState, newCharacterNode];
     });
 
     setEdges((edgesState) => [
@@ -437,7 +222,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
             "inline-flex items-center rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white",
           )}
         >
-          {eventLabel}
+          {data?.event}
         </span>
       </div>
       <PerspectiveHandle
