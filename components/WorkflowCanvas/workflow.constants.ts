@@ -1,11 +1,4 @@
-import type {
-  CharacterNodeType,
-  CharacterTraits,
-  EventNodeType,
-  PerspectiveNodeType,
-  WorkflowEdge,
-  WorkflowNode,
-} from "@/lib/types/workflow";
+import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
 
 export type {
   EventNodeData,
@@ -15,54 +8,77 @@ export type {
   EventNodeType,
   PerspectiveNodeType,
   CharacterNodeType,
+  GroupNodeType,
   WorkflowNode,
   WorkflowEdge,
 } from "@/lib/types/workflow";
 
 export const initialNodes: WorkflowNode[] = [
   {
+    id: "event-group",
+    type: "group",
+    position: { x: 100, y: 20 },
+    data: { label: "Story Event Plans" },
+    style: {
+      width: 1200,
+      height: 200,
+      backgroundColor: "rgba(240, 240, 255, 0.3)",
+      border: "2px solid rgba(100, 100, 200, 0.3)",
+      borderRadius: "8px",
+      padding: "20px",
+    },
+  },
+  {
     id: "event-1",
     type: "event",
-    position: { x: 120, y: 80 },
+    position: { x: 20, y: 40 },
     draggable: false,
     data: {
       description:
         "At dawn, a band of raiders torches the outer granary; Aria breaks formation to drag a trapped child to safety while the rest hold the line.",
       timeline: "Event 1",
     },
+    parentId: "event-group",
+    extent: "parent",
   },
   {
     id: "event-2",
     type: "event",
-    position: { x: 420, y: 80 },
+    position: { x: 320, y: 40 },
     draggable: false,
     data: {
       description:
         "That afternoon, the council publicly reprimands Aria and demotes her to archive duty, placing her under the watch of the cautious historian Lysa.",
       timeline: "Event 2",
     },
+    parentId: "event-group",
+    extent: "parent",
   },
   {
     id: "event-3",
     type: "event",
-    position: { x: 720, y: 80 },
+    position: { x: 620, y: 40 },
     draggable: false,
     data: {
       description:
         "Night falls and the raiders return; drawing on what she learned in the archives, Aria coordinates an ambush that routes the attackers without further loss.",
       timeline: "Event 3",
     },
+    parentId: "event-group",
+    extent: "parent",
   },
   {
     id: "event-4",
     type: "event",
-    position: { x: 1020, y: 80 },
+    position: { x: 920, y: 40 },
     draggable: false,
     data: {
       description:
         "At week's end, Aria and Lysa present the ambush tactics to the council, earning a mandate to train scouts and archivists together.",
       timeline: "Event 4",
     },
+    parentId: "event-group",
+    extent: "parent",
   },
   {
     id: "perspective-1",

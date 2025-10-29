@@ -240,7 +240,7 @@ export function WorkflowCanvas() {
           edgeTypes={edgeTypes}
           proOptions={proOptions}
           snapToGrid
-          snapGrid={[10, 10]}
+          snapGrid={[4, 4]}
           fitView
         >
           <Background />

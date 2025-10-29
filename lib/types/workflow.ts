@@ -22,14 +22,20 @@ export type CharacterNodeData = {
   traits: CharacterTraits;
 };
 
+export type GroupNodeData = {
+  label: string;
+};
+
 export type EventNodeType = Node<EventNodeData, "event">;
 export type PerspectiveNodeType = Node<PerspectiveNodeData, "perspective">;
 export type CharacterNodeType = Node<CharacterNodeData, "character">;
+export type GroupNodeType = Node<GroupNodeData, "group">;
 
 export type WorkflowNode =
   | EventNodeType
   | PerspectiveNodeType
-  | CharacterNodeType;
+  | CharacterNodeType
+  | GroupNodeType;
 
 export type WorkflowEdge = Edge & {
   sourceHandle?: string | null;
