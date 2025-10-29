@@ -51,10 +51,133 @@ const sanitizeEdges = (edges: WorkflowEdge[]): WorkflowEdge[] =>
     );
   });
 
-const getInitialState = () => ({
-  nodes: deepClone(initialNodes),
-  edges: sanitizeEdges(deepClone(initialEdges)),
-});
+// Keep each character node's perspectiveId in sync with the actual edges that
+// connect characters to perspective nodes so UI affordances stay accurate.
+const synchronizeCharacterPerspectiveLinks = (
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+): WorkflowNode[] => {
+  if (!nodes || nodes.length === 0) {
+    return nodes ?? [];
+  }
+
+  if (!edges || edges.length === 0) {
+    let changed = false;
+    const detachedNodes = nodes.map((node) => {
+      if (node.type !== "character") {
+        return node;
+      }
+
+      const currentData = node.data as CharacterNodeType["data"] | undefined;
+      const currentPerspectiveId = currentData?.perspectiveId ?? "";
+      if (currentPerspectiveId === "") {
+        return node;
+      }
+
+      changed = true;
+      const nextData: CharacterNodeType["data"] = {
+        ...(currentData ?? {
+          name: "",
+          traits: {
+            physiology: [],
+            psychology: [],
+            sociology: [],
+          },
+          perspectiveId: "",
+        }),
+        traits:
+          currentData?.traits ?? {
+            physiology: [],
+            psychology: [],
+            sociology: [],
+          },
+        perspectiveId: "",
+      };
+
+      return {
+        ...node,
+        data: nextData,
+      };
+    });
+
+    return changed ? detachedNodes : nodes;
+  }
+
+  const nodeLookup = new Map(nodes.map((node) => [node.id, node]));
+  const characterAssignments = new Map<string, string>();
+
+  edges.forEach((edge) => {
+    const sourceNode = nodeLookup.get(edge.source);
+    const targetNode = nodeLookup.get(edge.target);
+    if (!sourceNode || !targetNode) {
+      return;
+    }
+
+    if (sourceNode.type === "character" && targetNode.type === "perspective") {
+      characterAssignments.set(sourceNode.id, targetNode.id);
+      return;
+    }
+
+    if (
+      sourceNode.type === "perspective" &&
+      targetNode.type === "character"
+    ) {
+      characterAssignments.set(targetNode.id, sourceNode.id);
+    }
+  });
+
+  let updated = false;
+
+  const normalizedNodes = nodes.map((node) => {
+    if (node.type !== "character") {
+      return node;
+    }
+
+    const targetPerspectiveId = characterAssignments.get(node.id) ?? "";
+    const currentData = node.data as CharacterNodeType["data"] | undefined;
+    const currentPerspectiveId = currentData?.perspectiveId ?? "";
+
+    if (currentPerspectiveId === targetPerspectiveId) {
+      return node;
+    }
+
+    updated = true;
+
+    const baseTraits =
+      currentData?.traits ?? {
+        physiology: [],
+        psychology: [],
+        sociology: [],
+      };
+
+    const nextData: CharacterNodeType["data"] = {
+      ...(currentData ?? {
+        name: "",
+        traits: baseTraits,
+        perspectiveId: "",
+      }),
+      traits: baseTraits,
+      perspectiveId: targetPerspectiveId,
+    };
+
+    return {
+      ...node,
+      data: nextData,
+    };
+  });
+
+  return updated ? normalizedNodes : nodes;
+};
+
+const getInitialState = () => {
+  const nodes = deepClone(initialNodes);
+  const edges = sanitizeEdges(deepClone(initialEdges));
+
+  return {
+    nodes: synchronizeCharacterPerspectiveLinks(nodes, edges),
+    edges,
+  };
+};
 
 const ensureNarrationGroupCharacterNames = (
   nodes: WorkflowNode[] | undefined,
@@ -126,22 +249,43 @@ export const useWorkflowStore = create<WorkflowState>()(
               : updater,
         })),
       setEdges: (updater) =>
-        set((state) => ({
-          edges: sanitizeEdges(
+        set((state) => {
+          const nextEdges = sanitizeEdges(
             typeof updater === "function"
               ? (updater as (edges: WorkflowEdge[]) => WorkflowEdge[])(
                   state.edges,
                 )
               : updater,
-          ),
-        })),
+          );
+
+          const nextNodes = synchronizeCharacterPerspectiveLinks(
+            state.nodes,
+            nextEdges,
+          );
+
+          return {
+            edges: nextEdges,
+            nodes: nextNodes,
+          };
+        }),
       onNodesChange: (changes) =>
         set({
           nodes: applyNodeChanges(changes, get().nodes),
         }),
       onEdgesChange: (changes) =>
-        set({
-          edges: sanitizeEdges(applyEdgeChanges(changes, get().edges)),
+        set((state) => {
+          const nextEdges = sanitizeEdges(
+            applyEdgeChanges(changes, state.edges),
+          );
+          const nextNodes = synchronizeCharacterPerspectiveLinks(
+            state.nodes,
+            nextEdges,
+          );
+
+          return {
+            edges: nextEdges,
+            nodes: nextNodes,
+          };
         }),
       reset: () => set(getInitialState()),
     }),
@@ -155,14 +299,19 @@ export const useWorkflowStore = create<WorkflowState>()(
 
         const state = persistedState as Partial<WorkflowState>;
         const shouldEnsureNames = version < STORAGE_VERSION;
-        const nodes = shouldEnsureNames
+        const edges = sanitizeEdges(state.edges ?? []);
+        const nodesWithNames = shouldEnsureNames
           ? ensureNarrationGroupCharacterNames(state.nodes)
           : state.nodes ?? [];
+        const normalizedNodes = synchronizeCharacterPerspectiveLinks(
+          nodesWithNames,
+          edges,
+        );
 
         return {
           ...state,
-          nodes,
-          edges: sanitizeEdges(state.edges ?? []),
+          nodes: normalizedNodes,
+          edges,
         };
       },
       partialize: (state) => ({
