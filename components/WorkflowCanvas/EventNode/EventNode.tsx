@@ -56,7 +56,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           "text-[10px] font-semibold uppercase tracking-wide text-zinc-800",
         )}
       >
-        📜 {id}
+        📜 {data.timeline}
       </div>
       <textarea
         value={data?.description ?? ""}

@@ -13,6 +13,7 @@ import { PerspectiveMenu } from "@/components/WorkflowCanvas/PerspectiveNode/Per
 import { AddCharacterButton } from "@/components/WorkflowCanvas/PerspectiveNode/AddCharacterButton";
 import type {
   CharacterNodeType,
+  EventNodeType,
   PerspectiveNodeType,
   WorkflowEdge,
   WorkflowNode,
@@ -39,6 +40,17 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
 
     return Boolean(characterNode);
   }, [id, nodes]);
+
+  // Find the event node and its timeline
+  const eventTimeline = useMemo(() => {
+    if (!data?.event) {
+      return null;
+    }
+    const eventNode = nodes.find(
+      (node) => node.id === data.event && node.type === "event",
+    ) as EventNodeType | undefined;
+    return eventNode?.data?.timeline ?? data.event;
+  }, [data?.event, nodes]);
 
   // keep character nodes aligned with perspective node
   useEffect(() => {
@@ -194,7 +206,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           "flex w-full flex-wrap items-center gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase",
         )}
       >
-        <span className="flex items-center">💬 {id}</span>
+        <span className="flex items-center">💬 Perspective</span>
       </div>
       <div
         className="mt-2 flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800"
@@ -215,16 +227,19 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       >
         {data?.reflection}
       </div>
-      <div className="mt-2 flex gap-2">
-        <span
-          className={cn(
-            geistMono.className,
-            "inline-flex items-center rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white",
-          )}
-        >
-          {data?.event}
-        </span>
-      </div>
+      {eventTimeline && (
+        <div className="mt-2 flex gap-2">
+          <span
+            className={cn(
+              geistMono.className,
+              "inline-flex items-center rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white",
+            )}
+            title={`Event: ${data?.event}`}
+          >
+            {eventTimeline}
+          </span>
+        </div>
+      )}
       <PerspectiveHandle
         type="target"
         position={Position.Left}

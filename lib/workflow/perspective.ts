@@ -5,6 +5,7 @@ import type {
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
+import { sortEventsByTimeline } from "@/lib/utils/workflowUtils";
 
 export type CharacterSnapshotPayload = {
   name: string;
@@ -70,19 +71,7 @@ export const preparePerspectiveRequest = ({
     (node): node is PerspectiveNodeType => node.type === "perspective",
   );
 
-  const sortedEventNodes = [...eventNodes].sort((nodeA, nodeB) => {
-    const indexA = parseEventTimelineIndex(nodeA.data?.timeline);
-    const indexB = parseEventTimelineIndex(nodeB.data?.timeline);
-
-    if (indexA != null && indexB != null && indexA !== indexB) {
-      return indexA - indexB;
-    }
-
-    if (indexA != null) return -1;
-    if (indexB != null) return 1;
-
-    return nodeA.position.x - nodeB.position.x;
-  });
+  const sortedEventNodes = sortEventsByTimeline(eventNodes);
 
   const eventNodeMap = new Map(
     sortedEventNodes.map((eventNode) => [eventNode.id, eventNode]),
