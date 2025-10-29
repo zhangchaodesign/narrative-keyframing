@@ -305,6 +305,139 @@ const ensureEventData = (
   description: data?.description ?? "",
 });
 
+interface RebuildEdgesParams {
+  baseEdgeId: string;
+  eventSequence: string[];
+  perspectiveSequences: Map<string, string[]>;
+}
+
+// Rebuild event chain and perspective chain edges from sequences
+const rebuildChainEdges = ({
+  baseEdgeId,
+  eventSequence,
+  perspectiveSequences,
+}: RebuildEdgesParams): WorkflowEdge[] => {
+  const rebuiltEdges: WorkflowEdge[] = [];
+
+  // Event chain edges
+  for (let index = 0; index < eventSequence.length - 1; index += 1) {
+    rebuiltEdges.push({
+      id: `${baseEdgeId}-event-${index}`,
+      source: eventSequence[index]!,
+      target: eventSequence[index + 1]!,
+      sourceHandle: "event-next",
+      targetHandle: "event-prev",
+      type: "customEdge",
+      animated: true,
+    });
+  }
+
+  // Perspective chain edges
+  let groupIndex = 0;
+  perspectiveSequences.forEach((sequence) => {
+    for (let index = 0; index < sequence.length - 1; index += 1) {
+      rebuiltEdges.push({
+        id: `${baseEdgeId}-perspective-${groupIndex}-${index}`,
+        source: sequence[index]!,
+        target: sequence[index + 1]!,
+        sourceHandle: "perspective-next",
+        targetHandle: "perspective-prev",
+        type: "customEdge",
+        animated: true,
+      });
+    }
+    groupIndex += 1;
+  });
+
+  return rebuiltEdges;
+};
+
+interface UpdatePerspectiveNodeParams {
+  nodeState: WorkflowNode;
+  perspectivePositionMapsByGroup: Map<string, Map<string, Position>>;
+  perspectiveEventAssignments: Map<string, string>;
+}
+
+// Update a perspective node with new position and event assignment
+const updatePerspectiveNode = ({
+  nodeState,
+  perspectivePositionMapsByGroup,
+  perspectiveEventAssignments,
+}: UpdatePerspectiveNodeParams): WorkflowNode => {
+  const parentId = (nodeState as { parentId?: string }).parentId;
+  const positionMap = parentId
+    ? perspectivePositionMapsByGroup.get(parentId)
+    : null;
+  const newPosition = positionMap?.get(nodeState.id);
+  const existingData = (nodeState.data as PerspectiveNodeType["data"]) ?? {
+    narrator: "",
+    reflection: "",
+    event: "",
+  };
+  const assignedEventId =
+    perspectiveEventAssignments.get(nodeState.id) ?? existingData.event ?? "";
+  const dataWithEvent =
+    assignedEventId === existingData.event
+      ? existingData
+      : {
+          ...existingData,
+          event: assignedEventId,
+        };
+
+  return {
+    ...nodeState,
+    position: newPosition
+      ? {
+          ...nodeState.position,
+          ...newPosition,
+        }
+      : nodeState.position,
+    data: dataWithEvent,
+    parentId,
+    extent: "parent",
+  } as WorkflowNode;
+};
+
+interface UpdateGroupWidthsParams {
+  nodeState: WorkflowNode;
+  eventGroupId: string;
+  nextGroupWidth: number;
+  narrationWidthUpdates: Map<string, number>;
+}
+
+// Update event group or perspective group widths
+const updateGroupWidths = ({
+  nodeState,
+  eventGroupId,
+  nextGroupWidth,
+  narrationWidthUpdates,
+}: UpdateGroupWidthsParams): WorkflowNode | null => {
+  if (nodeState.type === "eventGroup" && nodeState.id === eventGroupId) {
+    return {
+      ...nodeState,
+      style: {
+        ...nodeState.style,
+        width: nextGroupWidth,
+      },
+    };
+  }
+
+  if (nodeState.type === "perspectiveGroup") {
+    const nextWidth = narrationWidthUpdates.get(nodeState.id);
+    if (nextWidth != null) {
+      return {
+        ...nodeState,
+        style: {
+          ...nodeState.style,
+          width: nextWidth,
+        },
+      };
+    }
+  }
+
+  return null;
+};
+
 export function useEventAdjacency(nodeId: string) {
   const { getNode, setNodes, setEdges } = useReactFlow<
     WorkflowNode,
@@ -589,68 +722,21 @@ export function useEventAdjacency(nodeId: string) {
           }
 
           if (nodeState.type === "perspective") {
-            const parentId = (nodeState as { parentId?: string }).parentId;
-            const positionMap = parentId
-              ? perspectivePositionMapsByGroup.get(parentId)
-              : null;
-            const newPosition = positionMap?.get(nodeState.id);
-            const existingData =
-              (nodeState.data as PerspectiveNodeType["data"]) ?? {
-                narrator: "",
-                reflection: "",
-                event: "",
-              };
-            const assignedEventId =
-              perspectiveEventAssignments.get(nodeState.id) ??
-              existingData.event ??
-              "";
-            const dataWithEvent =
-              assignedEventId === existingData.event
-                ? existingData
-                : {
-                    ...existingData,
-                    event: assignedEventId,
-                  };
-
-            return {
-              ...nodeState,
-              position: newPosition
-                ? {
-                    ...nodeState.position,
-                    ...newPosition,
-                  }
-                : nodeState.position,
-              data: dataWithEvent,
-              parentId,
-              extent: "parent",
-            };
+            return updatePerspectiveNode({
+              nodeState,
+              perspectivePositionMapsByGroup,
+              perspectiveEventAssignments,
+            });
           }
 
-          if (
-            nodeState.type === "eventGroup" &&
-            nodeState.id === eventGroupId
-          ) {
-            return {
-              ...nodeState,
-              style: {
-                ...nodeState.style,
-                width: nextGroupWidth,
-              },
-            };
-          }
-
-          if (nodeState.type === "perspectiveGroup") {
-            const nextWidth = narrationWidthUpdates.get(nodeState.id);
-            if (nextWidth != null) {
-              return {
-                ...nodeState,
-                style: {
-                  ...nodeState.style,
-                  width: nextWidth,
-                },
-              };
-            }
-            return nodeState;
+          const groupUpdate = updateGroupWidths({
+            nodeState,
+            eventGroupId,
+            nextGroupWidth,
+            narrationWidthUpdates,
+          });
+          if (groupUpdate) {
+            return groupUpdate;
           }
 
           return nodeState;
@@ -687,34 +773,10 @@ export function useEventAdjacency(nodeId: string) {
           return true;
         });
 
-        const rebuiltEdges: WorkflowEdge[] = [];
-
-        for (let index = 0; index < eventSequence.length - 1; index += 1) {
-          rebuiltEdges.push({
-            id: `${baseEdgeId}-event-${index}`,
-            source: eventSequence[index]!,
-            target: eventSequence[index + 1]!,
-            sourceHandle: "event-next",
-            targetHandle: "event-prev",
-            type: "customEdge",
-            animated: true,
-          });
-        }
-
-        let groupIndex = 0;
-        perspectiveSequences.forEach((sequence) => {
-          for (let index = 0; index < sequence.length - 1; index += 1) {
-            rebuiltEdges.push({
-              id: `${baseEdgeId}-perspective-${groupIndex}-${index}`,
-              source: sequence[index]!,
-              target: sequence[index + 1]!,
-              sourceHandle: "perspective-next",
-              targetHandle: "perspective-prev",
-              type: "customEdge",
-              animated: true,
-            });
-          }
-          groupIndex += 1;
+        const rebuiltEdges = rebuildChainEdges({
+          baseEdgeId,
+          eventSequence,
+          perspectiveSequences,
         });
 
         return [...preservedEdges, ...rebuiltEdges];
@@ -758,23 +820,7 @@ export function useEventAdjacency(nodeId: string) {
         return parentId === eventGroupId;
       });
 
-      const sortedEventNodes = [...eventRowNodes].sort((a, b) => {
-        const indexA = parseEventTimelineIndex(
-          (a.data as EventNodeType["data"])?.timeline,
-        );
-        const indexB = parseEventTimelineIndex(
-          (b.data as EventNodeType["data"])?.timeline,
-        );
-
-        if (indexA != null && indexB != null && indexA !== indexB) {
-          return indexA - indexB;
-        }
-
-        if (indexA != null) return -1;
-        if (indexB != null) return 1;
-
-        return a.position.x - b.position.x;
-      });
+      const sortedEventNodes = sortEventsByTimeline(eventRowNodes);
 
       const referenceIndex = sortedEventNodes.findIndex(
         (nodeState) => nodeState.id === nodeId,
@@ -893,64 +939,21 @@ export function useEventAdjacency(nodeId: string) {
         }
 
         if (nodeState.type === "perspective") {
-          const parentId = (nodeState as { parentId?: string }).parentId;
-          const positionMap = parentId
-            ? perspectivePositionMapsByGroup.get(parentId)
-            : null;
-          const newPosition = positionMap?.get(nodeState.id);
-          const existingData =
-            (nodeState.data as PerspectiveNodeType["data"]) ?? {
-              narrator: "",
-              reflection: "",
-              event: "",
-            };
-          const assignedEventId =
-            perspectiveEventAssignments.get(nodeState.id) ??
-            existingData.event ??
-            "";
-          const dataWithEvent =
-            assignedEventId === existingData.event
-              ? existingData
-              : {
-                  ...existingData,
-                  event: assignedEventId,
-                };
-
-          return {
-            ...nodeState,
-            position: newPosition
-              ? {
-                  ...nodeState.position,
-                  ...newPosition,
-                }
-              : nodeState.position,
-            data: dataWithEvent,
-            parentId,
-            extent: "parent",
-          };
+          return updatePerspectiveNode({
+            nodeState,
+            perspectivePositionMapsByGroup,
+            perspectiveEventAssignments,
+          });
         }
 
-        if (nodeState.type === "eventGroup" && nodeState.id === eventGroupId) {
-          return {
-            ...nodeState,
-            style: {
-              ...nodeState.style,
-              width: nextGroupWidth,
-            },
-          };
-        }
-
-        if (nodeState.type === "perspectiveGroup") {
-          const nextWidth = narrationWidthUpdates.get(nodeState.id);
-          if (nextWidth != null) {
-            return {
-              ...nodeState,
-              style: {
-                ...nodeState.style,
-                width: nextWidth,
-              },
-            };
-          }
+        const groupUpdate = updateGroupWidths({
+          nodeState,
+          eventGroupId,
+          nextGroupWidth,
+          narrationWidthUpdates,
+        });
+        if (groupUpdate) {
+          return groupUpdate;
         }
 
         return nodeState;
@@ -992,34 +995,10 @@ export function useEventAdjacency(nodeId: string) {
         return true;
       });
 
-      const rebuiltEdges: WorkflowEdge[] = [];
-
-      for (let index = 0; index < eventSequence.length - 1; index += 1) {
-        rebuiltEdges.push({
-          id: `${baseEdgeId}-event-${index}`,
-          source: eventSequence[index]!,
-          target: eventSequence[index + 1]!,
-          sourceHandle: "event-next",
-          targetHandle: "event-prev",
-          type: "customEdge",
-          animated: true,
-        });
-      }
-
-      let groupIndex = 0;
-      perspectiveSequences.forEach((sequence) => {
-        for (let index = 0; index < sequence.length - 1; index += 1) {
-          rebuiltEdges.push({
-            id: `${baseEdgeId}-perspective-${groupIndex}-${index}`,
-            source: sequence[index]!,
-            target: sequence[index + 1]!,
-            sourceHandle: "perspective-next",
-            targetHandle: "perspective-prev",
-            type: "customEdge",
-            animated: true,
-          });
-        }
-        groupIndex += 1;
+      const rebuiltEdges = rebuildChainEdges({
+        baseEdgeId,
+        eventSequence,
+        perspectiveSequences,
       });
 
       return [...preservedEdges, ...rebuiltEdges];
