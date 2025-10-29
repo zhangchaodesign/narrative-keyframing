@@ -1,5 +1,3 @@
-// Static class with a bunch of utility functions for text manipulation
-
 import {
   Node,
   Point,

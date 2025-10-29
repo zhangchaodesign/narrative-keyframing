@@ -3,7 +3,7 @@
 import { Position, type NodeProps } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import type { GroupNodeType } from "@/lib/types/workflow";
-import { cn } from "@/lib/utils/utils";
+import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
 
 export function EventGroupNode({ data }: NodeProps<GroupNodeType>) {

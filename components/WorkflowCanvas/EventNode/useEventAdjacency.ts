@@ -7,6 +7,10 @@ import type {
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
+import {
+  parseEventTimelineIndex,
+  sortNodesByTimeline,
+} from "@/lib/utils/workflowUtils";
 
 const EVENT_HORIZONTAL_GAP = 300;
 const EVENT_ROW_START_X = 20;
@@ -23,30 +27,6 @@ type Position = { x: number; y: number };
 // React Flow nodes only expose parentId when they actually have one; fall back when absent.
 const getParentId = (node: WorkflowNode, fallbackId: string): string =>
   (node as { parentId?: string }).parentId ?? fallbackId;
-
-const sortEventsByTimeline = (events: WorkflowNode[]) =>
-  [...events].sort((a, b) => {
-    const indexA = parseEventTimelineIndex(
-      (a.data as EventNodeType["data"])?.timeline,
-    );
-    const indexB = parseEventTimelineIndex(
-      (b.data as EventNodeType["data"])?.timeline,
-    );
-
-    if (indexA != null && indexB != null) {
-      if (indexA === indexB) {
-        return a.position.x - b.position.x;
-      }
-      return indexA - indexB;
-    }
-    if (indexA != null) {
-      return -1;
-    }
-    if (indexB != null) {
-      return 1;
-    }
-    return a.position.x - b.position.x;
-  });
 
 interface EventLayoutParams {
   sortedEvents: WorkflowNode[];
@@ -281,19 +261,6 @@ const buildPerspectiveLayout = ({
     widthUpdates,
     eventAssignments,
   };
-};
-
-const parseEventTimelineIndex = (timeline?: string | null) => {
-  if (!timeline) {
-    return null;
-  }
-
-  const match = timeline.match(/(\d+)/);
-  if (!match) {
-    return null;
-  }
-
-  return Number.parseInt(match[1]!, 10);
 };
 
 const formatEventTimeline = (index: number) => `Event ${index}`;
@@ -661,7 +628,7 @@ export function useEventAdjacency(nodeId: string) {
           ...eventRowNodesWithNew.map((nodeState) => nodeState.position.x),
         );
         const normalizedStartX = Math.max(EVENT_ROW_START_X, minEventX);
-        const sortedEventNodes = sortEventsByTimeline(eventRowNodesWithNew);
+        const sortedEventNodes = sortNodesByTimeline(eventRowNodesWithNew);
         const eventLayout = buildEventLayout({
           sortedEvents: sortedEventNodes,
           eventRowY,
@@ -820,7 +787,7 @@ export function useEventAdjacency(nodeId: string) {
         return parentId === eventGroupId;
       });
 
-      const sortedEventNodes = sortEventsByTimeline(eventRowNodes);
+      const sortedEventNodes = sortNodesByTimeline(eventRowNodes);
 
       const referenceIndex = sortedEventNodes.findIndex(
         (nodeState) => nodeState.id === nodeId,
@@ -860,7 +827,7 @@ export function useEventAdjacency(nodeId: string) {
           getParentId(nodeState, DEFAULT_EVENT_GROUP_ID) === eventGroupId,
       );
 
-      const sortedRemainingEvents = sortEventsByTimeline(remainingEventNodes);
+      const sortedRemainingEvents = sortNodesByTimeline(remainingEventNodes);
 
       const eventRowY = referenceNode.position.y;
       const minEventX =

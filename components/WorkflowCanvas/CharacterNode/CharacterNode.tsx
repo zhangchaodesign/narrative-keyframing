@@ -14,7 +14,7 @@ import { TbCheck, TbPencil, TbPlus, TbX } from "react-icons/tb";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { CharacterMenu } from "@/components/WorkflowCanvas/CharacterNode/CharacterMenu";
 import type { CharacterNodeType, CharacterTraits } from "@/lib/types/workflow";
-import { cn } from "@/lib/utils/utils";
+import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
 
 type TraitCategory = keyof CharacterTraits;

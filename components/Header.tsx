@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { geistMono } from "@/app/fonts";
 import { TbInfoCircleFilled } from "react-icons/tb";
-import { cn } from "@/lib/utils/utils";
+import { cn } from "@/lib/utils";
 import { TbX } from "react-icons/tb";
 
 export function Header() {

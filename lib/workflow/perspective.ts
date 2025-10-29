@@ -38,19 +38,6 @@ export type PerspectivePreparationResult = {
   tasks: PerspectiveTaskPayload[];
 };
 
-export const parseEventTimelineIndex = (timeline?: string | null) => {
-  if (!timeline) {
-    return null;
-  }
-
-  const match = timeline.match(/(\d+)/);
-  if (!match) {
-    return null;
-  }
-
-  return Number.parseInt(match[1] ?? "", 10);
-};
-
 type PositionedCharacterSnapshot = CharacterSnapshotPayload & {
   positionX: number;
 };
