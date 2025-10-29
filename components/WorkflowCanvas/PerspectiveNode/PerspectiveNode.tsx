@@ -418,7 +418,14 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           disabled={isLoading}
         />
       )}
-      <CustomHandle type="target" position={Position.Bottom} id="character" />
+      <CustomHandle
+        type="target"
+        position={Position.Bottom}
+        id="character"
+        style={{
+          background: "lightgray",
+        }}
+      />
     </div>
   );
 }

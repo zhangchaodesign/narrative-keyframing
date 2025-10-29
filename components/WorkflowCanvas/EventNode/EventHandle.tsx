@@ -7,7 +7,7 @@ export const EventHandle: React.FC<HandleProps> = ({ style, ...props }) => {
       style={{
         width: 10,
         height: 10,
-        background: "oklch(55.2% 0.016 285.938)",
+        background: "#67CC8A",
         ...style,
       }}
       {...props}

@@ -397,7 +397,9 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                             ) : (
                               <>
                                 <button
-                                  onClick={() => handleStartEdit(key, index, trait)}
+                                  onClick={() =>
+                                    handleStartEdit(key, index, trait)
+                                  }
                                   className="pointer-events-auto rounded p-0.5 text-zinc-600 hover:text-zinc-800 cursor-pointer"
                                   title="Edit attribute"
                                   aria-label={`Edit ${label} trait`}
@@ -450,7 +452,14 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
             )}
           </div>
         </div>
-        <CustomHandle type="source" position={Position.Top} id="perspective" />
+        <CustomHandle
+          type="source"
+          position={Position.Top}
+          id="perspective"
+          style={{
+            background: "lightgray",
+          }}
+        />
       </div>
     </div>
   );

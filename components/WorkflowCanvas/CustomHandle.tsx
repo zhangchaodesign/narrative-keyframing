@@ -7,7 +7,7 @@ export const CustomHandle: React.FC<HandleProps> = ({ style, ...props }) => {
       style={{
         width: 12,
         height: 12,
-        background: "lightgray",
+        background: "gray",
         ...style,
       }}
       {...props}
