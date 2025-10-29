@@ -18,6 +18,271 @@ const PERSPECTIVE_NODE_WIDTH = 256;
 const NARRATION_GROUP_RIGHT_PADDING = 24;
 const DEFAULT_NARRATION_GROUP_WIDTH = 1200;
 
+type Position = { x: number; y: number };
+
+// React Flow nodes only expose parentId when they actually have one; fall back when absent.
+const getParentId = (node: WorkflowNode, fallbackId: string): string =>
+  (node as { parentId?: string }).parentId ?? fallbackId;
+
+const sortEventsByTimeline = (events: WorkflowNode[]) =>
+  [...events].sort((a, b) => {
+    const indexA = parseEventTimelineIndex(
+      (a.data as EventNodeType["data"])?.timeline,
+    );
+    const indexB = parseEventTimelineIndex(
+      (b.data as EventNodeType["data"])?.timeline,
+    );
+
+    if (indexA != null && indexB != null) {
+      if (indexA === indexB) {
+        return a.position.x - b.position.x;
+      }
+      return indexA - indexB;
+    }
+    if (indexA != null) {
+      return -1;
+    }
+    if (indexB != null) {
+      return 1;
+    }
+    return a.position.x - b.position.x;
+  });
+
+interface EventLayoutParams {
+  sortedEvents: WorkflowNode[];
+  eventRowY: number;
+  normalizedStartX: number;
+}
+
+interface EventLayoutResult {
+  eventPositionMap: Map<string, Position>;
+  eventSequence: string[];
+  fallbackBaseX: number;
+  rightmostEventEdge: number;
+  eventPositions: Position[];
+}
+
+// Normalize event X positions so the row stays anchored and report the derived layout metadata.
+const buildEventLayout = ({
+  sortedEvents,
+  eventRowY,
+  normalizedStartX,
+}: EventLayoutParams): EventLayoutResult => {
+  const eventPositionMap = new Map<string, Position>();
+
+  sortedEvents.forEach((nodeState, indexPosition) => {
+    eventPositionMap.set(nodeState.id, {
+      x: normalizedStartX + indexPosition * EVENT_HORIZONTAL_GAP,
+      y: eventRowY,
+    });
+  });
+
+  let leftmostEventX = Number.POSITIVE_INFINITY;
+  sortedEvents.forEach((nodeState) => {
+    const position = eventPositionMap.get(nodeState.id);
+    if (position) {
+      leftmostEventX = Math.min(leftmostEventX, position.x);
+    }
+  });
+
+  const shiftOffset =
+    leftmostEventX !== Number.POSITIVE_INFINITY &&
+    leftmostEventX > EVENT_ROW_START_X
+      ? leftmostEventX - EVENT_ROW_START_X
+      : 0;
+
+  if (shiftOffset > 0) {
+    sortedEvents.forEach((nodeState) => {
+      const position = eventPositionMap.get(nodeState.id);
+      if (!position) {
+        return;
+      }
+
+      eventPositionMap.set(nodeState.id, {
+        x: position.x - shiftOffset,
+        y: position.y,
+      });
+    });
+  }
+
+  const eventPositions = sortedEvents
+    .map((nodeState) => eventPositionMap.get(nodeState.id))
+    .filter((position): position is Position => position != null);
+
+  const eventStartX =
+    eventPositions.length > 0
+      ? Math.min(...eventPositions.map((position) => position.x))
+      : normalizedStartX;
+
+  const rightmostEventEdge =
+    eventPositions.length > 0
+      ? Math.max(
+          ...eventPositions.map((position) => position.x + EVENT_NODE_WIDTH),
+        )
+      : eventStartX + EVENT_NODE_WIDTH;
+
+  return {
+    eventPositionMap,
+    eventSequence: sortedEvents.map((nodeState) => nodeState.id),
+    fallbackBaseX: eventStartX,
+    rightmostEventEdge,
+    eventPositions,
+  };
+};
+
+const getPerspectiveEventIndex = (
+  nodeState: WorkflowNode,
+  eventIndexMap: Map<string, number>,
+) => {
+  const perspectiveData =
+    (nodeState.data as PerspectiveNodeType["data"] | undefined) ?? null;
+  const eventId = perspectiveData?.event?.trim();
+  if (!eventId) {
+    return null;
+  }
+
+  const index = eventIndexMap.get(eventId);
+  return index ?? null;
+};
+
+const sortPerspectiveNodes = (
+  nodes: WorkflowNode[],
+  eventIndexMap: Map<string, number>,
+) =>
+  [...nodes].sort((a, b) => {
+    const indexA = getPerspectiveEventIndex(a, eventIndexMap);
+    const indexB = getPerspectiveEventIndex(b, eventIndexMap);
+
+    if (indexA != null && indexB != null) {
+      if (indexA === indexB) {
+        return a.position.x - b.position.x;
+      }
+      return indexA - indexB;
+    }
+    if (indexA != null) {
+      return -1;
+    }
+    if (indexB != null) {
+      return 1;
+    }
+    return a.position.x - b.position.x;
+  });
+
+interface PerspectiveLayoutParams {
+  perspectiveGroups: WorkflowNode[];
+  nodes: WorkflowNode[];
+  eventSequence: string[];
+  eventPositionMap: Map<string, Position>;
+  fallbackBaseX: number;
+  eventIndexMap: Map<string, number>;
+}
+
+interface PerspectiveLayoutResult {
+  positionMapsByGroup: Map<string, Map<string, Position>>;
+  sequences: Map<string, string[]>;
+  widthUpdates: Map<string, number>;
+  eventAssignments: Map<string, string>;
+}
+
+// Align perspective nodes with their events and track width adjustments per group.
+const buildPerspectiveLayout = ({
+  perspectiveGroups,
+  nodes,
+  eventSequence,
+  eventPositionMap,
+  fallbackBaseX,
+  eventIndexMap,
+}: PerspectiveLayoutParams): PerspectiveLayoutResult => {
+  const positionMapsByGroup = new Map<string, Map<string, Position>>();
+  const sequences = new Map<string, string[]>();
+  const widthUpdates = new Map<string, number>();
+  const eventAssignments = new Map<string, string>();
+
+  perspectiveGroups.forEach((groupNode) => {
+    const groupId = groupNode.id;
+    const groupPerspectiveNodes = nodes.filter((nodeState) => {
+      if (nodeState.type !== "perspective") {
+        return false;
+      }
+      return getParentId(nodeState, "") === groupId;
+    });
+
+    if (groupPerspectiveNodes.length === 0) {
+      sequences.set(groupId, []);
+      widthUpdates.set(groupId, DEFAULT_NARRATION_GROUP_WIDTH);
+      return;
+    }
+
+    const sortedPerspectiveNodes = sortPerspectiveNodes(
+      groupPerspectiveNodes,
+      eventIndexMap,
+    );
+    const positionMap = new Map<string, Position>();
+
+    sortedPerspectiveNodes.forEach((nodeState, indexPosition) => {
+      const perspectiveIndex = getPerspectiveEventIndex(
+        nodeState,
+        eventIndexMap,
+      );
+      const fallbackIndex =
+        perspectiveIndex != null
+          ? perspectiveIndex
+          : eventSequence.length > 0
+          ? Math.min(indexPosition, eventSequence.length - 1)
+          : indexPosition;
+      const fallbackEventId =
+        eventSequence.length > 0
+          ? eventSequence[fallbackIndex] ?? eventSequence[0]
+          : null;
+      const eventPosition = fallbackEventId
+        ? eventPositionMap.get(fallbackEventId)
+        : undefined;
+      const fallbackX = fallbackBaseX + fallbackIndex * EVENT_HORIZONTAL_GAP;
+
+      positionMap.set(nodeState.id, {
+        x: eventPosition?.x ?? fallbackX,
+        y: nodeState.position.y,
+      });
+
+      if (fallbackEventId) {
+        eventAssignments.set(nodeState.id, fallbackEventId);
+      }
+    });
+
+    let rightmostEdge = 0;
+    sortedPerspectiveNodes.forEach((nodeState) => {
+      const mappedPosition = positionMap.get(nodeState.id);
+      const positionX = mappedPosition?.x ?? nodeState.position.x;
+      rightmostEdge = Math.max(
+        rightmostEdge,
+        positionX + PERSPECTIVE_NODE_WIDTH,
+      );
+    });
+
+    const computedWidth =
+      rightmostEdge > 0
+        ? rightmostEdge + NARRATION_GROUP_RIGHT_PADDING
+        : DEFAULT_NARRATION_GROUP_WIDTH;
+
+    widthUpdates.set(
+      groupId,
+      Math.max(DEFAULT_NARRATION_GROUP_WIDTH, computedWidth),
+    );
+    positionMapsByGroup.set(groupId, positionMap);
+    sequences.set(
+      groupId,
+      sortedPerspectiveNodes.map((nodeState) => nodeState.id),
+    );
+  });
+
+  return {
+    positionMapsByGroup,
+    sequences,
+    widthUpdates,
+    eventAssignments,
+  };
+};
+
 const parseEventTimelineIndex = (timeline?: string | null) => {
   if (!timeline) {
     return null;
@@ -96,6 +361,7 @@ export function useEventAdjacency(nodeId: string) {
         );
 
         const perspectiveNodesByGroup = new Map<string, WorkflowNode[]>();
+        // Snapshot existing perspectives by group so we can derive fallbacks.
         perspectiveGroups.forEach((groupNode) => {
           const groupId = groupNode.id;
           const children = perspectiveNodes.filter(
@@ -242,21 +508,18 @@ export function useEventAdjacency(nodeId: string) {
           });
         });
 
+        // Add the freshly created nodes before running the layout pass.
         const nodesWithNew = [
           ...updatedNodes,
           newEventNode,
           ...newPerspectiveNodes,
         ];
 
-        const eventRowNodesWithNew = nodesWithNew.filter((nodeState) => {
-          if (nodeState.type !== "event") {
-            return false;
-          }
-          const parentId =
-            (nodeState as { parentId?: string }).parentId ??
-            DEFAULT_EVENT_GROUP_ID;
-          return parentId === eventGroupId;
-        });
+        const eventRowNodesWithNew = nodesWithNew.filter(
+          (nodeState) =>
+            nodeState.type === "event" &&
+            getParentId(nodeState, DEFAULT_EVENT_GROUP_ID) === eventGroupId,
+        );
         if (eventRowNodesWithNew.length === 0) {
           return nodesWithNew;
         }
@@ -265,227 +528,47 @@ export function useEventAdjacency(nodeId: string) {
           ...eventRowNodesWithNew.map((nodeState) => nodeState.position.x),
         );
         const normalizedStartX = Math.max(EVENT_ROW_START_X, minEventX);
-
-        const sortedEventNodes = [...eventRowNodesWithNew].sort((a, b) => {
-          const indexA = parseEventTimelineIndex(
-            (a.data as EventNodeType["data"])?.timeline,
-          );
-          const indexB = parseEventTimelineIndex(
-            (b.data as EventNodeType["data"])?.timeline,
-          );
-
-          if (indexA != null && indexB != null) {
-            return indexA - indexB;
-          }
-          if (indexA != null) {
-            return -1;
-          }
-          if (indexB != null) {
-            return 1;
-          }
-          return a.position.x - b.position.x;
+        const sortedEventNodes = sortEventsByTimeline(eventRowNodesWithNew);
+        const eventLayout = buildEventLayout({
+          sortedEvents: sortedEventNodes,
+          eventRowY,
+          normalizedStartX,
         });
 
-        const eventPositionMap = new Map<string, { x: number; y: number }>();
-        sortedEventNodes.forEach((nodeState, indexPosition) => {
-          eventPositionMap.set(nodeState.id, {
-            x: normalizedStartX + indexPosition * EVENT_HORIZONTAL_GAP,
-            y: eventRowY,
-          });
-        });
-        let leftmostEventX = Number.POSITIVE_INFINITY;
-        sortedEventNodes.forEach((nodeState) => {
-          const position = eventPositionMap.get(nodeState.id);
-          if (position) {
-            leftmostEventX = Math.min(leftmostEventX, position.x);
-          }
-        });
-        const shiftOffset =
-          leftmostEventX !== Number.POSITIVE_INFINITY &&
-          leftmostEventX > EVENT_ROW_START_X
-            ? leftmostEventX - EVENT_ROW_START_X
-            : 0;
-
-        if (shiftOffset > 0) {
-          sortedEventNodes.forEach((nodeState) => {
-            const position = eventPositionMap.get(nodeState.id);
-            if (!position) {
-              return;
-            }
-            eventPositionMap.set(nodeState.id, {
-              x: position.x - shiftOffset,
-              y: position.y,
-            });
-          });
-        }
-        const eventPositions = sortedEventNodes
-          .map((nodeState) => eventPositionMap.get(nodeState.id))
-          .filter(
-            (position): position is { x: number; y: number } =>
-              position != null,
-          );
-        const eventStartX =
-          eventPositions.length > 0
-            ? Math.min(...eventPositions.map((position) => position.x))
-            : normalizedStartX;
-        const rightmostEventEdge =
-          eventPositions.length > 0
-            ? Math.max(
-                ...eventPositions.map(
-                  (position) => position.x + EVENT_NODE_WIDTH,
-                ),
-              )
-            : eventStartX + EVENT_NODE_WIDTH;
-        const fallbackBaseX = eventStartX;
-
-        eventSequence = sortedEventNodes.map((nodeState) => nodeState.id);
+        eventSequence = eventLayout.eventSequence;
         const eventIndexMap = new Map<string, number>();
         eventSequence.forEach((eventId, indexPosition) => {
           eventIndexMap.set(eventId, indexPosition);
         });
-        const getPerspectiveEventIndex = (nodeState: WorkflowNode) => {
-          const perspectiveData =
-            (nodeState.data as PerspectiveNodeType["data"] | undefined) ?? null;
-          const eventId = perspectiveData?.event?.trim();
-          if (!eventId) {
-            return null;
-          }
-          const index = eventIndexMap.get(eventId);
-          return index ?? null;
-        };
 
-        const perspectivePositionMapsByGroup = new Map<
-          string,
-          Map<string, { x: number; y: number }>
-        >();
-        const perspectiveEventAssignments = new Map<string, string>();
-        const narrationWidthUpdates = new Map<string, number>();
-
-        perspectiveGroups.forEach((groupNode) => {
-          const groupId = groupNode.id;
-          const groupPerspectiveNodes = nodesWithNew.filter((nodeState) => {
-            if (nodeState.type !== "perspective") {
-              return false;
-            }
-            const parentId = (nodeState as { parentId?: string }).parentId;
-            return parentId === groupId;
-          });
-
-          if (groupPerspectiveNodes.length === 0) {
-            narrationWidthUpdates.set(groupId, DEFAULT_NARRATION_GROUP_WIDTH);
-            return;
-          }
-
-          const sortedPerspectiveNodes = [...groupPerspectiveNodes].sort(
-            (a, b) => {
-              const indexA = getPerspectiveEventIndex(a);
-              const indexB = getPerspectiveEventIndex(b);
-
-              if (indexA != null && indexB != null) {
-                if (indexA === indexB) {
-                  return a.position.x - b.position.x;
-                }
-                return indexA - indexB;
-              }
-              if (indexA != null) {
-                return -1;
-              }
-              if (indexB != null) {
-                return 1;
-              }
-              return a.position.x - b.position.x;
-            },
-          );
-
-          const positionMap = new Map<string, { x: number; y: number }>();
-          sortedPerspectiveNodes.forEach((nodeState, indexPosition) => {
-            const perspectiveIndex = getPerspectiveEventIndex(nodeState);
-            const fallbackIndex =
-              perspectiveIndex != null
-                ? perspectiveIndex
-                : eventSequence.length > 0
-                ? Math.min(indexPosition, eventSequence.length - 1)
-                : indexPosition;
-            const fallbackEventId =
-              eventSequence.length > 0
-                ? eventSequence[fallbackIndex] ?? eventSequence[0]
-                : null;
-            const eventPosition = fallbackEventId
-              ? eventPositionMap.get(fallbackEventId)
-              : undefined;
-            const fallbackX =
-              fallbackBaseX + fallbackIndex * EVENT_HORIZONTAL_GAP;
-
-            positionMap.set(nodeState.id, {
-              x: eventPosition?.x ?? fallbackX,
-              y: nodeState.position.y,
-            });
-
-            if (fallbackEventId) {
-              perspectiveEventAssignments.set(nodeState.id, fallbackEventId);
-            }
-          });
-
-          perspectivePositionMapsByGroup.set(groupId, positionMap);
-          perspectiveSequences.set(
-            groupId,
-            sortedPerspectiveNodes.map((nodeState) => nodeState.id),
-          );
+        // Use the shared helpers to normalize event spacing and align perspectives.
+        const perspectiveLayout = buildPerspectiveLayout({
+          perspectiveGroups,
+          nodes: nodesWithNew,
+          eventSequence,
+          eventPositionMap: eventLayout.eventPositionMap,
+          fallbackBaseX: eventLayout.fallbackBaseX,
+          eventIndexMap,
         });
 
+        const perspectivePositionMapsByGroup =
+          perspectiveLayout.positionMapsByGroup;
+        const perspectiveEventAssignments = perspectiveLayout.eventAssignments;
+        const narrationWidthUpdates = perspectiveLayout.widthUpdates;
+        perspectiveSequences = perspectiveLayout.sequences;
+
         const computedGroupWidth =
-          eventPositions.length > 0
-            ? rightmostEventEdge + EVENT_GROUP_RIGHT_PADDING
+          eventLayout.eventPositions.length > 0
+            ? eventLayout.rightmostEventEdge + EVENT_GROUP_RIGHT_PADDING
             : DEFAULT_EVENT_GROUP_WIDTH;
         const nextGroupWidth = Math.max(
           DEFAULT_EVENT_GROUP_WIDTH,
           computedGroupWidth,
         );
 
-        perspectiveGroups.forEach((groupNode) => {
-          const groupId = groupNode.id;
-          const positionMap = perspectivePositionMapsByGroup.get(groupId);
-          if (!positionMap) {
-            return;
-          }
-
-          const groupPerspectiveNodes = nodesWithNew.filter((nodeState) => {
-            if (nodeState.type !== "perspective") {
-              return false;
-            }
-            const parentId = (nodeState as { parentId?: string }).parentId;
-            return parentId === groupId;
-          });
-
-          if (groupPerspectiveNodes.length === 0) {
-            narrationWidthUpdates.set(groupId, DEFAULT_NARRATION_GROUP_WIDTH);
-            return;
-          }
-
-          let rightmostEdge = 0;
-          groupPerspectiveNodes.forEach((nodeState) => {
-            const mappedPosition = positionMap.get(nodeState.id);
-            const positionX = mappedPosition?.x ?? nodeState.position.x;
-            rightmostEdge = Math.max(
-              rightmostEdge,
-              positionX + PERSPECTIVE_NODE_WIDTH,
-            );
-          });
-
-          const computedWidth =
-            rightmostEdge > 0
-              ? rightmostEdge + NARRATION_GROUP_RIGHT_PADDING
-              : DEFAULT_NARRATION_GROUP_WIDTH;
-
-          narrationWidthUpdates.set(
-            groupId,
-            Math.max(DEFAULT_NARRATION_GROUP_WIDTH, computedWidth),
-          );
-        });
-
         return nodesWithNew.map((nodeState) => {
           if (nodeState.type === "event") {
-            const newPosition = eventPositionMap.get(nodeState.id);
+            const newPosition = eventLayout.eventPositionMap.get(nodeState.id);
             if (newPosition) {
               return {
                 ...nodeState,
@@ -702,7 +785,7 @@ export function useEventAdjacency(nodeId: string) {
 
       const nodesToRemove = new Set<string>([nodeId]);
 
-      const perspectiveNodesByGroup = new Map<string, WorkflowNode[]>();
+      // Mirror event deletions for each perspective group so rows stay aligned.
       perspectiveGroups.forEach((groupNode) => {
         const groupId = groupNode.id;
         const children = perspectiveNodes.filter(
@@ -717,7 +800,6 @@ export function useEventAdjacency(nodeId: string) {
         if (perspectiveToRemove) {
           nodesToRemove.add(perspectiveToRemove.id);
         }
-        perspectiveNodesByGroup.set(groupId, sortedChildren);
       });
 
       removedNodeIds = Array.from(nodesToRemove);
@@ -726,33 +808,13 @@ export function useEventAdjacency(nodeId: string) {
         (nodeState) => !nodesToRemove.has(nodeState.id),
       );
 
-      const remainingEventNodes = remainingNodes.filter((nodeState) => {
-        if (nodeState.type !== "event") {
-          return false;
-        }
-        const parentId =
-          (nodeState as { parentId?: string }).parentId ??
-          DEFAULT_EVENT_GROUP_ID;
-        return parentId === eventGroupId;
-      });
+      const remainingEventNodes = remainingNodes.filter(
+        (nodeState) =>
+          nodeState.type === "event" &&
+          getParentId(nodeState, DEFAULT_EVENT_GROUP_ID) === eventGroupId,
+      );
 
-      const sortedRemainingEvents = [...remainingEventNodes].sort((a, b) => {
-        const indexA = parseEventTimelineIndex(
-          (a.data as EventNodeType["data"])?.timeline,
-        );
-        const indexB = parseEventTimelineIndex(
-          (b.data as EventNodeType["data"])?.timeline,
-        );
-
-        if (indexA != null && indexB != null && indexA !== indexB) {
-          return indexA - indexB;
-        }
-
-        if (indexA != null) return -1;
-        if (indexB != null) return 1;
-
-        return a.position.x - b.position.x;
-      });
+      const sortedRemainingEvents = sortEventsByTimeline(remainingEventNodes);
 
       const eventRowY = referenceNode.position.y;
       const minEventX =
@@ -763,184 +825,45 @@ export function useEventAdjacency(nodeId: string) {
           : referenceNode.position.x;
       const normalizedStartX = Math.max(EVENT_ROW_START_X, minEventX);
 
-      const eventPositionMap = new Map<string, { x: number; y: number }>();
-      sortedRemainingEvents.forEach((nodeState, indexPosition) => {
-        eventPositionMap.set(nodeState.id, {
-          x: normalizedStartX + indexPosition * EVENT_HORIZONTAL_GAP,
-          y: eventRowY,
-        });
+      const eventLayout = buildEventLayout({
+        sortedEvents: sortedRemainingEvents,
+        eventRowY,
+        normalizedStartX,
       });
-      let leftmostEventX = Number.POSITIVE_INFINITY;
-      sortedRemainingEvents.forEach((nodeState) => {
-        const position = eventPositionMap.get(nodeState.id);
-        if (position) {
-          leftmostEventX = Math.min(leftmostEventX, position.x);
-        }
-      });
-      const shiftOffset =
-        leftmostEventX !== Number.POSITIVE_INFINITY &&
-        leftmostEventX > EVENT_ROW_START_X
-          ? leftmostEventX - EVENT_ROW_START_X
-          : 0;
 
-      if (shiftOffset > 0) {
-        sortedRemainingEvents.forEach((nodeState) => {
-          const position = eventPositionMap.get(nodeState.id);
-          if (!position) {
-            return;
-          }
-          eventPositionMap.set(nodeState.id, {
-            x: position.x - shiftOffset,
-            y: position.y,
-          });
-        });
-      }
-      const eventPositions = sortedRemainingEvents
-        .map((nodeState) => eventPositionMap.get(nodeState.id))
-        .filter(
-          (position): position is { x: number; y: number } => position != null,
-        );
-      const eventStartX =
-        eventPositions.length > 0
-          ? Math.min(...eventPositions.map((position) => position.x))
-          : normalizedStartX;
-      const rightmostEventEdge =
-        eventPositions.length > 0
-          ? Math.max(
-              ...eventPositions.map(
-                (position) => position.x + EVENT_NODE_WIDTH,
-              ),
-            )
-          : eventStartX + EVENT_NODE_WIDTH;
-      const fallbackBaseX = eventStartX;
-
-      eventSequence = sortedRemainingEvents.map((nodeState) => nodeState.id);
+      eventSequence = eventLayout.eventSequence;
       const eventIndexMap = new Map<string, number>();
       eventSequence.forEach((eventId, indexPosition) => {
         eventIndexMap.set(eventId, indexPosition);
       });
-      const getPerspectiveEventIndexForGroup = (nodeState: WorkflowNode) => {
-        const perspectiveData =
-          (nodeState.data as PerspectiveNodeType["data"] | undefined) ?? null;
-        const eventId = perspectiveData?.event?.trim();
-        if (!eventId) {
-          return null;
-        }
-        const index = eventIndexMap.get(eventId);
-        return index ?? null;
-      };
 
-      const narrationWidthUpdates = new Map<string, number>();
-      const perspectivePositionMapsByGroup = new Map<
-        string,
-        Map<string, { x: number; y: number }>
-      >();
-      const perspectiveEventAssignments = new Map<string, string>();
-
-      perspectiveGroups.forEach((groupNode) => {
-        const groupId = groupNode.id;
-        const remainingPerspectiveNodes = remainingNodes.filter((nodeState) => {
-          if (nodeState.type !== "perspective") {
-            return false;
-          }
-          const parentId = (nodeState as { parentId?: string }).parentId;
-          return parentId === groupId;
-        });
-
-        if (remainingPerspectiveNodes.length === 0) {
-          perspectiveSequences.set(groupId, []);
-          narrationWidthUpdates.set(groupId, DEFAULT_NARRATION_GROUP_WIDTH);
-          return;
-        }
-
-        const sortedPerspectiveNodes = [...remainingPerspectiveNodes].sort(
-          (a, b) => {
-            const indexA = getPerspectiveEventIndexForGroup(a);
-            const indexB = getPerspectiveEventIndexForGroup(b);
-
-            if (indexA != null && indexB != null) {
-              if (indexA === indexB) {
-                return a.position.x - b.position.x;
-              }
-              return indexA - indexB;
-            }
-            if (indexA != null) {
-              return -1;
-            }
-            if (indexB != null) {
-              return 1;
-            }
-            return a.position.x - b.position.x;
-          },
-        );
-
-        const positionMap = new Map<string, { x: number; y: number }>();
-        sortedPerspectiveNodes.forEach((nodeState, indexPosition) => {
-          const perspectiveIndex = getPerspectiveEventIndexForGroup(nodeState);
-          const fallbackIndex =
-            perspectiveIndex != null
-              ? perspectiveIndex
-              : eventSequence.length > 0
-              ? Math.min(indexPosition, eventSequence.length - 1)
-              : indexPosition;
-          const fallbackEventId =
-            eventSequence.length > 0
-              ? eventSequence[fallbackIndex] ?? eventSequence[0]
-              : null;
-          const eventPosition = fallbackEventId
-            ? eventPositionMap.get(fallbackEventId)
-            : undefined;
-          const fallbackX =
-            fallbackBaseX + fallbackIndex * EVENT_HORIZONTAL_GAP;
-
-          positionMap.set(nodeState.id, {
-            x: eventPosition?.x ?? fallbackX,
-            y: nodeState.position.y,
-          });
-
-          if (fallbackEventId) {
-            perspectiveEventAssignments.set(nodeState.id, fallbackEventId);
-          }
-        });
-
-        perspectivePositionMapsByGroup.set(groupId, positionMap);
-        perspectiveSequences.set(
-          groupId,
-          sortedPerspectiveNodes.map((nodeState) => nodeState.id),
-        );
-
-        let rightmostEdge = 0;
-        sortedPerspectiveNodes.forEach((nodeState) => {
-          const mappedPosition = positionMap.get(nodeState.id);
-          const positionX = mappedPosition?.x ?? nodeState.position.x;
-          rightmostEdge = Math.max(
-            rightmostEdge,
-            positionX + PERSPECTIVE_NODE_WIDTH,
-          );
-        });
-
-        const computedWidth =
-          rightmostEdge > 0
-            ? rightmostEdge + NARRATION_GROUP_RIGHT_PADDING
-            : DEFAULT_NARRATION_GROUP_WIDTH;
-
-        narrationWidthUpdates.set(
-          groupId,
-          Math.max(DEFAULT_NARRATION_GROUP_WIDTH, computedWidth),
-        );
+      // Re-run the shared layout helpers to compress the remaining grid.
+      const perspectiveLayout = buildPerspectiveLayout({
+        perspectiveGroups,
+        nodes: remainingNodes,
+        eventSequence,
+        eventPositionMap: eventLayout.eventPositionMap,
+        fallbackBaseX: eventLayout.fallbackBaseX,
+        eventIndexMap,
       });
 
+      const perspectivePositionMapsByGroup =
+        perspectiveLayout.positionMapsByGroup;
+      const perspectiveEventAssignments = perspectiveLayout.eventAssignments;
+      const narrationWidthUpdates = perspectiveLayout.widthUpdates;
+      perspectiveSequences = perspectiveLayout.sequences;
+
       const nextGroupWidth =
-        eventPositions.length === 0
+        eventLayout.eventPositions.length === 0
           ? DEFAULT_EVENT_GROUP_WIDTH
           : Math.max(
               DEFAULT_EVENT_GROUP_WIDTH,
-              rightmostEventEdge + EVENT_GROUP_RIGHT_PADDING,
+              eventLayout.rightmostEventEdge + EVENT_GROUP_RIGHT_PADDING,
             );
 
       return remainingNodes.map((nodeState) => {
         if (nodeState.type === "event") {
-          const newPosition = eventPositionMap.get(nodeState.id);
+          const newPosition = eventLayout.eventPositionMap.get(nodeState.id);
           if (!newPosition) {
             return nodeState;
           }
