@@ -9,7 +9,7 @@ import {
 } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { EventHandle } from "@/components/WorkflowCanvas/EventNode/EventHandle";
-import { NodeActionMenu } from "@/components/WorkflowCanvas/NodeActionMenu";
+import { EventMenu } from "@/components/WorkflowCanvas/EventNode/EventMenu";
 import { AddEventButton } from "@/components/WorkflowCanvas/EventNode/AddEventButton";
 import type {
   EventNodeType,
@@ -165,8 +165,8 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
         const eventRowNodesWithNew = nodesWithNew.filter(
           (nodeState) =>
             nodeState.type === "event" &&
-            (((nodeState as { parentId?: string }).parentId ??
-              eventGroupId) === eventGroupId),
+            ((nodeState as { parentId?: string }).parentId ?? eventGroupId) ===
+              eventGroupId,
         );
         if (eventRowNodesWithNew.length === 0) {
           return nodesWithNew;
@@ -399,18 +399,12 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
   return (
     <div className="group relative w-64 rounded-lg border-2 border-zinc-500 bg-white p-3 text-xs hover:shadow-lg">
       {!hasPreviousEvent && (
-        <AddEventButton
-          direction="before"
-          onAdd={handleAddAdjacentEvent}
-        />
+        <AddEventButton direction="before" onAdd={handleAddAdjacentEvent} />
       )}
       {!hasNextEvent && (
-        <AddEventButton
-          direction="after"
-          onAdd={handleAddAdjacentEvent}
-        />
+        <AddEventButton direction="after" onAdd={handleAddAdjacentEvent} />
       )}
-      <NodeActionMenu nodeId={id} nodeType="event" />
+      <EventMenu nodeId={id} nodeType="event" />
       <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
         📜 {data?.timeline}
       </div>

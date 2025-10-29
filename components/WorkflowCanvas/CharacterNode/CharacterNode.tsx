@@ -12,7 +12,7 @@ import {
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { TbCheck, TbPencil, TbPlus, TbX } from "react-icons/tb";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
-import { NodeActionMenu } from "@/components/WorkflowCanvas/NodeActionMenu";
+import { CharacterMenu } from "@/components/WorkflowCanvas/CharacterNode/CharacterMenu";
 import type { CharacterNodeType, CharacterTraits } from "@/lib/types/workflow";
 
 type TraitCategory = keyof CharacterTraits;
@@ -276,7 +276,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
       ref={containerRef}
       className="group relative flex w-64 flex-col gap-3 rounded-lg border-2 border-warning p-3 text-xs bg-white hover:shadow-lg"
     >
-      <NodeActionMenu nodeId={id} nodeType="character" />
+      <CharacterMenu nodeId={id} nodeType="character" />
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
           🧙 Character Snapshot

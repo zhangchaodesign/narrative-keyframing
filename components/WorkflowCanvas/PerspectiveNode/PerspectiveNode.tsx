@@ -9,7 +9,7 @@ import {
 } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { PerspectiveHandle } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveHandle";
-import { NodeActionMenu } from "@/components/WorkflowCanvas/NodeActionMenu";
+import { PerspectiveMenu } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveMenu";
 import { AddCharacterButton } from "@/components/WorkflowCanvas/PerspectiveNode/AddCharacterButton";
 import type {
   CharacterNodeType,
@@ -257,7 +257,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           </span>
         </div>
       )}
-      <NodeActionMenu nodeId={id} nodeType="perspective" />
+      <PerspectiveMenu nodeId={id} nodeType="perspective" />
       <div className="flex w-full flex-wrap items-center gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase">
         <span className="flex items-center">💬 Perspective</span>
       </div>
