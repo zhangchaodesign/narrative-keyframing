@@ -293,6 +293,51 @@ export function useEventAdjacency(nodeId: string) {
             y: eventRowY,
           });
         });
+        let leftmostEventX = Number.POSITIVE_INFINITY;
+        sortedEventNodes.forEach((nodeState) => {
+          const position = eventPositionMap.get(nodeState.id);
+          if (position) {
+            leftmostEventX = Math.min(leftmostEventX, position.x);
+          }
+        });
+        const shiftOffset =
+          leftmostEventX !== Number.POSITIVE_INFINITY &&
+          leftmostEventX > EVENT_ROW_START_X
+            ? leftmostEventX - EVENT_ROW_START_X
+            : 0;
+
+        if (shiftOffset > 0) {
+          sortedEventNodes.forEach((nodeState) => {
+            const position = eventPositionMap.get(nodeState.id);
+            if (!position) {
+              return;
+            }
+            eventPositionMap.set(nodeState.id, {
+              x: position.x - shiftOffset,
+              y: position.y,
+            });
+          });
+        }
+        const eventPositions = sortedEventNodes
+          .map((nodeState) => eventPositionMap.get(nodeState.id))
+          .filter(
+            (position): position is { x: number; y: number } =>
+              position != null,
+          );
+        const eventStartX =
+          eventPositions.length > 0
+            ? Math.min(...eventPositions.map((position) => position.x))
+            : normalizedStartX;
+        const rightmostEventEdge =
+          eventPositions.length > 0
+            ? Math.max(
+                ...eventPositions.map(
+                  (position) => position.x + EVENT_NODE_WIDTH,
+                ),
+              )
+            : eventStartX + EVENT_NODE_WIDTH;
+        const fallbackBaseX = eventStartX;
+
         eventSequence = sortedEventNodes.map((nodeState) => nodeState.id);
         const eventIndexMap = new Map<string, number>();
         eventSequence.forEach((eventId, indexPosition) => {
@@ -369,7 +414,7 @@ export function useEventAdjacency(nodeId: string) {
               ? eventPositionMap.get(fallbackEventId)
               : undefined;
             const fallbackX =
-              normalizedStartX + fallbackIndex * EVENT_HORIZONTAL_GAP;
+              fallbackBaseX + fallbackIndex * EVENT_HORIZONTAL_GAP;
 
             positionMap.set(nodeState.id, {
               x: eventPosition?.x ?? fallbackX,
@@ -388,12 +433,8 @@ export function useEventAdjacency(nodeId: string) {
           );
         });
 
-        const rightmostEventEdge =
-          normalizedStartX +
-          (sortedEventNodes.length - 1) * EVENT_HORIZONTAL_GAP +
-          EVENT_NODE_WIDTH;
         const computedGroupWidth =
-          sortedEventNodes.length > 0
+          eventPositions.length > 0
             ? rightmostEventEdge + EVENT_GROUP_RIGHT_PADDING
             : DEFAULT_EVENT_GROUP_WIDTH;
         const nextGroupWidth = Math.max(
@@ -729,6 +770,51 @@ export function useEventAdjacency(nodeId: string) {
           y: eventRowY,
         });
       });
+      let leftmostEventX = Number.POSITIVE_INFINITY;
+      sortedRemainingEvents.forEach((nodeState) => {
+        const position = eventPositionMap.get(nodeState.id);
+        if (position) {
+          leftmostEventX = Math.min(leftmostEventX, position.x);
+        }
+      });
+      const shiftOffset =
+        leftmostEventX !== Number.POSITIVE_INFINITY &&
+        leftmostEventX > EVENT_ROW_START_X
+          ? leftmostEventX - EVENT_ROW_START_X
+          : 0;
+
+      if (shiftOffset > 0) {
+        sortedRemainingEvents.forEach((nodeState) => {
+          const position = eventPositionMap.get(nodeState.id);
+          if (!position) {
+            return;
+          }
+          eventPositionMap.set(nodeState.id, {
+            x: position.x - shiftOffset,
+            y: position.y,
+          });
+        });
+      }
+      const eventPositions = sortedRemainingEvents
+        .map((nodeState) => eventPositionMap.get(nodeState.id))
+        .filter(
+          (position): position is { x: number; y: number } =>
+            position != null,
+        );
+      const eventStartX =
+        eventPositions.length > 0
+          ? Math.min(...eventPositions.map((position) => position.x))
+          : normalizedStartX;
+      const rightmostEventEdge =
+        eventPositions.length > 0
+          ? Math.max(
+              ...eventPositions.map(
+                (position) => position.x + EVENT_NODE_WIDTH,
+              ),
+            )
+          : eventStartX + EVENT_NODE_WIDTH;
+      const fallbackBaseX = eventStartX;
+
       eventSequence = sortedRemainingEvents.map((nodeState) => nodeState.id);
       const eventIndexMap = new Map<string, number>();
       eventSequence.forEach((eventId, indexPosition) => {
@@ -806,7 +892,7 @@ export function useEventAdjacency(nodeId: string) {
             ? eventPositionMap.get(fallbackEventId)
             : undefined;
           const fallbackX =
-            normalizedStartX + fallbackIndex * EVENT_HORIZONTAL_GAP;
+            fallbackBaseX + fallbackIndex * EVENT_HORIZONTAL_GAP;
 
           positionMap.set(nodeState.id, {
             x: eventPosition?.x ?? fallbackX,
@@ -845,20 +931,13 @@ export function useEventAdjacency(nodeId: string) {
         );
       });
 
-      const nextGroupWidth = (() => {
-        if (sortedRemainingEvents.length === 0) {
-          return DEFAULT_EVENT_GROUP_WIDTH;
-        }
-
-        const rightmostEventEdge =
-          normalizedStartX +
-          (sortedRemainingEvents.length - 1) * EVENT_HORIZONTAL_GAP +
-          EVENT_NODE_WIDTH;
-        const computedGroupWidth =
-          rightmostEventEdge + EVENT_GROUP_RIGHT_PADDING;
-
-        return Math.max(DEFAULT_EVENT_GROUP_WIDTH, computedGroupWidth);
-      })();
+      const nextGroupWidth =
+        eventPositions.length === 0
+          ? DEFAULT_EVENT_GROUP_WIDTH
+          : Math.max(
+              DEFAULT_EVENT_GROUP_WIDTH,
+              rightmostEventEdge + EVENT_GROUP_RIGHT_PADDING,
+            );
 
       return remainingNodes.map((nodeState) => {
         if (nodeState.type === "event") {
