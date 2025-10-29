@@ -272,166 +272,186 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   }, [editingTrait]);
 
   return (
-    <div
-      ref={containerRef}
-      className="group relative flex w-64 flex-col gap-3 rounded-lg border-2 border-warning p-3 text-xs bg-white hover:shadow-lg"
-    >
-      <CharacterMenu nodeId={id} nodeType="character" />
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
-          🧙 Character Snapshot
-        </span>
-      </div>
-      <label>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
-          Name
-        </p>
-        <input
-          value={data?.name ?? ""}
-          onChange={handleNameChange}
-          placeholder="Name this character..."
-          className="mt-2 w-full resize-none rounded border border-zinc-300 bg-white/70 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
-        />
-      </label>
+    <div className="group relative w-64">
+      <div
+        ref={containerRef}
+        className="flex max-h-80 flex-col rounded-lg border-2 border-warning bg-white text-xs hover:shadow-lg"
+      >
+        <CharacterMenu nodeId={id} nodeType="character" />
+        <div
+          className="flex flex-1 flex-col gap-3 overflow-y-auto p-3 min-h-0"
+          onWheel={(event) => {
+            if (event.ctrlKey || event.metaKey) {
+              return;
+            }
+            event.stopPropagation();
+            event.nativeEvent.stopImmediatePropagation?.();
+          }}
+          onWheelCapture={(event) => {
+            if (event.ctrlKey || event.metaKey) {
+              return;
+            }
+            event.stopPropagation();
+            event.nativeEvent.stopImmediatePropagation?.();
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
+              🧙 Character Snapshot
+            </span>
+          </div>
+          <label>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-800">
+              Name
+            </p>
+            <input
+              value={data?.name ?? ""}
+              onChange={handleNameChange}
+              placeholder="Name this character..."
+              className="mt-2 w-full resize-none rounded border border-zinc-300 bg-white/70 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
+            />
+          </label>
 
-      <div className="space-y-3">
-        {TRAIT_CATEGORIES.map(
-          ({ key, label, titleClass, chipClass, emptyClass }) => (
-            <section key={key} className="">
-              <div className="flex items-center justify-between gap-2">
-                <h4
-                  className={`text-[10px] font-semibold uppercase tracking-wide ${titleClass}`}
-                >
-                  {label}
-                </h4>
-                <button
-                  type="button"
-                  onClick={() => toggleAddInput(key)}
-                  className={`flex cursor-pointer items-center justify-center rounded-full bg-white transition ${
-                    activeCategory === key
-                      ? "text-red-500 hover:text-red-700"
-                      : "text-zinc-500 hover:text-zinc-700"
-                  }`}
-                  aria-label={
-                    activeCategory === key
-                      ? `Hide ${label} trait input`
-                      : `Add ${label} trait`
-                  }
-                >
-                  {activeCategory === key ? (
-                    <TbX size={12} />
-                  ) : (
-                    <TbPlus size={12} />
-                  )}
-                </button>
-              </div>
-              <div className="mt-2 flex flex-col gap-2">
-                {(traits[key] ?? []).map((trait, index) => {
-                  const isEditing =
-                    editingTrait?.category === key &&
-                    editingTrait.index === index;
-
-                  return (
-                    <div
-                      key={`${key}-${trait}-${index}`}
-                      className={`group/trait relative flex items-center rounded border-none text-[10px] transition ${chipClass}`}
+          <div className="space-y-3">
+            {TRAIT_CATEGORIES.map(
+              ({ key, label, titleClass, chipClass, emptyClass }) => (
+                <section key={key} className="">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4
+                      className={`text-[10px] font-semibold uppercase tracking-wide ${titleClass}`}
                     >
-                      {isEditing ? (
-                        <input
-                          ref={editingInputRef}
-                          value={editingTrait.value}
-                          onChange={handleEditChange}
-                          onKeyDown={onEditInputKeyDown}
-                          className="flex-1 rounded border border-zinc-300 bg-white/80 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
-                          aria-label={`Edit ${label} trait`}
-                        />
+                      {label}
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => toggleAddInput(key)}
+                      className={`flex cursor-pointer items-center justify-center rounded-full bg-white transition ${
+                        activeCategory === key
+                          ? "text-red-500 hover:text-red-700"
+                          : "text-zinc-500 hover:text-zinc-700"
+                      }`}
+                      aria-label={
+                        activeCategory === key
+                          ? `Hide ${label} trait input`
+                          : `Add ${label} trait`
+                      }
+                    >
+                      {activeCategory === key ? (
+                        <TbX size={12} />
                       ) : (
-                        <span className="flex-1 leading-snug pr-10 px-2 py-1 font-medium">
-                          {trait}
-                        </span>
+                        <TbPlus size={12} />
                       )}
-                      <div
-                        className={`absolute right-1 top-1/2 z-10 -translate-y-1/2 items-center ${
-                          isEditing
-                            ? "flex"
-                            : "hidden group-hover/trait:flex group-focus-within/trait:flex"
-                        }`}
-                      >
-                        {isEditing ? (
-                          <>
-                            <button
-                              onClick={handleEditConfirm}
-                              className="pointer-events-auto rounded p-0.5 text-green-500 hover:text-green-700 cursor-pointer"
-                              title="Save attribute"
-                              aria-label={`Save ${label} trait`}
-                            >
-                              <TbCheck size={12} />
-                            </button>
-                            <button
-                              onClick={handleEditCancel}
-                              className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
-                              title="Cancel editing"
-                              aria-label={`Cancel editing ${label} trait`}
-                            >
-                              <TbX size={12} />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => handleStartEdit(key, index, trait)}
-                              className="pointer-events-auto rounded p-0.5 text-zinc-600 hover:text-zinc-800 cursor-pointer"
-                              title="Edit attribute"
+                    </button>
+                  </div>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {(traits[key] ?? []).map((trait, index) => {
+                      const isEditing =
+                        editingTrait?.category === key &&
+                        editingTrait.index === index;
+
+                      return (
+                        <div
+                          key={`${key}-${trait}-${index}`}
+                          className={`group/trait relative flex items-center rounded border-none text-[10px] transition ${chipClass}`}
+                        >
+                          {isEditing ? (
+                            <input
+                              ref={editingInputRef}
+                              value={editingTrait.value}
+                              onChange={handleEditChange}
+                              onKeyDown={onEditInputKeyDown}
+                              className="flex-1 rounded border border-zinc-300 bg-white/80 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
                               aria-label={`Edit ${label} trait`}
-                            >
-                              <TbPencil size={12} />
-                            </button>
-                            <button
-                              onClick={() => handleRemoveTrait(key, index)}
-                              className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
-                              title="Remove attribute"
-                              aria-label={`Remove ${label} trait`}
-                            >
-                              <TbX size={12} />
-                            </button>
-                          </>
-                        )}
-                      </div>
+                            />
+                          ) : (
+                            <span className="flex-1 leading-snug pr-10 px-2 py-1 font-medium">
+                              {trait}
+                            </span>
+                          )}
+                          <div
+                            className={`absolute right-1 top-1/2 z-10 -translate-y-1/2 items-center ${
+                              isEditing
+                                ? "flex"
+                                : "hidden group-hover/trait:flex group-focus-within/trait:flex"
+                            }`}
+                          >
+                            {isEditing ? (
+                              <>
+                                <button
+                                  onClick={handleEditConfirm}
+                                  className="pointer-events-auto rounded p-0.5 text-green-500 hover:text-green-700 cursor-pointer"
+                                  title="Save attribute"
+                                  aria-label={`Save ${label} trait`}
+                                >
+                                  <TbCheck size={12} />
+                                </button>
+                                <button
+                                  onClick={handleEditCancel}
+                                  className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
+                                  title="Cancel editing"
+                                  aria-label={`Cancel editing ${label} trait`}
+                                >
+                                  <TbX size={12} />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => handleStartEdit(key, index, trait)}
+                                  className="pointer-events-auto rounded p-0.5 text-zinc-600 hover:text-zinc-800 cursor-pointer"
+                                  title="Edit attribute"
+                                  aria-label={`Edit ${label} trait`}
+                                >
+                                  <TbPencil size={12} />
+                                </button>
+                                <button
+                                  onClick={() => handleRemoveTrait(key, index)}
+                                  className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
+                                  title="Remove attribute"
+                                  aria-label={`Remove ${label} trait`}
+                                >
+                                  <TbX size={12} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {(traits[key] ?? []).length === 0 && (
+                      <span
+                        className={`rounded border border-dashed bg-white/70 px-2 py-1 text-[10px] ${emptyClass}`}
+                      >
+                        No {label.toLowerCase()} traits yet.
+                      </span>
+                    )}
+                  </div>
+                  {activeCategory === key && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        value={draftTraits[key]}
+                        onChange={(event) => handleDraftChange(key, event)}
+                        onKeyDown={(event) => onTraitInputKeyDown(key, event)}
+                        placeholder={`Add ${label.toLowerCase()} trait`}
+                        className="flex-1 rounded border border-zinc-300 bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleAddTrait(key)}
+                        className="flex cursor-pointer items-center justify-center rounded-full bg-white text-green-500 hover:text-green-700"
+                        aria-label={`Confirm ${label} trait`}
+                      >
+                        <TbCheck size={12} />
+                      </button>
                     </div>
-                  );
-                })}
-                {(traits[key] ?? []).length === 0 && (
-                  <span
-                    className={`rounded border border-dashed bg-white/70 px-2 py-1 text-[10px] ${emptyClass}`}
-                  >
-                    No {label.toLowerCase()} traits yet.
-                  </span>
-                )}
-              </div>
-              {activeCategory === key && (
-                <div className="mt-2 flex items-center gap-2">
-                  <input
-                    value={draftTraits[key]}
-                    onChange={(event) => handleDraftChange(key, event)}
-                    onKeyDown={(event) => onTraitInputKeyDown(key, event)}
-                    placeholder={`Add ${label.toLowerCase()} trait`}
-                    className="flex-1 rounded border border-zinc-300 bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleAddTrait(key)}
-                    className="flex cursor-pointer items-center justify-center rounded-full bg-white text-green-500 hover:text-green-700"
-                    aria-label={`Confirm ${label} trait`}
-                  >
-                    <TbCheck size={12} />
-                  </button>
-                </div>
-              )}
-            </section>
-          ),
-        )}
+                  )}
+                </section>
+              ),
+            )}
+          </div>
+        </div>
+        <CustomHandle type="source" position={Position.Top} id="perspective" />
       </div>
-      <CustomHandle type="source" position={Position.Top} id="perspective" />
     </div>
   );
 }
