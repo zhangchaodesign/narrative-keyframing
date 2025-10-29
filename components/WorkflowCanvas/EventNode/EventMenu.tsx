@@ -2,9 +2,10 @@
 
 import { useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { TbCopy, TbTrash } from "react-icons/tb";
+import { TbArrowLeft, TbArrowRight, TbCopy, TbTrash } from "react-icons/tb";
 
 import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
+import { useEventAdjacency } from "@/components/WorkflowCanvas/EventNode/useEventAdjacency";
 
 type EventMenuProps = {
   nodeId: string;
@@ -27,6 +28,7 @@ function cloneData<DataType>(data: DataType): DataType {
 
 export function EventMenu({ nodeId, nodeType }: EventMenuProps) {
   const { setNodes, setEdges } = useReactFlow<WorkflowNode, WorkflowEdge>();
+  const { handleAddAdjacentEvent } = useEventAdjacency(nodeId);
 
   const handleDelete = useCallback(() => {
     setNodes((nodes) => nodes.filter((node) => node.id !== nodeId));
@@ -70,6 +72,24 @@ export function EventMenu({ nodeId, nodeType }: EventMenuProps) {
 
   return (
     <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+      <button
+        type="button"
+        onClick={() => handleAddAdjacentEvent("before")}
+        className="pointer-events-auto cursor-pointer rounded-full p-1 transition hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500"
+        title="Add event before"
+        aria-label="Add event before"
+      >
+        <TbArrowLeft size={12} />
+      </button>
+      <button
+        type="button"
+        onClick={() => handleAddAdjacentEvent("after")}
+        className="pointer-events-auto cursor-pointer rounded-full p-1 transition hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500"
+        title="Add event after"
+        aria-label="Add event after"
+      >
+        <TbArrowRight size={12} />
+      </button>
       <button
         type="button"
         onClick={handleDuplicate}
