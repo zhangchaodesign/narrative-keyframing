@@ -223,7 +223,7 @@ export function WorkflowCanvas() {
       <div className="absolute left-3 top-3 z-20 flex flex-col gap-2">
         <button
           type="button"
-          className="btn btn-neutral btn-xs"
+          className="btn btn-xs"
           onClick={handleAddFirstPersonCluster}
         >
           Add a First-Person Limited Cluster
