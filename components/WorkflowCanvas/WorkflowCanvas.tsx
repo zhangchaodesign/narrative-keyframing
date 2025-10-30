@@ -241,14 +241,22 @@ export function WorkflowCanvas() {
   return (
     <div className="h-full min-h-0 w-full relative">
       <div className="absolute left-1/2 top-4 -translate-x-1/2 z-20">
-        <div className="">
+        <div className="flex gap-2">
           <button
             type="button"
-            className="btn btn-sm btn-neutral"
+            className="btn btn-xs btn-soft btn-secondary"
             onClick={handleAddFirstPersonCluster}
           >
             <TbPlus size={16} />
             Add a First-Person Limited Cluster
+          </button>
+          <button
+            type="button"
+            className="btn btn-xs btn-soft btn-error hover:text-white"
+            onClick={() => {}}
+          >
+            <TbPlus size={16} />
+            Add a Third-Person Omniscient Cluster
           </button>
         </div>
       </div>
