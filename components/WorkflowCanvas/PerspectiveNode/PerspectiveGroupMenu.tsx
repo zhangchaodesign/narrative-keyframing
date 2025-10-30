@@ -54,7 +54,10 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     const existingEdgeIds = new Set(currentEdges.map((edge) => edge.id));
     const idMap = new Map<string, string>();
 
-    const newGroupId = generateUniqueUuidId("perspective-group", existingNodeIds);
+    const newGroupId = generateUniqueUuidId(
+      "perspective-group",
+      existingNodeIds,
+    );
     existingNodeIds.add(newGroupId);
     idMap.set(nodeId, newGroupId);
 

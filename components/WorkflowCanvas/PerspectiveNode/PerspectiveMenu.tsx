@@ -18,8 +18,10 @@ const NARRATION_GROUP_RIGHT_PADDING = 24;
 const DEFAULT_NARRATION_GROUP_WIDTH = 1200;
 
 export function PerspectiveMenu({ nodeId, nodeType }: PerspectiveMenuProps) {
-  const { setNodes, setEdges, getNode, getNodes } =
-    useReactFlow<WorkflowNode, WorkflowEdge>();
+  const { setNodes, setEdges, getNode, getNodes } = useReactFlow<
+    WorkflowNode,
+    WorkflowEdge
+  >();
   const runPerspectives = useContext(RunPerspectiveContext);
 
   const handleDelete = useCallback(() => {

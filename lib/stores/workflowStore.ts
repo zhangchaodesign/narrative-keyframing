@@ -85,12 +85,11 @@ const synchronizeCharacterPerspectiveLinks = (
           },
           perspectiveId: "",
         }),
-        traits:
-          currentData?.traits ?? {
-            physiology: [],
-            psychology: [],
-            sociology: [],
-          },
+        traits: currentData?.traits ?? {
+          physiology: [],
+          psychology: [],
+          sociology: [],
+        },
         perspectiveId: "",
       };
 
@@ -118,10 +117,7 @@ const synchronizeCharacterPerspectiveLinks = (
       return;
     }
 
-    if (
-      sourceNode.type === "perspective" &&
-      targetNode.type === "character"
-    ) {
+    if (sourceNode.type === "perspective" && targetNode.type === "character") {
       characterAssignments.set(targetNode.id, sourceNode.id);
     }
   });
@@ -143,12 +139,11 @@ const synchronizeCharacterPerspectiveLinks = (
 
     updated = true;
 
-    const baseTraits =
-      currentData?.traits ?? {
-        physiology: [],
-        psychology: [],
-        sociology: [],
-      };
+    const baseTraits = currentData?.traits ?? {
+      physiology: [],
+      psychology: [],
+      sociology: [],
+    };
 
     const nextData: CharacterNodeType["data"] = {
       ...(currentData ?? {
