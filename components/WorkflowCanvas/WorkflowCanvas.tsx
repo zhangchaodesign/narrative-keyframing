@@ -51,7 +51,7 @@ function nodeColor(node: WorkflowNode) {
     case "perspective":
       return "oklch(88.2% 0.059 254.128)";
     case "character":
-      return "oklch(90.1% 0.076 70.697)";
+      return "oklch(95.4% 0.038 75.164)";
     default:
       return "#67cc8a";
   }
