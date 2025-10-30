@@ -40,6 +40,10 @@
     overscroll-behavior: contain;
     scrollbar-gutter: stable both-edges; /* optional: keeps layout from shifting */
   }
+
+  button {
+    @apply cursor-pointer;
+  }
 }
 
 @utility btn {
