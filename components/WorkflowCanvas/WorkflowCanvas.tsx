@@ -31,7 +31,7 @@ import {
 import {
   preparePerspectiveRequest,
   type GeneratePerspectiveResponse,
-} from "@/lib/workflow/perspective";
+} from "@/lib/perspective";
 
 const nodeTypes: NodeTypes = {
   event: EventNode,
