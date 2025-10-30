@@ -1,7 +1,12 @@
 "use client";
 
 import { useCallback, type ChangeEvent } from "react";
-import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
+import {
+  Position,
+  type NodeProps,
+  useReactFlow,
+  useStore,
+} from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { PerspectiveGroupMenu } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveGroupMenu";
 import type {
@@ -14,7 +19,10 @@ import type {
 import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
 
+const zoomSelector = (s: any) => s.transform[2] >= 0.9;
+
 export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
+  const showContent = useStore(zoomSelector);
   const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
 
   const handleCharacterNameChange = useCallback(
@@ -95,6 +103,24 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
             className="w-28 rounded border border-transparent bg-zinc-50 px-2 py-0.5 font-medium normal-case text-zinc-700 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400"
           />
         </label>
+      </div>
+      {/* {!showContent && (
+        <div
+          className={cn(
+            geistMono.className,
+            "absolute left-4 bottom-1 text-blue-200/75 text-9xl font-semibold",
+          )}
+        >
+          {data?.characterName}
+        </div>
+      )} */}
+      <div
+        className={cn(
+          geistMono.className,
+          "absolute left-4 bottom-1 text-blue-200/75 text-9xl font-semibold",
+        )}
+      >
+        {data?.characterName}
       </div>
       <CustomHandle type="target" position={Position.Top} id="group-bridge" />
     </div>

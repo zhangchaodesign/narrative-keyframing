@@ -2,14 +2,13 @@
 
 import { useCallback, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { TbCopy, TbPlayerPlay, TbTrash } from "react-icons/tb";
+import { TbPlayerPlay } from "react-icons/tb";
 
 import type {
   PerspectiveNodeType,
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
-import { duplicateWorkflowNode } from "@/lib/utils/workflowUtils";
 import {
   preparePerspectiveRequest,
   type GeneratePerspectiveResponse,
@@ -19,12 +18,8 @@ type PerspectiveMenuProps = {
   nodeId: string;
 };
 
-const PERSPECTIVE_NODE_WIDTH = 256;
-const NARRATION_GROUP_RIGHT_PADDING = 24;
-const DEFAULT_NARRATION_GROUP_WIDTH = 1200;
-
 export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
-  const { setNodes, setEdges, getNode, getNodes, getEdges } = useReactFlow<
+  const { setNodes, getNode, getNodes, getEdges } = useReactFlow<
     WorkflowNode,
     WorkflowEdge
   >();
@@ -167,119 +162,6 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
     [isGenerating, getNodes, getEdges, setNodes],
   );
 
-  const handleDelete = useCallback(() => {
-    const nodesSnapshot = getNodes();
-    const targetNode = nodesSnapshot.find(
-      (node) => node.id === nodeId && node.type === "perspective",
-    );
-    if (!targetNode) {
-      return;
-    }
-
-    const parentId = (targetNode as { parentId?: string }).parentId ?? null;
-
-    const nodesWithoutTarget = nodesSnapshot.filter(
-      (node) => node.id !== nodeId,
-    );
-
-    let clusterSequence: string[] = [];
-    let adjustedNodes: WorkflowNode[] = nodesWithoutTarget;
-
-    if (parentId) {
-      const clusterNodes = nodesWithoutTarget
-        .filter(
-          (node): node is WorkflowNode & { parentId?: string } =>
-            node.type === "perspective" && node.parentId === parentId,
-        )
-        .sort((nodeA, nodeB) => nodeA.position.x - nodeB.position.x);
-
-      clusterSequence = clusterNodes.map((node) => node.id);
-
-      let nextWidth = DEFAULT_NARRATION_GROUP_WIDTH;
-      if (clusterNodes.length > 0) {
-        let rightmostEdge = 0;
-        clusterNodes.forEach((node) => {
-          rightmostEdge = Math.max(
-            rightmostEdge,
-            node.position.x + PERSPECTIVE_NODE_WIDTH,
-          );
-        });
-        nextWidth = Math.max(
-          DEFAULT_NARRATION_GROUP_WIDTH,
-          rightmostEdge + NARRATION_GROUP_RIGHT_PADDING,
-        );
-      }
-
-      adjustedNodes = nodesWithoutTarget.map((node) => {
-        if (node.type === "perspectiveGroup" && node.id === parentId) {
-          return {
-            ...node,
-            style: {
-              ...node.style,
-              width: nextWidth,
-            },
-          } as WorkflowNode;
-        }
-        return node;
-      });
-    }
-
-    setNodes(() => adjustedNodes);
-
-    setEdges((edges) => {
-      const clusterSet = new Set(clusterSequence);
-      const preservedEdges = edges.filter((edge) => {
-        if (edge.source === nodeId || edge.target === nodeId) {
-          return false;
-        }
-
-        const isClusterChainEdge =
-          edge.sourceHandle === "perspective-next" &&
-          edge.targetHandle === "perspective-prev" &&
-          clusterSet.has(edge.source) &&
-          clusterSet.has(edge.target);
-        if (isClusterChainEdge) {
-          return false;
-        }
-
-        return true;
-      });
-
-      if (!parentId || clusterSequence.length < 2) {
-        return preservedEdges;
-      }
-
-      const baseEdgeId = `edge-${parentId}-${Date.now()}`;
-      const rebuiltEdges: WorkflowEdge[] = clusterSequence
-        .slice(0, -1)
-        .map((sourceId, indexPosition) => ({
-          id: `${baseEdgeId}-${indexPosition}`,
-          source: sourceId,
-          target: clusterSequence[indexPosition + 1]!,
-          sourceHandle: "perspective-next",
-          targetHandle: "perspective-prev",
-          type: "customEdge",
-          animated: true,
-        }));
-
-      return [...preservedEdges, ...rebuiltEdges];
-    });
-  }, [getNodes, nodeId, setEdges, setNodes]);
-
-  const handleDuplicate = useCallback(() => {
-    setNodes((nodes) => {
-      const original = nodes.find((node) => node.id === nodeId);
-      if (!original) {
-        return nodes;
-      }
-
-      const existingIds = new Set(nodes.map((node) => node.id));
-      const duplicatedNode = duplicateWorkflowNode(original, existingIds);
-
-      return [...nodes, duplicatedNode];
-    });
-  }, [nodeId, setNodes]);
-
   const handleRun = useCallback(() => {
     const currentNode = getNode(nodeId);
     const parentId = (currentNode as { parentId?: string }).parentId;
@@ -306,25 +188,6 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
         aria-label="Run perspective"
       >
         <TbPlayerPlay size={12} />
-      </button>
-
-      <button
-        type="button"
-        onClick={handleDuplicate}
-        className="pointer-events-auto rounded-full p-1 transition hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500 cursor-pointer"
-        title="Duplicate node"
-        aria-label="Duplicate node"
-      >
-        <TbCopy size={12} />
-      </button>
-      <button
-        type="button"
-        onClick={handleDelete}
-        className="pointer-events-auto rounded-full p-1 text-red-500 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-red-500 cursor-pointer"
-        title="Delete node"
-        aria-label="Delete node"
-      >
-        <TbTrash size={12} />
       </button>
     </div>
   );
