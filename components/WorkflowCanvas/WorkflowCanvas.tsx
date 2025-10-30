@@ -55,10 +55,6 @@ export function WorkflowCanvas() {
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const setEdges = useWorkflowStore((state) => state.setEdges);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [runStatus, setRunStatus] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -234,7 +230,6 @@ export function WorkflowCanvas() {
         return;
       }
 
-      setRunStatus(null);
       setIsGenerating(true);
       let loadingNodeIds: Set<string> | null = null;
 
@@ -246,10 +241,6 @@ export function WorkflowCanvas() {
         });
 
         if (!preparation) {
-          setRunStatus({
-            type: "error",
-            message: "No perspective nodes were eligible for generation.",
-          });
           return;
         }
 
@@ -306,10 +297,6 @@ export function WorkflowCanvas() {
           .filter((entry): entry is readonly [string, string] => entry != null);
 
         if (orderedUpdates.length === 0) {
-          setRunStatus({
-            type: "error",
-            message: "No perspective updates were returned.",
-          });
           return;
         }
 
@@ -341,17 +328,8 @@ export function WorkflowCanvas() {
             return node;
           }),
         );
-
-        setRunStatus(null);
       } catch (error) {
         console.error("Error generating perspectives:", error);
-        setRunStatus({
-          type: "error",
-          message:
-            error instanceof Error
-              ? error.message
-              : "Unexpected error generating perspectives.",
-        });
       } finally {
         if (loadingNodeIds) {
           setNodes((currentNodes) =>
@@ -391,9 +369,6 @@ export function WorkflowCanvas() {
           >
             Add a First-Person Limited Cluster
           </button>
-          {runStatus && (
-            <p className="text-[11px] text-red-500">{runStatus.message}</p>
-          )}
         </div>
         <ReactFlow
           nodes={nodes}

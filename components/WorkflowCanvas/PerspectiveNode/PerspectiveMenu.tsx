@@ -10,14 +10,13 @@ import { duplicateWorkflowNode } from "@/lib/utils/workflowUtils";
 
 type PerspectiveMenuProps = {
   nodeId: string;
-  nodeType: WorkflowNode["type"];
 };
 
 const PERSPECTIVE_NODE_WIDTH = 256;
 const NARRATION_GROUP_RIGHT_PADDING = 24;
 const DEFAULT_NARRATION_GROUP_WIDTH = 1200;
 
-export function PerspectiveMenu({ nodeId, nodeType }: PerspectiveMenuProps) {
+export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
   const { setNodes, setEdges, getNode, getNodes } = useReactFlow<
     WorkflowNode,
     WorkflowEdge
@@ -138,31 +137,20 @@ export function PerspectiveMenu({ nodeId, nodeType }: PerspectiveMenuProps) {
   }, [nodeId, setNodes]);
 
   const handleRun = useCallback(() => {
-    if (!runPerspectives) {
-      return;
-    }
-
     const currentNode = getNode(nodeId);
-    if (!currentNode) {
-      runPerspectives();
-      return;
-    }
-
     const parentId = (currentNode as { parentId?: string }).parentId;
-
-    if (!parentId) {
-      runPerspectives([nodeId]);
-      return;
-    }
-
     const siblingPerspectiveIds = getNodes()
       .filter(
         (node) => node.type === "perspective" && node.parentId === parentId,
       )
       .map((node) => node.id);
 
-    if (siblingPerspectiveIds.length === 0) {
-      runPerspectives([nodeId]);
+    if (
+      !runPerspectives ||
+      !parentId ||
+      !currentNode ||
+      siblingPerspectiveIds.length === 0
+    ) {
       return;
     }
 

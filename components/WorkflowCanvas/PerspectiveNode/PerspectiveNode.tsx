@@ -199,7 +199,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           </span>
         </div>
       )}
-      <PerspectiveMenu nodeId={id} nodeType="perspective" />
+      <PerspectiveMenu nodeId={id} />
       <div
         className={cn(
           geistMono.className,
