@@ -1,10 +1,8 @@
-import type { EventNodeType, WorkflowNode, WorkflowEdge } from "@/lib/types/workflow";
-
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
-export const CLONE_OFFSET = 40;
+import type {
+  EventNodeType,
+  WorkflowNode,
+  WorkflowEdge,
+} from "@/lib/types/workflow";
 
 // ============================================================================
 // DATA UTILITIES
@@ -37,7 +35,9 @@ export function cloneData<DataType>(data: DataType): DataType {
  * @param timeline Timeline string (e.g., "Event 1", "1", etc.)
  * @returns Numeric index or null if not found
  */
-export const parseEventTimelineIndex = (timeline?: string | null): number | null => {
+export const parseEventTimelineIndex = (
+  timeline?: string | null,
+): number | null => {
   if (!timeline) {
     return null;
   }
@@ -178,13 +178,13 @@ export const generateUniqueUuidId = (
  * Duplicate a workflow node with a new ID and offset position
  * @param node Node to duplicate
  * @param existingIds Set of existing node IDs
- * @param offset Position offset for the duplicated node (default: CLONE_OFFSET)
+ * @param offset Position offset for the duplicated node (default: 40)
  * @returns Duplicated node with new ID and offset position
  */
 export const duplicateWorkflowNode = (
   node: WorkflowNode,
   existingIds: Set<string>,
-  offset: number = CLONE_OFFSET,
+  offset: number = 40,
 ): WorkflowNode => {
   const newId = generateUniqueIncrementalId(node.id, existingIds);
 
@@ -236,7 +236,10 @@ export const deleteNodeCluster = (
   const clusterNodeIds = new Set<string>();
 
   nodes.forEach((node) => {
-    if (node.id === parentNodeId || (node as { parentId?: string }).parentId === parentNodeId) {
+    if (
+      node.id === parentNodeId ||
+      (node as { parentId?: string }).parentId === parentNodeId
+    ) {
       clusterNodeIds.add(node.id);
     }
   });
