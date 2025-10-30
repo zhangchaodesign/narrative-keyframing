@@ -25,9 +25,9 @@ type PerspectiveMenuProps = {
 const READY_TO_ANALYZE_MESSAGE = "Ready to analyze evidence.";
 const NEED_REFLECTION_MESSAGE = "Add a reflection to analyze evidence.";
 const ANALYZING_EVIDENCE_MESSAGE = "Analyzing evidence...";
-const ANALYSIS_COMPLETE_MESSAGE = "Evidence analysis complete.";
 const ANALYSIS_FAILED_MESSAGE = "Evidence analysis failed. Try again.";
 const NO_CHARACTERS_MESSAGE = "No characters available to analyze.";
+const NO_EVIDENCE_FOUND_MESSAGE = "No supporting evidence found.";
 
 export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
   const { setNodes, getNode, getNodes, getEdges } = useReactFlow<
@@ -173,6 +173,7 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
                   analysisStatusMessage: hasContent
                     ? undefined
                     : NEED_REFLECTION_MESSAGE,
+                  analysisEvidence: hasContent ? [] : undefined,
                 },
               };
             }
@@ -233,6 +234,7 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
         analysisStatusMessage: hasReflection
           ? NO_CHARACTERS_MESSAGE
           : NEED_REFLECTION_MESSAGE,
+        analysisEvidence: [],
       });
       return;
     }
@@ -243,6 +245,21 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
         isAnalyzingEvidence: false,
         analysisStatus: "idle",
         analysisStatusMessage: NEED_REFLECTION_MESSAGE,
+        analysisEvidence: [],
+      });
+      return;
+    }
+
+    const hasCharacterAttributes = target.characters.some((character) =>
+      character.attributes.some((attribute) => attribute.value.trim().length > 0),
+    );
+
+    if (!hasCharacterAttributes) {
+      updateAnalysisState({
+        isAnalyzingEvidence: false,
+        analysisStatus: "idle",
+        analysisStatusMessage: NO_CHARACTERS_MESSAGE,
+        analysisEvidence: [],
       });
       return;
     }
@@ -251,6 +268,7 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
       isAnalyzingEvidence: true,
       analysisStatus: "running",
       analysisStatusMessage: ANALYZING_EVIDENCE_MESSAGE,
+      analysisEvidence: [],
     });
 
     try {
@@ -272,10 +290,21 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
 
       const data = (await response.json()) as EvidenceAnalysisResponse | null;
       console.log("Evidence analysis result:", data);
+      const evidence = data?.characterEvidence ?? [];
+      const supportedCharacters = evidence.filter(
+        (entry) => entry.items.length > 0,
+      );
+      const successMessage =
+        supportedCharacters.length > 0
+          ? supportedCharacters
+              .map((entry) => `Found evidence for ${entry.characterName}`)
+              .join(", ")
+          : NO_EVIDENCE_FOUND_MESSAGE;
       updateAnalysisState({
         isAnalyzingEvidence: false,
         analysisStatus: "success",
-        analysisStatusMessage: ANALYSIS_COMPLETE_MESSAGE,
+        analysisStatusMessage: successMessage,
+        analysisEvidence: evidence,
       });
     } catch (error) {
       console.error("Error analyzing character evidence:", error);
@@ -283,6 +312,7 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
         isAnalyzingEvidence: false,
         analysisStatus: "error",
         analysisStatusMessage: ANALYSIS_FAILED_MESSAGE,
+        analysisEvidence: [],
       });
     }
   }, [

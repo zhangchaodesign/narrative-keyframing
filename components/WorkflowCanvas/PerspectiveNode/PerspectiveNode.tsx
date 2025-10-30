@@ -29,6 +29,7 @@ const NEED_REFLECTION_MESSAGE = "Add a reflection to analyze evidence.";
 const ANALYSIS_COMPLETE_MESSAGE = "Evidence analysis complete.";
 const ANALYSIS_FAILED_MESSAGE = "Evidence analysis failed. Try again.";
 const NO_CHARACTERS_MESSAGE = "No characters available to analyze.";
+const NO_EVIDENCE_FOUND_MESSAGE = "No supporting evidence found.";
 
 export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const { setNodes, setEdges, getNode } = useReactFlow<
@@ -200,7 +201,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   }, [edges, getNode, id, nodes, setEdges, setNodes]);
 
   return (
-    <div className="group relative flex h-44 w-64 flex-col rounded-lg border-2 border-secondary bg-white p-3 text-xs hover:shadow-lg">
+    <div className="group relative flex gap-2 h-48 w-64 flex-col rounded-lg border-2 border-secondary bg-white p-3 text-xs hover:shadow-lg">
       {isLoading && (
         <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
           <span className="loading loading-spinner text-secondary"></span>
@@ -213,53 +214,57 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       <div
         className={cn(
           geistMono.className,
-          "flex w-full flex-wrap items-center gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase",
+          "flex flex-col w-full gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase",
         )}
       >
         <span className="flex items-center">💬 Perspective</span>
-      </div>
-      {(() => {
-        let labelText: string;
-        let labelClass = "text-zinc-400";
+        {(() => {
+          let labelText: string;
+          let labelClass = "text-zinc-400";
 
-        if (isAnalyzingEvidence) {
-          labelText = ANALYZING_EVIDENCE_MESSAGE;
-          labelClass = "text-blue-600";
-        } else if (analysisStatus === "success") {
-          labelText = analysisStatusMessage || ANALYSIS_COMPLETE_MESSAGE;
-          labelClass = "text-green-600";
-        } else if (analysisStatus === "error") {
-          labelText = analysisStatusMessage || ANALYSIS_FAILED_MESSAGE;
-          labelClass = "text-red-600";
-        } else if (!hasReflectionContent) {
-          labelText = NEED_REFLECTION_MESSAGE;
-        } else if (analysisStatusMessage) {
-          if (analysisStatusMessage === NEED_REFLECTION_MESSAGE) {
-            labelText = READY_TO_ANALYZE_MESSAGE;
-          } else {
-            labelText = analysisStatusMessage;
-            if (analysisStatusMessage === NO_CHARACTERS_MESSAGE) {
-              labelClass = "text-amber-600";
+          if (isAnalyzingEvidence) {
+            labelText = ANALYZING_EVIDENCE_MESSAGE;
+            labelClass = "text-blue-600";
+          } else if (analysisStatus === "success") {
+            labelText = analysisStatusMessage || ANALYSIS_COMPLETE_MESSAGE;
+            labelClass = "text-green-600";
+          } else if (analysisStatus === "error") {
+            labelText = analysisStatusMessage || ANALYSIS_FAILED_MESSAGE;
+            labelClass = "text-red-600";
+          } else if (!hasReflectionContent) {
+            labelText = NEED_REFLECTION_MESSAGE;
+          } else if (analysisStatusMessage) {
+            if (analysisStatusMessage === NEED_REFLECTION_MESSAGE) {
+              labelText = READY_TO_ANALYZE_MESSAGE;
+            } else {
+              labelText = analysisStatusMessage;
+              if (
+                analysisStatusMessage === NO_CHARACTERS_MESSAGE ||
+                analysisStatusMessage === NO_EVIDENCE_FOUND_MESSAGE
+              ) {
+                labelClass = "text-amber-600";
+              }
             }
+          } else {
+            labelText = READY_TO_ANALYZE_MESSAGE;
           }
-        } else {
-          labelText = READY_TO_ANALYZE_MESSAGE;
-        }
 
-        return (
-          <div
-            className={cn(
-              geistMono.className,
-              "mt-1 text-[9px] font-medium uppercase tracking-wide",
-              labelClass,
-            )}
-          >
-            {labelText}
-          </div>
-        );
-      })()}
+          return (
+            <div
+              className={cn(
+                geistMono.className,
+                "text-[9px] font-medium uppercase tracking-wide",
+                labelClass,
+              )}
+            >
+              {labelText}
+            </div>
+          );
+        })()}
+      </div>
+
       <div
-        className="mt-2 flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800"
+        className="flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800"
         onWheel={(event) => {
           if (event.ctrlKey || event.metaKey) {
             return;
@@ -278,7 +283,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         {data?.reflection}
       </div>
       {eventTimeline && (
-        <div className="mt-2 flex gap-2">
+        <div className="mt-1 flex gap-2">
           <span
             className={cn(
               geistMono.className,

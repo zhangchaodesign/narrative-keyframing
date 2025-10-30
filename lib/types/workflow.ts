@@ -13,6 +13,7 @@ export type PerspectiveNodeData = {
   isAnalyzingEvidence?: boolean;
   analysisStatus?: "idle" | "running" | "success" | "error";
   analysisStatusMessage?: string;
+  analysisEvidence?: PerspectiveEvidenceItem[];
 };
 
 export type CharacterTraits = {
@@ -25,6 +26,15 @@ export type CharacterNodeData = {
   name: string;
   traits: CharacterTraits;
   perspectiveId: string;
+};
+
+export type PerspectiveEvidenceItem = {
+  characterName: string;
+  items: Array<{
+    text: string;
+    category: string;
+    attributes: string[];
+  }>;
 };
 
 export type GroupNodeData = {
