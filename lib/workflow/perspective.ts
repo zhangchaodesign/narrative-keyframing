@@ -44,7 +44,6 @@ type PositionedCharacterSnapshot = CharacterSnapshotPayload & {
 
 export const preparePerspectiveRequest = ({
   nodes,
-  edges,
   targetNodeIds,
 }: {
   nodes: WorkflowNode[];
@@ -56,6 +55,9 @@ export const preparePerspectiveRequest = ({
   );
   const perspectiveNodes = nodes.filter(
     (node): node is PerspectiveNodeType => node.type === "perspective",
+  );
+  const characterNodes = nodes.filter(
+    (node): node is CharacterNodeType => node.type === "character",
   );
 
   const sortedEventNodes = sortEventsByTimeline(eventNodes);
@@ -116,16 +118,6 @@ export const preparePerspectiveRequest = ({
       const eventOrder =
         eventOrderMap.get(eventNode.id) ?? Number.MAX_SAFE_INTEGER;
 
-      const characterEdges = edges.filter((edge) => {
-        if (edge.target === perspectiveNode.id) {
-          return edge.targetHandle === "character";
-        }
-        if (edge.source === perspectiveNode.id) {
-          return edge.sourceHandle === "character";
-        }
-        return false;
-      });
-
       const eventLabel =
         eventNode.data?.timeline?.trim() ||
         eventNode.data?.description?.trim() ||
@@ -139,21 +131,13 @@ export const preparePerspectiveRequest = ({
       const fallbackNarratorName =
         perspectiveNode.data?.narrator?.trim() || "Narrator";
 
-      let characterSnapshots = characterEdges
-        .map((characterEdge) => {
-          const connectedId =
-            characterEdge.source === perspectiveNode.id
-              ? characterEdge.target
-              : characterEdge.source;
-          const characterNode = nodes.find(
-            (node): node is CharacterNodeType =>
-              node.id === connectedId && node.type === "character",
-          );
-
-          if (!characterNode) {
-            return null;
-          }
-
+      let characterSnapshots = characterNodes
+        .filter((characterNode) => {
+          const assignedPerspectiveId =
+            characterNode.data?.perspectiveId?.trim() ?? "";
+          return assignedPerspectiveId === perspectiveNode.id;
+        })
+        .map((characterNode) => {
           const name = characterNode.data?.name?.trim() || characterNode.id;
           const traits = characterNode.data?.traits ?? {
             physiology: [],
@@ -162,7 +146,6 @@ export const preparePerspectiveRequest = ({
           };
 
           return {
-            id: characterNode.id,
             name,
             positionX: characterNode.position.x,
             traits: {
@@ -172,28 +155,9 @@ export const preparePerspectiveRequest = ({
             },
           };
         })
-        .filter(
-          (
-            snapshot,
-          ): snapshot is PositionedCharacterSnapshot & { id: string } =>
-            snapshot != null,
-        )
-        .reduce<
-          Array<
-            PositionedCharacterSnapshot & {
-              id: string;
-            }
-          >
-        >((accumulator, snapshot) => {
-          if (accumulator.some((item) => item.id === snapshot.id)) {
-            return accumulator;
-          }
-          accumulator.push(snapshot);
-          return accumulator;
-        }, [])
-        .sort((a, b) => a.positionX - b.positionX)
+        // .sort((a, b) => a.positionX - b.positionX)
         .map((snapshot) => {
-          const { positionX: _ignore, id: _omitId, ...rest } = snapshot;
+          const { positionX: _ignore, ...rest } = snapshot;
           return rest;
         });
 

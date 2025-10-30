@@ -2,7 +2,6 @@
 
 import { useCallback, type ChangeEvent } from "react";
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
-import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { EventHandle } from "@/components/WorkflowCanvas/EventNode/EventHandle";
 import { EventMenu } from "@/components/WorkflowCanvas/EventNode/EventMenu";
 import { AddEventButton } from "@/components/WorkflowCanvas/EventNode/AddEventButton";
