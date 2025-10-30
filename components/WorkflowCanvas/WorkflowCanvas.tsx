@@ -40,6 +40,23 @@ const edgeTypes: EdgeTypes = {
   customEdge: CustomEdge,
 };
 
+function nodeColor(node: WorkflowNode) {
+  switch (node.type) {
+    case "eventGroup":
+      return "oklch(98.2% 0.018 155.826)";
+    case "perspectiveGroup":
+      return "oklch(97% 0.014 254.604)";
+    case "event":
+      return "oklch(92.5% 0.084 155.995)";
+    case "perspective":
+      return "oklch(88.2% 0.059 254.128)";
+    case "character":
+      return "oklch(90.1% 0.076 70.697)";
+    default:
+      return "#67cc8a";
+  }
+}
+
 export function WorkflowCanvas() {
   const proOptions = { hideAttribution: true };
 
@@ -246,7 +263,7 @@ export function WorkflowCanvas() {
       >
         <Background />
         <Controls position="bottom-left" />
-        <MiniMap zoomable pannable />
+        <MiniMap zoomable pannable nodeColor={nodeColor} />
       </ReactFlow>
     </div>
   );
