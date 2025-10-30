@@ -51,6 +51,7 @@ export type PerspectiveEvidenceTarget = {
   perspectiveId: string;
   reflection: string;
   characters: CharacterEvidenceTarget[];
+  groupContext: string;
 };
 
 export type EvidenceAnalysisRequest = PerspectiveEvidenceTarget | null;
@@ -107,9 +108,11 @@ const collectAttributes = (
 const buildTarget = ({
   node,
   characters,
+  groupContext,
 }: {
   node: PerspectiveNodeType;
   characters: CharacterEvidenceTarget[];
+  groupContext: string;
 }): PerspectiveEvidenceTarget => {
   const reflectionRaw = node.data?.reflection;
   const reflection = typeof reflectionRaw === "string" ? reflectionRaw : "";
@@ -118,6 +121,7 @@ const buildTarget = ({
     perspectiveId: node.id,
     reflection,
     characters,
+    groupContext,
   };
 };
 
@@ -253,6 +257,20 @@ export const prepareEvidenceAnalysis = ({
   );
   const characterMap = new Map(characterNodes.map((node) => [node.id, node]));
 
+  const buildGroupContext = (perspective: PerspectiveNodeType): string => {
+    const parentId = perspective.parentId;
+    if (!parentId) {
+      return "";
+    }
+
+    return perspectiveNodes
+      .filter((sibling) => sibling.parentId === parentId)
+      .sort((a, b) => a.position.x - b.position.x || a.position.y - b.position.y)
+      .map((sibling) => (sibling.data?.reflection ?? "").trim())
+      .filter((reflection) => reflection.length > 0)
+      .join("\n\n");
+  };
+
   const targetPerspective = perspectiveMap.get(perspectiveId);
   if (!targetPerspective) {
     return null;
@@ -268,6 +286,7 @@ export const prepareEvidenceAnalysis = ({
     return buildTarget({
       node: targetPerspective,
       characters: primaryCharacters,
+      groupContext: buildGroupContext(targetPerspective),
     });
   } else {
     const fallbackCharacters: CharacterEvidenceTarget[] = [];
@@ -298,6 +317,7 @@ export const prepareEvidenceAnalysis = ({
       return buildTarget({
         node: targetPerspective,
         characters: fallbackCharacters,
+        groupContext: buildGroupContext(targetPerspective),
       });
     }
   }

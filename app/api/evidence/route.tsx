@@ -18,6 +18,7 @@ const EvidenceCategorySchema = z.enum(EVIDENCE_CATEGORIES);
 const EvidenceRequestSchema = z.object({
   perspectiveId: z.string().min(1),
   reflection: z.string().optional().default(""),
+  groupContext: z.string().optional().default(""),
   characters: z.array(
     z.object({
       characterName: z.string().min(1),
@@ -104,16 +105,23 @@ const buildEvidenceCategorySection = (): string => {
 const buildPrompt = ({
   characters,
   reflection,
+  groupContext,
 }: {
   characters: PerspectiveEvidenceTarget["characters"];
   reflection: string;
+  groupContext?: string;
 }): string => {
   const characterSection = buildCharacterSection(characters);
   const evidenceCategorySection = buildEvidenceCategorySection();
+  const trimmedContext = groupContext?.trim() ?? "";
+  const contextSection =
+    trimmedContext.length > 0
+      ? `Full story (background only—do NOT quote from this section):\n<<<\n${trimmedContext}\n>>>\n\n`
+      : "";
 
-  return `You are an expert literary analyst. Identify direct textual evidence (i.e., verbatim phrases from the first-person limited narrative told by the character) that confirms the given character attributes.
+  return `You are an expert literary analyst. Identify direct textual evidence (i.e., verbatim phrases) that confirms the given character attributes.
 
-Narrative (verbatim):
+${contextSection}Current snippet (ONLY source for evidence):
 <<<
 ${reflection}
 >>>
@@ -125,12 +133,12 @@ Evidence categories to classify each phrase:
 ${evidenceCategorySection}
 
 Instructions:
-1. Scan the narrative for exact short phrases that directly demonstrate each listed attribute.
-2. Only report evidence that appears verbatim in the narrative text.
+1. Scan the current snippet for exact short phrases that directly demonstrate each listed attribute.
+2. Only report evidence that appears verbatim in the current snippet text.
 3. If an attribute is not supported, do not invent evidence for it.
 4. When one phrase supports multiple attributes from the same category, list all matching attributes together.
 5. Assign each phrase to exactly one evidence category from the list above.
-7. Return JSON that matches the provided schema exactly. Do not include explanations outside the schema.
+6. Return JSON that matches the provided schema exactly. Do not include explanations outside the schema.
 `;
 };
 
@@ -229,7 +237,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const { perspectiveId, reflection = "", characters } = parsed.data;
+    const {
+      perspectiveId,
+      reflection = "",
+      characters,
+      groupContext = "",
+    } = parsed.data;
     const trimmedReflection = reflection.trim();
 
     const characterEvidence: EvidenceAnalysisResponse["characterEvidence"] = [];
@@ -258,6 +271,7 @@ export async function POST(request: Request) {
           const prompt = buildPrompt({
             characters: charactersWithAttributes,
             reflection: trimmedReflection,
+            groupContext,
           });
           console.log("Evidence analysis prompt:", prompt);
 
