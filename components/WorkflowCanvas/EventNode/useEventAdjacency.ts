@@ -117,7 +117,7 @@ const getPerspectiveEventIndex = (
 ) => {
   const perspectiveData =
     (nodeState.data as PerspectiveNodeType["data"] | undefined) ?? null;
-  const eventId = perspectiveData?.event?.trim();
+  const eventId = perspectiveData?.eventId?.trim();
   if (!eventId) {
     return null;
   }
@@ -338,16 +338,16 @@ const updatePerspectiveNode = ({
   const existingData = (nodeState.data as PerspectiveNodeType["data"]) ?? {
     narrator: "",
     reflection: "",
-    event: "",
+    eventId: "",
   };
   const assignedEventId =
-    perspectiveEventAssignments.get(nodeState.id) ?? existingData.event ?? "";
+    perspectiveEventAssignments.get(nodeState.id) ?? existingData.eventId ?? "";
   const dataWithEvent =
-    assignedEventId === existingData.event
+    assignedEventId === existingData.eventId
       ? existingData
       : {
           ...existingData,
-          event: assignedEventId,
+          eventId: assignedEventId,
         };
 
   return {
@@ -599,7 +599,7 @@ export function useEventAdjacency(nodeId: string) {
               narrator: narratorFallback,
               reflection: "",
               isLoading: false,
-              event: newEventId,
+              eventId: newEventId,
             },
             draggable: false,
             parentId: groupId,

@@ -43,14 +43,14 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
 
   // Find the event node and its timeline
   const eventTimeline = useMemo(() => {
-    if (!data?.event) {
+    if (!data?.eventId) {
       return null;
     }
     const eventNode = nodes.find(
-      (node) => node.id === data.event && node.type === "event",
+      (node) => node.id === data.eventId && node.type === "event",
     ) as EventNodeType | undefined;
-    return eventNode?.data?.timeline ?? data.event;
-  }, [data?.event, nodes]);
+    return eventNode?.data?.timeline ?? data.eventId;
+  }, [data?.eventId, nodes]);
 
   // keep character nodes aligned with perspective node
   useEffect(() => {
@@ -234,7 +234,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
               geistMono.className,
               "inline-flex items-center rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white",
             )}
-            title={`Event: ${data?.event}`}
+            title={`Event: ${data?.eventId}`}
           >
             {eventTimeline}
           </span>

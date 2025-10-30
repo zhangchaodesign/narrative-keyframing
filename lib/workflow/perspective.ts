@@ -107,7 +107,7 @@ export const preparePerspectiveRequest = ({
   const findEventForPerspective = (
     perspectiveNode: PerspectiveNodeType,
   ): EventNodeType | null => {
-    const eventId = perspectiveNode.data?.event?.trim();
+    const eventId = perspectiveNode.data?.eventId?.trim();
     if (eventId) {
       const explicitEvent = eventNodeMap.get(eventId);
       if (explicitEvent) {

@@ -9,7 +9,7 @@ export type PerspectiveNodeData = {
   narrator: string;
   reflection: string;
   isLoading?: boolean;
-  event: string;
+  eventId: string;
 };
 
 export type CharacterTraits = {
