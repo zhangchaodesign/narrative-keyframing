@@ -246,7 +246,7 @@ export function WorkflowCanvas() {
       >
         <Background />
         <Controls position="bottom-left" />
-        <MiniMap pannable zoomable />
+        <MiniMap zoomable pannable />
       </ReactFlow>
     </div>
   );
