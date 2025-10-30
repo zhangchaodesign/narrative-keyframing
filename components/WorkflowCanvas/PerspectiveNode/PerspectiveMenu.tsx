@@ -30,6 +30,11 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzingEvidence, setIsAnalyzingEvidence] = useState(false);
 
+  const currentNodeData = getNode(nodeId)?.data as
+    | PerspectiveNodeType["data"]
+    | undefined;
+  const hasReflection = Boolean(currentNodeData?.reflection?.trim());
+
   const handleGeneratePerspectives = useCallback(
     async (targetNodeIds?: string[]) => {
       if (isGenerating) {
@@ -188,6 +193,11 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
       return;
     }
 
+    if (!target.reflection.trim()) {
+      console.warn("Cannot analyze evidence for an empty reflection:", nodeId);
+      return;
+    }
+
     setIsAnalyzingEvidence(true);
 
     try {
@@ -236,23 +246,23 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
     <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
       <button
         type="button"
-        onClick={handleAnalyzeEvidence}
-        className="pointer-events-auto rounded-full p-1 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-        title="Analyze character evidence"
-        aria-label="Analyze character evidence"
-        disabled={isAnalyzingEvidence}
-      >
-        <TbListSearch size={12} />
-      </button>
-      <button
-        type="button"
         onClick={handleRun}
         className="pointer-events-auto rounded-full p-1 transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 disabled:cursor-not-allowed disabled:opacity-60"
-        title="Run perspective"
-        aria-label="Run perspective"
+        title="Generate first-person limited narration"
+        aria-label="Generate first-person limited narration"
         disabled={isGenerating}
       >
         <TbPlayerPlay size={12} />
+      </button>
+      <button
+        type="button"
+        onClick={handleAnalyzeEvidence}
+        className="pointer-events-auto rounded-full p-1 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+        title="Analyze textual evidence that supports character attributes"
+        aria-label="Analyze textual evidence that supports character attributes"
+        disabled={isAnalyzingEvidence || !hasReflection}
+      >
+        <TbListSearch size={12} />
       </button>
     </div>
   );
