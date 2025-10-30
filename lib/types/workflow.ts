@@ -29,6 +29,7 @@ export type CharacterNodeData = {
 };
 
 export type PerspectiveEvidenceItem = {
+  characterId: string;
   characterName: string;
   items: Array<{
     text: string;

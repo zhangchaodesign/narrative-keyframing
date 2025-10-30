@@ -16,6 +16,10 @@ import { CharacterMenu } from "@/components/WorkflowCanvas/CharacterNode/Charact
 import type { CharacterNodeType, CharacterTraits } from "@/lib/types/workflow";
 import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
+import {
+  buildEvidenceAttributeKey,
+  useWorkflowStore,
+} from "@/lib/stores/workflowStore";
 
 type TraitCategory = keyof CharacterTraits;
 
@@ -25,6 +29,7 @@ const TRAIT_CATEGORIES: Array<{
   titleClass: string;
   chipClass: string;
   emptyClass: string;
+  selectedClass: string;
 }> = [
   {
     key: "physiology",
@@ -33,6 +38,8 @@ const TRAIT_CATEGORIES: Array<{
     chipClass:
       "border-blue-200 bg-blue-50 text-blue-900 hover:bg-blue-100 focus-visible:ring focus-visible:ring-blue-200",
     emptyClass: "border-blue-200 text-blue-700",
+    selectedClass:
+      "border-transparent bg-blue-500 text-white hover:text-blue-600",
   },
   {
     key: "psychology",
@@ -41,6 +48,8 @@ const TRAIT_CATEGORIES: Array<{
     chipClass:
       "border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-100 focus-visible:ring focus-visible:ring-purple-200",
     emptyClass: "border-purple-200 text-purple-700",
+    selectedClass:
+      "border-transparent bg-purple-500 text-white hover:text-purple-600",
   },
   {
     key: "sociology",
@@ -49,6 +58,8 @@ const TRAIT_CATEGORIES: Array<{
     chipClass:
       "border-green-200 bg-green-50 text-green-900 hover:bg-green-100 focus-visible:ring focus-visible:ring-green-200",
     emptyClass: "border-green-200 text-green-700",
+    selectedClass:
+      "border-transparent bg-green-500 text-white hover:text-green-600",
   },
 ];
 
@@ -89,6 +100,15 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     };
   }, [data?.traits]);
   const characterName = data?.name?.trim() ?? "";
+  const selectedEvidenceAttributes = useWorkflowStore(
+    (state) => state.selectedEvidenceAttributes,
+  );
+  const toggleEvidenceAttribute = useWorkflowStore(
+    (state) => state.toggleEvidenceAttribute,
+  );
+  const clearEvidenceAttribute = useWorkflowStore(
+    (state) => state.clearEvidenceAttribute,
+  );
 
   const updateNodeData = useCallback(
     (
@@ -159,8 +179,15 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
 
   const handleRemoveTrait = useCallback(
     (category: TraitCategory, index: number) => {
+      const traitValue = traits[category]?.[index];
+      if (traitValue) {
+        clearEvidenceAttribute(id, traitValue);
+      }
+
       setEditingTrait((current) =>
-        current && current.category === category ? null : current,
+        current && current.category === category && current.index === index
+          ? null
+          : current,
       );
       updateNodeData((currentTraits, currentName, currentPerspectiveId) => ({
         name: currentName,
@@ -173,7 +200,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         perspectiveId: currentPerspectiveId,
       }));
     },
-    [updateNodeData],
+    [clearEvidenceAttribute, id, traits, updateNodeData],
   );
 
   const handleUpdateTrait = useCallback(
@@ -193,6 +220,11 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
           };
         }
 
+        const previousValue = categoryTraits[index];
+        if (previousValue) {
+          clearEvidenceAttribute(id, previousValue);
+        }
+
         categoryTraits[index] = trimmed;
 
         return {
@@ -205,7 +237,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         };
       });
     },
-    [updateNodeData],
+    [clearEvidenceAttribute, id, updateNodeData],
   );
 
   const handleStartEdit = useCallback(
@@ -272,6 +304,16 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     }
   }, [editingTrait]);
 
+  const handleToggleHighlight = useCallback(
+    (attribute: string) => {
+      if (!attribute.trim()) {
+        return;
+      }
+      toggleEvidenceAttribute(id, attribute);
+    },
+    [id, toggleEvidenceAttribute],
+  );
+
   return (
     <div className="group relative w-64">
       <div
@@ -328,7 +370,14 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
             }}
           >
             {TRAIT_CATEGORIES.map(
-              ({ key, label, titleClass, chipClass, emptyClass }) => (
+              ({
+                key,
+                label,
+                titleClass,
+                chipClass,
+                emptyClass,
+                selectedClass,
+              }) => (
                 <section key={key} className="">
                   <div className="flex items-center justify-between gap-2">
                     <h4
@@ -362,11 +411,19 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                       const isEditing =
                         editingTrait?.category === key &&
                         editingTrait.index === index;
+                      const attributeKey = buildEvidenceAttributeKey(id, trait);
+                      const isSelected = Boolean(
+                        selectedEvidenceAttributes[attributeKey],
+                      );
 
                       return (
                         <div
                           key={`${key}-${trait}-${index}`}
-                          className={`group/trait relative flex items-center rounded border-none text-[10px] transition ${chipClass}`}
+                          className={cn(
+                            "group/trait relative flex items-center rounded border text-[10px] transition",
+                            chipClass,
+                            isSelected && selectedClass,
+                          )}
                         >
                           {isEditing ? (
                             <input
@@ -378,9 +435,22 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                               aria-label={`Edit ${label} trait`}
                             />
                           ) : (
-                            <span className="flex-1 leading-snug pr-10 px-2 py-1 font-medium">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleToggleHighlight(trait);
+                              }}
+                              aria-pressed={isSelected}
+                              title={
+                                isSelected
+                                  ? "Hide supporting evidence highlight"
+                                  : "Highlight supporting evidence in perspectives"
+                              }
+                              className="flex-1 px-2 py-1 pr-10 text-left font-medium leading-snug"
+                            >
                               {trait}
-                            </span>
+                            </button>
                           )}
                           <div
                             className={`absolute right-1 top-1/2 z-10 -translate-y-1/2 items-center ${
@@ -392,7 +462,10 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                             {isEditing ? (
                               <>
                                 <button
-                                  onClick={handleEditConfirm}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleEditConfirm();
+                                  }}
                                   className="pointer-events-auto rounded p-0.5 text-green-500 hover:text-green-700 cursor-pointer"
                                   title="Save attribute"
                                   aria-label={`Save ${label} trait`}
@@ -400,7 +473,10 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                                   <TbCheck size={12} />
                                 </button>
                                 <button
-                                  onClick={handleEditCancel}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleEditCancel();
+                                  }}
                                   className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
                                   title="Cancel editing"
                                   aria-label={`Cancel editing ${label} trait`}
@@ -411,9 +487,10 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                             ) : (
                               <>
                                 <button
-                                  onClick={() =>
-                                    handleStartEdit(key, index, trait)
-                                  }
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleStartEdit(key, index, trait);
+                                  }}
                                   className="pointer-events-auto rounded p-0.5 text-zinc-600 hover:text-zinc-800 cursor-pointer"
                                   title="Edit attribute"
                                   aria-label={`Edit ${label} trait`}
@@ -421,7 +498,10 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                                   <TbPencil size={12} />
                                 </button>
                                 <button
-                                  onClick={() => handleRemoveTrait(key, index)}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleRemoveTrait(key, index);
+                                  }}
                                   className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
                                   title="Remove attribute"
                                   aria-label={`Remove ${label} trait`}

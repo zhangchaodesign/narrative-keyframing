@@ -18,13 +18,22 @@ import {
 
 type StateUpdater<T> = T | ((state: T) => T);
 
+export const buildEvidenceAttributeKey = (
+  characterId: string,
+  attribute: string,
+) => `${characterId}::${attribute.trim().toLowerCase()}`;
+
 type WorkflowState = {
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
+  selectedEvidenceAttributes: Record<string, boolean>;
   setNodes: (updater: StateUpdater<WorkflowNode[]>) => void;
   setEdges: (updater: StateUpdater<WorkflowEdge[]>) => void;
   onNodesChange: (changes: NodeChange<WorkflowNode>[]) => void;
   onEdgesChange: (changes: EdgeChange<WorkflowEdge>[]) => void;
+  toggleEvidenceAttribute: (characterId: string, attribute: string) => void;
+  clearEvidenceAttribute: (characterId: string, attribute: string) => void;
+  clearAllEvidenceAttributes: () => void;
   reset: () => void;
 };
 
@@ -37,7 +46,7 @@ const deepClone = <T>(value: T): T => {
 };
 
 const ATTRIBUTE_HANDLE_PATTERN = /-(physiology|psychology|sociology)-/;
-const STORAGE_VERSION = 3;
+const STORAGE_VERSION = 4;
 
 const sanitizeEdges = (edges: WorkflowEdge[]): WorkflowEdge[] =>
   edges.filter((edge) => {
@@ -171,6 +180,7 @@ const getInitialState = () => {
   return {
     nodes: synchronizeCharacterPerspectiveLinks(nodes, edges),
     edges,
+    selectedEvidenceAttributes: {},
   };
 };
 
@@ -282,6 +292,30 @@ export const useWorkflowStore = create<WorkflowState>()(
             nodes: nextNodes,
           };
         }),
+      toggleEvidenceAttribute: (characterId, attribute) =>
+        set((state) => {
+          const key = buildEvidenceAttributeKey(characterId, attribute);
+          const current = state.selectedEvidenceAttributes ?? {};
+          const next = { ...current };
+          if (next[key]) {
+            delete next[key];
+          } else {
+            next[key] = true;
+          }
+          return { selectedEvidenceAttributes: next };
+        }),
+      clearEvidenceAttribute: (characterId, attribute) =>
+        set((state) => {
+          const key = buildEvidenceAttributeKey(characterId, attribute);
+          if (!state.selectedEvidenceAttributes?.[key]) {
+            return {};
+          }
+          const next = { ...state.selectedEvidenceAttributes };
+          delete next[key];
+          return { selectedEvidenceAttributes: next };
+        }),
+      clearAllEvidenceAttributes: () =>
+        set({ selectedEvidenceAttributes: {} }),
       reset: () => set(getInitialState()),
     }),
     {
@@ -307,11 +341,13 @@ export const useWorkflowStore = create<WorkflowState>()(
           ...state,
           nodes: normalizedNodes,
           edges,
+          selectedEvidenceAttributes: state.selectedEvidenceAttributes ?? {},
         };
       },
       partialize: (state) => ({
         nodes: state.nodes,
         edges: state.edges,
+        selectedEvidenceAttributes: state.selectedEvidenceAttributes,
       }),
     },
   ),

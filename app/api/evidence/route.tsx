@@ -21,6 +21,7 @@ const EvidenceRequestSchema = z.object({
   groupContext: z.string().optional().default(""),
   characters: z.array(
     z.object({
+      characterId: z.string().min(1),
       characterName: z.string().min(1),
       attributes: z.array(
         z.object({
@@ -49,6 +50,7 @@ const EvidenceItemSchema = z.object({
 });
 
 const CharacterEvidenceSchema = z.object({
+  characterId: z.string().min(1),
   characterName: z.string().min(1),
   items: z.array(EvidenceItemSchema),
 });
@@ -169,6 +171,7 @@ const normalizeEvidence = ({
 
     if (!entry) {
       return {
+        characterId: character.characterId,
         characterName: canonicalName,
         items: [],
       };
@@ -222,6 +225,7 @@ const normalizeEvidence = ({
       );
 
     return {
+      characterId: character.characterId,
       characterName: canonicalName,
       items: sanitizedItems,
     };
@@ -251,6 +255,7 @@ export async function POST(request: Request) {
     if (trimmedReflection.length === 0) {
       characterEvidence.push(
         ...characters.map((character) => ({
+          characterId: character.characterId,
           characterName: character.characterName,
           items: [],
         })),
@@ -263,6 +268,7 @@ export async function POST(request: Request) {
       if (charactersWithAttributes.length === 0) {
         characterEvidence.push(
           ...characters.map((character) => ({
+            characterId: character.characterId,
             characterName: character.characterName,
             items: [],
           })),
@@ -296,6 +302,7 @@ export async function POST(request: Request) {
           );
           characterEvidence.push(
             ...characters.map((character) => ({
+              characterId: character.characterId,
               characterName: character.characterName,
               items: [],
             })),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, type ReactNode } from "react";
 import {
   Position,
   type NodeProps,
@@ -20,13 +20,16 @@ import type {
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
+import {
+  buildEvidenceAttributeKey,
+  useWorkflowStore,
+} from "@/lib/stores/workflowStore";
 
 const CHARACTER_VERTICAL_GAP = 210;
 const DEFAULT_NARRATION_GROUP_ID = "perspective-group";
 const ANALYZING_EVIDENCE_MESSAGE = "Analyzing evidence...";
 const READY_TO_ANALYZE_MESSAGE = "Ready to analyze evidence.";
 const NEED_REFLECTION_MESSAGE = "Add a reflection to analyze evidence.";
-const ANALYSIS_COMPLETE_MESSAGE = "Evidence analysis complete.";
 const ANALYSIS_FAILED_MESSAGE = "Evidence analysis failed. Try again.";
 const NO_CHARACTERS_MESSAGE = "No characters available to analyze.";
 const NO_EVIDENCE_FOUND_MESSAGE = "No supporting evidence found.";
@@ -43,6 +46,106 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const analysisStatus = data?.analysisStatus ?? "idle";
   const analysisStatusMessage = data?.analysisStatusMessage?.trim();
   const hasReflectionContent = Boolean(data?.reflection?.trim());
+  const selectedEvidenceAttributes = useWorkflowStore(
+    (state) => state.selectedEvidenceAttributes,
+  );
+  const highlightedReflection = useMemo<ReactNode>(() => {
+    const reflectionText = data?.reflection ?? "";
+    if (!reflectionText) {
+      return null;
+    }
+
+    const analysisItems = data?.analysisEvidence ?? [];
+    const activeKeys = selectedEvidenceAttributes;
+    if (
+      analysisItems.length === 0 ||
+      !activeKeys ||
+      Object.keys(activeKeys).length === 0
+    ) {
+      return reflectionText;
+    }
+
+    const ranges: Array<{ start: number; end: number }> = [];
+
+    analysisItems.forEach((entry) => {
+      const characterId = entry.characterId;
+      entry.items.forEach((item) => {
+        const shouldHighlight = item.attributes.some((attribute) =>
+          Boolean(
+            activeKeys[
+              buildEvidenceAttributeKey(characterId, attribute)
+            ],
+          ),
+        );
+
+        if (!shouldHighlight) {
+          return;
+        }
+
+        const snippet = item.text;
+        if (!snippet || snippet.trim().length === 0) {
+          return;
+        }
+
+        let searchIndex = 0;
+        const snippetLength = snippet.length;
+        while (searchIndex <= reflectionText.length - snippetLength) {
+          const matchIndex = reflectionText.indexOf(snippet, searchIndex);
+          if (matchIndex === -1) {
+            break;
+          }
+          ranges.push({ start: matchIndex, end: matchIndex + snippetLength });
+          searchIndex = matchIndex + snippetLength;
+        }
+      });
+    });
+
+    if (ranges.length === 0) {
+      return reflectionText;
+    }
+
+    ranges.sort((a, b) => a.start - b.start || a.end - b.end);
+    const merged: Array<{ start: number; end: number }> = [];
+    ranges.forEach((range) => {
+      const last = merged[merged.length - 1];
+      if (!last || range.start > last.end) {
+        merged.push({ ...range });
+      } else if (range.end > last.end) {
+        last.end = range.end;
+      }
+    });
+
+    const segments: ReactNode[] = [];
+    let cursor = 0;
+
+    merged.forEach((range, index) => {
+      if (range.start > cursor) {
+        segments.push(
+          <span key={`segment-${index}-text`}>
+            {reflectionText.slice(cursor, range.start)}
+          </span>,
+        );
+      }
+
+      segments.push(
+        <mark
+          key={`segment-${index}-highlight`}
+          className="rounded bg-yellow-200 px-0.5 py-0.5 text-zinc-900"
+        >
+          {reflectionText.slice(range.start, range.end)}
+        </mark>,
+      );
+      cursor = range.end;
+    });
+
+    if (cursor < reflectionText.length) {
+      segments.push(
+        <span key="segment-tail">{reflectionText.slice(cursor)}</span>,
+      );
+    }
+
+    return segments;
+  }, [data?.analysisEvidence, data?.reflection, selectedEvidenceAttributes]);
 
   const hasDirectCharacter = useMemo(() => {
     const characterNode = nodes.find(
@@ -226,24 +329,20 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
             labelText = ANALYZING_EVIDENCE_MESSAGE;
             labelClass = "text-blue-600";
           } else if (analysisStatus === "success") {
-            labelText = analysisStatusMessage || ANALYSIS_COMPLETE_MESSAGE;
+            labelText = analysisStatusMessage ?? READY_TO_ANALYZE_MESSAGE;
             labelClass = "text-green-600";
           } else if (analysisStatus === "error") {
-            labelText = analysisStatusMessage || ANALYSIS_FAILED_MESSAGE;
+            labelText = analysisStatusMessage ?? ANALYSIS_FAILED_MESSAGE;
             labelClass = "text-red-600";
           } else if (!hasReflectionContent) {
             labelText = NEED_REFLECTION_MESSAGE;
           } else if (analysisStatusMessage) {
-            if (analysisStatusMessage === NEED_REFLECTION_MESSAGE) {
-              labelText = READY_TO_ANALYZE_MESSAGE;
-            } else {
-              labelText = analysisStatusMessage;
-              if (
-                analysisStatusMessage === NO_CHARACTERS_MESSAGE ||
-                analysisStatusMessage === NO_EVIDENCE_FOUND_MESSAGE
-              ) {
-                labelClass = "text-amber-600";
-              }
+            labelText = analysisStatusMessage;
+            if (
+              analysisStatusMessage === NO_CHARACTERS_MESSAGE ||
+              analysisStatusMessage === NO_EVIDENCE_FOUND_MESSAGE
+            ) {
+              labelClass = "text-amber-600";
             }
           } else {
             labelText = READY_TO_ANALYZE_MESSAGE;
@@ -280,7 +379,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           event.nativeEvent.stopImmediatePropagation?.();
         }}
       >
-        {data?.reflection}
+        {highlightedReflection}
       </div>
       {eventTimeline && (
         <div className="mt-1 flex gap-2">

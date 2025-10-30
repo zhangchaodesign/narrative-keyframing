@@ -43,6 +43,7 @@ export type CharacterAttributePayload = {
 };
 
 export type CharacterEvidenceTarget = {
+  characterId: string;
   characterName: string;
   attributes: CharacterAttributePayload[];
 };
@@ -63,6 +64,7 @@ export type EvidenceItemResult = {
 };
 
 export type CharacterEvidenceResult = {
+  characterId: string;
   characterName: string;
   items: EvidenceItemResult[];
 };
@@ -159,6 +161,7 @@ const getCharactersForPerspective = ({
       const attributes = collectAttributes(characterNode.data?.traits);
 
       return {
+        characterId: characterNode.id,
         characterName,
         attributes,
       };
