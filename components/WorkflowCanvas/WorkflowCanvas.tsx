@@ -244,7 +244,7 @@ export function WorkflowCanvas() {
         <div className="">
           <button
             type="button"
-            className="btn btn-sm btn-soft btn-neutral"
+            className="btn btn-sm btn-neutral"
             onClick={handleAddFirstPersonCluster}
           >
             <TbPlus size={16} />
