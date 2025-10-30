@@ -404,8 +404,8 @@ export function WorkflowCanvas() {
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           proOptions={proOptions}
-          snapToGrid
-          snapGrid={[4, 4]}
+          // snapToGrid
+          // snapGrid={[4, 4]}
           fitView
           minZoom={0.1}
           maxZoom={4}
