@@ -5,37 +5,17 @@ import { useReactFlow } from "@xyflow/react";
 import { TbCopy, TbTrash } from "react-icons/tb";
 
 import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
+import {
+  cloneData,
+  deleteNodeCluster,
+  generateUniqueUuidId,
+} from "@/lib/utils/workflowUtils";
 
 type PerspectiveGroupMenuProps = {
   nodeId: string;
 };
 
 const CLONE_OFFSET = 80;
-
-const randomSuffix = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-function cloneData<DataType>(data: DataType): DataType {
-  if (data == null) {
-    return data;
-  }
-
-  try {
-    return JSON.parse(JSON.stringify(data)) as DataType;
-  } catch {
-    return data;
-  }
-}
-
-const makeUniqueId = (prefix: string, existingIds: Set<string>) => {
-  let candidate = `${prefix}-${randomSuffix()}`;
-  while (existingIds.has(candidate)) {
-    candidate = `${prefix}-${randomSuffix()}`;
-  }
-  return candidate;
-};
 
 export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
   const { setNodes, setEdges, getNodes, getEdges } = useReactFlow<
@@ -44,26 +24,13 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
   >();
 
   const handleDelete = useCallback(() => {
-    const clusterNodeIds = new Set<string>();
+    const nodes = getNodes();
+    const edges = getEdges();
+    const result = deleteNodeCluster(nodeId, nodes, edges);
 
-    getNodes().forEach((node) => {
-      if (node.id === nodeId || node.parentId === nodeId) {
-        clusterNodeIds.add(node.id);
-      }
-    });
-
-    if (clusterNodeIds.size === 0) {
-      return;
-    }
-
-    setNodes((nodes) => nodes.filter((node) => !clusterNodeIds.has(node.id)));
-    setEdges((edges) =>
-      edges.filter(
-        (edge) =>
-          !clusterNodeIds.has(edge.source) && !clusterNodeIds.has(edge.target),
-      ),
-    );
-  }, [getNodes, nodeId, setEdges, setNodes]);
+    setNodes(result.nodes);
+    setEdges(result.edges);
+  }, [getNodes, getEdges, nodeId, setEdges, setNodes]);
 
   const handleDuplicate = useCallback(() => {
     const currentNodes = getNodes();
@@ -87,7 +54,7 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     const existingEdgeIds = new Set(currentEdges.map((edge) => edge.id));
     const idMap = new Map<string, string>();
 
-    const newGroupId = makeUniqueId("perspective-group", existingNodeIds);
+    const newGroupId = generateUniqueUuidId("perspective-group", existingNodeIds);
     existingNodeIds.add(newGroupId);
     idMap.set(nodeId, newGroupId);
 
@@ -110,7 +77,7 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
           : original.type === "character"
           ? "character"
           : original.type ?? "node";
-      const newId = makeUniqueId(prefix, existingNodeIds);
+      const newId = generateUniqueUuidId(prefix, existingNodeIds);
       existingNodeIds.add(newId);
       idMap.set(original.id, newId);
 
@@ -136,7 +103,7 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     );
 
     const newEdges = internalEdges.map((edge) => {
-      const newId = makeUniqueId("edge", existingEdgeIds);
+      const newId = generateUniqueUuidId("edge", existingEdgeIds);
       existingEdgeIds.add(newId);
 
       return {
@@ -154,7 +121,7 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     );
 
     const duplicatedBridges = bridgingEdges.map((edge) => {
-      const newId = makeUniqueId("edge", existingEdgeIds);
+      const newId = generateUniqueUuidId("edge", existingEdgeIds);
       existingEdgeIds.add(newId);
       return {
         ...edge,
@@ -171,7 +138,7 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
         (node) => node.type === "eventGroup",
       );
       if (eventGroupNode) {
-        const newId = makeUniqueId("edge", existingEdgeIds);
+        const newId = generateUniqueUuidId("edge", existingEdgeIds);
         existingEdgeIds.add(newId);
         fallbackBridge.push({
           id: newId,

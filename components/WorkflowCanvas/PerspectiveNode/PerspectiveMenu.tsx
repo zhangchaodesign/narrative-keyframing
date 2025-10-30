@@ -6,28 +6,16 @@ import { TbCopy, TbPlayerPlay, TbTrash } from "react-icons/tb";
 
 import { RunPerspectiveContext } from "@/components/WorkflowCanvas/RunPerspectiveContext";
 import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
+import { duplicateWorkflowNode } from "@/lib/utils/workflowUtils";
 
 type PerspectiveMenuProps = {
   nodeId: string;
   nodeType: WorkflowNode["type"];
 };
 
-const CLONE_OFFSET = 40;
 const PERSPECTIVE_NODE_WIDTH = 256;
 const NARRATION_GROUP_RIGHT_PADDING = 24;
 const DEFAULT_NARRATION_GROUP_WIDTH = 1200;
-
-function cloneData<DataType>(data: DataType): DataType {
-  if (data == null) {
-    return data;
-  }
-
-  try {
-    return JSON.parse(JSON.stringify(data)) as DataType;
-  } catch {
-    return data;
-  }
-}
 
 export function PerspectiveMenu({ nodeId, nodeType }: PerspectiveMenuProps) {
   const { setNodes, setEdges, getNode, getNodes } =
@@ -141,26 +129,7 @@ export function PerspectiveMenu({ nodeId, nodeType }: PerspectiveMenuProps) {
       }
 
       const existingIds = new Set(nodes.map((node) => node.id));
-      const baseId = `${original.id}-copy`;
-      let candidateId = baseId;
-      let attempt = 1;
-
-      while (existingIds.has(candidateId)) {
-        attempt += 1;
-        candidateId = `${baseId}-${attempt}`;
-      }
-
-      const duplicatedNode = {
-        ...original,
-        id: candidateId,
-        data: cloneData(original.data),
-        position: {
-          x: original.position.x + CLONE_OFFSET,
-          y: original.position.y + CLONE_OFFSET,
-        },
-        selected: false,
-        dragging: false,
-      } as WorkflowNode;
+      const duplicatedNode = duplicateWorkflowNode(original, existingIds);
 
       return [...nodes, duplicatedNode];
     });

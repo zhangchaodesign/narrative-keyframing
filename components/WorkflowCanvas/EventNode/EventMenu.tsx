@@ -6,25 +6,12 @@ import { TbArrowLeft, TbArrowRight, TbCopy, TbTrash } from "react-icons/tb";
 
 import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
 import { useEventAdjacency } from "@/components/WorkflowCanvas/EventNode/useEventAdjacency";
+import { duplicateWorkflowNode } from "@/lib/utils/workflowUtils";
 
 type EventMenuProps = {
   nodeId: string;
   nodeType: WorkflowNode["type"];
 };
-
-const CLONE_OFFSET = 40;
-
-function cloneData<DataType>(data: DataType): DataType {
-  if (data == null) {
-    return data;
-  }
-
-  try {
-    return JSON.parse(JSON.stringify(data)) as DataType;
-  } catch {
-    return data;
-  }
-}
 
 export function EventMenu({ nodeId, nodeType }: EventMenuProps) {
   const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
@@ -43,26 +30,7 @@ export function EventMenu({ nodeId, nodeType }: EventMenuProps) {
       }
 
       const existingIds = new Set(nodes.map((node) => node.id));
-      const baseId = `${original.id}-copy`;
-      let candidateId = baseId;
-      let attempt = 1;
-
-      while (existingIds.has(candidateId)) {
-        attempt += 1;
-        candidateId = `${baseId}-${attempt}`;
-      }
-
-      const duplicatedNode = {
-        ...original,
-        id: candidateId,
-        data: cloneData(original.data),
-        position: {
-          x: original.position.x + CLONE_OFFSET,
-          y: original.position.y + CLONE_OFFSET,
-        },
-        selected: false,
-        dragging: false,
-      } as WorkflowNode;
+      const duplicatedNode = duplicateWorkflowNode(original, existingIds);
 
       return [...nodes, duplicatedNode];
     });

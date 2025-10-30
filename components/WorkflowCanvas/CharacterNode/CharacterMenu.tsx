@@ -5,34 +5,28 @@ import { useReactFlow } from "@xyflow/react";
 import { TbCopy, TbTrash } from "react-icons/tb";
 
 import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
+import {
+  deleteNodeWithEdges,
+  duplicateWorkflowNode,
+} from "@/lib/utils/workflowUtils";
 
 type CharacterMenuProps = {
   nodeId: string;
   nodeType: WorkflowNode["type"];
 };
 
-const CLONE_OFFSET = 40;
-
-function cloneData<DataType>(data: DataType): DataType {
-  if (data == null) {
-    return data;
-  }
-
-  try {
-    return JSON.parse(JSON.stringify(data)) as DataType;
-  } catch {
-    return data;
-  }
-}
-
 export function CharacterMenu({ nodeId, nodeType }: CharacterMenuProps) {
   const { setNodes, setEdges } = useReactFlow<WorkflowNode, WorkflowEdge>();
 
   const handleDelete = useCallback(() => {
-    setNodes((nodes) => nodes.filter((node) => node.id !== nodeId));
-    setEdges((edges) =>
-      edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId),
-    );
+    setNodes((nodes) => {
+      setEdges((edges) => {
+        const result = deleteNodeWithEdges(nodeId, nodes, edges);
+        setNodes(result.nodes);
+        return result.edges;
+      });
+      return nodes;
+    });
   }, [nodeId, setEdges, setNodes]);
 
   const handleDuplicate = useCallback(() => {
@@ -43,26 +37,7 @@ export function CharacterMenu({ nodeId, nodeType }: CharacterMenuProps) {
       }
 
       const existingIds = new Set(nodes.map((node) => node.id));
-      const baseId = `${original.id}-copy`;
-      let candidateId = baseId;
-      let attempt = 1;
-
-      while (existingIds.has(candidateId)) {
-        attempt += 1;
-        candidateId = `${baseId}-${attempt}`;
-      }
-
-      const duplicatedNode = {
-        ...original,
-        id: candidateId,
-        data: cloneData(original.data),
-        position: {
-          x: original.position.x + CLONE_OFFSET,
-          y: original.position.y + CLONE_OFFSET,
-        },
-        selected: false,
-        dragging: false,
-      } as WorkflowNode;
+      const duplicatedNode = duplicateWorkflowNode(original, existingIds);
 
       return [...nodes, duplicatedNode];
     });

@@ -8,6 +8,7 @@ import type {
   WorkflowNode,
 } from "@/lib/types/workflow";
 import {
+  formatEventTimeline,
   parseEventTimelineIndex,
   sortNodesByTimeline,
 } from "@/lib/utils/workflowUtils";
@@ -262,8 +263,6 @@ const buildPerspectiveLayout = ({
     eventAssignments,
   };
 };
-
-const formatEventTimeline = (index: number) => `Event ${index}`;
 
 const ensureEventData = (
   data: EventNodeType["data"] | undefined,
