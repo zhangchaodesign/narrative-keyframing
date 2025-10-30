@@ -1,12 +1,19 @@
 "use client";
 
-import { useCallback, useContext } from "react";
+import { useCallback, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { TbCopy, TbPlayerPlay, TbTrash } from "react-icons/tb";
 
-import { RunPerspectiveContext } from "@/components/WorkflowCanvas/RunPerspectiveContext";
-import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
+import type {
+  PerspectiveNodeType,
+  WorkflowEdge,
+  WorkflowNode,
+} from "@/lib/types/workflow";
 import { duplicateWorkflowNode } from "@/lib/utils/workflowUtils";
+import {
+  preparePerspectiveRequest,
+  type GeneratePerspectiveResponse,
+} from "@/lib/perspective";
 
 type PerspectiveMenuProps = {
   nodeId: string;
@@ -17,11 +24,148 @@ const NARRATION_GROUP_RIGHT_PADDING = 24;
 const DEFAULT_NARRATION_GROUP_WIDTH = 1200;
 
 export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
-  const { setNodes, setEdges, getNode, getNodes } = useReactFlow<
+  const { setNodes, setEdges, getNode, getNodes, getEdges } = useReactFlow<
     WorkflowNode,
     WorkflowEdge
   >();
-  const runPerspectives = useContext(RunPerspectiveContext);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGeneratePerspectives = useCallback(
+    async (targetNodeIds?: string[]) => {
+      if (isGenerating) {
+        return;
+      }
+
+      const nodes = getNodes();
+      const edges = getEdges();
+
+      setIsGenerating(true);
+      let loadingNodeIds: Set<string> | null = null;
+
+      try {
+        const preparation = preparePerspectiveRequest({
+          nodes,
+          edges,
+          targetNodeIds,
+        });
+
+        if (!preparation) {
+          return;
+        }
+
+        const { eventSequence, tasks } = preparation;
+
+        loadingNodeIds = new Set(tasks.map((task) => task.id));
+        setNodes((currentNodes) =>
+          currentNodes.map((node) => {
+            if (node.type !== "perspective") {
+              return node;
+            }
+
+            const existingData = node.data as PerspectiveNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                isLoading: loadingNodeIds?.has(node.id) ?? false,
+              },
+            };
+          }),
+        );
+
+        const response = await fetch("/api/perspective", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            eventSequence,
+            perspectives: tasks,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => null);
+          const errorMessage =
+            (errorBody && errorBody.error) ||
+            `Failed to generate perspectives (${response.status}).`;
+          throw new Error(errorMessage);
+        }
+
+        const data = (await response.json()) as GeneratePerspectiveResponse;
+        const perspectives = data?.perspectives ?? [];
+
+        const orderedUpdates = perspectives
+          .map((item, index) => {
+            const task = tasks[index];
+            if (!task) {
+              return null;
+            }
+            return [task.id, item.reflection] as const;
+          })
+          .filter((entry): entry is readonly [string, string] => entry != null);
+
+        if (orderedUpdates.length === 0) {
+          return;
+        }
+
+        if (perspectives.length !== tasks.length) {
+          console.warn(
+            "Perspective response count did not match requested tasks.",
+            {
+              requested: tasks.length,
+              received: perspectives.length,
+            },
+          );
+        }
+
+        const updateMap = new Map<string, string>(orderedUpdates);
+
+        setNodes((currentNodes) =>
+          currentNodes.map((node) => {
+            if (node.type === "perspective" && updateMap.has(node.id)) {
+              const reflection = updateMap.get(node.id) ?? "";
+              const existingData = node.data as PerspectiveNodeType["data"];
+              return {
+                ...node,
+                data: {
+                  ...existingData,
+                  reflection,
+                },
+              };
+            }
+            return node;
+          }),
+        );
+      } catch (error) {
+        console.error("Error generating perspectives:", error);
+      } finally {
+        if (loadingNodeIds) {
+          setNodes((currentNodes) =>
+            currentNodes.map((node) => {
+              if (node.type !== "perspective") {
+                return node;
+              }
+              if (!loadingNodeIds?.has(node.id)) {
+                return node;
+              }
+
+              const existingData = node.data as PerspectiveNodeType["data"];
+              return {
+                ...node,
+                data: {
+                  ...existingData,
+                  isLoading: false,
+                },
+              };
+            }),
+          );
+        }
+        setIsGenerating(false);
+      }
+    },
+    [isGenerating, getNodes, getEdges, setNodes],
+  );
 
   const handleDelete = useCallback(() => {
     const nodesSnapshot = getNodes();
@@ -145,17 +289,12 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
       )
       .map((node) => node.id);
 
-    if (
-      !runPerspectives ||
-      !parentId ||
-      !currentNode ||
-      siblingPerspectiveIds.length === 0
-    ) {
+    if (!parentId || !currentNode || siblingPerspectiveIds.length === 0) {
       return;
     }
 
-    runPerspectives(siblingPerspectiveIds);
-  }, [getNode, getNodes, nodeId, runPerspectives]);
+    handleGeneratePerspectives(siblingPerspectiveIds);
+  }, [getNode, getNodes, nodeId, handleGeneratePerspectives]);
 
   return (
     <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
