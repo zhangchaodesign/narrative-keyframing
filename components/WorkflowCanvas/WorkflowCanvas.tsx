@@ -46,11 +46,11 @@ const edgeTypes: EdgeTypes = {
 function nodeColor(node: WorkflowNode) {
   switch (node.type) {
     case "eventGroup":
-      return "oklch(98.2% 0.018 155.826)";
+      return "oklch(97.1% 0.014 343.198)";
     case "perspectiveGroup":
       return "oklch(97% 0.014 254.604)";
     case "event":
-      return "oklch(92.5% 0.084 155.995)";
+      return "oklch(89.9% 0.061 343.231)";
     case "perspective":
       return "oklch(88.2% 0.059 254.128)";
     case "character":
@@ -244,7 +244,7 @@ export function WorkflowCanvas() {
         <div className="flex gap-2">
           <button
             type="button"
-            className="btn btn-xs btn-soft btn-secondary"
+            className="btn btn-xs btn-secondary"
             onClick={handleAddFirstPersonCluster}
           >
             <TbPlus size={16} />
@@ -252,7 +252,7 @@ export function WorkflowCanvas() {
           </button>
           <button
             type="button"
-            className="btn btn-xs btn-soft btn-error hover:text-white"
+            className="btn btn-xs btn-primary text-white"
             onClick={() => {}}
           >
             <TbPlus size={16} />

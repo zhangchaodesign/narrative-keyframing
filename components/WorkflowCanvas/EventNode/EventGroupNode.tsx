@@ -8,11 +8,11 @@ import { geistMono } from "@/app/fonts";
 
 export function EventGroupNode({ data }: NodeProps<GroupNodeType>) {
   return (
-    <div className="relative h-full w-full rounded-lg border-4 border-green-100 bg-green-50/50 shadow">
+    <div className="relative h-full w-full rounded-lg border-4 border-pink-100 bg-pink-50/50 shadow">
       <div
         className={cn(
           geistMono.className,
-          "absolute left-1 top-1 rounded bg-primary px-2 py-1 text-xs font-bold text-white",
+          "absolute left-1 top-1 rounded bg-pink-500 px-2 py-1 text-xs font-bold text-white",
         )}
       >
         {data?.label}
