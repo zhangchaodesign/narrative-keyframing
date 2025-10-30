@@ -27,6 +27,9 @@ import {
   type PerspectiveNodeType,
   type WorkflowNode,
 } from "@/lib/types/workflow";
+import { TbPlus } from "react-icons/tb";
+import { geistMono } from "@/app/fonts";
+import { cn } from "@/lib/utils";
 
 const nodeTypes: NodeTypes = {
   event: EventNode,
@@ -237,14 +240,17 @@ export function WorkflowCanvas() {
 
   return (
     <div className="h-full min-h-0 w-full relative">
-      <div className="absolute left-3 top-3 z-20 flex flex-col gap-2">
-        <button
-          type="button"
-          className="btn btn-neutral btn-xs"
-          onClick={handleAddFirstPersonCluster}
-        >
-          Add a First-Person Limited Cluster
-        </button>
+      <div className="absolute left-1/2 top-4 -translate-x-1/2 z-20">
+        <div className="">
+          <button
+            type="button"
+            className="btn btn-sm btn-soft btn-neutral"
+            onClick={handleAddFirstPersonCluster}
+          >
+            <TbPlus size={16} />
+            Add a First-Person Limited Cluster
+          </button>
+        </div>
       </div>
       <ReactFlow
         nodes={nodes}
