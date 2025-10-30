@@ -268,7 +268,9 @@ export const prepareEvidenceAnalysis = ({
 
     return perspectiveNodes
       .filter((sibling) => sibling.parentId === parentId)
-      .sort((a, b) => a.position.x - b.position.x || a.position.y - b.position.y)
+      .sort(
+        (a, b) => a.position.x - b.position.x || a.position.y - b.position.y,
+      )
       .map((sibling) => (sibling.data?.reflection ?? "").trim())
       .filter((reflection) => reflection.length > 0)
       .join("\n\n");

@@ -251,7 +251,9 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
     }
 
     const hasCharacterAttributes = target.characters.some((character) =>
-      character.attributes.some((attribute) => attribute.value.trim().length > 0),
+      character.attributes.some(
+        (attribute) => attribute.value.trim().length > 0,
+      ),
     );
 
     if (!hasCharacterAttributes) {

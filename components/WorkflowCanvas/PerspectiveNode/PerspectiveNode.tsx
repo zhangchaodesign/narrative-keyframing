@@ -72,9 +72,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       entry.items.forEach((item) => {
         const shouldHighlight = item.attributes.some((attribute) =>
           Boolean(
-            activeKeys[
-              buildEvidenceAttributeKey(characterId, attribute)
-            ],
+            activeKeys[buildEvidenceAttributeKey(characterId, attribute)],
           ),
         );
 
