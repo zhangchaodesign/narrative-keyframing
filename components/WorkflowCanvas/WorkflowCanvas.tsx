@@ -248,7 +248,7 @@ export function WorkflowCanvas() {
             onClick={handleAddFirstPersonCluster}
           >
             <TbPlus size={16} />
-            Add a First-Person Limited Cluster
+            First-Person Limited Cluster
           </button>
           <button
             type="button"
@@ -256,7 +256,7 @@ export function WorkflowCanvas() {
             onClick={() => {}}
           >
             <TbPlus size={16} />
-            Add a Third-Person Omniscient Cluster
+            Third-Person Omniscient Cluster
           </button>
         </div>
       </div>
