@@ -10,6 +10,9 @@ export type PerspectiveNodeData = {
   reflection: string;
   isLoading?: boolean;
   eventId: string;
+  isAnalyzingEvidence?: boolean;
+  analysisStatus?: "idle" | "running" | "success" | "error";
+  analysisStatusMessage?: string;
 };
 
 export type CharacterTraits = {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useReactFlow } from "@xyflow/react";
+import { useReactFlow, useStore } from "@xyflow/react";
 import { TbListSearch, TbPlayerPlay } from "react-icons/tb";
 
 import type {
@@ -22,18 +22,49 @@ type PerspectiveMenuProps = {
   nodeId: string;
 };
 
+const READY_TO_ANALYZE_MESSAGE = "Ready to analyze evidence.";
+const NEED_REFLECTION_MESSAGE = "Add a reflection to analyze evidence.";
+const ANALYZING_EVIDENCE_MESSAGE = "Analyzing evidence...";
+const ANALYSIS_COMPLETE_MESSAGE = "Evidence analysis complete.";
+const ANALYSIS_FAILED_MESSAGE = "Evidence analysis failed. Try again.";
+const NO_CHARACTERS_MESSAGE = "No characters available to analyze.";
+
 export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
   const { setNodes, getNode, getNodes, getEdges } = useReactFlow<
     WorkflowNode,
     WorkflowEdge
   >();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isAnalyzingEvidence, setIsAnalyzingEvidence] = useState(false);
+  const perspectiveData = useStore((store) => {
+    const node = store.nodes.find(
+      (candidate): candidate is PerspectiveNodeType =>
+        candidate.id === nodeId && candidate.type === "perspective",
+    );
+    return node?.data as PerspectiveNodeType["data"] | undefined;
+  });
+  const isAnalyzingEvidence = perspectiveData?.isAnalyzingEvidence ?? false;
+  const hasReflection = Boolean(perspectiveData?.reflection?.trim());
 
-  const currentNodeData = getNode(nodeId)?.data as
-    | PerspectiveNodeType["data"]
-    | undefined;
-  const hasReflection = Boolean(currentNodeData?.reflection?.trim());
+  const updateAnalysisState = useCallback(
+    (patch: Partial<PerspectiveNodeType["data"]>) => {
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.id !== nodeId || node.type !== "perspective") {
+            return node;
+          }
+          const existingData = node.data as PerspectiveNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              ...patch,
+            },
+          };
+        }),
+      );
+    },
+    [nodeId, setNodes],
+  );
 
   const handleGeneratePerspectives = useCallback(
     async (targetNodeIds?: string[]) => {
@@ -131,11 +162,17 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
             if (node.type === "perspective" && updateMap.has(node.id)) {
               const reflection = updateMap.get(node.id) ?? "";
               const existingData = node.data as PerspectiveNodeType["data"];
+              const hasContent = reflection.trim().length > 0;
               return {
                 ...node,
                 data: {
                   ...existingData,
                   reflection,
+                  isAnalyzingEvidence: false,
+                  analysisStatus: "idle",
+                  analysisStatusMessage: hasContent
+                    ? undefined
+                    : NEED_REFLECTION_MESSAGE,
                 },
               };
             }
@@ -190,15 +227,31 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
         "No evidence analysis targets found for perspective:",
         nodeId,
       );
+      updateAnalysisState({
+        isAnalyzingEvidence: false,
+        analysisStatus: "idle",
+        analysisStatusMessage: hasReflection
+          ? NO_CHARACTERS_MESSAGE
+          : NEED_REFLECTION_MESSAGE,
+      });
       return;
     }
 
     if (!target.reflection.trim()) {
       console.warn("Cannot analyze evidence for an empty reflection:", nodeId);
+      updateAnalysisState({
+        isAnalyzingEvidence: false,
+        analysisStatus: "idle",
+        analysisStatusMessage: NEED_REFLECTION_MESSAGE,
+      });
       return;
     }
 
-    setIsAnalyzingEvidence(true);
+    updateAnalysisState({
+      isAnalyzingEvidence: true,
+      analysisStatus: "running",
+      analysisStatusMessage: ANALYZING_EVIDENCE_MESSAGE,
+    });
 
     try {
       const response = await fetch("/api/evidence", {
@@ -219,12 +272,27 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
 
       const data = (await response.json()) as EvidenceAnalysisResponse | null;
       console.log("Evidence analysis result:", data);
+      updateAnalysisState({
+        isAnalyzingEvidence: false,
+        analysisStatus: "success",
+        analysisStatusMessage: ANALYSIS_COMPLETE_MESSAGE,
+      });
     } catch (error) {
       console.error("Error analyzing character evidence:", error);
-    } finally {
-      setIsAnalyzingEvidence(false);
+      updateAnalysisState({
+        isAnalyzingEvidence: false,
+        analysisStatus: "error",
+        analysisStatusMessage: ANALYSIS_FAILED_MESSAGE,
+      });
     }
-  }, [getEdges, getNodes, isAnalyzingEvidence, nodeId]);
+  }, [
+    getEdges,
+    getNodes,
+    hasReflection,
+    isAnalyzingEvidence,
+    nodeId,
+    updateAnalysisState,
+  ]);
 
   const handleRun = useCallback(() => {
     const currentNode = getNode(nodeId);
@@ -246,6 +314,20 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
     <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
       <button
         type="button"
+        onClick={handleAnalyzeEvidence}
+        className="pointer-events-auto rounded-full p-1 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+        title="Analyze textual evidence that supports character attributes"
+        aria-label="Analyze textual evidence that supports character attributes"
+        disabled={isAnalyzingEvidence || !hasReflection}
+      >
+        {isAnalyzingEvidence ? (
+          <span className="block h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent align-middle" />
+        ) : (
+          <TbListSearch size={12} />
+        )}
+      </button>
+      <button
+        type="button"
         onClick={handleRun}
         className="pointer-events-auto rounded-full p-1 transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 disabled:cursor-not-allowed disabled:opacity-60"
         title="Generate first-person limited narration"
@@ -253,16 +335,6 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
         disabled={isGenerating}
       >
         <TbPlayerPlay size={12} />
-      </button>
-      <button
-        type="button"
-        onClick={handleAnalyzeEvidence}
-        className="pointer-events-auto rounded-full p-1 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-        title="Analyze textual evidence that supports character attributes"
-        aria-label="Analyze textual evidence that supports character attributes"
-        disabled={isAnalyzingEvidence || !hasReflection}
-      >
-        <TbListSearch size={12} />
       </button>
     </div>
   );

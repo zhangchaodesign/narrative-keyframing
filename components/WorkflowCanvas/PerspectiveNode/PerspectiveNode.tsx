@@ -23,6 +23,12 @@ import { geistMono } from "@/app/fonts";
 
 const CHARACTER_VERTICAL_GAP = 210;
 const DEFAULT_NARRATION_GROUP_ID = "perspective-group";
+const ANALYZING_EVIDENCE_MESSAGE = "Analyzing evidence...";
+const READY_TO_ANALYZE_MESSAGE = "Ready to analyze evidence.";
+const NEED_REFLECTION_MESSAGE = "Add a reflection to analyze evidence.";
+const ANALYSIS_COMPLETE_MESSAGE = "Evidence analysis complete.";
+const ANALYSIS_FAILED_MESSAGE = "Evidence analysis failed. Try again.";
+const NO_CHARACTERS_MESSAGE = "No characters available to analyze.";
 
 export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const { setNodes, setEdges, getNode } = useReactFlow<
@@ -32,6 +38,10 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const edges = useStore((store) => store.edges);
   const nodes = useStore((store) => store.nodes);
   const isLoading = data?.isLoading ?? false;
+  const isAnalyzingEvidence = data?.isAnalyzingEvidence ?? false;
+  const analysisStatus = data?.analysisStatus ?? "idle";
+  const analysisStatusMessage = data?.analysisStatusMessage?.trim();
+  const hasReflectionContent = Boolean(data?.reflection?.trim());
 
   const hasDirectCharacter = useMemo(() => {
     const characterNode = nodes.find(
@@ -208,6 +218,46 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       >
         <span className="flex items-center">💬 Perspective</span>
       </div>
+      {(() => {
+        let labelText: string;
+        let labelClass = "text-zinc-400";
+
+        if (isAnalyzingEvidence) {
+          labelText = ANALYZING_EVIDENCE_MESSAGE;
+          labelClass = "text-blue-600";
+        } else if (analysisStatus === "success") {
+          labelText = analysisStatusMessage || ANALYSIS_COMPLETE_MESSAGE;
+          labelClass = "text-green-600";
+        } else if (analysisStatus === "error") {
+          labelText = analysisStatusMessage || ANALYSIS_FAILED_MESSAGE;
+          labelClass = "text-red-600";
+        } else if (!hasReflectionContent) {
+          labelText = NEED_REFLECTION_MESSAGE;
+        } else if (analysisStatusMessage) {
+          if (analysisStatusMessage === NEED_REFLECTION_MESSAGE) {
+            labelText = READY_TO_ANALYZE_MESSAGE;
+          } else {
+            labelText = analysisStatusMessage;
+            if (analysisStatusMessage === NO_CHARACTERS_MESSAGE) {
+              labelClass = "text-amber-600";
+            }
+          }
+        } else {
+          labelText = READY_TO_ANALYZE_MESSAGE;
+        }
+
+        return (
+          <div
+            className={cn(
+              geistMono.className,
+              "mt-1 text-[9px] font-medium uppercase tracking-wide",
+              labelClass,
+            )}
+          >
+            {labelText}
+          </div>
+        );
+      })()}
       <div
         className="mt-2 flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800"
         onWheel={(event) => {

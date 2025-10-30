@@ -138,7 +138,8 @@ Instructions:
 3. If an attribute is not supported, do not invent evidence for it.
 4. When one phrase supports multiple attributes from the same category, list all matching attributes together.
 5. Assign each phrase to exactly one evidence category from the list above.
-6. Return JSON that matches the provided schema exactly. Do not include explanations outside the schema.
+6. Return characterEvidence entries in the same order as the character list above.
+7. Return JSON that matches the provided schema exactly. Do not include explanations outside the schema.
 `;
 };
 
