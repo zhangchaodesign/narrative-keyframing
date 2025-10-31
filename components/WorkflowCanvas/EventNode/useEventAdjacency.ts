@@ -943,10 +943,12 @@ export function useEventAdjacency(nodeId: string) {
     const timestamp = Date.now();
     let eventSequence: string[] = [];
     let perspectiveSequences = new Map<string, string[]>();
+    let narrativeSequences = new Map<string, string[]>();
     let removedNodeIds: string[] = [];
 
     setNodes((nodesState) => {
       perspectiveSequences = new Map<string, string[]>();
+      narrativeSequences = new Map<string, string[]>();
 
       const eventNodes = nodesState.filter(
         (nodeState) => nodeState.type === "event",
@@ -954,8 +956,14 @@ export function useEventAdjacency(nodeId: string) {
       const perspectiveNodes = nodesState.filter(
         (nodeState) => nodeState.type === "perspective",
       );
+      const narrativeNodes = nodesState.filter(
+        (nodeState) => nodeState.type === "narrative",
+      );
       const perspectiveGroups = nodesState.filter(
         (nodeState) => nodeState.type === "perspectiveGroup",
+      );
+      const narrativeGroups = nodesState.filter(
+        (nodeState) => nodeState.type === "narrativeGroup",
       );
 
       const eventRowNodes = eventNodes.filter((nodeState) => {
@@ -990,6 +998,23 @@ export function useEventAdjacency(nodeId: string) {
         const perspectiveToRemove = sortedChildren[referenceIndex];
         if (perspectiveToRemove) {
           nodesToRemove.add(perspectiveToRemove.id);
+        }
+      });
+
+      // Mirror event deletions for each narrative group so rows stay aligned.
+      narrativeGroups.forEach((groupNode) => {
+        const groupId = groupNode.id;
+        const children = narrativeNodes.filter(
+          (nodeState) =>
+            nodeState.type === "narrative" &&
+            (nodeState as { parentId?: string }).parentId === groupId,
+        );
+        const sortedChildren = [...children].sort(
+          (a, b) => a.position.x - b.position.x,
+        );
+        const narrativeToRemove = sortedChildren[referenceIndex];
+        if (narrativeToRemove) {
+          nodesToRemove.add(narrativeToRemove.id);
         }
       });
 
@@ -1044,6 +1069,21 @@ export function useEventAdjacency(nodeId: string) {
       const narrationWidthUpdates = perspectiveLayout.widthUpdates;
       perspectiveSequences = perspectiveLayout.sequences;
 
+      // Also layout narrative nodes using similar logic
+      const narrativeLayout = buildPerspectiveLayout({
+        perspectiveGroups: narrativeGroups,
+        nodes: remainingNodes,
+        eventSequence,
+        eventPositionMap: eventLayout.eventPositionMap,
+        fallbackBaseX: eventLayout.fallbackBaseX,
+        eventIndexMap,
+      });
+
+      const narrativePositionMapsByGroup = narrativeLayout.positionMapsByGroup;
+      const narrativeEventAssignments = narrativeLayout.eventAssignments;
+      const narrativeWidthUpdates = narrativeLayout.widthUpdates;
+      narrativeSequences = narrativeLayout.sequences;
+
       const nextGroupWidth =
         eventLayout.eventPositions.length === 0
           ? DEFAULT_EVENT_GROUP_WIDTH
@@ -1091,11 +1131,20 @@ export function useEventAdjacency(nodeId: string) {
           });
         }
 
+        if (nodeState.type === "narrative") {
+          return updateNarrativeNode({
+            nodeState,
+            narrativePositionMapsByGroup,
+            narrativeEventAssignments,
+          });
+        }
+
         const groupUpdate = updateGroupWidths({
           nodeState,
           eventGroupId,
           nextGroupWidth,
           narrationWidthUpdates,
+          narrativeWidthUpdates,
         });
         if (groupUpdate) {
           return groupUpdate;
@@ -1112,6 +1161,10 @@ export function useEventAdjacency(nodeId: string) {
       const perspectiveIdSet = new Set<string>();
       perspectiveSequences.forEach((sequence) => {
         sequence.forEach((id) => perspectiveIdSet.add(id));
+      });
+      const narrativeIdSet = new Set<string>();
+      narrativeSequences.forEach((sequence) => {
+        sequence.forEach((id) => narrativeIdSet.add(id));
       });
 
       const preservedEdges = edgesState.filter((edge) => {
@@ -1137,6 +1190,15 @@ export function useEventAdjacency(nodeId: string) {
           return false;
         }
 
+        const isNarrativeChainEdge =
+          edge.sourceHandle === "narrative-next" &&
+          edge.targetHandle === "narrative-prev" &&
+          narrativeIdSet.has(edge.source) &&
+          narrativeIdSet.has(edge.target);
+        if (isNarrativeChainEdge) {
+          return false;
+        }
+
         return true;
       });
 
@@ -1144,6 +1206,7 @@ export function useEventAdjacency(nodeId: string) {
         baseEdgeId,
         eventSequence,
         perspectiveSequences,
+        narrativeSequences,
       });
 
       return [...preservedEdges, ...rebuiltEdges];
