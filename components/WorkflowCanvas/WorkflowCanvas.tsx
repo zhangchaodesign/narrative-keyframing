@@ -26,6 +26,7 @@ import {
   type EventNodeType,
   type EventGroupNodeType,
   type NarrationGroupNodeType,
+  type NarrativeNodeType,
   type PerspectiveNodeType,
   type WorkflowNode,
 } from "@/lib/types/workflow";
@@ -246,6 +247,142 @@ export function WorkflowCanvas() {
     });
   }, [nodes, setEdges, setNodes]);
 
+  const handleAddThirdPersonCluster = useCallback(() => {
+    const eventNodes = nodes.filter(
+      (node): node is EventNodeType => node.type === "event",
+    );
+    if (eventNodes.length === 0) {
+      return;
+    }
+
+    const sortedEvents = [...eventNodes].sort(
+      (nodeA, nodeB) => nodeA.position.x - nodeB.position.x,
+    );
+    const narrativeGroups = nodes.filter(
+      (node): node is NarrationGroupNodeType => node.type === "narrativeGroup",
+    );
+    const eventGroup = nodes.find(
+      (node): node is EventGroupNodeType => node.type === "eventGroup",
+    );
+
+    const DEFAULT_GROUP_STYLE = {
+      width: 1200,
+      height: 640,
+      backgroundColor: "transparent",
+      border: "none",
+      padding: 0,
+      boxShadow: "none",
+    } as const;
+
+    const baselineGroupStyle = narrativeGroups[0]?.style ?? DEFAULT_GROUP_STYLE;
+    const baselineWidth =
+      typeof baselineGroupStyle?.width === "number"
+        ? baselineGroupStyle.width
+        : DEFAULT_GROUP_STYLE.width;
+    const baselineHeight =
+      typeof baselineGroupStyle?.height === "number"
+        ? baselineGroupStyle.height
+        : DEFAULT_GROUP_STYLE.height;
+    const eventGroupWidth =
+      typeof eventGroup?.style?.width === "number"
+        ? eventGroup.style.width
+        : baselineWidth;
+    const clusterWidth = Math.max(baselineWidth, eventGroupWidth);
+
+    const HORIZONTAL_GAP = 80;
+    const baseGroupY =
+      narrativeGroups.length > 0
+        ? narrativeGroups[0]!.position.y
+        : eventGroup?.position.y ?? 1020;
+    const rightmostEdge = narrativeGroups.reduce((accumulator, group) => {
+      const groupWidth =
+        typeof group.style?.width === "number"
+          ? group.style.width
+          : baselineWidth;
+      return Math.max(accumulator, group.position.x + groupWidth);
+    }, Number.NEGATIVE_INFINITY);
+    const newGroupX =
+      narrativeGroups.length === 0
+        ? eventGroup?.position.x ?? 100
+        : (rightmostEdge === Number.NEGATIVE_INFINITY
+            ? narrativeGroups[0]!.position.x + baselineWidth
+            : rightmostEdge) + HORIZONTAL_GAP;
+    const newGroupY = baseGroupY;
+
+    const clusterSuffix =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const newGroupId = `narrative-group-${clusterSuffix}`;
+    const narrativeRowY =
+      narrativeGroups.length > 0
+        ? nodes.find(
+            (node): node is NarrativeNodeType =>
+              node.type === "narrative" &&
+              node.parentId === narrativeGroups[0]?.id,
+          )?.position.y ?? 50
+        : 50;
+
+    const newNarrativeNodes: WorkflowNode[] = sortedEvents.map(
+      (eventNode, indexPosition) => ({
+        id: `narrative-${clusterSuffix}-${indexPosition + 1}`,
+        type: "narrative",
+        position: {
+          x: eventNode.position.x,
+          y: narrativeRowY,
+        },
+        data: {
+          narration: "",
+          isLoading: false,
+          eventId: eventNode.id,
+        },
+        draggable: false,
+        parentId: newGroupId,
+        extent: "parent",
+      }),
+    );
+
+    const newGroupNode: WorkflowNode = {
+      id: newGroupId,
+      type: "narrativeGroup",
+      position: {
+        x: newGroupX,
+        y: newGroupY,
+      },
+      data: {
+        label: "Third-Person Omniscient Cluster",
+      },
+      style: {
+        ...DEFAULT_GROUP_STYLE,
+        ...(baselineGroupStyle ?? {}),
+        width: clusterWidth,
+        height: baselineHeight,
+      },
+    };
+
+    setNodes((currentNodes) => [
+      ...currentNodes,
+      newGroupNode,
+      ...newNarrativeNodes,
+    ]);
+
+    setEdges((currentEdges) => {
+      const sequentialEdges = newNarrativeNodes
+        .slice(0, -1)
+        .map((node, indexPosition) => ({
+          id: `edge-${node.id}-${newNarrativeNodes[indexPosition + 1]!.id}`,
+          source: node.id,
+          target: newNarrativeNodes[indexPosition + 1]!.id,
+          sourceHandle: "narrative-next",
+          targetHandle: "narrative-prev",
+          type: "customEdge",
+          animated: true,
+        }));
+
+      return [...currentEdges, ...sequentialEdges];
+    });
+  }, [nodes, setEdges, setNodes]);
+
   return (
     <div className="h-full min-h-0 w-full relative">
       <div className="absolute left-1/2 top-4 -translate-x-1/2 z-20">
@@ -261,7 +398,7 @@ export function WorkflowCanvas() {
           <button
             type="button"
             className="btn btn-xs btn-primary text-white"
-            onClick={() => {}}
+            onClick={handleAddThirdPersonCluster}
           >
             <TbPlus size={16} />
             Third-Person Omniscient Cluster
