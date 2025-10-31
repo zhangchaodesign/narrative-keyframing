@@ -4,6 +4,7 @@ import { useReactFlow, useStore } from "@xyflow/react";
 import type {
   EventNodeType,
   PerspectiveNodeType,
+  NarrativeNodeType,
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
@@ -115,9 +116,18 @@ const getPerspectiveEventIndex = (
   nodeState: WorkflowNode,
   eventIndexMap: Map<string, number>,
 ) => {
-  const perspectiveData =
-    (nodeState.data as PerspectiveNodeType["data"] | undefined) ?? null;
-  const eventId = perspectiveData?.eventId?.trim();
+  let eventId: string | undefined;
+
+  if (nodeState.type === "perspective") {
+    const perspectiveData =
+      (nodeState.data as PerspectiveNodeType["data"] | undefined) ?? null;
+    eventId = perspectiveData?.eventId?.trim();
+  } else if (nodeState.type === "narrative") {
+    const narrativeData =
+      (nodeState.data as NarrativeNodeType["data"] | undefined) ?? null;
+    eventId = narrativeData?.eventId?.trim();
+  }
+
   if (!eventId) {
     return null;
   }
@@ -181,8 +191,9 @@ const buildPerspectiveLayout = ({
 
   perspectiveGroups.forEach((groupNode) => {
     const groupId = groupNode.id;
+    const nodeType = groupNode.type === "narrativeGroup" ? "narrative" : "perspective";
     const groupPerspectiveNodes = nodes.filter((nodeState) => {
-      if (nodeState.type !== "perspective") {
+      if (nodeState.type !== nodeType) {
         return false;
       }
       return getParentId(nodeState, "") === groupId;
@@ -275,6 +286,7 @@ interface RebuildEdgesParams {
   baseEdgeId: string;
   eventSequence: string[];
   perspectiveSequences: Map<string, string[]>;
+  narrativeSequences?: Map<string, string[]>;
 }
 
 // Rebuild event chain and perspective chain edges from sequences
@@ -282,6 +294,7 @@ const rebuildChainEdges = ({
   baseEdgeId,
   eventSequence,
   perspectiveSequences,
+  narrativeSequences,
 }: RebuildEdgesParams): WorkflowEdge[] => {
   const rebuiltEdges: WorkflowEdge[] = [];
 
@@ -314,6 +327,25 @@ const rebuildChainEdges = ({
     }
     groupIndex += 1;
   });
+
+  // Narrative chain edges
+  if (narrativeSequences) {
+    let narrativeGroupIndex = 0;
+    narrativeSequences.forEach((sequence) => {
+      for (let index = 0; index < sequence.length - 1; index += 1) {
+        rebuiltEdges.push({
+          id: `${baseEdgeId}-narrative-${narrativeGroupIndex}-${index}`,
+          source: sequence[index]!,
+          target: sequence[index + 1]!,
+          sourceHandle: "narrative-next",
+          targetHandle: "narrative-prev",
+          type: "customEdge",
+          animated: true,
+        });
+      }
+      narrativeGroupIndex += 1;
+    });
+  }
 
   return rebuiltEdges;
 };
@@ -364,11 +396,57 @@ const updatePerspectiveNode = ({
   } as WorkflowNode;
 };
 
+interface UpdateNarrativeNodeParams {
+  nodeState: WorkflowNode;
+  narrativePositionMapsByGroup: Map<string, Map<string, Position>>;
+  narrativeEventAssignments: Map<string, string>;
+}
+
+// Update a narrative node with new position and event assignment
+const updateNarrativeNode = ({
+  nodeState,
+  narrativePositionMapsByGroup,
+  narrativeEventAssignments,
+}: UpdateNarrativeNodeParams): WorkflowNode => {
+  const parentId = (nodeState as { parentId?: string }).parentId;
+  const positionMap = parentId
+    ? narrativePositionMapsByGroup.get(parentId)
+    : null;
+  const newPosition = positionMap?.get(nodeState.id);
+  const existingData = (nodeState.data as NarrativeNodeType["data"]) ?? {
+    narration: "",
+    eventId: "",
+  };
+  const assignedEventId =
+    narrativeEventAssignments.get(nodeState.id) ?? existingData.eventId ?? "";
+  const dataWithEvent =
+    assignedEventId === existingData.eventId
+      ? existingData
+      : {
+          ...existingData,
+          eventId: assignedEventId,
+        };
+
+  return {
+    ...nodeState,
+    position: newPosition
+      ? {
+          ...nodeState.position,
+          ...newPosition,
+        }
+      : nodeState.position,
+    data: dataWithEvent,
+    parentId,
+    extent: "parent",
+  } as WorkflowNode;
+};
+
 interface UpdateGroupWidthsParams {
   nodeState: WorkflowNode;
   eventGroupId: string;
   nextGroupWidth: number;
   narrationWidthUpdates: Map<string, number>;
+  narrativeWidthUpdates?: Map<string, number>;
 }
 
 // Update event group or perspective group widths
@@ -377,6 +455,7 @@ const updateGroupWidths = ({
   eventGroupId,
   nextGroupWidth,
   narrationWidthUpdates,
+  narrativeWidthUpdates,
 }: UpdateGroupWidthsParams): WorkflowNode | null => {
   if (nodeState.type === "eventGroup" && nodeState.id === eventGroupId) {
     return {
@@ -390,6 +469,19 @@ const updateGroupWidths = ({
 
   if (nodeState.type === "perspectiveGroup") {
     const nextWidth = narrationWidthUpdates.get(nodeState.id);
+    if (nextWidth != null) {
+      return {
+        ...nodeState,
+        style: {
+          ...nodeState.style,
+          width: nextWidth,
+        },
+      };
+    }
+  }
+
+  if (nodeState.type === "narrativeGroup") {
+    const nextWidth = narrativeWidthUpdates?.get(nodeState.id);
     if (nextWidth != null) {
       return {
         ...nodeState,
@@ -445,9 +537,11 @@ export function useEventAdjacency(nodeId: string) {
       const newEventId = `event-${timestamp}`;
       let eventSequence: string[] = [];
       let perspectiveSequences = new Map<string, string[]>();
+      let narrativeSequences = new Map<string, string[]>();
 
       setNodes((nodesState) => {
         perspectiveSequences = new Map<string, string[]>();
+        narrativeSequences = new Map<string, string[]>();
 
         const eventNodes = nodesState.filter(
           (nodeState) => nodeState.type === "event",
@@ -455,11 +549,18 @@ export function useEventAdjacency(nodeId: string) {
         const perspectiveNodes = nodesState.filter(
           (nodeState) => nodeState.type === "perspective",
         );
+        const narrativeNodes = nodesState.filter(
+          (nodeState) => nodeState.type === "narrative",
+        );
         const perspectiveGroups = nodesState.filter(
           (nodeState) => nodeState.type === "perspectiveGroup",
         );
+        const narrativeGroups = nodesState.filter(
+          (nodeState) => nodeState.type === "narrativeGroup",
+        );
 
         const perspectiveNodesByGroup = new Map<string, WorkflowNode[]>();
+        const narrativeNodesByGroup = new Map<string, WorkflowNode[]>();
         // Snapshot existing perspectives by group so we can derive fallbacks.
         perspectiveGroups.forEach((groupNode) => {
           const groupId = groupNode.id;
@@ -469,6 +570,16 @@ export function useEventAdjacency(nodeId: string) {
               (nodeState as { parentId?: string }).parentId === groupId,
           );
           perspectiveNodesByGroup.set(groupId, children);
+        });
+        // Snapshot existing narratives by group so we can derive fallbacks.
+        narrativeGroups.forEach((groupNode) => {
+          const groupId = groupNode.id;
+          const children = narrativeNodes.filter(
+            (nodeState) =>
+              nodeState.type === "narrative" &&
+              (nodeState as { parentId?: string }).parentId === groupId,
+          );
+          narrativeNodesByGroup.set(groupId, children);
         });
 
         const eventRowNodes = eventNodes.filter((nodeState) => {
@@ -607,11 +718,40 @@ export function useEventAdjacency(nodeId: string) {
           });
         });
 
+        const newNarrativeNodes: WorkflowNode[] = [];
+        narrativeGroups.forEach((groupNode) => {
+          const groupId = groupNode.id;
+          const existingGroupNarratives =
+            narrativeNodesByGroup.get(groupId) ?? [];
+          const rowY =
+            existingGroupNarratives[0]?.position.y ??
+            groupNode.position.y + 60;
+          const newNarrativeId = `${groupId}-narrative-${timestamp}`;
+
+          newNarrativeNodes.push({
+            id: newNarrativeId,
+            type: "narrative",
+            position: {
+              x: startPositionX,
+              y: rowY,
+            },
+            data: {
+              narration: "",
+              isLoading: false,
+              eventId: newEventId,
+            },
+            draggable: false,
+            parentId: groupId,
+            extent: "parent",
+          });
+        });
+
         // Add the freshly created nodes before running the layout pass.
         const nodesWithNew = [
           ...updatedNodes,
           newEventNode,
           ...newPerspectiveNodes,
+          ...newNarrativeNodes,
         ];
 
         const eventRowNodesWithNew = nodesWithNew.filter(
@@ -656,6 +796,22 @@ export function useEventAdjacency(nodeId: string) {
         const narrationWidthUpdates = perspectiveLayout.widthUpdates;
         perspectiveSequences = perspectiveLayout.sequences;
 
+        // Also layout narrative nodes using similar logic
+        const narrativeLayout = buildPerspectiveLayout({
+          perspectiveGroups: narrativeGroups,
+          nodes: nodesWithNew,
+          eventSequence,
+          eventPositionMap: eventLayout.eventPositionMap,
+          fallbackBaseX: eventLayout.fallbackBaseX,
+          eventIndexMap,
+        });
+
+        const narrativePositionMapsByGroup =
+          narrativeLayout.positionMapsByGroup;
+        const narrativeEventAssignments = narrativeLayout.eventAssignments;
+        const narrativeWidthUpdates = narrativeLayout.widthUpdates;
+        narrativeSequences = narrativeLayout.sequences;
+
         const computedGroupWidth =
           eventLayout.eventPositions.length > 0
             ? eventLayout.rightmostEventEdge + EVENT_GROUP_RIGHT_PADDING
@@ -695,11 +851,20 @@ export function useEventAdjacency(nodeId: string) {
             });
           }
 
+          if (nodeState.type === "narrative") {
+            return updateNarrativeNode({
+              nodeState,
+              narrativePositionMapsByGroup,
+              narrativeEventAssignments,
+            });
+          }
+
           const groupUpdate = updateGroupWidths({
             nodeState,
             eventGroupId,
             nextGroupWidth,
             narrationWidthUpdates,
+            narrativeWidthUpdates,
           });
           if (groupUpdate) {
             return groupUpdate;
@@ -715,6 +880,10 @@ export function useEventAdjacency(nodeId: string) {
         const perspectiveIdSet = new Set<string>();
         perspectiveSequences.forEach((sequence) => {
           sequence.forEach((id) => perspectiveIdSet.add(id));
+        });
+        const narrativeIdSet = new Set<string>();
+        narrativeSequences.forEach((sequence) => {
+          sequence.forEach((id) => narrativeIdSet.add(id));
         });
 
         const preservedEdges = edgesState.filter((edge) => {
@@ -736,6 +905,15 @@ export function useEventAdjacency(nodeId: string) {
             return false;
           }
 
+          const isNarrativeChainEdge =
+            edge.sourceHandle === "narrative-next" &&
+            edge.targetHandle === "narrative-prev" &&
+            narrativeIdSet.has(edge.source) &&
+            narrativeIdSet.has(edge.target);
+          if (isNarrativeChainEdge) {
+            return false;
+          }
+
           return true;
         });
 
@@ -743,6 +921,7 @@ export function useEventAdjacency(nodeId: string) {
           baseEdgeId,
           eventSequence,
           perspectiveSequences,
+          narrativeSequences,
         });
 
         return [...preservedEdges, ...rebuiltEdges];

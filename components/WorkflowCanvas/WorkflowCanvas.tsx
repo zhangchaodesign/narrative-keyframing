@@ -18,8 +18,10 @@ import { CustomEdge } from "@/components/WorkflowCanvas/CustomEdge";
 import { CharacterNode } from "@/components/WorkflowCanvas/CharacterNode/CharacterNode";
 import { EventNode } from "@/components/WorkflowCanvas/EventNode/EventNode";
 import { PerspectiveNode } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveNode";
+import { NarrativeNode } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeNode";
 import { EventGroupNode } from "@/components/WorkflowCanvas/EventNode/EventGroupNode";
 import { PerspectiveGroupNode } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveGroupNode";
+import { NarrativeGroupNode } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeGroupNode";
 import {
   type EventNodeType,
   type EventGroupNodeType,
@@ -34,9 +36,11 @@ import { cn } from "@/lib/utils";
 const nodeTypes: NodeTypes = {
   event: EventNode,
   perspective: PerspectiveNode,
+  narrative: NarrativeNode,
   character: CharacterNode,
   eventGroup: EventGroupNode,
   perspectiveGroup: PerspectiveGroupNode,
+  narrativeGroup: NarrativeGroupNode,
 };
 
 const edgeTypes: EdgeTypes = {
@@ -49,10 +53,14 @@ function nodeColor(node: WorkflowNode) {
       return "oklch(97.1% 0.014 343.198)";
     case "perspectiveGroup":
       return "oklch(97% 0.014 254.604)";
+    case "narrativeGroup":
+      return "oklch(97% 0.014 300)";
     case "event":
       return "oklch(89.9% 0.061 343.231)";
     case "perspective":
       return "oklch(88.2% 0.059 254.128)";
+    case "narrative":
+      return "oklch(88.2% 0.059 300)";
     case "character":
       return "oklch(95.4% 0.038 75.164)";
     default:
