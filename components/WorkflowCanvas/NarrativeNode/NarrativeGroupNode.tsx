@@ -8,11 +8,11 @@ import { geistMono } from "@/app/fonts";
 
 export function NarrativeGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   return (
-    <div className="group relative h-full w-full rounded-lg border-4 border-purple-100 bg-purple-50/50 shadow">
+    <div className="group relative h-full w-full rounded-lg border-4 border-green-100 bg-green-50/50 shadow">
       <div
         className={cn(
           geistMono.className,
-          "absolute left-1 top-1 rounded bg-purple-600 px-2 py-1 text-xs font-bold text-white",
+          "absolute left-1 top-1 rounded bg-primary px-2 py-1 text-xs font-bold text-white",
         )}
       >
         {data?.label}

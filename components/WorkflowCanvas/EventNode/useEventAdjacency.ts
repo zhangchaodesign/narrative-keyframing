@@ -191,7 +191,8 @@ const buildPerspectiveLayout = ({
 
   perspectiveGroups.forEach((groupNode) => {
     const groupId = groupNode.id;
-    const nodeType = groupNode.type === "narrativeGroup" ? "narrative" : "perspective";
+    const nodeType =
+      groupNode.type === "narrativeGroup" ? "narrative" : "perspective";
     const groupPerspectiveNodes = nodes.filter((nodeState) => {
       if (nodeState.type !== nodeType) {
         return false;
@@ -724,8 +725,7 @@ export function useEventAdjacency(nodeId: string) {
           const existingGroupNarratives =
             narrativeNodesByGroup.get(groupId) ?? [];
           const rowY =
-            existingGroupNarratives[0]?.position.y ??
-            groupNode.position.y + 60;
+            existingGroupNarratives[0]?.position.y ?? groupNode.position.y + 60;
           const newNarrativeId = `${groupId}-narrative-${timestamp}`;
 
           newNarrativeNodes.push({

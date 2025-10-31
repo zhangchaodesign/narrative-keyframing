@@ -1,17 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  Position,
-  type NodeProps,
-  useStore,
-} from "@xyflow/react";
+import { Position, type NodeProps, useStore } from "@xyflow/react";
 import { NarrativeHandle } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeHandle";
 import { NarrativeMenu } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeMenu";
-import type {
-  EventNodeType,
-  NarrativeNodeType,
-} from "@/lib/types/workflow";
+import type { EventNodeType, NarrativeNodeType } from "@/lib/types/workflow";
 import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
 
@@ -33,7 +26,7 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
   }, [data?.eventId, nodes]);
 
   return (
-    <div className="group relative flex gap-2 h-48 w-64 flex-col rounded-lg border-2 border-purple-600 bg-white p-3 text-xs hover:shadow-lg">
+    <div className="group relative flex gap-2 h-48 w-64 flex-col rounded-lg border-2 border-primary bg-white p-3 text-xs hover:shadow-lg">
       {isLoading && (
         <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
           <span className="loading loading-spinner text-purple-600"></span>
