@@ -189,6 +189,7 @@ export function NarrativeMenu({ nodeId }: NarrativeMenuProps) {
                 ...node.data,
                 narration:
                   narrativeForThisNode?.narration ?? node.data?.narration ?? "",
+                snippetUsages: narrativeForThisNode?.snippetUsages ?? [],
                 isLoading: false,
               },
             };

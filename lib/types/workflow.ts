@@ -20,6 +20,10 @@ export type NarrativeNodeData = {
   narration: string;
   isLoading?: boolean;
   eventId: string;
+  snippetUsages?: Array<{
+    originalSnippet: string;
+    verbatimInNarrative: string;
+  }>;
 };
 
 export type CharacterTraits = {

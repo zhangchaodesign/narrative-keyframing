@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Position, type NodeProps, useStore } from "@xyflow/react";
 import { NarrativeHandle } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeHandle";
 import { NarrativeMenu } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeMenu";
+import { NarrativeContent } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeContent";
 import type { EventNodeType, NarrativeNodeType } from "@/lib/types/workflow";
 import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
@@ -45,25 +46,10 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
         <span className="flex items-center">📖 Narration</span>
       </div>
 
-      <div
-        className="flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800"
-        onWheel={(event) => {
-          if (event.ctrlKey || event.metaKey) {
-            return;
-          }
-          event.stopPropagation();
-          event.nativeEvent.stopImmediatePropagation?.();
-        }}
-        onWheelCapture={(event) => {
-          if (event.ctrlKey || event.metaKey) {
-            return;
-          }
-          event.stopPropagation();
-          event.nativeEvent.stopImmediatePropagation?.();
-        }}
-      >
-        {data?.narration}
-      </div>
+      <NarrativeContent
+        narration={data?.narration ?? ""}
+        snippetUsages={data?.snippetUsages}
+      />
       {eventTimeline && (
         <div className="mt-1 flex gap-2">
           <span

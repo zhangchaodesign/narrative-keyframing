@@ -25,6 +25,11 @@ const RequestSchema = z.object({
   events: z.array(EventDataSchema).min(1),
 });
 
+const SnippetUsageSchema = z.object({
+  originalSnippet: z.string().describe("The original character detail/snippet text"),
+  verbatimInNarrative: z.string().describe("The exact verbatim text in the narrative that incorporates this snippet (word-for-word match)"),
+});
+
 const EventNarrationSchema = z.object({
   eventNumber: z
     .number()
@@ -35,6 +40,9 @@ const EventNarrationSchema = z.object({
     .describe(
       "Third-person omniscient narrative for this event (2-4 paragraphs) that incorporates all selected character details and shows their perspectives, thoughts, and interactions during this specific event.",
     ),
+  snippetUsages: z.array(SnippetUsageSchema).describe(
+    "Array of snippet usages showing exactly which parts of the narrative text incorporate which original character details. Each verbatimInNarrative must be an exact substring that appears in the narration.",
+  ),
 });
 
 const ResponseSchema = z.object({
@@ -131,7 +139,18 @@ Write a comprehensive third-person omniscient narrative that weaves together ALL
 5. **Event-Specific Focus**: Each narrative should be 2-4 paragraphs capturing that specific event moment
 6. **Chronological Continuity**: Maintain story flow and character consistency across ALL events, even those without specific details
 
-IMPORTANT: You must return a narrative for EVERY event, even if no specific character details are provided. For events without details, use your understanding of the characters from other events to create a coherent continuation of the story.
+SNIPPET USAGE TRACKING:
+For each event with selected character details, you must identify exactly which parts of your narrative text incorporate which original snippets:
+- In the "snippetUsages" array, provide pairs of (originalSnippet, verbatimInNarrative)
+- "originalSnippet" should be the exact text from the selected details above
+- "verbatimInNarrative" must be an EXACT substring from your generated narrative that shows how you used that snippet
+- Each verbatimInNarrative should be a phrase or sentence (not a single word) that clearly demonstrates the snippet's influence
+- Try to capture all significant uses of the provided character details
+
+IMPORTANT:
+- You must return a narrative for EVERY event, even if no specific character details are provided.
+- For events without details, use your understanding of the characters from other events to create a coherent continuation of the story.
+- For events without character details, snippetUsages should be an empty array.
 
 Return one narrative for each event in the provided order.`;
 
@@ -159,6 +178,7 @@ Return one narrative for each event in the provided order.`;
       return {
         narrativeNodeId: eventData.narrativeNodeId,
         narration: generatedNarrative?.narration ?? "",
+        snippetUsages: generatedNarrative?.snippetUsages ?? [],
       };
     });
 
