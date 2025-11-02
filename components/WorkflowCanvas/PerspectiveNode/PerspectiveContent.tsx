@@ -4,10 +4,62 @@ import {
   useWorkflowStore,
 } from "@/lib/stores/workflowStore";
 import type { PerspectiveEvidenceItem } from "@/lib/types/workflow";
+import { findTextMatches } from "@/lib/utils";
 
 interface PerspectiveContentProps {
   reflection: string;
   analysisEvidence?: PerspectiveEvidenceItem[];
+}
+
+function createHighlightedSegments(
+  text: string,
+  ranges: Array<{ start: number; end: number }>,
+): ReactNode[] {
+  if (ranges.length === 0) {
+    return [text];
+  }
+
+  // Sort and merge overlapping ranges
+  ranges.sort((a, b) => a.start - b.start || a.end - b.end);
+  const merged: Array<{ start: number; end: number }> = [];
+  ranges.forEach((range) => {
+    const last = merged[merged.length - 1];
+    if (!last || range.start > last.end) {
+      merged.push({ ...range });
+    } else if (range.end > last.end) {
+      last.end = range.end;
+    }
+  });
+
+  // Generate segments with highlights
+  const segments: ReactNode[] = [];
+  let cursor = 0;
+
+  merged.forEach((range, index) => {
+    if (range.start > cursor) {
+      segments.push(
+        <span key={`segment-${index}-text`}>
+          {text.slice(cursor, range.start)}
+        </span>,
+      );
+    }
+
+    segments.push(
+      <mark
+        key={`segment-${index}-highlight`}
+        className="rounded bg-yellow-200 px-0.5 py-0.5 text-zinc-900"
+      >
+        {text.slice(range.start, range.end)}
+      </mark>,
+    );
+    cursor = range.end;
+  });
+
+  if (cursor < text.length) {
+    segments.push(<span key="segment-tail">{text.slice(cursor)}</span>);
+  }
+
+  return segments;
 }
 
 export function PerspectiveContent({
@@ -24,6 +76,7 @@ export function PerspectiveContent({
       return null;
     }
 
+    // 1. Gather all evidence items based on selected attributes
     const analysisItems = analysisEvidence ?? [];
     const activeKeys = selectedEvidenceAttributes;
     if (
@@ -34,6 +87,7 @@ export function PerspectiveContent({
       return reflectionText;
     }
 
+    // 2. Find all matching text ranges
     const ranges: Array<{ start: number; end: number }> = [];
 
     analysisItems.forEach((entry) => {
@@ -50,68 +104,13 @@ export function PerspectiveContent({
         }
 
         const snippet = item.text;
-        if (!snippet || snippet.trim().length === 0) {
-          return;
-        }
-
-        let searchIndex = 0;
-        const snippetLength = snippet.length;
-        while (searchIndex <= reflectionText.length - snippetLength) {
-          const matchIndex = reflectionText.indexOf(snippet, searchIndex);
-          if (matchIndex === -1) {
-            break;
-          }
-          ranges.push({ start: matchIndex, end: matchIndex + snippetLength });
-          searchIndex = matchIndex + snippetLength;
-        }
+        const matches = findTextMatches(reflectionText, snippet);
+        ranges.push(...matches);
       });
     });
 
-    if (ranges.length === 0) {
-      return reflectionText;
-    }
-
-    ranges.sort((a, b) => a.start - b.start || a.end - b.end);
-    const merged: Array<{ start: number; end: number }> = [];
-    ranges.forEach((range) => {
-      const last = merged[merged.length - 1];
-      if (!last || range.start > last.end) {
-        merged.push({ ...range });
-      } else if (range.end > last.end) {
-        last.end = range.end;
-      }
-    });
-
-    const segments: ReactNode[] = [];
-    let cursor = 0;
-
-    merged.forEach((range, index) => {
-      if (range.start > cursor) {
-        segments.push(
-          <span key={`segment-${index}-text`}>
-            {reflectionText.slice(cursor, range.start)}
-          </span>,
-        );
-      }
-
-      segments.push(
-        <mark
-          key={`segment-${index}-highlight`}
-          className="rounded bg-yellow-200 px-0.5 py-0.5 text-zinc-900"
-        >
-          {reflectionText.slice(range.start, range.end)}
-        </mark>,
-      );
-      cursor = range.end;
-    });
-
-    if (cursor < reflectionText.length) {
-      segments.push(
-        <span key="segment-tail">{reflectionText.slice(cursor)}</span>,
-      );
-    }
-
-    return segments;
+    // 3. Create highlighted segments (handles sorting, merging, and rendering)
+    return createHighlightedSegments(reflectionText, ranges);
   }, [analysisEvidence, reflection, selectedEvidenceAttributes]);
 
   return (
