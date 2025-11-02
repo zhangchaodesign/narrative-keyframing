@@ -5,7 +5,7 @@ import { createEditor, Range, NodeEntry, Transforms, Editor } from "slate";
 import { Slate, Editable, withReact, RenderLeafProps } from "slate-react";
 import { withHistory, HistoryEditor } from "slate-history";
 import { Leaf } from "@/components/TextEditor/Leaf";
-import { SlateUtils } from "@/lib/utils/slateUtils";
+import { SlateUtils } from "@/lib/slateUtils";
 import { useEditorStore } from "@/lib/stores/editorStore";
 import isHotkey from "is-hotkey";
 

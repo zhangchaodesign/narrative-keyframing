@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Descendant } from "slate";
-import { SlateUtils, type SlateTextSegment } from "../utils/slateUtils";
+import { SlateUtils, type SlateTextSegment } from "../slateUtils";
 
 export type Match = { start: number; end: number };
 

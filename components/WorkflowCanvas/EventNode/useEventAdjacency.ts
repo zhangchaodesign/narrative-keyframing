@@ -12,7 +12,7 @@ import {
   formatEventTimeline,
   parseEventTimelineIndex,
   sortNodesByTimeline,
-} from "@/lib/utils/workflowUtils";
+} from "@/lib/workflow/workflowUtils";
 
 const EVENT_HORIZONTAL_GAP = 300;
 const EVENT_ROW_START_X = 20;

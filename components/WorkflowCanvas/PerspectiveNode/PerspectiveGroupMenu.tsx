@@ -9,7 +9,7 @@ import {
   cloneData,
   deleteNodeCluster,
   generateUniqueUuidId,
-} from "@/lib/utils/workflowUtils";
+} from "@/lib/workflow/workflowUtils";
 
 type PerspectiveGroupMenuProps = {
   nodeId: string;

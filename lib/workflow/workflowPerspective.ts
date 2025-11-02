@@ -5,7 +5,7 @@ import type {
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
-import { sortEventsByTimeline } from "@/lib/utils/workflowUtils";
+import { sortEventsByTimeline } from "./workflowUtils";
 
 export type CharacterSnapshotPayload = {
   name: string;

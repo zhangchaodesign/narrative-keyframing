@@ -12,11 +12,11 @@ import type {
 import {
   preparePerspectiveRequest,
   type GeneratePerspectiveResponse,
-} from "@/lib/perspective";
+} from "@/lib/workflow/workflowPerspective";
 import {
   prepareEvidenceAnalysis,
   type EvidenceAnalysisResponse,
-} from "@/lib/evidence";
+} from "@/lib/workflow/workflowEvidence";
 
 type PerspectiveMenuProps = {
   nodeId: string;

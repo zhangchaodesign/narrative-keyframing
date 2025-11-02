@@ -6,7 +6,7 @@ import { TbArrowLeft, TbArrowRight, TbCopy, TbTrash } from "react-icons/tb";
 
 import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
 import { useEventAdjacency } from "@/components/WorkflowCanvas/EventNode/useEventAdjacency";
-import { duplicateWorkflowNode } from "@/lib/utils/workflowUtils";
+import { duplicateWorkflowNode } from "@/lib/workflow/workflowUtils";
 
 type EventMenuProps = {
   nodeId: string;

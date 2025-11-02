@@ -8,7 +8,7 @@ import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
 import {
   deleteNodeWithEdges,
   duplicateWorkflowNode,
-} from "@/lib/utils/workflowUtils";
+} from "@/lib/workflow/workflowUtils";
 
 type CharacterMenuProps = {
   nodeId: string;
