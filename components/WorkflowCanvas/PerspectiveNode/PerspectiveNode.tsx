@@ -222,6 +222,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       </div>
 
       <PerspectiveContent
+        perspectiveNodeId={id}
         reflection={data?.reflection ?? ""}
         analysisEvidence={data?.analysisEvidence}
       />

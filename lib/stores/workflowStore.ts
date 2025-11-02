@@ -23,10 +23,24 @@ export const buildEvidenceAttributeKey = (
   attribute: string,
 ) => `${characterId}::${attribute.trim().toLowerCase()}`;
 
+export const buildSnippetKey = (
+  perspectiveNodeId: string,
+  snippetText: string,
+) => `${perspectiveNodeId}::${snippetText.trim()}`;
+
+export type SelectedSnippet = {
+  perspectiveNodeId: string;
+  text: string;
+  characterId: string;
+  characterName: string;
+  attributes: string[];
+};
+
 type WorkflowState = {
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
   selectedEvidenceAttributes: Record<string, boolean>;
+  selectedSnippets: Record<string, SelectedSnippet>;
   setNodes: (updater: StateUpdater<WorkflowNode[]>) => void;
   setEdges: (updater: StateUpdater<WorkflowEdge[]>) => void;
   onNodesChange: (changes: NodeChange<WorkflowNode>[]) => void;
@@ -34,6 +48,9 @@ type WorkflowState = {
   toggleEvidenceAttribute: (characterId: string, attribute: string) => void;
   clearEvidenceAttribute: (characterId: string, attribute: string) => void;
   clearAllEvidenceAttributes: () => void;
+  toggleSnippet: (snippet: SelectedSnippet) => void;
+  clearSnippet: (perspectiveNodeId: string, snippetText: string) => void;
+  clearAllSnippets: () => void;
   reset: () => void;
 };
 
@@ -181,6 +198,7 @@ const getInitialState = () => {
     nodes: synchronizeCharacterPerspectiveLinks(nodes, edges),
     edges,
     selectedEvidenceAttributes: {},
+    selectedSnippets: {},
   };
 };
 
@@ -316,6 +334,29 @@ export const useWorkflowStore = create<WorkflowState>()(
         }),
       clearAllEvidenceAttributes: () =>
         set({ selectedEvidenceAttributes: {} }),
+      toggleSnippet: (snippet) =>
+        set((state) => {
+          const key = buildSnippetKey(snippet.perspectiveNodeId, snippet.text);
+          const current = state.selectedSnippets ?? {};
+          const next = { ...current };
+          if (next[key]) {
+            delete next[key];
+          } else {
+            next[key] = snippet;
+          }
+          return { selectedSnippets: next };
+        }),
+      clearSnippet: (perspectiveNodeId, snippetText) =>
+        set((state) => {
+          const key = buildSnippetKey(perspectiveNodeId, snippetText);
+          if (!state.selectedSnippets?.[key]) {
+            return {};
+          }
+          const next = { ...state.selectedSnippets };
+          delete next[key];
+          return { selectedSnippets: next };
+        }),
+      clearAllSnippets: () => set({ selectedSnippets: {} }),
       reset: () => set(getInitialState()),
     }),
     {
@@ -342,12 +383,14 @@ export const useWorkflowStore = create<WorkflowState>()(
           nodes: normalizedNodes,
           edges,
           selectedEvidenceAttributes: state.selectedEvidenceAttributes ?? {},
+          selectedSnippets: state.selectedSnippets ?? {},
         };
       },
       partialize: (state) => ({
         nodes: state.nodes,
         edges: state.edges,
         selectedEvidenceAttributes: state.selectedEvidenceAttributes,
+        selectedSnippets: state.selectedSnippets,
       }),
     },
   ),

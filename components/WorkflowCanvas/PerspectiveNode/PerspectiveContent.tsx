@@ -1,19 +1,31 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useCallback, type ReactNode } from "react";
 import {
   buildEvidenceAttributeKey,
+  buildSnippetKey,
   useWorkflowStore,
+  type SelectedSnippet,
 } from "@/lib/stores/workflowStore";
 import type { PerspectiveEvidenceItem } from "@/lib/types/workflow";
 import { findTextMatches } from "@/lib/utils";
 
 interface PerspectiveContentProps {
+  perspectiveNodeId: string;
   reflection: string;
   analysisEvidence?: PerspectiveEvidenceItem[];
 }
 
+type SnippetRange = {
+  start: number;
+  end: number;
+  snippet: SelectedSnippet;
+};
+
 function createHighlightedSegments(
   text: string,
-  ranges: Array<{ start: number; end: number }>,
+  ranges: SnippetRange[],
+  selectedSnippets: Record<string, SelectedSnippet>,
+  perspectiveNodeId: string,
+  onToggleSnippet: (snippet: SelectedSnippet) => void,
 ): ReactNode[] {
   if (ranges.length === 0) {
     return [text];
@@ -21,13 +33,15 @@ function createHighlightedSegments(
 
   // Sort and merge overlapping ranges
   ranges.sort((a, b) => a.start - b.start || a.end - b.end);
-  const merged: Array<{ start: number; end: number }> = [];
+  const merged: SnippetRange[] = [];
   ranges.forEach((range) => {
     const last = merged[merged.length - 1];
     if (!last || range.start > last.end) {
       merged.push({ ...range });
     } else if (range.end > last.end) {
       last.end = range.end;
+      // Keep the snippet info from the longer range
+      last.snippet = range.snippet;
     }
   });
 
@@ -44,10 +58,19 @@ function createHighlightedSegments(
       );
     }
 
+    const snippetKey = buildSnippetKey(perspectiveNodeId, range.snippet.text);
+    const isSelected = Boolean(selectedSnippets[snippetKey]);
+
     segments.push(
       <mark
         key={`segment-${index}-highlight`}
-        className="rounded bg-yellow-200 px-0.5 py-0.5 text-zinc-900"
+        onClick={() => onToggleSnippet(range.snippet)}
+        className={`cursor-pointer rounded px-0.5 py-0.5 transition-colors ${
+          isSelected
+            ? "bg-blue-400 text-white ring-2 ring-blue-600"
+            : "bg-yellow-200 text-zinc-900 hover:bg-yellow-300"
+        }`}
+        title={`Click to ${isSelected ? "deselect" : "select"} snippet for story generation`}
       >
         {text.slice(range.start, range.end)}
       </mark>,
@@ -63,11 +86,21 @@ function createHighlightedSegments(
 }
 
 export function PerspectiveContent({
+  perspectiveNodeId,
   reflection,
   analysisEvidence,
 }: PerspectiveContentProps) {
   const selectedEvidenceAttributes = useWorkflowStore(
     (state) => state.selectedEvidenceAttributes,
+  );
+  const selectedSnippets = useWorkflowStore((state) => state.selectedSnippets);
+  const toggleSnippet = useWorkflowStore((state) => state.toggleSnippet);
+
+  const handleToggleSnippet = useCallback(
+    (snippet: SelectedSnippet) => {
+      toggleSnippet(snippet);
+    },
+    [toggleSnippet],
   );
 
   const highlightedReflection = useMemo<ReactNode>(() => {
@@ -87,11 +120,12 @@ export function PerspectiveContent({
       return reflectionText;
     }
 
-    // 2. Find all matching text ranges
-    const ranges: Array<{ start: number; end: number }> = [];
+    // 2. Find all matching text ranges with snippet metadata
+    const ranges: SnippetRange[] = [];
 
     analysisItems.forEach((entry) => {
       const characterId = entry.characterId;
+      const characterName = entry.characterName;
       entry.items.forEach((item) => {
         const shouldHighlight = item.attributes.some((attribute) =>
           Boolean(
@@ -105,13 +139,41 @@ export function PerspectiveContent({
 
         const snippet = item.text;
         const matches = findTextMatches(reflectionText, snippet);
-        ranges.push(...matches);
+
+        // Create snippet metadata for each match
+        const snippetData: SelectedSnippet = {
+          perspectiveNodeId,
+          text: snippet,
+          characterId,
+          characterName,
+          attributes: item.attributes,
+        };
+
+        ranges.push(
+          ...matches.map((match) => ({
+            ...match,
+            snippet: snippetData,
+          })),
+        );
       });
     });
 
     // 3. Create highlighted segments (handles sorting, merging, and rendering)
-    return createHighlightedSegments(reflectionText, ranges);
-  }, [analysisEvidence, reflection, selectedEvidenceAttributes]);
+    return createHighlightedSegments(
+      reflectionText,
+      ranges,
+      selectedSnippets,
+      perspectiveNodeId,
+      handleToggleSnippet,
+    );
+  }, [
+    analysisEvidence,
+    reflection,
+    selectedEvidenceAttributes,
+    selectedSnippets,
+    perspectiveNodeId,
+    handleToggleSnippet,
+  ]);
 
   return (
     <div
