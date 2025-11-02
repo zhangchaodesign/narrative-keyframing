@@ -33,7 +33,7 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "perspective-group-aria",
     type: "perspectiveGroup",
-    position: { x: 0, y: 320 },
+    position: { x: 0, y: 360 },
     data: {
       label: "Aria's Perspective",
       characterName: "Aria",
@@ -50,7 +50,7 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "perspective-group-lysa",
     type: "perspectiveGroup",
-    position: { x: 1300, y: 320 },
+    position: { x: 1300, y: 360 },
     data: {
       label: "Lysa's Perspective",
       characterName: "Lysa",
@@ -427,7 +427,7 @@ export const initialEdges: WorkflowEdge[] = [
     id: "edge-perspective-group-aria-narration-group",
     source: "perspective-group-aria",
     target: "narration-group",
-    sourceHandle: "group-bridge",
+    sourceHandle: "narrative-bridge",
     targetHandle: "group-bridge",
     type: "customEdge",
     animated: true,
@@ -436,7 +436,7 @@ export const initialEdges: WorkflowEdge[] = [
     id: "edge-perspective-group-lysa-narration-group",
     source: "perspective-group-lysa",
     target: "narration-group",
-    sourceHandle: "group-bridge",
+    sourceHandle: "narrative-bridge",
     targetHandle: "group-bridge",
     type: "customEdge",
     animated: true,
