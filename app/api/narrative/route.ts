@@ -26,7 +26,9 @@ const RequestSchema = z.object({
 });
 
 const EventNarrationSchema = z.object({
-  eventNumber: z.number().describe("The sequential number of the event (1, 2, 3, etc.)"),
+  eventNumber: z
+    .number()
+    .describe("The sequential number of the event (1, 2, 3, etc.)"),
   narration: z
     .string()
     .min(1)
@@ -36,9 +38,9 @@ const EventNarrationSchema = z.object({
 });
 
 const ResponseSchema = z.object({
-  narratives: z.array(EventNarrationSchema).describe(
-    "Array of narratives, one for each event in chronological order",
-  ),
+  narratives: z
+    .array(EventNarrationSchema)
+    .describe("Array of narratives, one for each event in chronological order"),
 });
 
 export async function POST(request: Request) {
@@ -60,12 +62,10 @@ export async function POST(request: Request) {
         const { eventTimeline, eventDescription, snippets } = eventData;
 
         const eventHeader = eventTimeline
-          ? `Event ${eventIndex + 1}: ${eventTimeline}${
-              eventDescription ? ` - ${eventDescription}` : ""
-            }`
+          ? `${eventTimeline}${eventDescription ? `: ${eventDescription}` : ""}`
           : eventDescription
-            ? `Event ${eventIndex + 1}: ${eventDescription}`
-            : `Event ${eventIndex + 1}`;
+          ? `Event ${eventIndex + 1}: ${eventDescription}`
+          : `Event ${eventIndex + 1}`;
 
         // If no snippets, just return the event header
         if (!snippets || snippets.length === 0) {
@@ -73,22 +73,23 @@ export async function POST(request: Request) {
   (No specific character details selected for this event - infer from overall story context)`;
         }
 
-        // Group snippets by character for this event
+        // Group snippets by character name for this event
         const characterSnippets = new Map<
           string,
           { characterName: string; snippets: string[]; attributes: Set<string> }
         >();
 
         snippets.forEach((snippet) => {
-          if (!characterSnippets.has(snippet.characterId)) {
-            characterSnippets.set(snippet.characterId, {
+          const key = snippet.characterName;
+          if (!characterSnippets.has(key)) {
+            characterSnippets.set(key, {
               characterName: snippet.characterName,
               snippets: [],
               attributes: new Set(),
             });
           }
 
-          const charData = characterSnippets.get(snippet.characterId)!;
+          const charData = characterSnippets.get(key)!;
           charData.snippets.push(snippet.text);
           snippet.attributes.forEach((attr: string) =>
             charData.attributes.add(attr),
@@ -127,9 +128,8 @@ Write a comprehensive third-person omniscient narrative that weaves together ALL
 2. **Incorporate Selected Details**: For events with character details, seamlessly integrate ALL the provided snippets into the narrative
 3. **Bridge Events Without Details**: For events without specific character details, create narrative continuity by inferring character states from surrounding events and the overall story arc
 4. **Character Development**: Show how characters evolve, interact, and influence each other across the entire sequence
-5. **Rich Storytelling**: Use sensory details, internal monologue, and emotional depth throughout
-6. **Event-Specific Focus**: Each narrative should be 2-4 paragraphs capturing that specific event moment
-7. **Chronological Continuity**: Maintain story flow and character consistency across ALL events, even those without specific details
+5. **Event-Specific Focus**: Each narrative should be 2-4 paragraphs capturing that specific event moment
+6. **Chronological Continuity**: Maintain story flow and character consistency across ALL events, even those without specific details
 
 IMPORTANT: You must return a narrative for EVERY event, even if no specific character details are provided. For events without details, use your understanding of the characters from other events to create a coherent continuation of the story.
 

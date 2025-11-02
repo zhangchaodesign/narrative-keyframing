@@ -3,7 +3,10 @@
 import { useCallback, useState } from "react";
 import { TbPlayerPlay } from "react-icons/tb";
 import { useReactFlow, useStore } from "@xyflow/react";
-import { useWorkflowStore, type SelectedSnippet } from "@/lib/stores/workflowStore";
+import {
+  useWorkflowStore,
+  type SelectedSnippet,
+} from "@/lib/stores/workflowStore";
 import type {
   NarrativeNodeType,
   PerspectiveNodeType,
@@ -46,8 +49,7 @@ export function NarrativeMenu({ nodeId }: NarrativeMenuProps) {
       // Find all narrative nodes in the same group
       const allNarrativeNodesInGroup = nodes.filter(
         (node) =>
-          node.type === "narrative" &&
-          node.parentId === narrativeParentGroupId,
+          node.type === "narrative" && node.parentId === narrativeParentGroupId,
       ) as NarrativeNodeType[];
 
       // Find perspective groups connected to the narrative group
@@ -70,7 +72,9 @@ export function NarrativeMenu({ nodeId }: NarrativeMenuProps) {
       // Get all selected snippets from linked perspective nodes
       const allRelevantSnippets = Object.values(selectedSnippets).filter(
         (snippet) =>
-          linkedPerspectiveNodes.some((pNode) => pNode.id === snippet.perspectiveNodeId),
+          linkedPerspectiveNodes.some(
+            (pNode) => pNode.id === snippet.perspectiveNodeId,
+          ),
       );
 
       if (allRelevantSnippets.length === 0) {
@@ -81,46 +85,54 @@ export function NarrativeMenu({ nodeId }: NarrativeMenuProps) {
       }
 
       // Build events data with their associated snippets
-      const eventsData = allNarrativeNodesInGroup.map((narrativeNodeInGroup) => {
-        const eventId = narrativeNodeInGroup.data?.eventId;
-        let eventDescription = "";
-        let eventTimeline = "";
+      const eventsData = allNarrativeNodesInGroup.map(
+        (narrativeNodeInGroup) => {
+          const eventId = narrativeNodeInGroup.data?.eventId;
+          let eventDescription = "";
+          let eventTimeline = "";
 
-        if (eventId) {
-          const eventNode = nodes.find(
-            (node) => node.id === eventId && node.type === "event",
-          ) as EventNodeType | undefined;
+          if (eventId) {
+            const eventNode = nodes.find(
+              (node) => node.id === eventId && node.type === "event",
+            ) as EventNodeType | undefined;
 
-          if (eventNode) {
-            eventDescription = eventNode.data?.description ?? "";
-            eventTimeline = eventNode.data?.timeline ?? "";
+            if (eventNode) {
+              eventDescription = eventNode.data?.description ?? "";
+              eventTimeline = eventNode.data?.timeline ?? "";
+            }
           }
-        }
 
-        // Find perspective nodes with matching eventId
-        const perspectiveNodesForEvent = linkedPerspectiveNodes.filter(
-          (pNode) => pNode.data?.eventId === eventId,
-        );
+          // Find perspective nodes with matching eventId
+          const perspectiveNodesForEvent = linkedPerspectiveNodes.filter(
+            (pNode) => pNode.data?.eventId === eventId,
+          );
 
-        // Get snippets from those perspective nodes
-        const snippetsForEvent = allRelevantSnippets.filter((snippet) =>
-          perspectiveNodesForEvent.some((pNode) => pNode.id === snippet.perspectiveNodeId),
-        );
+          // Get snippets from those perspective nodes
+          const snippetsForEvent = allRelevantSnippets.filter((snippet) =>
+            perspectiveNodesForEvent.some(
+              (pNode) => pNode.id === snippet.perspectiveNodeId,
+            ),
+          );
 
-        return {
-          narrativeNodeId: narrativeNodeInGroup.id,
-          eventId,
-          eventDescription,
-          eventTimeline,
-          snippets: snippetsForEvent,
-        };
-      });
+          return {
+            narrativeNodeId: narrativeNodeInGroup.id,
+            eventId,
+            eventDescription,
+            eventTimeline,
+            snippets: snippetsForEvent,
+          };
+        },
+      );
 
       // Check if at least one event has snippets
-      const hasAnySnippets = eventsData.some((event) => event.snippets.length > 0);
+      const hasAnySnippets = eventsData.some(
+        (event) => event.snippets.length > 0,
+      );
 
       if (!hasAnySnippets) {
-        alert("Please select at least one snippet from any event to generate the story.");
+        alert(
+          "Please select at least one snippet from any event to generate the story.",
+        );
         return;
       }
 
@@ -175,7 +187,8 @@ export function NarrativeMenu({ nodeId }: NarrativeMenuProps) {
               ...node,
               data: {
                 ...node.data,
-                narration: narrativeForThisNode?.narration ?? node.data?.narration ?? "",
+                narration:
+                  narrativeForThisNode?.narration ?? node.data?.narration ?? "",
                 isLoading: false,
               },
             };

@@ -29,8 +29,8 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
     <div className="group relative flex gap-2 h-48 w-64 flex-col rounded-lg border-2 border-primary bg-white p-3 text-xs hover:shadow-lg">
       {isLoading && (
         <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
-          <span className="loading loading-spinner text-purple-600"></span>
-          <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-purple-600">
+          <span className="loading loading-spinner text-green-600"></span>
+          <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-green-600">
             Preparing narration...
           </span>
         </div>
