@@ -56,7 +56,7 @@ export const initialNodes: WorkflowNode[] = [
     },
     style: {
       width: 1200,
-      height: 300,
+      height: 440,
       backgroundColor: "transparent",
       border: "none",
       padding: 0,

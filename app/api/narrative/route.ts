@@ -26,8 +26,14 @@ const RequestSchema = z.object({
 });
 
 const SnippetUsageSchema = z.object({
-  originalSnippet: z.string().describe("The original character detail/snippet text"),
-  verbatimInNarrative: z.string().describe("The exact verbatim text in the narrative that incorporates this snippet (word-for-word match)"),
+  originalSnippet: z
+    .string()
+    .describe("The original character detail/snippet text"),
+  verbatimInNarrative: z
+    .string()
+    .describe(
+      "The exact verbatim text in the narrative that incorporates this snippet (word-for-word match)",
+    ),
 });
 
 const EventNarrationSchema = z.object({
@@ -40,9 +46,11 @@ const EventNarrationSchema = z.object({
     .describe(
       "Third-person omniscient narrative for this event (2-4 paragraphs) that incorporates all selected character details and shows their perspectives, thoughts, and interactions during this specific event.",
     ),
-  snippetUsages: z.array(SnippetUsageSchema).describe(
-    "Array of snippet usages showing exactly which parts of the narrative text incorporate which original character details. Each verbatimInNarrative must be an exact substring that appears in the narration.",
-  ),
+  snippetUsages: z
+    .array(SnippetUsageSchema)
+    .describe(
+      "Array of snippet usages showing exactly which parts of the narrative text incorporate which original character details. Each verbatimInNarrative must be an exact substring that appears in the narration.",
+    ),
 });
 
 const ResponseSchema = z.object({
