@@ -116,13 +116,11 @@ export function NarrativeMenu({ nodeId }: NarrativeMenuProps) {
         };
       });
 
-      // Filter out events with no snippets
-      const eventsWithSnippets = eventsData.filter(
-        (event) => event.snippets.length > 0,
-      );
+      // Check if at least one event has snippets
+      const hasAnySnippets = eventsData.some((event) => event.snippets.length > 0);
 
-      if (eventsWithSnippets.length === 0) {
-        alert("No snippets found for any events. Please select snippets that match the events.");
+      if (!hasAnySnippets) {
+        alert("Please select at least one snippet from any event to generate the story.");
         return;
       }
 
@@ -145,14 +143,14 @@ export function NarrativeMenu({ nodeId }: NarrativeMenuProps) {
         }),
       );
 
-      // Call the API with all events
+      // Call the API with all events (including those without snippets)
       const response = await fetch("/api/narrative", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          events: eventsWithSnippets,
+          events: eventsData,
         }),
       });
 

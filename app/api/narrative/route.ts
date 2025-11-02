@@ -18,7 +18,7 @@ const EventDataSchema = z.object({
   eventId: z.string().optional(),
   eventDescription: z.string().optional(),
   eventTimeline: z.string().optional(),
-  snippets: z.array(SnippetSchema),
+  snippets: z.array(SnippetSchema).default([]),
 });
 
 const RequestSchema = z.object({
@@ -59,6 +59,20 @@ export async function POST(request: Request) {
       .map((eventData, eventIndex) => {
         const { eventTimeline, eventDescription, snippets } = eventData;
 
+        const eventHeader = eventTimeline
+          ? `Event ${eventIndex + 1}: ${eventTimeline}${
+              eventDescription ? ` - ${eventDescription}` : ""
+            }`
+          : eventDescription
+            ? `Event ${eventIndex + 1}: ${eventDescription}`
+            : `Event ${eventIndex + 1}`;
+
+        // If no snippets, just return the event header
+        if (!snippets || snippets.length === 0) {
+          return `${eventHeader}
+  (No specific character details selected for this event - infer from overall story context)`;
+        }
+
         // Group snippets by character for this event
         const characterSnippets = new Map<
           string,
@@ -80,14 +94,6 @@ export async function POST(request: Request) {
             charData.attributes.add(attr),
           );
         });
-
-        const eventHeader = eventTimeline
-          ? `Event ${eventIndex + 1}: ${eventTimeline}${
-              eventDescription ? ` - ${eventDescription}` : ""
-            }`
-          : eventDescription
-            ? `Event ${eventIndex + 1}: ${eventDescription}`
-            : `Event ${eventIndex + 1}`;
 
         const characterDetails = Array.from(characterSnippets.entries())
           .map(([_, data]) => {
@@ -115,14 +121,17 @@ EVENTS AND CHARACTER PERSPECTIVES:
 ${eventsSection}
 
 INSTRUCTIONS:
-Write a comprehensive third-person omniscient narrative that weaves together ALL the events and character perspectives above. For each event, create a rich story that:
+Write a comprehensive third-person omniscient narrative that weaves together ALL the events above. For each event, create a rich story that:
 
 1. **Third-Person Omniscient Point of View**: Reveal the inner thoughts, feelings, and perspectives of multiple characters
-2. **Incorporate ALL Selected Details**: Seamlessly integrate every snippet into the narrative in a natural way
-3. **Character Development**: Show how characters evolve, interact, and influence each other
-4. **Rich Storytelling**: Use sensory details, internal monologue, and emotional depth
-5. **Event-Specific Focus**: Each narrative should be 2-4 paragraphs capturing that specific event moment
-6. **Chronological Continuity**: Maintain story flow and character consistency across all events
+2. **Incorporate Selected Details**: For events with character details, seamlessly integrate ALL the provided snippets into the narrative
+3. **Bridge Events Without Details**: For events without specific character details, create narrative continuity by inferring character states from surrounding events and the overall story arc
+4. **Character Development**: Show how characters evolve, interact, and influence each other across the entire sequence
+5. **Rich Storytelling**: Use sensory details, internal monologue, and emotional depth throughout
+6. **Event-Specific Focus**: Each narrative should be 2-4 paragraphs capturing that specific event moment
+7. **Chronological Continuity**: Maintain story flow and character consistency across ALL events, even those without specific details
+
+IMPORTANT: You must return a narrative for EVERY event, even if no specific character details are provided. For events without details, use your understanding of the characters from other events to create a coherent continuation of the story.
 
 Return one narrative for each event in the provided order.`;
 
