@@ -183,7 +183,7 @@ ${eventSequence
 `
         : "";
 
-    console.log("Generating perspectives for tasks:", perspectives);
+    // console.log("Generating perspectives for tasks:", perspectives);
 
     const tasksSection = buildTasksSection(perspectives);
 

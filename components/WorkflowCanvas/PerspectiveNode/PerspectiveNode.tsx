@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Position,
   type NodeProps,
@@ -38,6 +38,9 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const analysisStatus = data?.analysisStatus ?? "idle";
   const analysisStatusMessage = data?.analysisStatusMessage?.trim();
   const hasReflectionContent = Boolean(data?.reflection?.trim());
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedReflection, setEditedReflection] = useState(data?.reflection ?? "");
 
   const hasDirectCharacter = useMemo(() => {
     const characterNode = nodes.find(
@@ -115,6 +118,40 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       }),
     );
   }, [edges, id, nodes, setNodes]);
+
+  const handleToggleEdit = useCallback(() => {
+    if (isEditing) {
+      // Save the edited reflection
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
+          if (node.id !== id || node.type !== "perspective") {
+            return node;
+          }
+          const existingData = node.data as PerspectiveNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              reflection: editedReflection,
+              // Clear evidence analysis when reflection is edited
+              analysisEvidence: [],
+              analysisStatus: "idle",
+              analysisStatusMessage: undefined,
+            },
+          };
+        }),
+      );
+      setIsEditing(false);
+    } else {
+      // Enter edit mode
+      setEditedReflection(data?.reflection ?? "");
+      setIsEditing(true);
+    }
+  }, [isEditing, editedReflection, data?.reflection, id, setNodes]);
+
+  const handleReflectionChange = useCallback((newReflection: string) => {
+    setEditedReflection(newReflection);
+  }, []);
 
   // function to create a new character node linked to this perspective
   const handleCreateCharacter = useCallback(() => {
@@ -205,7 +242,11 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           </span>
         </div>
       )}
-      <PerspectiveMenu nodeId={id} />
+      <PerspectiveMenu
+        nodeId={id}
+        isEditing={isEditing}
+        onToggleEdit={handleToggleEdit}
+      />
       <div
         className={cn(
           geistMono.className,
@@ -225,6 +266,8 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         perspectiveNodeId={id}
         reflection={data?.reflection ?? ""}
         analysisEvidence={data?.analysisEvidence}
+        isEditing={isEditing}
+        onReflectionChange={handleReflectionChange}
       />
       {eventTimeline && (
         <div className="mt-1 flex gap-2">

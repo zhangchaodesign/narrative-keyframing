@@ -140,25 +140,31 @@ ${eventsSection}
 INSTRUCTIONS:
 Write a comprehensive third-person omniscient narrative that weaves together ALL the events above. For each event, create a rich story that:
 
-1. **Third-Person Omniscient Point of View**: Reveal the inner thoughts, feelings, and perspectives of multiple characters
-2. **Incorporate Selected Details**: For events with character details, seamlessly integrate ALL the provided snippets into the narrative
-3. **Bridge Events Without Details**: For events without specific character details, create narrative continuity by inferring character states from surrounding events and the overall story arc
-4. **Character Development**: Show how characters evolve, interact, and influence each other across the entire sequence
-5. **Event-Specific Focus**: Each narrative should be 2-4 paragraphs capturing that specific event moment
-6. **Chronological Continuity**: Maintain story flow and character consistency across ALL events, even those without specific details
+1. **Third-Person Omniscient Point of View**: Reveal the inner thoughts, feelings, and perspectives of multiple characters using third-person pronouns (he, she, they) and character names
+2. **Transform First-Person Details**: The selected character details come from first-person limited narrations. When incorporating them into your third-person omniscient narrative:
+   - CONVERT first-person pronouns (I, me, my, we, our) to third-person (he, she, they, [character name], his, her, their)
+   - REPHRASE first-person observations as third-person narration while preserving the meaning and details
+   - DO NOT copy first-person text verbatim - transform it into proper third-person omniscient narration
+   - Example: "I felt nervous" → "Sarah felt nervous" or "Nervousness crept over him"
+3. **Incorporate Selected Details**: For events with character details, seamlessly integrate ALL the provided snippets into the narrative after transforming them to third-person perspective
+4. **Bridge Events Without Details**: For events without specific character details, create narrative continuity by inferring character states from surrounding events and the overall story arc
+5. **Character Development**: Show how characters evolve, interact, and influence each other across the entire sequence
+6. **Event-Specific Focus**: Each narrative should be 2-4 paragraphs capturing that specific event moment
+7. **Chronological Continuity**: Maintain story flow and character consistency across ALL events, even those without specific details
 
 SNIPPET USAGE TRACKING:
 For each event with selected character details, you must identify exactly which parts of your narrative text incorporate which original snippets:
 - In the "snippetUsages" array, provide pairs of (originalSnippet, verbatimInNarrative)
-- "originalSnippet" should be the exact text from the selected details above
-- "verbatimInNarrative" must be an EXACT substring from your generated narrative that shows how you used that snippet
-- Each verbatimInNarrative should be a phrase or sentence (not a single word) that clearly demonstrates the snippet's influence
+- "originalSnippet" should be the exact text from the selected details above (as originally provided in first-person)
+- "verbatimInNarrative" must be an EXACT substring from your generated third-person narrative that shows how you transformed and used that snippet
+- Each verbatimInNarrative should be a phrase or short sentence (not a single word) that clearly demonstrates the snippet's influence in third-person form
 - Try to capture all significant uses of the provided character details
 
 IMPORTANT:
 - You must return a narrative for EVERY event, even if no specific character details are provided.
 - For events without details, use your understanding of the characters from other events to create a coherent continuation of the story.
 - For events without character details, snippetUsages should be an empty array.
+- Remember: The input snippets are in first-person, but your output narrative must be in third-person omniscient throughout.
 
 Return one narrative for each event in the provided order.`;
 

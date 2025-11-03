@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useReactFlow, useStore } from "@xyflow/react";
-import { TbListSearch, TbPlayerPlay } from "react-icons/tb";
+import { TbListSearch, TbPlayerPlay, TbPencil, TbCheck } from "react-icons/tb";
 
 import type {
   PerspectiveNodeType,
@@ -20,6 +20,8 @@ import {
 
 type PerspectiveMenuProps = {
   nodeId: string;
+  isEditing?: boolean;
+  onToggleEdit?: () => void;
 };
 
 const READY_TO_ANALYZE_MESSAGE = "Ready to analyze evidence.";
@@ -29,7 +31,11 @@ const ANALYSIS_FAILED_MESSAGE = "Evidence analysis failed. Try again.";
 const NO_CHARACTERS_MESSAGE = "No characters available to analyze.";
 const NO_EVIDENCE_FOUND_MESSAGE = "No supporting evidence found.";
 
-export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
+export function PerspectiveMenu({
+  nodeId,
+  isEditing = false,
+  onToggleEdit,
+}: PerspectiveMenuProps) {
   const { setNodes, getNode, getNodes, getEdges } = useReactFlow<
     WorkflowNode,
     WorkflowEdge
@@ -349,11 +355,21 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
     <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
       <button
         type="button"
+        onClick={onToggleEdit}
+        className="pointer-events-auto rounded-full p-1 transition hover:bg-purple-50 hover:text-purple-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-purple-500 disabled:cursor-not-allowed disabled:opacity-60"
+        title={isEditing ? "Save and finish editing" : "Edit perspective text"}
+        aria-label={isEditing ? "Save and finish editing" : "Edit perspective text"}
+        disabled={!hasReflection}
+      >
+        {isEditing ? <TbCheck size={12} /> : <TbPencil size={12} />}
+      </button>
+      <button
+        type="button"
         onClick={handleAnalyzeEvidence}
         className="pointer-events-auto rounded-full p-1 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
         title="Analyze textual evidence that supports character attributes"
         aria-label="Analyze textual evidence that supports character attributes"
-        disabled={isAnalyzingEvidence || !hasReflection}
+        disabled={isAnalyzingEvidence || !hasReflection || isEditing}
       >
         {isAnalyzingEvidence ? (
           <span className="block h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent align-middle" />
@@ -367,7 +383,7 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
         className="pointer-events-auto rounded-full p-1 transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 disabled:cursor-not-allowed disabled:opacity-60"
         title="Generate first-person limited narration"
         aria-label="Generate first-person limited narration"
-        disabled={isGenerating}
+        disabled={isGenerating || isEditing}
       >
         <TbPlayerPlay size={12} />
       </button>

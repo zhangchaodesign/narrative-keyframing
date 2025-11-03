@@ -1,4 +1,4 @@
-import { useMemo, useCallback, type ReactNode } from "react";
+import { useMemo, useCallback, useState, useRef, useEffect, type ReactNode } from "react";
 import {
   buildEvidenceAttributeKey,
   buildSnippetKey,
@@ -12,6 +12,8 @@ interface PerspectiveContentProps {
   perspectiveNodeId: string;
   reflection: string;
   analysisEvidence?: PerspectiveEvidenceItem[];
+  isEditing?: boolean;
+  onReflectionChange?: (newReflection: string) => void;
 }
 
 type SnippetRange = {
@@ -89,18 +91,44 @@ export function PerspectiveContent({
   perspectiveNodeId,
   reflection,
   analysisEvidence,
+  isEditing = false,
+  onReflectionChange,
 }: PerspectiveContentProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [editValue, setEditValue] = useState(reflection);
+
   const selectedEvidenceAttributes = useWorkflowStore(
     (state) => state.selectedEvidenceAttributes,
   );
   const selectedSnippets = useWorkflowStore((state) => state.selectedSnippets);
   const toggleSnippet = useWorkflowStore((state) => state.toggleSnippet);
 
+  // Update edit value when reflection changes externally
+  useEffect(() => {
+    setEditValue(reflection);
+  }, [reflection]);
+
+  // Auto-focus textarea when entering edit mode
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isEditing]);
+
   const handleToggleSnippet = useCallback(
     (snippet: SelectedSnippet) => {
       toggleSnippet(snippet);
     },
     [toggleSnippet],
+  );
+
+  const handleTextChange = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newValue = event.target.value;
+      setEditValue(newValue);
+      onReflectionChange?.(newValue);
+    },
+    [onReflectionChange],
   );
 
   const highlightedReflection = useMemo<ReactNode>(() => {
@@ -174,6 +202,31 @@ export function PerspectiveContent({
     perspectiveNodeId,
     handleToggleSnippet,
   ]);
+
+  if (isEditing) {
+    return (
+      <textarea
+        ref={textareaRef}
+        value={editValue}
+        onChange={handleTextChange}
+        className="flex-1 w-full resize-none rounded bg-white border border-zinc-300 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400"
+        onWheel={(event) => {
+          if (event.ctrlKey || event.metaKey) {
+            return;
+          }
+          event.stopPropagation();
+          event.nativeEvent.stopImmediatePropagation?.();
+        }}
+        onWheelCapture={(event) => {
+          if (event.ctrlKey || event.metaKey) {
+            return;
+          }
+          event.stopPropagation();
+          event.nativeEvent.stopImmediatePropagation?.();
+        }}
+      />
+    );
+  }
 
   return (
     <div
