@@ -88,7 +88,7 @@ export const initialNodes: WorkflowNode[] = [
     data: {
       description:
         "Dawn raid on the village. Aria breaks formation to save a trapped child. Lysa watches from the archive tower, documenting the chaos.",
-      timeline: "Event 1 - Dawn Raid",
+      timeline: "Event 1",
     },
     parentId: "event-group",
     extent: "parent",
@@ -101,7 +101,7 @@ export const initialNodes: WorkflowNode[] = [
     data: {
       description:
         "Council meeting. Aria is publicly reprimanded and demoted to archive duty under Lysa's supervision. Lysa reluctantly accepts her new charge.",
-      timeline: "Event 2 - Council Decision",
+      timeline: "Event 2",
     },
     parentId: "event-group",
     extent: "parent",
@@ -114,7 +114,7 @@ export const initialNodes: WorkflowNode[] = [
     data: {
       description:
         "Evening in the archives. Aria discovers old battle records. Lysa shares tactical insights from historical texts. They plan an ambush strategy together.",
-      timeline: "Event 3 - Archive Discovery",
+      timeline: "Event 3",
     },
     parentId: "event-group",
     extent: "parent",
@@ -127,7 +127,7 @@ export const initialNodes: WorkflowNode[] = [
     data: {
       description:
         "Night battle. Raiders return. Aria and Lysa execute their planned ambush, combining scout tactics with historical strategy. Victory without casualties.",
-      timeline: "Event 4 - The Ambush",
+      timeline: "Event 4",
     },
     parentId: "event-group",
     extent: "parent",
@@ -276,10 +276,7 @@ export const initialNodes: WorkflowNode[] = [
     data: {
       name: "Aria",
       traits: {
-        physiology: [
-          "Wears a reinforced archivist's cloak",
-          "Carries both scrolls and blades",
-        ],
+        physiology: ["Wears a reinforced archivist's cloak"],
         psychology: [
           "Strategic thinker",
           "Protective without recklessness",
