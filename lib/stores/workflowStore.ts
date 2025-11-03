@@ -315,12 +315,41 @@ export const useWorkflowStore = create<WorkflowState>()(
           const key = buildEvidenceAttributeKey(characterId, attribute);
           const current = state.selectedEvidenceAttributes ?? {};
           const next = { ...current };
-          if (next[key]) {
+          const isDeselecting = Boolean(next[key]);
+
+          if (isDeselecting) {
             delete next[key];
+
+            // When deselecting a trait, also deselect all snippets associated with this trait
+            const normalizedAttribute = attribute.trim().toLowerCase();
+            const nextSnippets = { ...state.selectedSnippets };
+            let snippetsChanged = false;
+
+            Object.keys(nextSnippets).forEach((snippetKey) => {
+              const snippet = nextSnippets[snippetKey];
+              if (
+                snippet.characterId === characterId &&
+                snippet.attributes.some(
+                  (attr) => attr.trim().toLowerCase() === normalizedAttribute
+                )
+              ) {
+                delete nextSnippets[snippetKey];
+                snippetsChanged = true;
+              }
+            });
+
+            if (snippetsChanged) {
+              return {
+                selectedEvidenceAttributes: next,
+                selectedSnippets: nextSnippets,
+              };
+            }
+
+            return { selectedEvidenceAttributes: next };
           } else {
             next[key] = true;
+            return { selectedEvidenceAttributes: next };
           }
-          return { selectedEvidenceAttributes: next };
         }),
       clearEvidenceAttribute: (characterId, attribute) =>
         set((state) => {
