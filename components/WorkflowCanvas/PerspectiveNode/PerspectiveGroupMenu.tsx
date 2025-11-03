@@ -73,7 +73,8 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
       dragging: false,
     } as WorkflowNode;
 
-    const newChildNodes: WorkflowNode[] = childNodes.map((original) => {
+    // First pass: Generate new IDs for all child nodes and build the complete ID map
+    const childNodesWithNewIds = childNodes.map((original) => {
       const prefix =
         original.type === "perspective"
           ? "perspective"
@@ -83,7 +84,11 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
       const newId = generateUniqueUuidId(prefix, existingNodeIds);
       existingNodeIds.add(newId);
       idMap.set(original.id, newId);
+      return { original, newId };
+    });
 
+    // Second pass: Create new nodes with updated data, now that all IDs are mapped
+    const newChildNodes: WorkflowNode[] = childNodesWithNewIds.map(({ original, newId }) => {
       let clonedData = cloneData(original.data);
 
       // Update analysisEvidence characterId references for perspective nodes
@@ -93,7 +98,7 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
           clonedData = {
             ...clonedData,
             analysisEvidence: perspectiveData.analysisEvidence.map((evidence) => {
-              // Map old character ID to new character ID
+              // Map old character ID to new character ID using the complete idMap
               const newCharacterId = idMap.get(evidence.characterId) ?? evidence.characterId;
               return {
                 characterId: newCharacterId,
