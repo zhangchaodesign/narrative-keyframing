@@ -43,6 +43,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
               data: {
                 ...groupData,
                 characterName: nextName,
+                label: nextName ? `${nextName}'s Perspective` : "First-Person Limited Cluster",
               },
             };
           }
