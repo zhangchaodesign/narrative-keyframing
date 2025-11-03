@@ -2,14 +2,20 @@
 
 import { useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { TbCopy, TbTrash } from "react-icons/tb";
+import { TbCopy, TbTrash, TbFileText } from "react-icons/tb";
 
-import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
+import type {
+  NarrativeNodeType,
+  WorkflowEdge,
+  WorkflowNode,
+} from "@/lib/types/workflow";
 import {
   cloneData,
   deleteNodeCluster,
   generateUniqueUuidId,
 } from "@/lib/workflow/workflowUtils";
+import { useEditorStore } from "@/lib/stores/editorStore";
+import { SlateUtils } from "@/lib/slateUtils";
 
 type NarrativeGroupMenuProps = {
   nodeId: string;
@@ -22,6 +28,7 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
     WorkflowNode,
     WorkflowEdge
   >();
+  const { setValue } = useEditorStore();
 
   const handleDelete = useCallback(() => {
     const nodes = getNodes();
@@ -31,6 +38,60 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
     setNodes(result.nodes);
     setEdges(result.edges);
   }, [getNodes, getEdges, nodeId, setEdges, setNodes]);
+
+  const handlePopulateEditor = useCallback(() => {
+    const currentNodes = getNodes();
+
+    // Find all narrative nodes within this group
+    const narrativeNodes = currentNodes.filter(
+      (node): node is NarrativeNodeType =>
+        node.type === "narrative" && node.parentId === nodeId,
+    );
+
+    if (narrativeNodes.length === 0) {
+      return;
+    }
+
+    // Sort narrative nodes by their position (left to right, top to bottom)
+    const sortedNarratives = narrativeNodes.sort((a, b) => {
+      // Primary sort by y position (top to bottom)
+      if (Math.abs(a.position.y - b.position.y) > 50) {
+        return a.position.y - b.position.y;
+      }
+      // Secondary sort by x position (left to right)
+      return a.position.x - b.position.x;
+    });
+
+    // Combine all narrative content with spacing
+    const combinedText = sortedNarratives
+      .map((node) => node.data?.narration || "")
+      .filter((text) => text.trim().length > 0)
+      .join("\n\n");
+
+    if (combinedText.trim().length === 0) {
+      return;
+    }
+
+    // Convert to Slate format and populate the editor
+    const slateValue = SlateUtils.textToSlateState(combinedText);
+    setValue(slateValue);
+
+    // Update all narrative group nodes to mark this one as active
+    setNodes((nodes) =>
+      nodes.map((node) => {
+        if (node.type === "narrativeGroup") {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              isActiveInEditor: node.id === nodeId,
+            },
+          };
+        }
+        return node;
+      }) as WorkflowNode[],
+    );
+  }, [getNodes, nodeId, setValue, setNodes]);
 
   const handleDuplicate = useCallback(() => {
     const currentNodes = getNodes();
@@ -82,8 +143,8 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
         id: newId,
         parentId: newGroupId,
         position: {
-          x: original.position.x + CLONE_OFFSET,
-          y: original.position.y + CLONE_OFFSET,
+          x: original.position.x,
+          y: original.position.y,
         },
         data: cloneData(original.data),
         selected: false,
@@ -136,6 +197,15 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
 
   return (
     <div className="pointer-events-none absolute -top-16 right-0 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+      <button
+        type="button"
+        onClick={handlePopulateEditor}
+        className="pointer-events-auto rounded-full p-2 transition hover:bg-green-100 hover:text-green-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 cursor-pointer"
+        title="Populate text editor with narratives"
+        aria-label="Populate text editor with narratives"
+      >
+        <TbFileText size={18} />
+      </button>
       <button
         type="button"
         onClick={handleDuplicate}

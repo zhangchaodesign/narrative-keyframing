@@ -51,6 +51,7 @@ export type PerspectiveEvidenceItem = {
 export type GroupNodeData = {
   label: string;
   characterName?: string;
+  isActiveInEditor?: boolean;
 };
 
 export type EventNodeType = Node<EventNodeData, "event">;
