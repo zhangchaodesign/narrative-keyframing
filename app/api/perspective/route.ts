@@ -195,6 +195,7 @@ ${timelineSection}For each task that follows, write a vivid first-person perspec
 - If character snapshots are supplied, embody the narrator exactly as those checkpoints describe.
 - If no snapshots are supplied for a task, narrate how the narrator moves from the prior snapshot state to the next.
 - Keep the progression consistent with previously established facts.
+- Make sure to cover all character attributes provided in the snapshots throughout the narration.
 
 Return each result as a JSON object that satisfies the provided schema.
 

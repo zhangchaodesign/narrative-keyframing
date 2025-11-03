@@ -296,10 +296,13 @@ export function PerspectiveMenu({ nodeId }: PerspectiveMenuProps) {
       const supportedCharacters = evidence.filter(
         (entry) => entry.items.length > 0,
       );
+      const uniqueCharacterNames = [
+        ...new Set(supportedCharacters.map((entry) => entry.characterName)),
+      ];
       const successMessage =
-        supportedCharacters.length > 0
-          ? supportedCharacters
-              .map((entry) => `Found evidence for ${entry.characterName}`)
+        uniqueCharacterNames.length > 0
+          ? uniqueCharacterNames
+              .map((name) => `Found evidence for ${name}`)
               .join(", ")
           : NO_EVIDENCE_FOUND_MESSAGE;
       updateAnalysisState({
