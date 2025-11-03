@@ -308,7 +308,6 @@ export const initialNodes: WorkflowNode[] = [
         ],
         sociology: [
           "Head archivist of the village",
-          "Trusted advisor to the council elders",
           "Keeper of historical records",
         ],
       },
@@ -335,7 +334,6 @@ export const initialNodes: WorkflowNode[] = [
           "Sees value in diverse perspectives",
         ],
         sociology: [
-          "Co-founder of the scout-scholar training program",
           "Respected by both guards and archivists",
           "Mentor to young tacticians",
         ],

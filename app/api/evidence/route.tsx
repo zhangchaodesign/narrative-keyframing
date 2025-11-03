@@ -135,7 +135,7 @@ Evidence categories to classify each phrase:
 ${evidenceCategorySection}
 
 Instructions:
-1. Scan the current snippet for exact short phrases that directly demonstrate each listed attribute.
+1. Scan the current snippet for exact short phrases that directly or indirectly demonstrate each listed attribute.
 2. Only report evidence that appears verbatim in the current snippet text.
 3. If an attribute is not supported, do not invent evidence for it.
 4. When one phrase supports multiple attributes from the same category, list all matching attributes together.
