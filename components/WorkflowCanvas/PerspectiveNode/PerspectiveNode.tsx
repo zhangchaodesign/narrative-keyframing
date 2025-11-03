@@ -40,7 +40,9 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const hasReflectionContent = Boolean(data?.reflection?.trim());
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editedReflection, setEditedReflection] = useState(data?.reflection ?? "");
+  const [editedReflection, setEditedReflection] = useState(
+    data?.reflection ?? "",
+  );
 
   const hasDirectCharacter = useMemo(() => {
     const characterNode = nodes.find(

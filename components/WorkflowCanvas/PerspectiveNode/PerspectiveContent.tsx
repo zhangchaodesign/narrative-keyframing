@@ -1,4 +1,11 @@
-import { useMemo, useCallback, useState, useRef, useEffect, type ReactNode } from "react";
+import {
+  useMemo,
+  useCallback,
+  useState,
+  useRef,
+  useEffect,
+  type ReactNode,
+} from "react";
 import { useStore } from "@xyflow/react";
 import {
   buildEvidenceAttributeKey,
@@ -6,7 +13,10 @@ import {
   useWorkflowStore,
   type SelectedSnippet,
 } from "@/lib/stores/workflowStore";
-import type { PerspectiveEvidenceItem, CharacterNodeType } from "@/lib/types/workflow";
+import type {
+  PerspectiveEvidenceItem,
+  CharacterNodeType,
+} from "@/lib/types/workflow";
 import { findTextMatches } from "@/lib/utils";
 
 interface PerspectiveContentProps {
@@ -73,7 +83,9 @@ function createHighlightedSegments(
             ? "bg-blue-400 text-white ring-2 ring-blue-600"
             : "bg-yellow-200 text-zinc-900 hover:bg-yellow-300"
         }`}
-        title={`Click to ${isSelected ? "deselect" : "select"} snippet for story generation`}
+        title={`Click to ${
+          isSelected ? "deselect" : "select"
+        } snippet for story generation`}
       >
         {text.slice(range.start, range.end)}
       </mark>,
@@ -106,7 +118,9 @@ export function PerspectiveContent({
 
   // Get the parent group ID of this perspective node to filter character selections
   const perspectiveParentId = useStore((store) => {
-    const perspectiveNode = store.nodes.find((node) => node.id === perspectiveNodeId);
+    const perspectiveNode = store.nodes.find(
+      (node) => node.id === perspectiveNodeId,
+    );
     return perspectiveNode?.parentId;
   });
 

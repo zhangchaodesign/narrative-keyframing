@@ -358,7 +358,9 @@ export function PerspectiveMenu({
         onClick={onToggleEdit}
         className="pointer-events-auto rounded-full p-1 transition hover:bg-purple-50 hover:text-purple-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-purple-500 disabled:cursor-not-allowed disabled:opacity-60"
         title={isEditing ? "Save and finish editing" : "Edit perspective text"}
-        aria-label={isEditing ? "Save and finish editing" : "Edit perspective text"}
+        aria-label={
+          isEditing ? "Save and finish editing" : "Edit perspective text"
+        }
         disabled={!hasReflection}
       >
         {isEditing ? <TbCheck size={12} /> : <TbPencil size={12} />}

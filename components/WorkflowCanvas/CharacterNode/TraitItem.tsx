@@ -220,7 +220,9 @@ export function TraitItem({
                     ? "bg-white/20 text-white"
                     : "bg-zinc-800/10 text-zinc-700",
                 )}
-                title={`${evidenceCount} evidence item${evidenceCount !== 1 ? "s" : ""} found`}
+                title={`${evidenceCount} evidence item${
+                  evidenceCount !== 1 ? "s" : ""
+                } found`}
               >
                 {evidenceCount}
               </span>

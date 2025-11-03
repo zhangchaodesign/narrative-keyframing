@@ -4,7 +4,11 @@ import { useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { TbCopy, TbTrash } from "react-icons/tb";
 
-import type { WorkflowEdge, WorkflowNode, PerspectiveNodeType } from "@/lib/types/workflow";
+import type {
+  WorkflowEdge,
+  WorkflowNode,
+  PerspectiveNodeType,
+} from "@/lib/types/workflow";
 import {
   cloneData,
   deleteNodeCluster,
@@ -88,45 +92,53 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     });
 
     // Second pass: Create new nodes with updated data, now that all IDs are mapped
-    const newChildNodes: WorkflowNode[] = childNodesWithNewIds.map(({ original, newId }) => {
-      let clonedData = cloneData(original.data);
+    const newChildNodes: WorkflowNode[] = childNodesWithNewIds.map(
+      ({ original, newId }) => {
+        let clonedData = cloneData(original.data);
 
-      // Update analysisEvidence characterId references for perspective nodes
-      if (original.type === "perspective") {
-        const perspectiveData = original.data as PerspectiveNodeType["data"];
-        if (perspectiveData?.analysisEvidence && perspectiveData.analysisEvidence.length > 0) {
-          clonedData = {
-            ...clonedData,
-            analysisEvidence: perspectiveData.analysisEvidence.map((evidence) => {
-              // Map old character ID to new character ID using the complete idMap
-              const newCharacterId = idMap.get(evidence.characterId) ?? evidence.characterId;
-              return {
-                characterId: newCharacterId,
-                characterName: evidence.characterName,
-                items: evidence.items.map((item) => ({
-                  text: item.text,
-                  category: item.category,
-                  attributes: [...item.attributes],
-                })),
-              };
-            }),
-          };
+        // Update analysisEvidence characterId references for perspective nodes
+        if (original.type === "perspective") {
+          const perspectiveData = original.data as PerspectiveNodeType["data"];
+          if (
+            perspectiveData?.analysisEvidence &&
+            perspectiveData.analysisEvidence.length > 0
+          ) {
+            clonedData = {
+              ...clonedData,
+              analysisEvidence: perspectiveData.analysisEvidence.map(
+                (evidence) => {
+                  // Map old character ID to new character ID using the complete idMap
+                  const newCharacterId =
+                    idMap.get(evidence.characterId) ?? evidence.characterId;
+                  return {
+                    characterId: newCharacterId,
+                    characterName: evidence.characterName,
+                    items: evidence.items.map((item) => ({
+                      text: item.text,
+                      category: item.category,
+                      attributes: [...item.attributes],
+                    })),
+                  };
+                },
+              ),
+            };
+          }
         }
-      }
 
-      return {
-        ...original,
-        id: newId,
-        parentId: newGroupId,
-        position: {
-          x: original.position.x,
-          y: original.position.y,
-        },
-        data: clonedData,
-        selected: false,
-        dragging: false,
-      } as WorkflowNode;
-    });
+        return {
+          ...original,
+          id: newId,
+          parentId: newGroupId,
+          position: {
+            x: original.position.x,
+            y: original.position.y,
+          },
+          data: clonedData,
+          selected: false,
+          dragging: false,
+        } as WorkflowNode;
+      },
+    );
 
     const newNodes = [newGroupNode, ...newChildNodes];
 

@@ -43,7 +43,9 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
               data: {
                 ...groupData,
                 characterName: nextName,
-                label: nextName ? `${nextName}'s Perspective` : "First-Person Limited Cluster",
+                label: nextName
+                  ? `${nextName}'s Perspective`
+                  : "First-Person Limited Cluster",
               },
             };
           }
@@ -124,7 +126,11 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
         {data?.characterName}
       </div>
       <CustomHandle type="target" position={Position.Top} id="group-bridge" />
-      <CustomHandle type="source" position={Position.Bottom} id="narrative-bridge" />
+      <CustomHandle
+        type="source"
+        position={Position.Bottom}
+        id="narrative-bridge"
+      />
     </div>
   );
 }

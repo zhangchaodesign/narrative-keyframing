@@ -77,19 +77,20 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
     setValue(slateValue);
 
     // Update all narrative group nodes to mark this one as active
-    setNodes((nodes) =>
-      nodes.map((node) => {
-        if (node.type === "narrativeGroup") {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              isActiveInEditor: node.id === nodeId,
-            },
-          };
-        }
-        return node;
-      }) as WorkflowNode[],
+    setNodes(
+      (nodes) =>
+        nodes.map((node) => {
+          if (node.type === "narrativeGroup") {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                isActiveInEditor: node.id === nodeId,
+              },
+            };
+          }
+          return node;
+        }) as WorkflowNode[],
     );
   }, [getNodes, nodeId, setValue, setNodes]);
 
