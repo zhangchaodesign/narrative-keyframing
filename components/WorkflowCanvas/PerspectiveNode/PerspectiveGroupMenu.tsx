@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { TbCopy, TbTrash } from "react-icons/tb";
 
-import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
+import type { WorkflowEdge, WorkflowNode, PerspectiveNodeType } from "@/lib/types/workflow";
 import {
   cloneData,
   deleteNodeCluster,
@@ -84,15 +84,40 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
       existingNodeIds.add(newId);
       idMap.set(original.id, newId);
 
+      let clonedData = cloneData(original.data);
+
+      // Update analysisEvidence characterId references for perspective nodes
+      if (original.type === "perspective") {
+        const perspectiveData = original.data as PerspectiveNodeType["data"];
+        if (perspectiveData?.analysisEvidence && perspectiveData.analysisEvidence.length > 0) {
+          clonedData = {
+            ...clonedData,
+            analysisEvidence: perspectiveData.analysisEvidence.map((evidence) => {
+              // Map old character ID to new character ID
+              const newCharacterId = idMap.get(evidence.characterId) ?? evidence.characterId;
+              return {
+                characterId: newCharacterId,
+                characterName: evidence.characterName,
+                items: evidence.items.map((item) => ({
+                  text: item.text,
+                  category: item.category,
+                  attributes: [...item.attributes],
+                })),
+              };
+            }),
+          };
+        }
+      }
+
       return {
         ...original,
         id: newId,
         parentId: newGroupId,
         position: {
-          x: original.position.x + CLONE_OFFSET,
-          y: original.position.y + CLONE_OFFSET,
+          x: original.position.x,
+          y: original.position.y,
         },
-        data: cloneData(original.data),
+        data: clonedData,
         selected: false,
         dragging: false,
       } as WorkflowNode;

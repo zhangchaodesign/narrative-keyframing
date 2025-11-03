@@ -1,11 +1,12 @@
 import { useMemo, useCallback, useState, useRef, useEffect, type ReactNode } from "react";
+import { useStore } from "@xyflow/react";
 import {
   buildEvidenceAttributeKey,
   buildSnippetKey,
   useWorkflowStore,
   type SelectedSnippet,
 } from "@/lib/stores/workflowStore";
-import type { PerspectiveEvidenceItem } from "@/lib/types/workflow";
+import type { PerspectiveEvidenceItem, CharacterNodeType } from "@/lib/types/workflow";
 import { findTextMatches } from "@/lib/utils";
 
 interface PerspectiveContentProps {
@@ -103,6 +104,25 @@ export function PerspectiveContent({
   const selectedSnippets = useWorkflowStore((state) => state.selectedSnippets);
   const toggleSnippet = useWorkflowStore((state) => state.toggleSnippet);
 
+  // Get the parent group ID of this perspective node to filter character selections
+  const perspectiveParentId = useStore((store) => {
+    const perspectiveNode = store.nodes.find((node) => node.id === perspectiveNodeId);
+    return perspectiveNode?.parentId;
+  });
+
+  // Get character nodes in this group to check their parentId
+  const characterNodesInGroup = useStore((store) => {
+    if (!perspectiveParentId) return new Set<string>();
+
+    const characterIds = new Set<string>();
+    store.nodes.forEach((node) => {
+      if (node.type === "character" && node.parentId === perspectiveParentId) {
+        characterIds.add(node.id);
+      }
+    });
+    return characterIds;
+  });
+
   // Update edit value when reflection changes externally
   useEffect(() => {
     setEditValue(reflection);
@@ -143,7 +163,8 @@ export function PerspectiveContent({
     if (
       analysisItems.length === 0 ||
       !activeKeys ||
-      Object.keys(activeKeys).length === 0
+      Object.keys(activeKeys).length === 0 ||
+      !perspectiveParentId
     ) {
       return reflectionText;
     }
@@ -154,6 +175,12 @@ export function PerspectiveContent({
     analysisItems.forEach((entry) => {
       const characterId = entry.characterId;
       const characterName = entry.characterName;
+
+      // Only highlight if the character belongs to this perspective's group
+      if (!characterNodesInGroup.has(characterId)) {
+        return;
+      }
+
       entry.items.forEach((item) => {
         const shouldHighlight = item.attributes.some((attribute) =>
           Boolean(
@@ -200,6 +227,7 @@ export function PerspectiveContent({
     selectedEvidenceAttributes,
     selectedSnippets,
     perspectiveNodeId,
+    characterNodesInGroup,
     handleToggleSnippet,
   ]);
 
