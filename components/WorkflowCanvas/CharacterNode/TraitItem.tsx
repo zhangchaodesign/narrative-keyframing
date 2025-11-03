@@ -3,17 +3,23 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ChangeEvent,
   type KeyboardEvent,
 } from "react";
+import { useStore } from "@xyflow/react";
 import { TbCheck, TbPencil, TbX } from "react-icons/tb";
 import { cn } from "@/lib/utils";
 import {
   buildEvidenceAttributeKey,
   useWorkflowStore,
 } from "@/lib/stores/workflowStore";
+import type {
+  CharacterNodeType,
+  PerspectiveNodeType,
+} from "@/lib/types/workflow";
 
 interface TraitItemProps {
   nodeId: string;
@@ -49,6 +55,57 @@ export function TraitItem({
 
   const attributeKey = buildEvidenceAttributeKey(nodeId, trait);
   const isSelected = Boolean(selectedEvidenceAttributes[attributeKey]);
+
+  // Calculate evidence count for this trait from all perspective nodes in the same group
+  const evidenceCount = useStore((store) => {
+    // Find the character node to get its parent group
+    const characterNode = store.nodes.find(
+      (node): node is CharacterNodeType =>
+        node.id === nodeId && node.type === "character",
+    );
+
+    if (!characterNode) {
+      return 0;
+    }
+
+    const parentId = characterNode.parentId;
+    if (!parentId) {
+      return 0;
+    }
+
+    // Find all perspective nodes in the same group
+    const perspectiveNodes = store.nodes.filter(
+      (node): node is PerspectiveNodeType =>
+        node.type === "perspective" &&
+        node.parentId === parentId &&
+        Boolean(node.data?.analysisEvidence),
+    );
+
+    if (perspectiveNodes.length === 0) {
+      return 0;
+    }
+
+    // Aggregate evidence count from all perspective nodes
+    const normalizedTrait = trait.trim().toLowerCase();
+    let totalCount = 0;
+
+    for (const perspectiveNode of perspectiveNodes) {
+      const characterEvidence = perspectiveNode.data.analysisEvidence?.find(
+        (evidence) => evidence.characterId === nodeId,
+      );
+
+      if (characterEvidence) {
+        const count = characterEvidence.items.filter((item) =>
+          item.attributes.some(
+            (attr) => attr.trim().toLowerCase() === normalizedTrait,
+          ),
+        ).length;
+        totalCount += count;
+      }
+    }
+
+    return totalCount;
+  });
 
   const handleToggleHighlight = useCallback(
     (event: React.MouseEvent) => {
@@ -151,9 +208,24 @@ export function TraitItem({
               ? "Hide supporting evidence highlight"
               : "Highlight supporting evidence in perspectives"
           }
-          className="flex-1 px-2 py-1 pr-10 text-left font-medium leading-snug"
+          className="flex-1 px-2 py-1 pr-10 text-left font-medium leading-snug overflow-x-auto overflow-y-hidden max-h-8"
         >
-          {trait}
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
+            <span>{trait}</span>
+            {evidenceCount > 0 && (
+              <span
+                className={cn(
+                  "inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[8px] font-bold",
+                  isSelected
+                    ? "bg-white/20 text-white"
+                    : "bg-zinc-800/10 text-zinc-700",
+                )}
+                title={`${evidenceCount} evidence item${evidenceCount !== 1 ? "s" : ""} found`}
+              >
+                {evidenceCount}
+              </span>
+            )}
+          </span>
         </button>
       )}
       <div
