@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { Position, type NodeProps, useStore } from "@xyflow/react";
 import { NarrativeHandle } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeHandle";
-import { NarrativeMenu } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeMenu";
 import { NarrativeContent } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeContent";
 import type { EventNodeType, NarrativeNodeType } from "@/lib/types/workflow";
 import { cn } from "@/lib/utils";
@@ -36,7 +35,6 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
           </span>
         </div>
       )}
-      <NarrativeMenu nodeId={id} />
       <div
         className={cn(
           geistMono.className,
