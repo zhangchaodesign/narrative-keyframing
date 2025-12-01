@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { TbCopy, TbTrash } from "react-icons/tb";
+import { TbCopy, TbTrash, TbPlayerPlay } from "react-icons/tb";
 
 import type {
   WorkflowEdge,
@@ -14,6 +14,10 @@ import {
   deleteNodeCluster,
   generateUniqueUuidId,
 } from "@/lib/workflow/workflowUtils";
+import {
+  preparePerspectiveRequest,
+  type GeneratePerspectiveResponse,
+} from "@/lib/workflow/workflowPerspective";
 
 type PerspectiveGroupMenuProps = {
   nodeId: string;
@@ -26,6 +30,159 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     WorkflowNode,
     WorkflowEdge
   >();
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGeneratePerspectives = useCallback(async () => {
+    if (isGenerating) {
+      return;
+    }
+
+    const nodes = getNodes();
+    const edges = getEdges();
+
+    // Get all perspective nodes in this group
+    const perspectiveNodesInGroup = nodes.filter(
+      (node) => node.type === "perspective" && node.parentId === nodeId,
+    );
+
+    if (perspectiveNodesInGroup.length === 0) {
+      return;
+    }
+
+    const targetNodeIds = perspectiveNodesInGroup.map((node) => node.id);
+
+    setIsGenerating(true);
+    let loadingNodeIds: Set<string> | null = null;
+
+    try {
+      const preparation = preparePerspectiveRequest({
+        nodes,
+        edges,
+        targetNodeIds,
+      });
+
+      if (!preparation) {
+        return;
+      }
+
+      const { eventSequence, tasks } = preparation;
+
+      loadingNodeIds = new Set(tasks.map((task) => task.id));
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.type !== "perspective") {
+            return node;
+          }
+
+          const existingData = node.data as PerspectiveNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              isLoading: loadingNodeIds?.has(node.id) ?? false,
+            },
+          };
+        }),
+      );
+
+      const response = await fetch("/api/perspective", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventSequence,
+          perspectives: tasks,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null);
+        const errorMessage =
+          (errorBody && errorBody.error) ||
+          `Failed to generate perspectives (${response.status}).`;
+        throw new Error(errorMessage);
+      }
+
+      const data = (await response.json()) as GeneratePerspectiveResponse;
+      const perspectives = data?.perspectives ?? [];
+
+      const orderedUpdates = perspectives
+        .map((item, index) => {
+          const task = tasks[index];
+          if (!task) {
+            return null;
+          }
+          return [task.id, item.reflection] as const;
+        })
+        .filter((entry): entry is readonly [string, string] => entry != null);
+
+      if (orderedUpdates.length === 0) {
+        return;
+      }
+
+      if (perspectives.length !== tasks.length) {
+        console.warn(
+          "Perspective response count did not match requested tasks.",
+          {
+            requested: tasks.length,
+            received: perspectives.length,
+          },
+        );
+      }
+
+      const updateMap = new Map<string, string>(orderedUpdates);
+
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.type === "perspective" && updateMap.has(node.id)) {
+            const reflection = updateMap.get(node.id) ?? "";
+            const existingData = node.data as PerspectiveNodeType["data"];
+            const hasContent = reflection.trim().length > 0;
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                reflection,
+                isAnalyzingEvidence: false,
+                analysisStatus: "idle",
+                analysisStatusMessage: hasContent
+                  ? undefined
+                  : "Add a reflection to analyze evidence.",
+                analysisEvidence: hasContent ? [] : undefined,
+              },
+            };
+          }
+          return node;
+        }),
+      );
+    } catch (error) {
+      console.error("Error generating perspectives:", error);
+    } finally {
+      if (loadingNodeIds) {
+        setNodes((currentNodes) =>
+          currentNodes.map((node) => {
+            if (node.type !== "perspective") {
+              return node;
+            }
+            if (!loadingNodeIds?.has(node.id)) {
+              return node;
+            }
+
+            const existingData = node.data as PerspectiveNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                isLoading: false,
+              },
+            };
+          }),
+        );
+      }
+      setIsGenerating(false);
+    }
+  }, [isGenerating, getNodes, getEdges, setNodes, nodeId]);
 
   const handleDelete = useCallback(() => {
     const nodes = getNodes();
@@ -208,6 +365,16 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
 
   return (
     <div className="pointer-events-none absolute -top-16 right-0 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+      <button
+        type="button"
+        onClick={handleGeneratePerspectives}
+        className="pointer-events-auto rounded-full p-2 transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+        title="Generate first-person limited narration for all perspectives"
+        aria-label="Generate first-person limited narration for all perspectives"
+        disabled={isGenerating}
+      >
+        <TbPlayerPlay size={18} />
+      </button>
       <button
         type="button"
         onClick={handleDuplicate}
