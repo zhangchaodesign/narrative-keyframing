@@ -19,6 +19,14 @@ const EventDataSchema = z.object({
   eventDescription: z.string().optional(),
   eventTimeline: z.string().optional(),
   snippets: z.array(SnippetSchema).default([]),
+  perspectives: z
+    .array(
+      z.object({
+        narrator: z.string().min(1),
+        reflection: z.string().min(1),
+      }),
+    )
+    .default([]),
 });
 
 const RequestSchema = z.object({
@@ -75,7 +83,8 @@ export async function POST(request: Request) {
     // Build comprehensive prompt with all events
     const eventsSection = events
       .map((eventData, eventIndex) => {
-        const { eventTimeline, eventDescription, snippets } = eventData;
+        const { eventTimeline, eventDescription, snippets, perspectives } =
+          eventData;
 
         const eventHeader = eventTimeline
           ? `${eventTimeline}${eventDescription ? `: ${eventDescription}` : ""}`
@@ -118,8 +127,13 @@ export async function POST(request: Request) {
             const snippetList = data.snippets
               .map((s, i) => `    ${i + 1}. "${s}"`)
               .join("\n");
+            // Find perspective of this character for this event
+            const perspective = perspectives.find(
+              (p) => p.narrator === data.characterName,
+            );
 
             return `  Character: ${data.characterName}
+  First-person perspective: ${perspective ? perspective.reflection : "N/A"}
   Attributes: ${attributeList}
   Selected details:
 ${snippetList}`;

@@ -114,12 +114,21 @@ export function NarrativeMenu({ nodeId }: NarrativeMenuProps) {
             ),
           );
 
+          // Get reflection from all perspectiveNodesForEvent data, connect them to a dict: {pNode.data?.narrator: pNode.data?.reflection}
+          const reflectionsForEvent = perspectiveNodesForEvent.map((pNode) => ({
+            narrator: pNode.data?.narrator || "Unknown narrator",
+            reflection: pNode.data?.reflection || "",
+          }));
+
+          // console.log("Reflections for event:", eventId, reflectionsForEvent);
+
           return {
             narrativeNodeId: narrativeNodeInGroup.id,
             eventId,
             eventDescription,
             eventTimeline,
             snippets: snippetsForEvent,
+            perspectives: reflectionsForEvent,
           };
         },
       );
