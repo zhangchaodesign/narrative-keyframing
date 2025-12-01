@@ -307,7 +307,7 @@ const rebuildChainEdges = ({
       target: eventSequence[index + 1]!,
       sourceHandle: "event-next",
       targetHandle: "event-prev",
-      type: "customEdge",
+      type: "eventEdge",
       animated: true,
     });
   }

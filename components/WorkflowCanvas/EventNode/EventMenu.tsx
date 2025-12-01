@@ -38,7 +38,7 @@ export function EventMenu({ nodeId, nodeType }: EventMenuProps) {
 
   return (
     <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
-      <button
+      {/* <button
         type="button"
         onClick={() => handleAddAdjacentEvent("before")}
         className="pointer-events-auto cursor-pointer rounded-full p-1 transition hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500"
@@ -55,7 +55,7 @@ export function EventMenu({ nodeId, nodeType }: EventMenuProps) {
         aria-label="Add event after"
       >
         <TbArrowRight size={12} />
-      </button>
+      </button> */}
       <button
         type="button"
         onClick={handleDuplicate}

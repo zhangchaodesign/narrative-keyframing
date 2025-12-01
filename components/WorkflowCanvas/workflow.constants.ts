@@ -443,7 +443,7 @@ export const initialEdges: WorkflowEdge[] = [
     target: "event-2",
     sourceHandle: "event-next",
     targetHandle: "event-prev",
-    type: "customEdge",
+    type: "eventEdge",
     animated: true,
   },
   {
@@ -452,7 +452,7 @@ export const initialEdges: WorkflowEdge[] = [
     target: "event-3",
     sourceHandle: "event-next",
     targetHandle: "event-prev",
-    type: "customEdge",
+    type: "eventEdge",
     animated: true,
   },
   {
@@ -461,7 +461,7 @@ export const initialEdges: WorkflowEdge[] = [
     target: "event-4",
     sourceHandle: "event-next",
     targetHandle: "event-prev",
-    type: "customEdge",
+    type: "eventEdge",
     animated: true,
   },
   // Aria perspective connections

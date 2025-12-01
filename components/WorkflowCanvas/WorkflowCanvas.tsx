@@ -15,6 +15,7 @@ import "@xyflow/react/dist/style.css";
 
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { CustomEdge } from "@/components/WorkflowCanvas/CustomEdge";
+import { EventEdge } from "@/components/WorkflowCanvas/EventNode/EventEdge";
 import { CharacterNode } from "@/components/WorkflowCanvas/CharacterNode/CharacterNode";
 import { EventNode } from "@/components/WorkflowCanvas/EventNode/EventNode";
 import { PerspectiveNode } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveNode";
@@ -46,6 +47,7 @@ const nodeTypes: NodeTypes = {
 
 const edgeTypes: EdgeTypes = {
   customEdge: CustomEdge,
+  eventEdge: EventEdge,
 };
 
 function nodeColor(node: WorkflowNode) {
