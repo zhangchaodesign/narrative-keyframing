@@ -31,6 +31,7 @@ const EventDataSchema = z.object({
 
 const RequestSchema = z.object({
   events: z.array(EventDataSchema).min(1),
+  customPrompt: z.string().optional(),
 });
 
 const SnippetUsageSchema = z.object({
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { events } = payload.data;
+    const { events, customPrompt } = payload.data;
 
     // Build comprehensive prompt with all events
     const eventsSection = events
@@ -145,7 +146,7 @@ ${characterDetails}`;
       })
       .join("\n\n");
 
-    const prompt = `You are a skilled narrative writer crafting a third-person omniscient story across multiple events.
+    const basePrompt = `You are a skilled narrative writer crafting a third-person omniscient story across multiple events.
 
 EVENTS AND CHARACTER PERSPECTIVES:
 
@@ -178,9 +179,17 @@ IMPORTANT:
 - You must return a narrative for EVERY event, even if no specific character details are provided.
 - For events without details, use your understanding of the characters from other events to create a coherent continuation of the story.
 - For events without character details, snippetUsages should be an empty array.
-- Remember: The input snippets are in first-person, but your output narrative must be in third-person omniscient throughout.
+- Remember: The input snippets are in first-person, but your output narrative must be in third-person omniscient throughout.`;
 
-Return one narrative for each event in the provided order.`;
+    // Add custom prompt if provided
+    const prompt = customPrompt
+      ? `${basePrompt}
+
+ADDITIONAL INSTRUCTIONS FROM USER:
+${customPrompt}
+
+Return one narrative for each event in the provided order.`
+      : basePrompt;
 
     console.log("Multi-event narrative generation prompt:", prompt);
 
