@@ -368,7 +368,10 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
         x: groupNode.position.x + CLONE_OFFSET,
         y: groupNode.position.y + CLONE_OFFSET,
       },
-      data: cloneData(groupNode.data),
+      data: {
+        ...cloneData(groupNode.data),
+        isActiveInEditor: false,
+      },
       selected: false,
       dragging: false,
     } as WorkflowNode;
@@ -465,7 +468,7 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
         <button
           type="button"
           onClick={handlePopulateEditor}
-          className="pointer-events-auto rounded-full p-2 transition hover:bg-green-100 hover:text-green-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 cursor-pointer"
+          className="pointer-events-auto rounded-full p-2 transition hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500 cursor-pointer"
           title="Populate text editor with narratives"
           aria-label="Populate text editor with narratives"
         >
