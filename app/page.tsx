@@ -14,7 +14,7 @@ export default function Page() {
       <div className="flex-1 overflow-hidden">
         <div className="h-full">
           <div className="flex h-full items-stretch overflow-hidden">
-            <div className="w-[640px] shrink-0 h-full overflow-y-auto">
+            <div className="w-[600px] shrink-0 h-full overflow-y-auto">
               <DynamicTextEditor conflictHighlight={null} />
             </div>
 

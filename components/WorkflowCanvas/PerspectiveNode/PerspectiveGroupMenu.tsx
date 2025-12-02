@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { TbCopy, TbTrash, TbPlayerPlay } from "react-icons/tb";
+import { TbCopy, TbTrash, TbPlayerPlay, TbListSearch } from "react-icons/tb";
 
 import type {
   WorkflowEdge,
@@ -18,6 +18,10 @@ import {
   preparePerspectiveRequest,
   type GeneratePerspectiveResponse,
 } from "@/lib/workflow/workflowPerspective";
+import {
+  prepareEvidenceAnalysis,
+  type EvidenceAnalysisResponse,
+} from "@/lib/workflow/workflowEvidence";
 
 type PerspectiveGroupMenuProps = {
   nodeId: string;
@@ -31,6 +35,7 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     WorkflowEdge
   >();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleGeneratePerspectives = useCallback(async () => {
     if (isGenerating) {
@@ -183,6 +188,170 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
       setIsGenerating(false);
     }
   }, [isGenerating, getNodes, getEdges, setNodes, nodeId]);
+
+  const handleAnalyzeAllEvidence = useCallback(async () => {
+    if (isAnalyzing) {
+      return;
+    }
+
+    const nodes = getNodes();
+    const edges = getEdges();
+
+    // Get all perspective nodes in this group
+    const perspectiveNodesInGroup = nodes.filter(
+      (node) => node.type === "perspective" && node.parentId === nodeId,
+    );
+
+    if (perspectiveNodesInGroup.length === 0) {
+      return;
+    }
+
+    setIsAnalyzing(true);
+
+    // Prepare analysis targets for all valid perspective nodes
+    const analysisTargets = perspectiveNodesInGroup
+      .map((perspectiveNode) => {
+        const perspectiveData = perspectiveNode.data as PerspectiveNodeType["data"];
+
+        // Skip if no reflection or already analyzing
+        if (!perspectiveData?.reflection?.trim() || perspectiveData?.isAnalyzingEvidence) {
+          return null;
+        }
+
+        const target = prepareEvidenceAnalysis({
+          perspectiveId: perspectiveNode.id,
+          nodes,
+          edges,
+        });
+
+        if (!target || !target.reflection.trim()) {
+          return null;
+        }
+
+        const hasCharacterAttributes = target.characters.some((character) =>
+          character.attributes.some(
+            (attribute) => attribute.value.trim().length > 0,
+          ),
+        );
+
+        if (!hasCharacterAttributes) {
+          return null;
+        }
+
+        return {
+          nodeId: perspectiveNode.id,
+          target,
+        };
+      })
+      .filter((item): item is { nodeId: string; target: any } => item !== null);
+
+    if (analysisTargets.length === 0) {
+      setIsAnalyzing(false);
+      return;
+    }
+
+    // Set all nodes to analyzing state
+    const analyzingNodeIds = new Set(analysisTargets.map((item) => item.nodeId));
+    setNodes((currentNodes) =>
+      currentNodes.map((node) => {
+        if (node.type !== "perspective" || !analyzingNodeIds.has(node.id)) {
+          return node;
+        }
+        const existingData = node.data as PerspectiveNodeType["data"];
+        return {
+          ...node,
+          data: {
+            ...existingData,
+            isAnalyzingEvidence: true,
+            analysisStatus: "running",
+            analysisStatusMessage: "Analyzing evidence...",
+          },
+        };
+      }),
+    );
+
+    // Process all API calls in parallel
+    const analysisPromises = analysisTargets.map(async ({ nodeId: perspectiveNodeId, target }) => {
+      try {
+        const response = await fetch("/api/evidence", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(target),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to analyze evidence (${response.status}).`);
+        }
+
+        const data = (await response.json()) as EvidenceAnalysisResponse | null;
+        const evidence = data?.characterEvidence ?? [];
+        const supportedCharacters = evidence.filter(
+          (entry) => entry.items.length > 0,
+        );
+        const uniqueCharacterNames = [
+          ...new Set(supportedCharacters.map((entry) => entry.characterName)),
+        ];
+        const successMessage =
+          uniqueCharacterNames.length > 0
+            ? uniqueCharacterNames
+                .map((name) => `Found evidence for ${name}`)
+                .join(", ")
+            : "No supporting evidence found.";
+
+        return {
+          nodeId: perspectiveNodeId,
+          success: true,
+          evidence,
+          message: successMessage,
+        };
+      } catch (error) {
+        console.error(`Error analyzing evidence for ${perspectiveNodeId}:`, error);
+        return {
+          nodeId: perspectiveNodeId,
+          success: false,
+          evidence: [],
+          message: "Evidence analysis failed. Try again.",
+        };
+      }
+    });
+
+    try {
+      // Wait for all analyses to complete
+      const results = await Promise.all(analysisPromises);
+
+      // Update all nodes with their results
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.type !== "perspective") {
+            return node;
+          }
+
+          const result = results.find((r) => r.nodeId === node.id);
+          if (!result) {
+            return node;
+          }
+
+          const existingData = node.data as PerspectiveNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              isAnalyzingEvidence: false,
+              analysisStatus: result.success ? "success" : "error",
+              analysisStatusMessage: result.message,
+              analysisEvidence: result.evidence,
+            },
+          };
+        }),
+      );
+    } catch (error) {
+      console.error("Error analyzing evidence for group:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [isAnalyzing, getNodes, getEdges, setNodes, nodeId]);
 
   const handleDelete = useCallback(() => {
     const nodes = getNodes();
@@ -374,6 +543,20 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
         disabled={isGenerating}
       >
         <TbPlayerPlay size={18} />
+      </button>
+      <button
+        type="button"
+        onClick={handleAnalyzeAllEvidence}
+        className="pointer-events-auto rounded-full p-2 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+        title="Analyze textual evidence for all perspectives in this group"
+        aria-label="Analyze textual evidence for all perspectives in this group"
+        disabled={isAnalyzing}
+      >
+        {isAnalyzing ? (
+          <span className="block h-[18px] w-[18px] animate-spin rounded-full border-2 border-blue-600 border-t-transparent align-middle" />
+        ) : (
+          <TbListSearch size={18} />
+        )}
       </button>
       <button
         type="button"

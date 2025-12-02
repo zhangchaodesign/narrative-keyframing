@@ -107,7 +107,7 @@ export default function TextEditor({ conflictHighlight }: TextEditorProps) {
           onChange={setValue}
         >
           <Editable
-            className="prose max-w-none focus:outline-none min-h-[600px] text-base leading-relaxed"
+            className="prose max-w-none focus:outline-none min-h-[600px] text-sm leading-relaxed"
             renderLeaf={(p: RenderLeafProps) => <Leaf {...p} />}
             decorate={decorate}
             readOnly={isReadOnly}
