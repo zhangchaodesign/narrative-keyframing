@@ -19,9 +19,28 @@ import {
 import { useEditorStore } from "@/lib/stores/editorStore";
 import { SlateUtils } from "@/lib/slateUtils";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
+import { NarrativeGenerationModal } from "./NarrativeGenerationModal";
 
 type NarrativeGroupMenuProps = {
   nodeId: string;
+};
+
+type EventData = {
+  narrativeNodeId: string;
+  eventId?: string;
+  eventDescription: string;
+  eventTimeline: string;
+  snippets: Array<{
+    perspectiveNodeId: string;
+    text: string;
+    characterId: string;
+    characterName: string;
+    attributes: string[];
+  }>;
+  perspectives: Array<{
+    narrator: string;
+    reflection: string;
+  }>;
 };
 
 const CLONE_OFFSET = 80;
@@ -33,200 +52,224 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
   >();
   const { setValue } = useEditorStore();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [eventsData, setEventsData] = useState<EventData[]>([]);
+  const [preSelectedSnippets, setPreSelectedSnippets] = useState<Set<string>>(
+    new Set(),
+  );
   const nodes = useStore((store) => store.nodes);
   const edges = useStore((store) => store.edges);
   const selectedSnippets = useWorkflowStore((state) => state.selectedSnippets);
 
-  const handleGenerateNarratives = useCallback(async () => {
-    setIsGenerating(true);
+  const handleOpenModal = useCallback(() => {
+    // Find all narrative nodes in this group
+    const allNarrativeNodesInGroup = nodes.filter(
+      (node) => node.type === "narrative" && node.parentId === nodeId,
+    ) as NarrativeNodeType[];
 
-    try {
-      // Find all narrative nodes in this group
-      const allNarrativeNodesInGroup = nodes.filter(
-        (node) =>
-          node.type === "narrative" && node.parentId === nodeId,
-      ) as NarrativeNodeType[];
+    if (allNarrativeNodesInGroup.length === 0) {
+      alert("No narrative nodes found in this group");
+      return;
+    }
 
-      if (allNarrativeNodesInGroup.length === 0) {
-        alert("No narrative nodes found in this group");
-        return;
-      }
-
-      // Find perspective groups connected to this narrative group
-      const connectedPerspectiveGroupIds = edges
-        .filter((edge) => edge.target === nodeId)
-        .map((edge) => edge.source)
-        .filter((sourceId) => {
-          const sourceNode = nodes.find((n) => n.id === sourceId);
-          return sourceNode?.type === "perspectiveGroup";
-        });
-
-      // Find all perspective nodes within those groups
-      const linkedPerspectiveNodes = nodes.filter(
-        (node) =>
-          node.type === "perspective" &&
-          node.parentId &&
-          connectedPerspectiveGroupIds.includes(node.parentId),
-      ) as PerspectiveNodeType[];
-
-      // Get all selected snippets from linked perspective nodes
-      const allRelevantSnippets = Object.values(selectedSnippets).filter(
-        (snippet) =>
-          linkedPerspectiveNodes.some(
-            (pNode) => pNode.id === snippet.perspectiveNodeId,
-          ),
-      );
-
-      if (allRelevantSnippets.length === 0) {
-        alert(
-          "Please select at least one snippet from the linked perspective nodes by clicking on highlighted text.",
-        );
-        return;
-      }
-
-      // Build events data with their associated snippets
-      const eventsData = allNarrativeNodesInGroup.map(
-        (narrativeNodeInGroup) => {
-          const eventId = narrativeNodeInGroup.data?.eventId;
-          let eventDescription = "";
-          let eventTimeline = "";
-
-          if (eventId) {
-            const eventNode = nodes.find(
-              (node) => node.id === eventId && node.type === "event",
-            ) as EventNodeType | undefined;
-
-            if (eventNode) {
-              eventDescription = eventNode.data?.description ?? "";
-              eventTimeline = eventNode.data?.timeline ?? "";
-            }
-          }
-
-          // Find perspective nodes with matching eventId
-          const perspectiveNodesForEvent = linkedPerspectiveNodes.filter(
-            (pNode) => pNode.data?.eventId === eventId,
-          );
-
-          // Get snippets from those perspective nodes
-          const snippetsForEvent = allRelevantSnippets.filter((snippet) =>
-            perspectiveNodesForEvent.some(
-              (pNode) => pNode.id === snippet.perspectiveNodeId,
-            ),
-          );
-
-          // Get reflection from all perspectiveNodesForEvent data
-          const reflectionsForEvent = perspectiveNodesForEvent.map((pNode) => ({
-            narrator: pNode.data?.narrator || "Unknown narrator",
-            reflection: pNode.data?.reflection || "",
-          }));
-
-          return {
-            narrativeNodeId: narrativeNodeInGroup.id,
-            eventId,
-            eventDescription,
-            eventTimeline,
-            snippets: snippetsForEvent,
-            perspectives: reflectionsForEvent,
-          };
-        },
-      );
-
-      // Check if at least one event has snippets
-      const hasAnySnippets = eventsData.some(
-        (event) => event.snippets.length > 0,
-      );
-
-      if (!hasAnySnippets) {
-        alert(
-          "Please select at least one snippet from any event to generate the story.",
-        );
-        return;
-      }
-
-      // Set loading state for all narrative nodes in the group
-      setNodes((nodesState) =>
-        nodesState.map((node) => {
-          if (
-            node.type === "narrative" &&
-            node.parentId === nodeId
-          ) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                isLoading: true,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-
-      // Call the API with all events
-      const response = await fetch("/api/narrative", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          events: eventsData,
-        }),
+    // Find perspective groups connected to this narrative group
+    const connectedPerspectiveGroupIds = edges
+      .filter((edge) => edge.target === nodeId)
+      .map((edge) => edge.source)
+      .filter((sourceId) => {
+        const sourceNode = nodes.find((n) => n.id === sourceId);
+        return sourceNode?.type === "perspectiveGroup";
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to generate narrative");
-      }
+    // Find all perspective nodes within those groups
+    const linkedPerspectiveNodes = nodes.filter(
+      (node) =>
+        node.type === "perspective" &&
+        node.parentId &&
+        connectedPerspectiveGroupIds.includes(node.parentId),
+    ) as PerspectiveNodeType[];
 
-      const data = await response.json();
-
-      // Update all narrative nodes with their generated stories
-      setNodes((nodesState) =>
-        nodesState.map((node) => {
-          if (
-            node.type === "narrative" &&
-            node.parentId === nodeId
-          ) {
-            const narrativeForThisNode = data.narratives?.find(
-              (n: { narrativeNodeId: string }) => n.narrativeNodeId === node.id,
-            );
-
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                narration:
-                  narrativeForThisNode?.narration ?? node.data?.narration ?? "",
-                snippetUsages: narrativeForThisNode?.snippetUsages ?? [],
-                isLoading: false,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-    } catch (error) {
-      console.error("Error generating narrative:", error);
-      alert("Failed to generate narrative. Please try again.");
-
-      // Clear loading state on error
-      setNodes((nodesState) =>
-        nodesState.map((node) => {
-          if (node.type === "narrative" && node.parentId === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                isLoading: false,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-    } finally {
-      setIsGenerating(false);
+    if (linkedPerspectiveNodes.length === 0) {
+      alert("No perspective nodes found connected to this narrative group");
+      return;
     }
-  }, [nodeId, nodes, edges, selectedSnippets, setNodes]);
+
+    // Build events data with their associated snippets
+    const preparedEventsData = allNarrativeNodesInGroup.map(
+      (narrativeNodeInGroup) => {
+        const eventId = narrativeNodeInGroup.data?.eventId;
+        let eventDescription = "";
+        let eventTimeline = "";
+
+        if (eventId) {
+          const eventNode = nodes.find(
+            (node) => node.id === eventId && node.type === "event",
+          ) as EventNodeType | undefined;
+
+          if (eventNode) {
+            eventDescription = eventNode.data?.description ?? "";
+            eventTimeline = eventNode.data?.timeline ?? "";
+          }
+        }
+
+        // Find perspective nodes with matching eventId
+        const perspectiveNodesForEvent = linkedPerspectiveNodes.filter(
+          (pNode) => pNode.data?.eventId === eventId,
+        );
+
+        // Extract all evidence from perspective nodes (regardless of selection)
+        const snippetsForEvent: Array<{
+          perspectiveNodeId: string;
+          text: string;
+          characterId: string;
+          characterName: string;
+          attributes: string[];
+        }> = [];
+
+        perspectiveNodesForEvent.forEach((pNode) => {
+          const evidence = pNode.data?.analysisEvidence || [];
+          evidence.forEach((evidenceItem) => {
+            evidenceItem.items.forEach((item) => {
+              snippetsForEvent.push({
+                perspectiveNodeId: pNode.id,
+                text: item.text,
+                characterId: evidenceItem.characterId,
+                characterName: evidenceItem.characterName,
+                attributes: item.attributes,
+              });
+            });
+          });
+        });
+
+        // Get reflection from all perspectiveNodesForEvent data
+        const reflectionsForEvent = perspectiveNodesForEvent.map((pNode) => ({
+          narrator: pNode.data?.narrator || "Unknown narrator",
+          reflection: pNode.data?.reflection || "",
+        }));
+
+        return {
+          narrativeNodeId: narrativeNodeInGroup.id,
+          eventId,
+          eventDescription,
+          eventTimeline,
+          snippets: snippetsForEvent,
+          perspectives: reflectionsForEvent,
+        };
+      },
+    );
+
+    // Build set of pre-selected snippet keys from user's previous selections
+    const preSelected = new Set<string>();
+    Object.values(selectedSnippets).forEach((snippet) => {
+      const key = `${snippet.perspectiveNodeId}::${snippet.text}`;
+      preSelected.add(key);
+    });
+
+    // Set events data, pre-selected snippets, and open modal
+    setEventsData(preparedEventsData);
+    setPreSelectedSnippets(preSelected);
+    setIsModalOpen(true);
+  }, [nodeId, nodes, edges, selectedSnippets]);
+
+  const handleGenerateNarratives = useCallback(
+    async (selectedSnippetKeys: Set<string>, customPrompt: string) => {
+      setIsGenerating(true);
+      setIsModalOpen(false);
+
+      try {
+        // Filter eventsData to only include selected snippets
+        const filteredEventsData = eventsData.map((event) => ({
+          ...event,
+          snippets: event.snippets.filter((snippet) => {
+            const key = `${snippet.perspectiveNodeId}::${snippet.text}`;
+            return selectedSnippetKeys.has(key);
+          }),
+        }));
+
+        // Set loading state for all narrative nodes in the group
+        setNodes((nodesState) =>
+          nodesState.map((node) => {
+            if (node.type === "narrative" && node.parentId === nodeId) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  isLoading: true,
+                },
+              };
+            }
+            return node;
+          }),
+        );
+
+        // Call the API with filtered events and custom prompt
+        const response = await fetch("/api/narrative", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            events: filteredEventsData,
+            customPrompt: customPrompt.trim() || undefined,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to generate narrative");
+        }
+
+        const data = await response.json();
+
+        // Update all narrative nodes with their generated stories
+        setNodes((nodesState) =>
+          nodesState.map((node) => {
+            if (node.type === "narrative" && node.parentId === nodeId) {
+              const narrativeForThisNode = data.narratives?.find(
+                (n: { narrativeNodeId: string }) =>
+                  n.narrativeNodeId === node.id,
+              );
+
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  narration:
+                    narrativeForThisNode?.narration ??
+                    node.data?.narration ??
+                    "",
+                  snippetUsages: narrativeForThisNode?.snippetUsages ?? [],
+                  isLoading: false,
+                },
+              };
+            }
+            return node;
+          }),
+        );
+      } catch (error) {
+        console.error("Error generating narrative:", error);
+        alert("Failed to generate narrative. Please try again.");
+
+        // Clear loading state on error
+        setNodes((nodesState) =>
+          nodesState.map((node) => {
+            if (node.type === "narrative" && node.parentId === nodeId) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  isLoading: false,
+                },
+              };
+            }
+            return node;
+          }),
+        );
+      } finally {
+        setIsGenerating(false);
+      }
+    },
+    [eventsData, nodeId, setNodes],
+  );
 
   const handleDelete = useCallback(() => {
     const nodes = getNodes();
@@ -394,45 +437,59 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
     setEdges((edges) => [...edges, ...newEdges, ...duplicatedBridges]);
   }, [getEdges, getNodes, nodeId, setEdges, setNodes]);
 
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
+
   return (
-    <div className="pointer-events-none absolute -top-16 right-0 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
-      <button
-        type="button"
-        onClick={handleGenerateNarratives}
-        disabled={isGenerating}
-        className="pointer-events-auto rounded-full p-2 transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-        title="Generate third-person omniscient story from selected snippets"
-        aria-label="Generate third-person omniscient story from selected snippets"
-      >
-        <TbPlayerPlay size={18} />
-      </button>
-      <button
-        type="button"
-        onClick={handlePopulateEditor}
-        className="pointer-events-auto rounded-full p-2 transition hover:bg-green-100 hover:text-green-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 cursor-pointer"
-        title="Populate text editor with narratives"
-        aria-label="Populate text editor with narratives"
-      >
-        <TbFileText size={18} />
-      </button>
-      <button
-        type="button"
-        onClick={handleDuplicate}
-        className="pointer-events-auto rounded-full p-2 transition hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500 cursor-pointer"
-        title="Duplicate cluster"
-        aria-label="Duplicate cluster"
-      >
-        <TbCopy size={18} />
-      </button>
-      <button
-        type="button"
-        onClick={handleDelete}
-        className="pointer-events-auto rounded-full p-2 text-red-500 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-red-500 cursor-pointer"
-        title="Delete cluster"
-        aria-label="Delete cluster"
-      >
-        <TbTrash size={18} />
-      </button>
-    </div>
+    <>
+      <NarrativeGenerationModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onConfirm={handleGenerateNarratives}
+        eventsData={eventsData}
+        isGenerating={isGenerating}
+        preSelectedSnippets={preSelectedSnippets}
+      />
+      <div className="pointer-events-none absolute -top-16 right-0 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={handleOpenModal}
+          disabled={isGenerating}
+          className="pointer-events-auto rounded-full p-2 transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+          title="Generate third-person omniscient story from selected snippets"
+          aria-label="Generate third-person omniscient story from selected snippets"
+        >
+          <TbPlayerPlay size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={handlePopulateEditor}
+          className="pointer-events-auto rounded-full p-2 transition hover:bg-green-100 hover:text-green-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 cursor-pointer"
+          title="Populate text editor with narratives"
+          aria-label="Populate text editor with narratives"
+        >
+          <TbFileText size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={handleDuplicate}
+          className="pointer-events-auto rounded-full p-2 transition hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500 cursor-pointer"
+          title="Duplicate cluster"
+          aria-label="Duplicate cluster"
+        >
+          <TbCopy size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={handleDelete}
+          className="pointer-events-auto rounded-full p-2 text-red-500 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-red-500 cursor-pointer"
+          title="Delete cluster"
+          aria-label="Delete cluster"
+        >
+          <TbTrash size={18} />
+        </button>
+      </div>
+    </>
   );
 }
