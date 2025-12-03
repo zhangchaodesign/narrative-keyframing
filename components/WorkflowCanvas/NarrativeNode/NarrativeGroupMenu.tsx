@@ -2,7 +2,13 @@
 
 import { useCallback, useState } from "react";
 import { useReactFlow, useStore } from "@xyflow/react";
-import { TbCopy, TbTrash, TbFileText, TbPlayerPlay, TbTable } from "react-icons/tb";
+import {
+  TbCopy,
+  TbTrash,
+  TbFileText,
+  TbPlayerPlay,
+  TbTable,
+} from "react-icons/tb";
 
 import type {
   NarrativeNodeType,
@@ -567,15 +573,6 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
       <div className="pointer-events-none absolute -top-16 right-0 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
         <button
           type="button"
-          onClick={handleOpenTableModal}
-          className="pointer-events-auto rounded-full p-2 transition hover:bg-purple-50 hover:text-purple-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-purple-500 cursor-pointer"
-          title="View narrative overview table"
-          aria-label="View narrative overview table"
-        >
-          <TbTable size={18} />
-        </button>
-        <button
-          type="button"
           onClick={handleOpenModal}
           disabled={isGenerating}
           className="pointer-events-auto rounded-full p-2 transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
@@ -583,6 +580,15 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
           aria-label="Generate third-person omniscient story from selected snippets"
         >
           <TbPlayerPlay size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={handleOpenTableModal}
+          className="pointer-events-auto rounded-full p-2 transition hover:bg-purple-50 hover:text-purple-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-purple-500 cursor-pointer"
+          title="View narrative overview table"
+          aria-label="View narrative overview table"
+        >
+          <TbTable size={18} />
         </button>
         <button
           type="button"
