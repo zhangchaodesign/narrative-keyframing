@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { TbX, TbHighlight } from "react-icons/tb";
+import { TbX, TbHighlight, TbRefresh } from "react-icons/tb";
+import { useReactFlow } from "@xyflow/react";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { SelectedSnippet } from "@/lib/stores/workflowStore";
 import { findTextMatches } from "@/lib/utils";
+import type { WorkflowNode, WorkflowEdge } from "@/lib/types/workflow";
 
 type EventData = {
   narrativeNodeId: string;
@@ -39,9 +41,14 @@ type NarrativeTableModalProps = {
 export function NarrativeTableModal({
   isOpen,
   onClose,
-  eventsData,
+  eventsData: initialEventsData,
 }: NarrativeTableModalProps) {
   const [highlightEnabled, setHighlightEnabled] = useState(true);
+  const [showPromptDialog, setShowPromptDialog] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [eventsData, setEventsData] = useState<EventData[]>(initialEventsData);
+  const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
   const selectedSnippets = useWorkflowStore((state) => state.selectedSnippets);
   const toggleSnippet = useWorkflowStore((state) => state.toggleSnippet);
   const toggleEvidenceAttribute = useWorkflowStore(
@@ -50,6 +57,11 @@ export function NarrativeTableModal({
   const selectedEvidenceAttributes = useWorkflowStore(
     (state) => state.selectedEvidenceAttributes,
   );
+
+  // Sync local eventsData with prop changes
+  useEffect(() => {
+    setEventsData(initialEventsData);
+  }, [initialEventsData]);
 
   // Get unique perspectives across all events
   const uniquePerspectives = useMemo(() => {
@@ -64,6 +76,137 @@ export function NarrativeTableModal({
     });
     return Array.from(perspectivesMap.values());
   }, [eventsData]);
+
+  const handleRegenerateNarrative = async () => {
+    if (isRegenerating) return;
+
+    setIsRegenerating(true);
+    setShowPromptDialog(false);
+
+    try {
+      // Filter eventsData to only include selected snippets
+      const filteredEventsData = eventsData.map((event) => ({
+        ...event,
+        snippets: event.snippets.filter((snippet) => {
+          const key = `${snippet.perspectiveNodeId}::${snippet.text}`;
+          return Boolean(selectedSnippets[key]);
+        }),
+      }));
+
+      // Set loading state for all narrative nodes
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
+          if (
+            node.type === "narrative" &&
+            eventsData.some((e) => e.narrativeNodeId === node.id)
+          ) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                isLoading: true,
+              },
+            };
+          }
+          return node;
+        }),
+      );
+
+      // Call the API with filtered events and custom prompt
+      const response = await fetch("/api/narrative", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          events: filteredEventsData,
+          customPrompt: customPrompt.trim() || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate narrative");
+      }
+
+      const data = await response.json();
+
+      // Update all narrative nodes with their generated stories
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
+          if (node.type === "narrative") {
+            const narrativeForThisNode = data.narratives?.find(
+              (n: { narrativeNodeId: string }) => n.narrativeNodeId === node.id,
+            );
+
+            if (narrativeForThisNode) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  narration:
+                    narrativeForThisNode?.narration ??
+                    node.data?.narration ??
+                    "",
+                  snippetUsages: narrativeForThisNode?.snippetUsages ?? [],
+                  isLoading: false,
+                },
+              };
+            }
+          }
+          return node;
+        }),
+      );
+
+      // Update eventsData state with new narratives to refresh the table
+      setEventsData((prevEventsData) =>
+        prevEventsData.map((event) => {
+          const narrativeForThisEvent = data.narratives?.find(
+            (n: { narrativeNodeId: string }) =>
+              n.narrativeNodeId === event.narrativeNodeId,
+          );
+
+          if (narrativeForThisEvent) {
+            return {
+              ...event,
+              narration: narrativeForThisEvent.narration ?? event.narration,
+              snippetUsages:
+                narrativeForThisEvent.snippetUsages ??
+                event.snippetUsages ??
+                [],
+            };
+          }
+          return event;
+        }),
+      );
+
+      // Reset custom prompt
+      setCustomPrompt("");
+    } catch (error) {
+      console.error("Error regenerating narrative:", error);
+      alert("Failed to regenerate narrative. Please try again.");
+
+      // Clear loading state on error
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
+          if (
+            node.type === "narrative" &&
+            eventsData.some((e) => e.narrativeNodeId === node.id)
+          ) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                isLoading: false,
+              },
+            };
+          }
+          return node;
+        }),
+      );
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
 
   // Helper function to highlight narrative snippetUsages (following NarrativeContent.tsx pattern)
   const highlightNarrative = (
@@ -247,6 +390,41 @@ export function NarrativeTableModal({
 
   if (!isOpen) return null;
 
+  const promptDialogContent = showPromptDialog && (
+    <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/50 p-4">
+      <div className="relative w-full max-w-md rounded bg-white p-4">
+        <fieldset className="fieldset">
+          <legend className="fieldset-legend">Custom Prompt (Optional)</legend>
+          <textarea
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            placeholder="E.g., Focus on emotional depth, use vivid imagery..."
+            rows={4}
+            className="textarea w-full text-xs rounded"
+          ></textarea>
+        </fieldset>
+        <div className="mt-4 flex justify-end gap-3">
+          <button
+            onClick={() => {
+              setShowPromptDialog(false);
+              setCustomPrompt("");
+            }}
+            className="btn btn-sm"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleRegenerateNarrative}
+            disabled={isRegenerating}
+            className="btn btn-sm btn-neutral"
+          >
+            {isRegenerating ? "Regenerating..." : "Regenerate"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   const modalContent = (
     <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 p-4">
       <div className="relative max-h-[90vh] w-full max-w-7xl overflow-hidden rounded bg-white shadow-xl">
@@ -309,7 +487,21 @@ export function NarrativeTableModal({
                   </th>
                 ))}
                 <th className="border border-zinc-300 bg-green-50 px-3 py-2 text-left font-semibold text-green-900">
-                  Third-Person Omniscient Narrative
+                  <div className="flex items-center gap-1">
+                    <span>Narrative</span>
+                    <button
+                      onClick={() => setShowPromptDialog(true)}
+                      disabled={isRegenerating}
+                      className="rounded p-1 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-50"
+                      title="Regenerate narratives"
+                      aria-label="Regenerate narratives"
+                    >
+                      <TbRefresh
+                        size={16}
+                        className={isRegenerating ? "animate-spin" : ""}
+                      />
+                    </button>
+                  </div>
                 </th>
               </tr>
             </thead>
@@ -361,7 +553,12 @@ export function NarrativeTableModal({
                       );
                     })}
                     <td className="border border-zinc-300 px-3 py-2 align-top bg-green-50/30">
-                      {event.narration ? (
+                      {isRegenerating ? (
+                        <div className="flex items-center gap-2 text-xs text-green-700">
+                          <TbRefresh size={14} className="animate-spin" />
+                          <span>Regenerating...</span>
+                        </div>
+                      ) : event.narration ? (
                         <div className="text-xs">
                           {highlightNarrative(
                             event.narration,
@@ -384,5 +581,10 @@ export function NarrativeTableModal({
     </div>
   );
 
-  return createPortal(modalContent, document.body);
+  return (
+    <>
+      {createPortal(modalContent, document.body)}
+      {promptDialogContent && createPortal(promptDialogContent, document.body)}
+    </>
+  );
 }

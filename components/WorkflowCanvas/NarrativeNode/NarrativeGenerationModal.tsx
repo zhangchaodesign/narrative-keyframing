@@ -219,7 +219,7 @@ export function NarrativeGenerationModal({
     <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 p-4">
       <div className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded bg-white shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-2">
+        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-3">
           <h2 className="text font-semibold text-zinc-900">
             Generate Third-Person Omniscient Narrative
           </h2>
