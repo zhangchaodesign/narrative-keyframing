@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useReactFlow, useStore } from "@xyflow/react";
-import { TbCopy, TbTrash, TbFileText, TbPlayerPlay } from "react-icons/tb";
+import { TbCopy, TbTrash, TbFileText, TbPlayerPlay, TbTable } from "react-icons/tb";
 
 import type {
   NarrativeNodeType,
@@ -20,6 +20,7 @@ import { useEditorStore } from "@/lib/stores/editorStore";
 import { SlateUtils } from "@/lib/slateUtils";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { NarrativeGenerationModal } from "./NarrativeGenerationModal";
+import { NarrativeTableModal } from "./NarrativeTableModal";
 
 type NarrativeGroupMenuProps = {
   nodeId: string;
@@ -53,6 +54,7 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
   const { setValue } = useEditorStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [eventsData, setEventsData] = useState<EventData[]>([]);
   const [preSelectedSnippets, setPreSelectedSnippets] = useState<Set<string>>(
     new Set(),
@@ -444,6 +446,109 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
     setIsModalOpen(false);
   }, []);
 
+  const handleOpenTableModal = useCallback(() => {
+    // Find all narrative nodes in this group
+    const allNarrativeNodesInGroup = nodes.filter(
+      (node) => node.type === "narrative" && node.parentId === nodeId,
+    ) as NarrativeNodeType[];
+
+    if (allNarrativeNodesInGroup.length === 0) {
+      alert("No narrative nodes found in this group");
+      return;
+    }
+
+    // Find perspective groups connected to this narrative group
+    const connectedPerspectiveGroupIds = edges
+      .filter((edge) => edge.target === nodeId)
+      .map((edge) => edge.source)
+      .filter((sourceId) => {
+        const sourceNode = nodes.find((n) => n.id === sourceId);
+        return sourceNode?.type === "perspectiveGroup";
+      });
+
+    // Find all perspective nodes within those groups
+    const linkedPerspectiveNodes = nodes.filter(
+      (node) =>
+        node.type === "perspective" &&
+        node.parentId &&
+        connectedPerspectiveGroupIds.includes(node.parentId),
+    ) as PerspectiveNodeType[];
+
+    // Build events data with their associated narratives
+    const preparedEventsData = allNarrativeNodesInGroup.map(
+      (narrativeNodeInGroup) => {
+        const eventId = narrativeNodeInGroup.data?.eventId;
+        let eventDescription = "";
+        let eventTimeline = "";
+
+        if (eventId) {
+          const eventNode = nodes.find(
+            (node) => node.id === eventId && node.type === "event",
+          ) as EventNodeType | undefined;
+
+          if (eventNode) {
+            eventDescription = eventNode.data?.description ?? "";
+            eventTimeline = eventNode.data?.timeline ?? "";
+          }
+        }
+
+        // Find perspective nodes with matching eventId
+        const perspectiveNodesForEvent = linkedPerspectiveNodes.filter(
+          (pNode) => pNode.data?.eventId === eventId,
+        );
+
+        // Extract all evidence from perspective nodes
+        const snippetsForEvent: Array<{
+          perspectiveNodeId: string;
+          text: string;
+          characterId: string;
+          characterName: string;
+          attributes: string[];
+        }> = [];
+
+        perspectiveNodesForEvent.forEach((pNode) => {
+          const evidence = pNode.data?.analysisEvidence || [];
+          evidence.forEach((evidenceItem) => {
+            evidenceItem.items.forEach((item) => {
+              snippetsForEvent.push({
+                perspectiveNodeId: pNode.id,
+                text: item.text,
+                characterId: evidenceItem.characterId,
+                characterName: evidenceItem.characterName,
+                attributes: item.attributes,
+              });
+            });
+          });
+        });
+
+        // Get reflection from all perspectiveNodesForEvent data
+        const reflectionsForEvent = perspectiveNodesForEvent.map((pNode) => ({
+          narrator: pNode.data?.narrator || "Unknown narrator",
+          reflection: pNode.data?.reflection || "",
+        }));
+
+        return {
+          narrativeNodeId: narrativeNodeInGroup.id,
+          eventId,
+          eventDescription,
+          eventTimeline,
+          snippets: snippetsForEvent,
+          perspectives: reflectionsForEvent,
+          narration: narrativeNodeInGroup.data?.narration || "",
+          snippetUsages: narrativeNodeInGroup.data?.snippetUsages || [],
+        };
+      },
+    );
+
+    // Set events data and open table modal
+    setEventsData(preparedEventsData);
+    setIsTableModalOpen(true);
+  }, [nodeId, nodes, edges]);
+
+  const handleCloseTableModal = useCallback(() => {
+    setIsTableModalOpen(false);
+  }, []);
+
   return (
     <>
       <NarrativeGenerationModal
@@ -454,7 +559,21 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
         isGenerating={isGenerating}
         preSelectedSnippets={preSelectedSnippets}
       />
+      <NarrativeTableModal
+        isOpen={isTableModalOpen}
+        onClose={handleCloseTableModal}
+        eventsData={eventsData}
+      />
       <div className="pointer-events-none absolute -top-16 right-0 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={handleOpenTableModal}
+          className="pointer-events-auto rounded-full p-2 transition hover:bg-purple-50 hover:text-purple-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-purple-500 cursor-pointer"
+          title="View narrative overview table"
+          aria-label="View narrative overview table"
+        >
+          <TbTable size={18} />
+        </button>
         <button
           type="button"
           onClick={handleOpenModal}
