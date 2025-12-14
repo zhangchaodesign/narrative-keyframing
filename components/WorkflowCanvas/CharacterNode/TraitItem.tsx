@@ -261,8 +261,7 @@ export function TraitItem({
             <button
               onClick={handleStartEdit}
               className={cn(
-                "pointer-events-auto rounded p-0.5 text-zinc-600 hover:text-zinc-800 cursor-pointer",
-                isSelected && "text-white hover:text-white",
+                "pointer-events-auto rounded p-0.5 text-white hover:text-gray-200 cursor-pointer",
               )}
               title="Edit attribute"
               aria-label={`Edit ${label} trait`}
@@ -271,7 +270,7 @@ export function TraitItem({
             </button>
             <button
               onClick={handleRemove}
-              className="pointer-events-auto rounded p-0.5 text-red-500 hover:text-red-700 cursor-pointer"
+              className="pointer-events-auto rounded p-0.5 text-white hover:text-gray-200 cursor-pointer"
               title="Remove attribute"
               aria-label={`Remove ${label} trait`}
             >
