@@ -36,11 +36,17 @@ export type SelectedSnippet = {
   attributes: string[];
 };
 
+export type ExtractedCharacter = {
+  name: string;
+  role: string;
+};
+
 type WorkflowState = {
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
   selectedEvidenceAttributes: Record<string, boolean>;
   selectedSnippets: Record<string, SelectedSnippet>;
+  extractedCharacters: Record<string, ExtractedCharacter[]>;
   setNodes: (updater: StateUpdater<WorkflowNode[]>) => void;
   setEdges: (updater: StateUpdater<WorkflowEdge[]>) => void;
   onNodesChange: (changes: NodeChange<WorkflowNode>[]) => void;
@@ -51,6 +57,10 @@ type WorkflowState = {
   toggleSnippet: (snippet: SelectedSnippet) => void;
   clearSnippet: (perspectiveNodeId: string, snippetText: string) => void;
   clearAllSnippets: () => void;
+  setExtractedCharacters: (
+    eventGroupId: string,
+    characters: ExtractedCharacter[],
+  ) => void;
   reset: () => void;
 };
 
@@ -199,6 +209,7 @@ const getInitialState = () => {
     edges,
     selectedEvidenceAttributes: {},
     selectedSnippets: {},
+    extractedCharacters: {},
   };
 };
 
@@ -386,6 +397,13 @@ export const useWorkflowStore = create<WorkflowState>()(
           return { selectedSnippets: next };
         }),
       clearAllSnippets: () => set({ selectedSnippets: {} }),
+      setExtractedCharacters: (eventGroupId, characters) =>
+        set((state) => ({
+          extractedCharacters: {
+            ...state.extractedCharacters,
+            [eventGroupId]: characters,
+          },
+        })),
       reset: () => set(getInitialState()),
     }),
     {
@@ -413,6 +431,7 @@ export const useWorkflowStore = create<WorkflowState>()(
           edges,
           selectedEvidenceAttributes: state.selectedEvidenceAttributes ?? {},
           selectedSnippets: state.selectedSnippets ?? {},
+          extractedCharacters: state.extractedCharacters ?? {},
         };
       },
       partialize: (state) => ({
@@ -420,6 +439,7 @@ export const useWorkflowStore = create<WorkflowState>()(
         edges: state.edges,
         selectedEvidenceAttributes: state.selectedEvidenceAttributes,
         selectedSnippets: state.selectedSnippets,
+        extractedCharacters: state.extractedCharacters,
       }),
     },
   ),
