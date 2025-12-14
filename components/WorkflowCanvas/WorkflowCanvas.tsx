@@ -23,6 +23,7 @@ import { NarrativeNode } from "@/components/WorkflowCanvas/NarrativeNode/Narrati
 import { EventGroupNode } from "@/components/WorkflowCanvas/EventNode/EventGroupNode";
 import { PerspectiveGroupNode } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveGroupNode";
 import { NarrativeGroupNode } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeGroupNode";
+import { WorkflowCanvasMenu } from "@/components/WorkflowCanvas/WorkflowCanvasMenu";
 import {
   type EventNodeType,
   type EventGroupNodeType,
@@ -31,9 +32,7 @@ import {
   type PerspectiveNodeType,
   type WorkflowNode,
 } from "@/lib/types/workflow";
-import { TbPlus } from "react-icons/tb";
-import { geistMono } from "@/app/fonts";
-import { cn } from "@/lib/utils";
+import { nodeColor } from "@/lib/workflow/workflowUtils";
 
 const nodeTypes: NodeTypes = {
   event: EventNode,
@@ -49,27 +48,6 @@ const edgeTypes: EdgeTypes = {
   customEdge: CustomEdge,
   eventEdge: EventEdge,
 };
-
-function nodeColor(node: WorkflowNode) {
-  switch (node.type) {
-    case "eventGroup":
-      return "oklch(97.1% 0.014 343.198)";
-    case "perspectiveGroup":
-      return "oklch(97% 0.014 254.604)";
-    case "narrativeGroup":
-      return "oklch(97% 0.014 300)";
-    case "event":
-      return "oklch(89.9% 0.061 343.231)";
-    case "perspective":
-      return "oklch(88.2% 0.059 254.128)";
-    case "narrative":
-      return "oklch(98.2% 0.018 155.826)";
-    case "character":
-      return "oklch(95.4% 0.038 75.164)";
-    default:
-      return "#67cc8a";
-  }
-}
 
 export function WorkflowCanvas() {
   const proOptions = { hideAttribution: true };
@@ -97,6 +75,120 @@ export function WorkflowCanvas() {
     },
     [setEdges],
   );
+
+  const handleAddStoryOutlineCluster = useCallback(() => {
+    const eventGroups = nodes.filter(
+      (node): node is EventGroupNodeType => node.type === "eventGroup",
+    );
+
+    const DEFAULT_GROUP_STYLE = {
+      width: 1200,
+      height: 220,
+      backgroundColor: "transparent",
+      border: "none",
+      padding: 0,
+      boxShadow: "none",
+    } as const;
+
+    const baselineGroupStyle = eventGroups[0]?.style ?? DEFAULT_GROUP_STYLE;
+    const baselineWidth =
+      typeof baselineGroupStyle?.width === "number"
+        ? baselineGroupStyle.width
+        : DEFAULT_GROUP_STYLE.width;
+    const baselineHeight =
+      typeof baselineGroupStyle?.height === "number"
+        ? baselineGroupStyle.height
+        : DEFAULT_GROUP_STYLE.height;
+
+    const VERTICAL_GAP = 80;
+    const bottomMostEdge = eventGroups.reduce((accumulator, group) => {
+      const groupHeight =
+        typeof group.style?.height === "number"
+          ? group.style.height
+          : baselineHeight;
+      return Math.max(accumulator, group.position.y + groupHeight);
+    }, Number.NEGATIVE_INFINITY);
+
+    const newGroupX = eventGroups[0]?.position.x ?? 200;
+    const newGroupY =
+      eventGroups.length === 0
+        ? 20
+        : (bottomMostEdge === Number.NEGATIVE_INFINITY
+            ? eventGroups[0]!.position.y + baselineHeight
+            : bottomMostEdge) + VERTICAL_GAP;
+
+    const clusterSuffix =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const newGroupId = `event-group-${clusterSuffix}`;
+
+    const newGroupNode: WorkflowNode = {
+      id: newGroupId,
+      type: "eventGroup",
+      position: {
+        x: newGroupX,
+        y: newGroupY,
+      },
+      data: {
+        label: "Story Outline",
+      },
+      style: {
+        ...DEFAULT_GROUP_STYLE,
+        ...(baselineGroupStyle ?? {}),
+        width: baselineWidth,
+        height: baselineHeight,
+      },
+    };
+
+    // Create four empty event nodes
+    const EVENT_HORIZONTAL_SPACING = 300;
+    const EVENT_START_X = 20;
+    const EVENT_START_Y = 60;
+    const DEFAULT_EVENT_COUNT = 4;
+
+    const newEventNodes: WorkflowNode[] = Array.from(
+      { length: DEFAULT_EVENT_COUNT },
+      (_, index) => ({
+        id: `event-${clusterSuffix}-${index + 1}`,
+        type: "event",
+        position: {
+          x: EVENT_START_X + index * EVENT_HORIZONTAL_SPACING,
+          y: EVENT_START_Y,
+        },
+        draggable: false,
+        data: {
+          description: "",
+          timeline: `Event ${index + 1}`,
+        },
+        parentId: newGroupId,
+        extent: "parent",
+      }),
+    );
+
+    setNodes((currentNodes) => [
+      ...currentNodes,
+      newGroupNode,
+      ...newEventNodes,
+    ]);
+
+    // Create edges connecting the event nodes sequentially
+    setEdges((currentEdges) => {
+      const sequentialEdges = newEventNodes
+        .slice(0, -1)
+        .map((node, index) => ({
+          id: `edge-${node.id}-${newEventNodes[index + 1]!.id}`,
+          source: node.id,
+          target: newEventNodes[index + 1]!.id,
+          sourceHandle: "event-next",
+          targetHandle: "event-prev",
+          type: "eventEdge",
+          animated: true,
+        }));
+
+      return [...currentEdges, ...sequentialEdges];
+    });
+  }, [nodes, setNodes, setEdges]);
 
   const handleAddFirstPersonCluster = useCallback(() => {
     const eventNodes = nodes.filter(
@@ -387,26 +479,11 @@ export function WorkflowCanvas() {
 
   return (
     <div className="h-full min-h-0 w-full relative">
-      <div className="absolute left-1/2 top-4 -translate-x-1/2 z-20">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            className="btn btn-xs btn-secondary"
-            onClick={handleAddFirstPersonCluster}
-          >
-            <TbPlus size={16} />
-            First-Person Limited Cluster
-          </button>
-          <button
-            type="button"
-            className="btn btn-xs btn-primary text-white"
-            onClick={handleAddThirdPersonCluster}
-          >
-            <TbPlus size={16} />
-            Third-Person Omniscient Cluster
-          </button>
-        </div>
-      </div>
+      <WorkflowCanvasMenu
+        onAddStoryOutlineCluster={handleAddStoryOutlineCluster}
+        onAddFirstPersonCluster={handleAddFirstPersonCluster}
+        onAddThirdPersonCluster={handleAddThirdPersonCluster}
+      />
       <ReactFlow
         nodes={nodes}
         edges={edges}

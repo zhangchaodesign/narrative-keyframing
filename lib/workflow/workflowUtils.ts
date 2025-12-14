@@ -256,3 +256,33 @@ export const deleteNodeCluster = (
     ),
   };
 };
+
+// ============================================================================
+// STYLE UTILITIES
+// ============================================================================
+
+/**
+ * Get color for a workflow node based on its type
+ * @param node Workflow node
+ * @returns Color string for the node
+ */
+export function nodeColor(node: WorkflowNode) {
+  switch (node.type) {
+    case "eventGroup":
+      return "oklch(97.1% 0.014 343.198)";
+    case "perspectiveGroup":
+      return "oklch(97% 0.014 254.604)";
+    case "narrativeGroup":
+      return "oklch(97% 0.014 300)";
+    case "event":
+      return "oklch(89.9% 0.061 343.231)";
+    case "perspective":
+      return "oklch(88.2% 0.059 254.128)";
+    case "narrative":
+      return "oklch(98.2% 0.018 155.826)";
+    case "character":
+      return "oklch(95.4% 0.038 75.164)";
+    default:
+      return "#67cc8a";
+  }
+}
