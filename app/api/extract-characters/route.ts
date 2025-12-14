@@ -57,7 +57,7 @@ For each character, identify:
 Only include characters that are explicitly mentioned or clearly implied in the outline. Do not invent characters that aren't present.`;
 
     const result = await generateObject({
-      model: openai("gpt-4o"),
+      model: openai("gpt-4.1"),
       schema: ResponseSchema,
       prompt,
       temperature: 0.3,

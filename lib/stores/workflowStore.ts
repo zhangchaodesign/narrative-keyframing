@@ -341,7 +341,7 @@ export const useWorkflowStore = create<WorkflowState>()(
               if (
                 snippet.characterId === characterId &&
                 snippet.attributes.some(
-                  (attr) => attr.trim().toLowerCase() === normalizedAttribute
+                  (attr) => attr.trim().toLowerCase() === normalizedAttribute,
                 )
               ) {
                 delete nextSnippets[snippetKey];
@@ -372,8 +372,7 @@ export const useWorkflowStore = create<WorkflowState>()(
           delete next[key];
           return { selectedEvidenceAttributes: next };
         }),
-      clearAllEvidenceAttributes: () =>
-        set({ selectedEvidenceAttributes: {} }),
+      clearAllEvidenceAttributes: () => set({ selectedEvidenceAttributes: {} }),
       toggleSnippet: (snippet) =>
         set((state) => {
           const key = buildSnippetKey(snippet.perspectiveNodeId, snippet.text);
