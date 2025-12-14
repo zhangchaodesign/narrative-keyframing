@@ -2,13 +2,15 @@
 
 import { Position, type NodeProps } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
+import { EventGroupMenu } from "@/components/WorkflowCanvas/EventNode/EventGroupMenu";
 import type { GroupNodeType } from "@/lib/types/workflow";
 import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
 
-export function EventGroupNode({ data }: NodeProps<GroupNodeType>) {
+export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   return (
-    <div className="relative h-full w-full rounded-lg border-4 border-pink-100 bg-pink-50/50 shadow">
+    <div className="group relative h-full w-full rounded-lg border-4 border-pink-100 bg-pink-50/50 shadow">
+      <EventGroupMenu nodeId={id} />
       <div
         className={cn(
           geistMono.className,
