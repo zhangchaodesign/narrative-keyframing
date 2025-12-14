@@ -161,7 +161,81 @@ export function createPerspectiveGroup(
     },
   };
 
-  const newNodes = [newGroupNode, ...newPerspectiveNodes];
+  // Create character nodes for first and last perspective nodes
+  const firstPerspective = newPerspectiveNodes[0];
+  const lastPerspective = newPerspectiveNodes[newPerspectiveNodes.length - 1];
+  const characterNodes: WorkflowNode[] = [];
+  const characterEdges: WorkflowEdge[] = [];
+
+  if (firstPerspective) {
+    const firstCharacterId = `character-${clusterSuffix}-1`;
+    characterNodes.push({
+      id: firstCharacterId,
+      type: "character",
+      position: {
+        x: firstPerspective.position.x,
+        y: 280,
+      },
+      draggable: false,
+      data: {
+        name: characterName || "",
+        traits: {
+          physiology: [],
+          psychology: [],
+          sociology: [],
+        },
+        perspectiveId: firstPerspective.id,
+      },
+      parentId: newGroupId,
+      extent: "parent",
+    });
+
+    characterEdges.push({
+      id: `edge-${firstCharacterId}-${firstPerspective.id}`,
+      source: firstCharacterId,
+      target: firstPerspective.id,
+      sourceHandle: "perspective",
+      targetHandle: "character",
+      type: "customEdge",
+      animated: true,
+    });
+  }
+
+  if (lastPerspective && lastPerspective.id !== firstPerspective?.id) {
+    const lastCharacterId = `character-${clusterSuffix}-${newPerspectiveNodes.length}`;
+    characterNodes.push({
+      id: lastCharacterId,
+      type: "character",
+      position: {
+        x: lastPerspective.position.x,
+        y: 280,
+      },
+      draggable: false,
+      data: {
+        name: characterName || "",
+        traits: {
+          physiology: [],
+          psychology: [],
+          sociology: [],
+        },
+        perspectiveId: lastPerspective.id,
+      },
+      parentId: newGroupId,
+      extent: "parent",
+    });
+
+    characterEdges.push({
+      id: `edge-${lastCharacterId}-${lastPerspective.id}`,
+      source: lastCharacterId,
+      target: lastPerspective.id,
+      sourceHandle: "perspective",
+      targetHandle: "character",
+      type: "customEdge",
+      animated: true,
+    });
+  }
+
+  const newNodes = [newGroupNode, ...newPerspectiveNodes, ...characterNodes];
 
   const sequentialEdges = newPerspectiveNodes
     .slice(0, -1)
@@ -186,7 +260,11 @@ export function createPerspectiveGroup(
     animated: true,
   };
 
-  const newEdges = [bridgingEdge, ...sequentialEdges];
+  const newEdges = [
+    bridgingEdge,
+    ...sequentialEdges,
+    ...characterEdges,
+  ];
 
   return { nodes: newNodes, edges: newEdges };
 }
