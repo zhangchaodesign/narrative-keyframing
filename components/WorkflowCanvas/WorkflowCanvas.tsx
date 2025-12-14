@@ -24,16 +24,12 @@ import { EventGroupNode } from "@/components/WorkflowCanvas/EventNode/EventGroup
 import { PerspectiveGroupNode } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveGroupNode";
 import { NarrativeGroupNode } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeGroupNode";
 import { WorkflowCanvasMenu } from "@/components/WorkflowCanvas/WorkflowCanvasMenu";
-import { createPerspectiveGroup } from "@/lib/workflow/addPerspectiveGroup";
 import {
-  type EventNodeType,
-  type EventGroupNodeType,
-  type NarrationGroupNodeType,
-  type NarrativeNodeType,
-  type WorkflowNode,
-  type WorkflowEdge,
-} from "@/lib/types/workflow";
-import { nodeColor } from "@/lib/workflow/workflowUtils";
+  createPerspectiveGroup,
+  createStoryOutlineCluster,
+  createNarrativeGroup,
+  nodeColor,
+} from "@/lib/workflow/workflowUtils";
 
 const nodeTypes: NodeTypes = {
   event: EventNode,
@@ -78,117 +74,10 @@ export function WorkflowCanvas() {
   );
 
   const handleAddStoryOutlineCluster = useCallback(() => {
-    const eventGroups = nodes.filter(
-      (node): node is EventGroupNodeType => node.type === "eventGroup",
-    );
+    const result = createStoryOutlineCluster(nodes, { eventCount: 4 });
 
-    const DEFAULT_GROUP_STYLE = {
-      width: 1200,
-      height: 220,
-      backgroundColor: "transparent",
-      border: "none",
-      padding: 0,
-      boxShadow: "none",
-    } as const;
-
-    const baselineGroupStyle = eventGroups[0]?.style ?? DEFAULT_GROUP_STYLE;
-    const baselineWidth =
-      typeof baselineGroupStyle?.width === "number"
-        ? baselineGroupStyle.width
-        : DEFAULT_GROUP_STYLE.width;
-    const baselineHeight =
-      typeof baselineGroupStyle?.height === "number"
-        ? baselineGroupStyle.height
-        : DEFAULT_GROUP_STYLE.height;
-
-    const VERTICAL_GAP = 80;
-    const bottomMostEdge = eventGroups.reduce((accumulator, group) => {
-      const groupHeight =
-        typeof group.style?.height === "number"
-          ? group.style.height
-          : baselineHeight;
-      return Math.max(accumulator, group.position.y + groupHeight);
-    }, Number.NEGATIVE_INFINITY);
-
-    const newGroupX = eventGroups[0]?.position.x ?? 200;
-    const newGroupY =
-      eventGroups.length === 0
-        ? 20
-        : (bottomMostEdge === Number.NEGATIVE_INFINITY
-            ? eventGroups[0]!.position.y + baselineHeight
-            : bottomMostEdge) + VERTICAL_GAP;
-
-    const clusterSuffix =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const newGroupId = `event-group-${clusterSuffix}`;
-
-    const newGroupNode: WorkflowNode = {
-      id: newGroupId,
-      type: "eventGroup",
-      position: {
-        x: newGroupX,
-        y: newGroupY,
-      },
-      data: {
-        label: "Story Outline",
-      },
-      style: {
-        ...DEFAULT_GROUP_STYLE,
-        ...(baselineGroupStyle ?? {}),
-        width: baselineWidth,
-        height: baselineHeight,
-      },
-    };
-
-    // Create four empty event nodes
-    const EVENT_HORIZONTAL_SPACING = 300;
-    const EVENT_START_X = 20;
-    const EVENT_START_Y = 60;
-    const DEFAULT_EVENT_COUNT = 4;
-
-    const newEventNodes: WorkflowNode[] = Array.from(
-      { length: DEFAULT_EVENT_COUNT },
-      (_, index) => ({
-        id: `event-${clusterSuffix}-${index + 1}`,
-        type: "event",
-        position: {
-          x: EVENT_START_X + index * EVENT_HORIZONTAL_SPACING,
-          y: EVENT_START_Y,
-        },
-        draggable: false,
-        data: {
-          description: "",
-          timeline: `Event ${index + 1}`,
-        },
-        parentId: newGroupId,
-        extent: "parent",
-      }),
-    );
-
-    setNodes((currentNodes) => [
-      ...currentNodes,
-      newGroupNode,
-      ...newEventNodes,
-    ]);
-
-    // Create edges connecting the event nodes sequentially
-    setEdges((currentEdges) => {
-      const sequentialEdges = newEventNodes
-        .slice(0, -1)
-        .map((node, index) => ({
-          id: `edge-${node.id}-${newEventNodes[index + 1]!.id}`,
-          source: node.id,
-          target: newEventNodes[index + 1]!.id,
-          sourceHandle: "event-next",
-          targetHandle: "event-prev",
-          type: "eventEdge",
-          animated: true,
-        }));
-
-      return [...currentEdges, ...sequentialEdges];
-    });
+    setNodes((currentNodes) => [...currentNodes, ...result.nodes]);
+    setEdges((currentEdges) => [...currentEdges, ...result.edges]);
   }, [nodes, setNodes, setEdges]);
 
   const handleAddFirstPersonCluster = useCallback(() => {
@@ -203,140 +92,15 @@ export function WorkflowCanvas() {
   }, [nodes, edges, setNodes, setEdges]);
 
   const handleAddThirdPersonCluster = useCallback(() => {
-    const eventNodes = nodes.filter(
-      (node): node is EventNodeType => node.type === "event",
-    );
-    if (eventNodes.length === 0) {
+    const result = createNarrativeGroup(nodes);
+
+    if (result.nodes.length === 0) {
       return;
     }
 
-    const sortedEvents = [...eventNodes].sort(
-      (nodeA, nodeB) => nodeA.position.x - nodeB.position.x,
-    );
-    const narrativeGroups = nodes.filter(
-      (node): node is NarrationGroupNodeType => node.type === "narrativeGroup",
-    );
-    const eventGroup = nodes.find(
-      (node): node is EventGroupNodeType => node.type === "eventGroup",
-    );
-
-    const DEFAULT_GROUP_STYLE = {
-      width: 1200,
-      height: 640,
-      backgroundColor: "transparent",
-      border: "none",
-      padding: 0,
-      boxShadow: "none",
-    } as const;
-
-    const baselineGroupStyle = narrativeGroups[0]?.style ?? DEFAULT_GROUP_STYLE;
-    const baselineWidth =
-      typeof baselineGroupStyle?.width === "number"
-        ? baselineGroupStyle.width
-        : DEFAULT_GROUP_STYLE.width;
-    const baselineHeight =
-      typeof baselineGroupStyle?.height === "number"
-        ? baselineGroupStyle.height
-        : DEFAULT_GROUP_STYLE.height;
-    const eventGroupWidth =
-      typeof eventGroup?.style?.width === "number"
-        ? eventGroup.style.width
-        : baselineWidth;
-    const clusterWidth = Math.max(baselineWidth, eventGroupWidth);
-
-    const HORIZONTAL_GAP = 80;
-    const baseGroupY =
-      narrativeGroups.length > 0
-        ? narrativeGroups[0]!.position.y
-        : eventGroup?.position.y ?? 1020;
-    const rightmostEdge = narrativeGroups.reduce((accumulator, group) => {
-      const groupWidth =
-        typeof group.style?.width === "number"
-          ? group.style.width
-          : baselineWidth;
-      return Math.max(accumulator, group.position.x + groupWidth);
-    }, Number.NEGATIVE_INFINITY);
-    const newGroupX =
-      narrativeGroups.length === 0
-        ? eventGroup?.position.x ?? 100
-        : (rightmostEdge === Number.NEGATIVE_INFINITY
-            ? narrativeGroups[0]!.position.x + baselineWidth
-            : rightmostEdge) + HORIZONTAL_GAP;
-    const newGroupY = baseGroupY;
-
-    const clusterSuffix =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    const newGroupId = `narrative-group-${clusterSuffix}`;
-    const narrativeRowY =
-      narrativeGroups.length > 0
-        ? nodes.find(
-            (node): node is NarrativeNodeType =>
-              node.type === "narrative" &&
-              node.parentId === narrativeGroups[0]?.id,
-          )?.position.y ?? 50
-        : 50;
-
-    const newNarrativeNodes: WorkflowNode[] = sortedEvents.map(
-      (eventNode, indexPosition) => ({
-        id: `narrative-${clusterSuffix}-${indexPosition + 1}`,
-        type: "narrative",
-        position: {
-          x: eventNode.position.x,
-          y: narrativeRowY,
-        },
-        data: {
-          narration: "",
-          isLoading: false,
-          eventId: eventNode.id,
-        },
-        draggable: false,
-        parentId: newGroupId,
-        extent: "parent",
-      }),
-    );
-
-    const newGroupNode: WorkflowNode = {
-      id: newGroupId,
-      type: "narrativeGroup",
-      position: {
-        x: newGroupX,
-        y: newGroupY,
-      },
-      data: {
-        label: "Third-Person Omniscient Cluster",
-      },
-      style: {
-        ...DEFAULT_GROUP_STYLE,
-        ...(baselineGroupStyle ?? {}),
-        width: clusterWidth,
-        height: baselineHeight,
-      },
-    };
-
-    setNodes((currentNodes) => [
-      ...currentNodes,
-      newGroupNode,
-      ...newNarrativeNodes,
-    ]);
-
-    setEdges((currentEdges) => {
-      const sequentialEdges = newNarrativeNodes
-        .slice(0, -1)
-        .map((node, indexPosition) => ({
-          id: `edge-${node.id}-${newNarrativeNodes[indexPosition + 1]!.id}`,
-          source: node.id,
-          target: newNarrativeNodes[indexPosition + 1]!.id,
-          sourceHandle: "narrative-next",
-          targetHandle: "narrative-prev",
-          type: "customEdge",
-          animated: true,
-        }));
-
-      return [...currentEdges, ...sequentialEdges];
-    });
-  }, [nodes, setEdges, setNodes]);
+    setNodes((currentNodes) => [...currentNodes, ...result.nodes]);
+    setEdges((currentEdges) => [...currentEdges, ...result.edges]);
+  }, [nodes, setNodes, setEdges]);
 
   return (
     <div className="h-full min-h-0 w-full relative">

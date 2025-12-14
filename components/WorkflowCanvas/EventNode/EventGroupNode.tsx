@@ -7,7 +7,7 @@ import { TbRefresh, TbPlus } from "react-icons/tb";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { EventGroupMenu } from "@/components/WorkflowCanvas/EventNode/EventGroupMenu";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
-import { createPerspectiveGroup } from "@/lib/workflow/addPerspectiveGroup";
+import { createPerspectiveGroup } from "@/lib/workflow/workflowUtils";
 import type {
   GroupNodeType,
   EventNodeType,
