@@ -1,4 +1,4 @@
-import { TbPlus } from "react-icons/tb";
+import { TbPlus, TbChevronDown } from "react-icons/tb";
 
 interface WorkflowCanvasMenuProps {
   onAddStoryOutlineCluster: () => void;
@@ -12,32 +12,40 @@ export function WorkflowCanvasMenu({
   onAddThirdPersonCluster,
 }: WorkflowCanvasMenuProps) {
   return (
-    <div className="absolute left-1/2 top-4 -translate-x-1/2 z-20">
-      <div className="flex gap-2">
-        <button
-          type="button"
-          className="btn btn-xs bg-pink-500 text-white"
-          onClick={onAddStoryOutlineCluster}
+    <div className="absolute left-2 top-4 z-20">
+      <div className="dropdown">
+        <div tabIndex={0} role="button" className="btn btn-sm btn-neutral">
+          Add Cluster
+          <TbChevronDown size={16} />
+        </div>
+        <div
+          tabIndex={0}
+          className="dropdown-content card card-sm bg-base-100 z-1 w-64 shadow-md"
         >
-          <TbPlus size={16} />
-          Story Outline Cluster
-        </button>
-        <button
-          type="button"
-          className="btn btn-xs bg-secondary text-white"
-          onClick={onAddFirstPersonCluster}
-        >
-          <TbPlus size={16} />
-          First-Person Limited Cluster
-        </button>
-        <button
-          type="button"
-          className="btn btn-xs bg-primary text-white"
-          onClick={onAddThirdPersonCluster}
-        >
-          <TbPlus size={16} />
-          Third-Person Omniscient Cluster
-        </button>
+          <ul
+            tabIndex={0}
+            className="dropdown-content menu menu-sm bg-base-100 rounded-lg z-1 w-64 p-2 shadow-lg mt-2"
+          >
+            <li>
+              <button type="button" onClick={onAddStoryOutlineCluster}>
+                <TbPlus size={16} className="text-pink-500" />
+                <span>Story Outline Cluster</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" onClick={onAddFirstPersonCluster}>
+                <TbPlus size={16} className="text-secondary" />
+                <span>First-Person Limited Cluster</span>
+              </button>
+            </li>
+            <li>
+              <button type="button" onClick={onAddThirdPersonCluster}>
+                <TbPlus size={16} className="text-primary" />
+                <span>Third-Person Omniscient Cluster</span>
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
