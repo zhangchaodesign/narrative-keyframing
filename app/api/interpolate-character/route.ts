@@ -24,6 +24,7 @@ const NearbySnapshotSchema = z.object({
 
 const RequestSchema = z.object({
   perspectiveText: z.string().min(1),
+  fullPerspectiveText: z.string().optional(),
   narratorName: z.string().min(1),
   nearbySnapshots: z.array(NearbySnapshotSchema).default([]),
   eventDescription: z.string().optional(),
@@ -58,8 +59,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { perspectiveText, narratorName, nearbySnapshots, eventDescription } =
-      payload.data;
+    const {
+      perspectiveText,
+      fullPerspectiveText,
+      narratorName,
+      nearbySnapshots,
+      eventDescription,
+    } = payload.data;
 
     // Build context from nearby snapshots
     const snapshotsContext =
@@ -75,19 +81,24 @@ ${formatTraits(snapshot.traits)}`;
   .join("\n\n")}`
         : "";
 
-    const eventContext = eventDescription
-      ? `\nEvent context: ${eventDescription}`
-      : "";
+    // const eventContext = eventDescription
+    //   ? `\nEvent context: ${eventDescription}`
+    //   : "";
 
-    const prompt = `You are analyzing a character's perspective to extract their traits at this specific moment in the story.
+    const perspectiveContext =
+      fullPerspectiveText && fullPerspectiveText.trim().length > 0
+        ? `\nFull narration (for context only, do not quote from this section):\n<<<\n${fullPerspectiveText}\n>>>`
+        : "";
 
-${eventContext}
+    const prompt = `You are analyzing a character's narration to extract their traits at this specific moment in the story.
 
-Perspective narration by ${narratorName}:
+Narration of this moment by ${narratorName}:
 "${perspectiveText}"
 ${snapshotsContext}
 
-Based on the perspective text${
+${perspectiveContext}
+
+Based on the narration text${
       nearbySnapshots.length > 0 ? " and nearby snapshots" : ""
     }, extract the character traits for ${narratorName} at this moment.
 

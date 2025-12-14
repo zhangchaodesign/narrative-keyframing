@@ -178,6 +178,25 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     const narratorName = perspectiveData?.narrator?.trim() || "New Character";
 
     const groupId = perspectiveNode.parentId;
+    const fullPerspectiveText = (() => {
+      if (!groupId) {
+        return perspectiveText;
+      }
+
+      const groupReflections = nodes
+        .filter(
+          (node): node is PerspectiveNodeType =>
+            node.type === "perspective" && node.parentId === groupId,
+        )
+        .sort(
+          (a, b) => a.position.x - b.position.x || a.position.y - b.position.y,
+        )
+        .map((node) => (node.data?.reflection ?? "").trim())
+        .filter((text) => text.length > 0)
+        .join("\n\n");
+
+      return groupReflections || perspectiveText;
+    })();
     const timestamp = Date.now();
     const newCharacterId = `character-${timestamp}`;
     const newEdgeId = `edge-${newCharacterId}-${id}`;
@@ -261,6 +280,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             perspectiveText,
+            fullPerspectiveText,
             narratorName,
             nearbySnapshots,
             eventDescription,
