@@ -12,9 +12,13 @@ export function WorkflowCanvasMenu({
   onAddThirdPersonCluster,
 }: WorkflowCanvasMenuProps) {
   return (
-    <div className="absolute left-2 top-4 z-20">
+    <div className="absolute left-2 top-4 z-20 bg-white/90 p-1 rounded">
       <div className="dropdown">
-        <div tabIndex={0} role="button" className="btn btn-sm btn-neutral">
+        <div
+          tabIndex={0}
+          role="button"
+          className="btn btn-sm btn-ghost btn-neutral"
+        >
           Add Cluster
           <TbChevronDown size={16} />
         </div>
