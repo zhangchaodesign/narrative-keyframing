@@ -5,6 +5,8 @@ import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
 
+const TraitCategoryEnum = z.enum(["physiology", "psychology", "sociology"]);
+
 const TraitListSchema = z.object({
   physiology: z.array(z.string().min(1)).default([]),
   psychology: z.array(z.string().min(1)).default([]),
@@ -22,6 +24,15 @@ const NearbySnapshotSchema = z.object({
   position: z.enum(["before", "after"]),
 });
 
+const TraitEvidenceSchema = z.object({
+  traitCategory: TraitCategoryEnum,
+  trait: z.string().min(1),
+  evidenceText: z
+    .string()
+    .min(1)
+    .describe("Exact excerpt copied from the perspective narration."),
+});
+
 const RequestSchema = z.object({
   perspectiveText: z.string().min(1),
   fullPerspectiveText: z.string().optional(),
@@ -32,6 +43,7 @@ const RequestSchema = z.object({
 
 const ResponseSchema = z.object({
   characterSnapshot: CharacterSnapshotSchema,
+  traitEvidence: z.array(TraitEvidenceSchema).default([]),
 });
 
 const formatTraits = (traits: z.infer<typeof TraitListSchema>) => {
@@ -87,7 +99,7 @@ ${formatTraits(snapshot.traits)}`;
 
     const perspectiveContext =
       fullPerspectiveText && fullPerspectiveText.trim().length > 0
-        ? `\nFull narration (for context only, do not quote from this section):\n<<<\n${fullPerspectiveText}\n>>>`
+        ? `\nFull narration (context only — do NOT quote from this section):\n<<<\n${fullPerspectiveText}\n>>>`
         : "";
 
     const prompt = `You are analyzing a character's narration to extract their traits at this specific moment in the story.
@@ -115,7 +127,12 @@ ${
 - Keep trait descriptions concise (3-8 words each)
 - Return 2-5 traits per category when evident
 
-Return a character snapshot as a JSON object.`;
+Evidence requirements:
+- For every trait you include, add one entry to traitEvidence with the traitCategory, the exact trait wording, and an evidenceText.
+- Each evidenceText must be a verbatim quote from the narration above (do NOT pull from the context section).
+- If you cannot find a direct quote, omit the trait entirely.
+
+Return JSON that matches the provided schema, including both the characterSnapshot and traitEvidence arrays.`;
 
     console.log("Character interpolation prompt:", prompt);
 

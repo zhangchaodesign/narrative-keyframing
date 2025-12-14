@@ -15,8 +15,10 @@ import { PerspectiveContent } from "@/components/WorkflowCanvas/PerspectiveNode/
 import { PerspectiveStatusLabel } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveStatusLabel";
 import type {
   CharacterNodeType,
+  CharacterTraits,
   EventNodeType,
   PerspectiveNodeType,
+  PerspectiveEvidenceItem,
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
@@ -25,6 +27,20 @@ import { geistMono } from "@/app/fonts";
 
 const CHARACTER_VERTICAL_GAP = 210;
 const DEFAULT_NARRATION_GROUP_ID = "perspective-group";
+
+type TraitEvidencePayload = {
+  traitCategory: keyof CharacterTraits;
+  trait: string;
+  evidenceText: string;
+};
+
+type InterpolateCharacterResponse = {
+  characterSnapshot?: {
+    name: string;
+    traits: CharacterTraits;
+  };
+  traitEvidence?: TraitEvidencePayload[];
+};
 
 export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const { setNodes, setEdges, getNode } = useReactFlow<
@@ -269,11 +285,12 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         return nearbySnapshots;
       };
 
-      let characterTraits = {
+      let characterTraits: CharacterTraits = {
         physiology: [],
         psychology: [],
         sociology: [],
       };
+      let interpolatedEvidence: TraitEvidencePayload[] = [];
 
       // If perspective has text, interpolate character snapshot from LLM
       if (perspectiveText) {
@@ -298,9 +315,13 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           });
 
           if (response.ok) {
-            const result = await response.json();
+            const result =
+              (await response.json()) as InterpolateCharacterResponse;
             if (result.characterSnapshot?.traits) {
               characterTraits = result.characterSnapshot.traits;
+            }
+            if (Array.isArray(result.traitEvidence)) {
+              interpolatedEvidence = result.traitEvidence;
             }
           } else {
             console.error(
@@ -312,6 +333,26 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           console.error("Error calling interpolate-character API:", error);
         }
       }
+
+      const perspectiveEvidenceItems = interpolatedEvidence
+        .map((entry) => {
+          const snippet = entry.evidenceText?.trim();
+          const traitValue = entry.trait?.trim();
+          if (!snippet || !traitValue) {
+            return null;
+          }
+          return {
+            text: snippet,
+            category: entry.traitCategory,
+            attributes: [traitValue],
+          } as PerspectiveEvidenceItem["items"][number];
+        })
+        .filter(
+          (
+            item,
+          ): item is PerspectiveEvidenceItem["items"][number] =>
+            Boolean(item),
+        );
 
       setNodes((nodesState) => {
         const characterNodes = nodesState.filter(
@@ -339,7 +380,41 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           extent: "parent",
         };
 
-        return [...nodesState, newCharacterNode];
+        const nodesWithCharacter = [...nodesState, newCharacterNode];
+
+        if (perspectiveEvidenceItems.length === 0) {
+          return nodesWithCharacter;
+        }
+
+        return nodesWithCharacter.map((nodeState) => {
+          if (nodeState.id !== id || nodeState.type !== "perspective") {
+            return nodeState;
+          }
+
+          const perspectiveData =
+            (nodeState.data as PerspectiveNodeType["data"]) ?? undefined;
+          const existingEvidence: PerspectiveEvidenceItem[] = Array.isArray(
+            perspectiveData?.analysisEvidence,
+          )
+            ? (perspectiveData?.analysisEvidence as PerspectiveEvidenceItem[])
+            : [];
+          const filteredEvidence = existingEvidence.filter(
+            (entry) => entry.characterId !== newCharacterId,
+          );
+          const evidenceEntry: PerspectiveEvidenceItem = {
+            characterId: newCharacterId,
+            characterName: narratorName,
+            items: perspectiveEvidenceItems,
+          };
+
+          return {
+            ...nodeState,
+            data: {
+              ...(perspectiveData ?? {}),
+              analysisEvidence: [...filteredEvidence, evidenceEntry],
+            } as PerspectiveNodeType["data"],
+          };
+        });
       });
 
       setEdges((edgesState) => [
