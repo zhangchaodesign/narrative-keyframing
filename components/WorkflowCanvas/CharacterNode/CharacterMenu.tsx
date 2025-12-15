@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useReactFlow, useStore } from "@xyflow/react";
 import { TbCopy, TbTrash, TbRefresh } from "react-icons/tb";
 
@@ -20,9 +20,16 @@ import {
 type CharacterMenuProps = {
   nodeId: string;
   nodeType: WorkflowNode["type"];
+  isRefreshing?: boolean;
+  onRefreshStateChange?: (isRefreshing: boolean) => void;
 };
 
-export function CharacterMenu({ nodeId, nodeType }: CharacterMenuProps) {
+export function CharacterMenu({
+  nodeId,
+  nodeType,
+  isRefreshing = false,
+  onRefreshStateChange,
+}: CharacterMenuProps) {
   const { setNodes, setEdges, getNodes } = useReactFlow<
     WorkflowNode,
     WorkflowEdge
@@ -44,7 +51,6 @@ export function CharacterMenu({ nodeId, nodeType }: CharacterMenuProps) {
       perspectiveData: perspectiveNode?.data,
     };
   });
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const hasPerspectiveLink =
     Boolean(characterData?.perspectiveId) &&
     Boolean(perspectiveData?.reflection?.trim());
@@ -104,7 +110,7 @@ export function CharacterMenu({ nodeId, nodeType }: CharacterMenuProps) {
       return;
     }
 
-    setIsRefreshing(true);
+    onRefreshStateChange?.(true);
     try {
       const result = await interpolateCharacterSnapshot({
         nodes: workflowNodes,
@@ -177,9 +183,16 @@ export function CharacterMenu({ nodeId, nodeType }: CharacterMenuProps) {
     } catch (error) {
       console.error("Error refreshing character snapshot:", error);
     } finally {
-      setIsRefreshing(false);
+      onRefreshStateChange?.(false);
     }
-  }, [getNodes, hasPerspectiveLink, isRefreshing, nodeId, setNodes]);
+  }, [
+    getNodes,
+    hasPerspectiveLink,
+    isRefreshing,
+    nodeId,
+    onRefreshStateChange,
+    setNodes,
+  ]);
 
   return (
     <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
