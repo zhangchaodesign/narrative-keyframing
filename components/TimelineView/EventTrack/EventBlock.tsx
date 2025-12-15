@@ -13,17 +13,17 @@ import type { TimelineItem } from "@/lib/types/timeline";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TimelineView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 
-interface StoryOutlineItemProps {
+interface EventBlockProps {
   item: TimelineItem;
   timeToPixel: (position: number) => number;
   timelineScale: number;
 }
 
-export function StoryOutlineItem({
+export function EventBlock({
   item,
   timeToPixel,
   timelineScale,
-}: StoryOutlineItemProps) {
+}: EventBlockProps) {
   const [draftContent, setDraftContent] = useState(item.content);
   const setNodes = useWorkflowStore((state) => state.setNodes);
 

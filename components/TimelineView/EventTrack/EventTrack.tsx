@@ -3,14 +3,14 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
-import { StoryOutlineItem } from "@/components/TimelineView/StoryTrack/StoryOutlineItem";
+import { EventBlock } from "@/components/TimelineView/EventTrack/EventBlock";
 import type { TimelineTrack } from "@/lib/types/timeline";
 import {
   TIMELINE_LABEL_WIDTH,
   TIMELINE_STORY_TRACK_HEIGHT,
 } from "@/components/TimelineView/constants";
 
-interface StoryTrackProps {
+interface EventTrackProps {
   track: TimelineTrack;
   timeToPixel: (position: number) => number;
   pixelToTime: (pixel: number) => number;
@@ -18,11 +18,11 @@ interface StoryTrackProps {
   timelineScale: number;
 }
 
-export function StoryTrack({
+export function EventTrack({
   track,
   timeToPixel,
   timelineScale,
-}: StoryTrackProps) {
+}: EventTrackProps) {
   return (
     <div
       className="relative border-b border-gray-200"
@@ -51,7 +51,7 @@ export function StoryTrack({
         style={{ left: TIMELINE_LABEL_WIDTH }}
       >
         {track.items.map((item) => (
-          <StoryOutlineItem
+          <EventBlock
             key={item.id}
             item={item}
             timeToPixel={timeToPixel}

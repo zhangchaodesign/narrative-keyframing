@@ -23,7 +23,7 @@ const sortByXPosition = (
   return ax - bx;
 };
 
-const buildStoryTrack = (
+const buildEventTrack = (
   nodes: WorkflowNode[],
 ): { track: TimelineTrack | null; eventPositionMap: Map<string, number> } => {
   const eventGroups = nodes.filter((node) => node.type === "eventGroup");
@@ -212,7 +212,7 @@ const buildNarrativeTrack = (
 };
 
 export const buildTimelineData = (nodes: WorkflowNode[]): TimelineData => {
-  const { track: storyTrack, eventPositionMap } = buildStoryTrack(nodes);
+  const { track: storyTrack, eventPositionMap } = buildEventTrack(nodes);
   const characterTracks = buildPerspectiveTracks(nodes, eventPositionMap);
   const narrativeTrack = buildNarrativeTrack(nodes, eventPositionMap);
 

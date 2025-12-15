@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { TimelineRuler } from "@/components/TimelineView/TimelineRuler";
-import { StoryTrack } from "@/components/TimelineView/StoryTrack/StoryTrack";
+import { EventTrack } from "@/components/TimelineView/EventTrack/EventTrack";
 import { CharacterTrack } from "@/components/TimelineView/CharacterTrack/CharacterTrack";
 import { NarrativeTrack } from "@/components/TimelineView/NarrativeTrack/NarrativeTrack";
 import {
@@ -125,7 +125,7 @@ export function TimelineView() {
 
           {/* Story Track */}
           {storyTrack && (
-            <StoryTrack
+            <EventTrack
               track={storyTrack}
               timeToPixel={timeToPixel}
               pixelToTime={pixelToTime}

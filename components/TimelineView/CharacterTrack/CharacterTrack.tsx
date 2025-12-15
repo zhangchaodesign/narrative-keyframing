@@ -3,7 +3,8 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
-import { TimelineItem } from "@/components/TimelineView/TimelineItem";
+import { PerspectiveBlock } from "@/components/TimelineView/CharacterTrack/PerspectiveBlock";
+import { CharacterBlock } from "@/components/TimelineView/CharacterTrack/CharacterBlock";
 import type { TimelineTrack } from "@/lib/types/timeline";
 import {
   TIMELINE_LABEL_WIDTH,
@@ -72,12 +73,11 @@ export function CharacterTrack({
             style={{ left: TIMELINE_LABEL_WIDTH }}
           >
             {perspectiveTrack.items.map((item) => (
-              <TimelineItem
+              <PerspectiveBlock
                 key={item.id}
                 item={item}
                 timeToPixel={timeToPixel}
                 timelineScale={timelineScale}
-                color="blue"
               />
             ))}
           </div>
@@ -103,12 +103,11 @@ export function CharacterTrack({
             style={{ left: TIMELINE_LABEL_WIDTH }}
           >
             {characterTrack.items.map((item) => (
-              <TimelineItem
+              <CharacterBlock
                 key={item.id}
                 item={item}
                 timeToPixel={timeToPixel}
                 timelineScale={timelineScale}
-                color="purple"
               />
             ))}
           </div>
