@@ -5,7 +5,7 @@ import { Position, type NodeProps } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { PerspectiveHandle } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveHandle";
 import { PerspectiveSingleActionsMenu } from "@/components/shared/PerspectiveNodeMenu";
-import { AddCharacterButton } from "@/components/shared/AddCharacterButton";
+import { AddCharacterButton } from "@/components/shared/CharacterSnapshotButton";
 import { PerspectiveContent } from "@/components/shared/PerspectiveContent";
 import { PerspectiveStatusLabel } from "@/components/shared/PerspectiveStatusLabel";
 import type {

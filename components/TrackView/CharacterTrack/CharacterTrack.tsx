@@ -6,7 +6,7 @@ import { geistMono } from "@/app/fonts";
 import { PerspectiveBlock } from "@/components/TrackView/CharacterTrack/PerspectiveBlock";
 import { CharacterBlock } from "@/components/TrackView/CharacterTrack/CharacterBlock";
 import { PerspectiveTrackMenu } from "@/components/TrackView/CharacterTrack/PerspectiveTrackMenu";
-import { AddCharacterButton } from "@/components/shared/AddCharacterButton";
+import { AddCharacterButton } from "@/components/shared/CharacterSnapshotButton";
 import type { TimelineTrack } from "@/lib/types/timeline";
 import {
   TIMELINE_LABEL_WIDTH,

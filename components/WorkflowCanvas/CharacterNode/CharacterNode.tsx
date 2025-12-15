@@ -4,7 +4,7 @@ import { useCallback, useMemo, useRef } from "react";
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { CharacterMenu } from "@/components/WorkflowCanvas/CharacterNode/CharacterMenu";
-import { TraitSection } from "@/components/shared/TraitSection";
+import { TraitSection } from "@/components/shared/CharacterTraitSection";
 import type { CharacterNodeType, CharacterTraits } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";

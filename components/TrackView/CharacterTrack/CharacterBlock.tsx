@@ -12,7 +12,7 @@ import { geistMono } from "@/app/fonts";
 import type { TimelineItem } from "@/lib/types/timeline";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TrackView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
-import { TraitSection } from "@/components/shared/TraitSection";
+import { TraitSection } from "@/components/shared/CharacterTraitSection";
 import { CharacterRefreshMenu } from "@/components/shared/CharacterActionsMenu";
 import type { CharacterNodeData, CharacterTraits } from "@/lib/types/workflow";
 import {
