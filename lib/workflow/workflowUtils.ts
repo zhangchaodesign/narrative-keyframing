@@ -331,14 +331,32 @@ export type InterpolateCharacterResult = {
   }>;
 };
 
+export type InterpolateCharacterSnapshotParams = {
+  nodes: WorkflowNode[];
+  perspectiveNode: PerspectiveNodeType;
+  fallbackNarratorName?: string;
+};
+
 /**
  * Call the /api/interpolate-character endpoint and return structured results
- * @param interpolationContext Context for character interpolation
- * @returns Interpolated character data and evidence items
+ * @param params Parameters for building interpolation context and calling API
+ * @returns Interpolated character data and evidence items, or null if no perspective text
  */
 export async function interpolateCharacterSnapshot(
-  interpolationContext: CharacterInterpolationContext,
-): Promise<InterpolateCharacterResult> {
+  params: InterpolateCharacterSnapshotParams,
+): Promise<InterpolateCharacterResult | null> {
+  const { nodes, perspectiveNode, fallbackNarratorName = "Character" } = params;
+
+  const interpolationContext = buildCharacterInterpolationContext({
+    nodes,
+    perspectiveNode,
+    fallbackNarratorName,
+  });
+
+  if (!interpolationContext) {
+    return null;
+  }
+
   const {
     perspectiveText,
     fullPerspectiveText,

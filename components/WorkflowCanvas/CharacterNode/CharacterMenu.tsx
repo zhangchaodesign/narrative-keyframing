@@ -14,7 +14,6 @@ import type {
 import {
   deleteNodeWithEdges,
   duplicateWorkflowNode,
-  buildCharacterInterpolationContext,
   interpolateCharacterSnapshot,
 } from "@/lib/workflow/workflowUtils";
 
@@ -105,24 +104,23 @@ export function CharacterMenu({ nodeId, nodeType }: CharacterMenuProps) {
       return;
     }
 
-    const interpolationContext = buildCharacterInterpolationContext({
-      nodes: workflowNodes,
-      perspectiveNode,
-      fallbackNarratorName:
-        characterNode.data?.name?.trim() ||
-        perspectiveNode.data?.narrator?.trim() ||
-        "Character",
-    });
-
-    if (!interpolationContext) {
-      console.warn("Cannot refresh character; perspective text is empty.");
-      return;
-    }
-
     setIsRefreshing(true);
     try {
-      const { characterName, characterTraits, evidenceItems } =
-        await interpolateCharacterSnapshot(interpolationContext);
+      const result = await interpolateCharacterSnapshot({
+        nodes: workflowNodes,
+        perspectiveNode,
+        fallbackNarratorName:
+          characterNode.data?.name?.trim() ||
+          perspectiveNode.data?.narrator?.trim() ||
+          "Character",
+      });
+
+      if (!result) {
+        console.warn("Cannot refresh character; perspective text is empty.");
+        return;
+      }
+
+      const { characterName, characterTraits, evidenceItems } = result;
 
       setNodes((currentNodes) =>
         currentNodes.map((node) => {

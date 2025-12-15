@@ -23,10 +23,7 @@ import type {
   WorkflowNode,
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utils";
-import {
-  buildCharacterInterpolationContext,
-  interpolateCharacterSnapshot,
-} from "@/lib/workflow/workflowUtils";
+import { interpolateCharacterSnapshot } from "@/lib/workflow/workflowUtils";
 import { geistMono } from "@/app/fonts";
 
 const CHARACTER_VERTICAL_GAP = 210;
@@ -197,11 +194,6 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       const newCharacterId = `character-${timestamp}`;
       const newEdgeId = `edge-${newCharacterId}-${id}`;
 
-      const interpolationContext = buildCharacterInterpolationContext({
-        nodes: workflowNodes,
-        perspectiveNode,
-        fallbackNarratorName,
-      });
       let resolvedNarratorName = fallbackNarratorName;
       let characterTraits: CharacterTraits = {
         physiology: [],
@@ -215,20 +207,20 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       }> = [];
 
       // If perspective has text, interpolate character snapshot from LLM
-      if (interpolationContext) {
-        try {
-          const {
-            characterName,
-            characterTraits: traits,
-            evidenceItems,
-          } = await interpolateCharacterSnapshot(interpolationContext);
+      try {
+        const result = await interpolateCharacterSnapshot({
+          nodes: workflowNodes,
+          perspectiveNode,
+          fallbackNarratorName,
+        });
 
-          resolvedNarratorName = characterName;
-          characterTraits = traits;
-          perspectiveEvidenceItems = evidenceItems;
-        } catch (error) {
-          console.error("Error calling interpolate-character API:", error);
+        if (result) {
+          resolvedNarratorName = result.characterName;
+          characterTraits = result.characterTraits;
+          perspectiveEvidenceItems = result.evidenceItems;
         }
+      } catch (error) {
+        console.error("Error calling interpolate-character API:", error);
       }
 
       setNodes((nodesState) => {
