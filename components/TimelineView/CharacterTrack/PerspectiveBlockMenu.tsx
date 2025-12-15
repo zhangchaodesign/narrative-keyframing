@@ -1,51 +1,48 @@
 "use client";
 
 import { useCallback } from "react";
-import { useReactFlow, useStore } from "@xyflow/react";
 import { TbListSearch, TbPencil, TbCheck, TbRefresh } from "react-icons/tb";
-
+import type { TimelineItem } from "@/lib/types/timeline";
 import type {
   PerspectiveNodeType,
-  WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
+import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import {
-  updatePerspectiveAnalysisState,
   analyzeSinglePerspectiveEvidence,
   regenerateSinglePerspective,
   PERSPECTIVE_MESSAGES,
 } from "@/lib/workflow/perspectiveActions";
 
-type PerspectiveMenuProps = {
-  nodeId: string;
+type PerspectiveBlockMenuProps = {
+  item: TimelineItem;
   isEditing?: boolean;
   onToggleEdit?: () => void;
 };
 
-export function PerspectiveMenu({
-  nodeId,
+
+export function PerspectiveBlockMenu({
+  item,
   isEditing = false,
   onToggleEdit,
-}: PerspectiveMenuProps) {
-  const { setNodes, getNodes, getEdges } = useReactFlow<
-    WorkflowNode,
-    WorkflowEdge
-  >();
-  const perspectiveData = useStore((store) => {
-    const node = store.nodes.find(
-      (candidate): candidate is PerspectiveNodeType =>
-        candidate.id === nodeId && candidate.type === "perspective",
-    );
-    return node?.data as PerspectiveNodeType["data"] | undefined;
-  });
-  const hasCharacterConnection = useStore((store) =>
-    store.edges.some(
-      (edge) =>
-        edge.target === nodeId &&
-        edge.targetHandle === "character" &&
-        edge.sourceHandle === "perspective",
-    ),
+}: PerspectiveBlockMenuProps) {
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
+  const setNodes = useWorkflowStore((state) => state.setNodes);
+
+  const perspectiveNode = nodes.find(
+    (node): node is PerspectiveNodeType =>
+      node.id === item.nodeId && node.type === "perspective",
   );
+  const perspectiveData = perspectiveNode?.data;
+
+  const hasCharacterConnection = edges.some(
+    (edge) =>
+      edge.target === item.nodeId &&
+      edge.targetHandle === "character" &&
+      edge.sourceHandle === "perspective",
+  );
+
   const isAnalyzingEvidence = perspectiveData?.isAnalyzingEvidence ?? false;
   const isRegenerating = perspectiveData?.isLoading ?? false;
   const hasReflection = Boolean(perspectiveData?.reflection?.trim());
@@ -54,7 +51,7 @@ export function PerspectiveMenu({
     (patch: Partial<PerspectiveNodeType["data"]>) => {
       setNodes((currentNodes) =>
         currentNodes.map((node) => {
-          if (node.id !== nodeId || node.type !== "perspective") {
+          if (node.id !== item.nodeId || node.type !== "perspective") {
             return node;
           }
           const existingData = node.data as PerspectiveNodeType["data"];
@@ -68,16 +65,13 @@ export function PerspectiveMenu({
         }),
       );
     },
-    [nodeId, setNodes],
+    [item.nodeId, setNodes],
   );
 
   const handleAnalyzeEvidence = useCallback(async () => {
     if (isAnalyzingEvidence) {
       return;
     }
-
-    const nodes = getNodes();
-    const edges = getEdges();
 
     updateAnalysisState({
       isAnalyzingEvidence: true,
@@ -86,7 +80,11 @@ export function PerspectiveMenu({
       analysisEvidence: [],
     });
 
-    const result = await analyzeSinglePerspectiveEvidence(nodeId, nodes, edges);
+    const result = await analyzeSinglePerspectiveEvidence(
+      item.nodeId,
+      nodes,
+      edges,
+    );
 
     updateAnalysisState({
       isAnalyzingEvidence: false,
@@ -95,10 +93,10 @@ export function PerspectiveMenu({
       analysisEvidence: result.evidence,
     });
   }, [
-    getEdges,
-    getNodes,
+    edges,
     isAnalyzingEvidence,
-    nodeId,
+    item.nodeId,
+    nodes,
     updateAnalysisState,
   ]);
 
@@ -107,12 +105,9 @@ export function PerspectiveMenu({
       return;
     }
 
-    const nodes = getNodes();
-    const edges = getEdges();
-
     setNodes((currentNodes) =>
       currentNodes.map((node) => {
-        if (node.id !== nodeId || node.type !== "perspective") {
+        if (node.id !== item.nodeId || node.type !== "perspective") {
           return node;
         }
         const existingData = node.data as PerspectiveNodeType["data"];
@@ -127,12 +122,16 @@ export function PerspectiveMenu({
     );
 
     try {
-      const reflection = await regenerateSinglePerspective(nodeId, nodes, edges);
+      const reflection = await regenerateSinglePerspective(
+        item.nodeId,
+        nodes,
+        edges,
+      );
       const hasContent = reflection.trim().length > 0;
 
       setNodes((currentNodes) =>
         currentNodes.map((node) => {
-          if (node.id !== nodeId || node.type !== "perspective") {
+          if (node.id !== item.nodeId || node.type !== "perspective") {
             return node;
           }
 
@@ -157,7 +156,7 @@ export function PerspectiveMenu({
       console.error("Error regenerating perspective:", error);
       setNodes((currentNodes) =>
         currentNodes.map((node) => {
-          if (node.id !== nodeId || node.type !== "perspective") {
+          if (node.id !== item.nodeId || node.type !== "perspective") {
             return node;
           }
 
@@ -173,12 +172,12 @@ export function PerspectiveMenu({
       );
     }
   }, [
-    getEdges,
-    getNodes,
+    edges,
     hasCharacterConnection,
     isEditing,
     isRegenerating,
-    nodeId,
+    item.nodeId,
+    nodes,
     setNodes,
   ]);
 

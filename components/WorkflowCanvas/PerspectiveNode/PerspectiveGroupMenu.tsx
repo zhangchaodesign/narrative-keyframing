@@ -15,13 +15,13 @@ import {
   generateUniqueUuidId,
 } from "@/lib/workflow/workflowUtils";
 import {
-  preparePerspectiveRequest,
-  type GeneratePerspectiveResponse,
-} from "@/lib/workflow/workflowPerspective";
-import {
-  prepareEvidenceAnalysis,
-  type EvidenceAnalysisResponse,
-} from "@/lib/workflow/workflowEvidence";
+  generateMultiplePerspectives,
+  analyzeMultiplePerspectivesEvidence,
+  setPerspectivesLoading,
+  setPerspectivesAnalyzing,
+  applyGeneratedPerspectives,
+  applyAnalysisResults,
+} from "@/lib/workflow/perspectiveActions";
 
 type PerspectiveGroupMenuProps = {
   nodeId: string;
@@ -57,134 +57,31 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     const targetNodeIds = perspectiveNodesInGroup.map((node) => node.id);
 
     setIsGenerating(true);
-    let loadingNodeIds: Set<string> | null = null;
 
     try {
-      const preparation = preparePerspectiveRequest({
-        nodes,
-        edges,
-        targetNodeIds,
-      });
-
-      if (!preparation) {
-        return;
-      }
-
-      const { eventSequence, tasks } = preparation;
-
-      loadingNodeIds = new Set(tasks.map((task) => task.id));
+      // Set loading state
       setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          if (node.type !== "perspective") {
-            return node;
-          }
-
-          const existingData = node.data as PerspectiveNodeType["data"];
-          return {
-            ...node,
-            data: {
-              ...existingData,
-              isLoading: loadingNodeIds?.has(node.id) ?? false,
-            },
-          };
-        }),
+        setPerspectivesLoading(currentNodes, new Set(targetNodeIds), true),
       );
 
-      const response = await fetch("/api/generate-perspective", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          eventSequence,
-          perspectives: tasks,
-        }),
-      });
+      // Generate perspectives
+      const updateMap = await generateMultiplePerspectives(
+        targetNodeIds,
+        nodes,
+        edges,
+      );
 
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => null);
-        const errorMessage =
-          (errorBody && errorBody.error) ||
-          `Failed to generate perspectives (${response.status}).`;
-        throw new Error(errorMessage);
-      }
-
-      const data = (await response.json()) as GeneratePerspectiveResponse;
-      const perspectives = data?.perspectives ?? [];
-
-      const orderedUpdates = perspectives
-        .map((item, index) => {
-          const task = tasks[index];
-          if (!task) {
-            return null;
-          }
-          return [task.id, item.reflection] as const;
-        })
-        .filter((entry): entry is readonly [string, string] => entry != null);
-
-      if (orderedUpdates.length === 0) {
-        return;
-      }
-
-      if (perspectives.length !== tasks.length) {
-        console.warn(
-          "Perspective response count did not match requested tasks.",
-          {
-            requested: tasks.length,
-            received: perspectives.length,
-          },
-        );
-      }
-
-      const updateMap = new Map<string, string>(orderedUpdates);
-
+      // Apply generated perspectives
       setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          if (node.type === "perspective" && updateMap.has(node.id)) {
-            const reflection = updateMap.get(node.id) ?? "";
-            const existingData = node.data as PerspectiveNodeType["data"];
-            const hasContent = reflection.trim().length > 0;
-            return {
-              ...node,
-              data: {
-                ...existingData,
-                reflection,
-                isAnalyzingEvidence: false,
-                analysisStatus: "idle",
-                analysisStatusMessage: hasContent
-                  ? undefined
-                  : "Add a reflection to analyze evidence.",
-                analysisEvidence: hasContent ? [] : undefined,
-              },
-            };
-          }
-          return node;
-        }),
+        applyGeneratedPerspectives(currentNodes, updateMap),
       );
     } catch (error) {
       console.error("Error generating perspectives:", error);
     } finally {
-      if (loadingNodeIds) {
-        setNodes((currentNodes) =>
-          currentNodes.map((node) => {
-            if (node.type !== "perspective") {
-              return node;
-            }
-            if (!loadingNodeIds?.has(node.id)) {
-              return node;
-            }
-
-            const existingData = node.data as PerspectiveNodeType["data"];
-            return {
-              ...node,
-              data: {
-                ...existingData,
-                isLoading: false,
-              },
-            };
-          }),
-        );
-      }
+      // Clear loading state
+      setNodes((currentNodes) =>
+        setPerspectivesLoading(currentNodes, new Set(targetNodeIds), false),
+      );
       setIsGenerating(false);
     }
   }, [isGenerating, getNodes, getEdges, setNodes, nodeId]);
@@ -206,158 +103,25 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
       return;
     }
 
+    const targetNodeIds = perspectiveNodesInGroup.map((node) => node.id);
+
     setIsAnalyzing(true);
 
-    // Prepare analysis targets for all valid perspective nodes
-    const analysisTargets = perspectiveNodesInGroup
-      .map((perspectiveNode) => {
-        const perspectiveData =
-          perspectiveNode.data as PerspectiveNodeType["data"];
-
-        // Skip if no reflection or already analyzing
-        if (
-          !perspectiveData?.reflection?.trim() ||
-          perspectiveData?.isAnalyzingEvidence
-        ) {
-          return null;
-        }
-
-        const target = prepareEvidenceAnalysis({
-          perspectiveId: perspectiveNode.id,
-          nodes,
-          edges,
-        });
-
-        if (!target || !target.reflection.trim()) {
-          return null;
-        }
-
-        const hasCharacterAttributes = target.characters.some((character) =>
-          character.attributes.some(
-            (attribute) => attribute.value.trim().length > 0,
-          ),
-        );
-
-        if (!hasCharacterAttributes) {
-          return null;
-        }
-
-        return {
-          nodeId: perspectiveNode.id,
-          target,
-        };
-      })
-      .filter((item): item is { nodeId: string; target: any } => item !== null);
-
-    if (analysisTargets.length === 0) {
-      setIsAnalyzing(false);
-      return;
-    }
-
-    // Set all nodes to analyzing state
-    const analyzingNodeIds = new Set(
-      analysisTargets.map((item) => item.nodeId),
-    );
-    setNodes((currentNodes) =>
-      currentNodes.map((node) => {
-        if (node.type !== "perspective" || !analyzingNodeIds.has(node.id)) {
-          return node;
-        }
-        const existingData = node.data as PerspectiveNodeType["data"];
-        return {
-          ...node,
-          data: {
-            ...existingData,
-            isAnalyzingEvidence: true,
-            analysisStatus: "running",
-            analysisStatusMessage: "Analyzing evidence...",
-          },
-        };
-      }),
-    );
-
-    // Process all API calls in parallel
-    const analysisPromises = analysisTargets.map(
-      async ({ nodeId: perspectiveNodeId, target }) => {
-        try {
-          const response = await fetch("/api/extract-evidence", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(target),
-          });
-
-          if (!response.ok) {
-            throw new Error(`Failed to analyze evidence (${response.status}).`);
-          }
-
-          const data =
-            (await response.json()) as EvidenceAnalysisResponse | null;
-          const evidence = data?.characterEvidence ?? [];
-          const supportedCharacters = evidence.filter(
-            (entry) => entry.items.length > 0,
-          );
-          const uniqueCharacterNames = [
-            ...new Set(supportedCharacters.map((entry) => entry.characterName)),
-          ];
-          const successMessage =
-            uniqueCharacterNames.length > 0
-              ? uniqueCharacterNames
-                  .map((name) => `Found evidence for ${name}`)
-                  .join(", ")
-              : "No supporting evidence found.";
-
-          return {
-            nodeId: perspectiveNodeId,
-            success: true,
-            evidence,
-            message: successMessage,
-          };
-        } catch (error) {
-          console.error(
-            `Error analyzing evidence for ${perspectiveNodeId}:`,
-            error,
-          );
-          return {
-            nodeId: perspectiveNodeId,
-            success: false,
-            evidence: [],
-            message: "Evidence analysis failed. Try again.",
-          };
-        }
-      },
-    );
-
     try {
-      // Wait for all analyses to complete
-      const results = await Promise.all(analysisPromises);
-
-      // Update all nodes with their results
+      // Set analyzing state
       setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          if (node.type !== "perspective") {
-            return node;
-          }
-
-          const result = results.find((r) => r.nodeId === node.id);
-          if (!result) {
-            return node;
-          }
-
-          const existingData = node.data as PerspectiveNodeType["data"];
-          return {
-            ...node,
-            data: {
-              ...existingData,
-              isAnalyzingEvidence: false,
-              analysisStatus: result.success ? "success" : "error",
-              analysisStatusMessage: result.message,
-              analysisEvidence: result.evidence,
-            },
-          };
-        }),
+        setPerspectivesAnalyzing(currentNodes, new Set(targetNodeIds), true),
       );
+
+      // Analyze evidence for all perspectives
+      const results = await analyzeMultiplePerspectivesEvidence(
+        targetNodeIds,
+        nodes,
+        edges,
+      );
+
+      // Apply analysis results
+      setNodes((currentNodes) => applyAnalysisResults(currentNodes, results));
     } catch (error) {
       console.error("Error analyzing evidence for group:", error);
     } finally {

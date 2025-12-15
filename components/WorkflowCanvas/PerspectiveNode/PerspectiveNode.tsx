@@ -12,7 +12,7 @@ import { PerspectiveHandle } from "@/components/WorkflowCanvas/PerspectiveNode/P
 import { PerspectiveMenu } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveMenu";
 import { AddCharacterButton } from "@/components/WorkflowCanvas/PerspectiveNode/AddCharacterButton";
 import { PerspectiveContent } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveContent";
-import { PerspectiveStatusLabel } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveStatusLabel";
+import { PerspectiveStatusLabel } from "@/components/shared/PerspectiveStatusLabel";
 import type {
   CharacterNodeType,
   CharacterTraits,

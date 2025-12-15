@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
 import { PerspectiveBlock } from "@/components/TimelineView/CharacterTrack/PerspectiveBlock";
 import { CharacterBlock } from "@/components/TimelineView/CharacterTrack/CharacterBlock";
+import { PerspectiveTrackMenu } from "@/components/TimelineView/CharacterTrack/PerspectiveTrackMenu";
 import type { TimelineTrack } from "@/lib/types/timeline";
 import {
   TIMELINE_LABEL_WIDTH,
@@ -64,9 +65,15 @@ export function CharacterTrack({
             className="absolute left-0 top-0 h-full bg-gray-50 border-r border-gray-200 flex items-center justify-center z-10"
             style={{ width: TIMELINE_LABEL_WIDTH }}
           >
-            <span className={cn(geistMono.className, "text-xs text-gray-600")}>
-              Perspective
-            </span>
+            <div className="flex items-center">
+              <span className={cn(geistMono.className, "text-xs text-gray-600")}>
+                Perspective
+              </span>
+              <PerspectiveTrackMenu
+                characterName={characterName}
+                perspectiveItems={perspectiveTrack.items}
+              />
+            </div>
           </div>
           <div
             className="absolute top-0 right-0 h-full bg-blue-50/10"

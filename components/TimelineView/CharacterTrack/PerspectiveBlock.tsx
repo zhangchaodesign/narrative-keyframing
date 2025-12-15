@@ -1,18 +1,15 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ChangeEvent,
-} from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
 import type { TimelineItem } from "@/lib/types/timeline";
 import type { PerspectiveNodeType } from "@/lib/types/workflow";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TimelineView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
+import { PerspectiveBlockMenu } from "@/components/TimelineView/CharacterTrack/PerspectiveBlockMenu";
+import { PerspectiveBlockContent } from "@/components/TimelineView/CharacterTrack/PerspectiveBlockContent";
+import { PerspectiveStatusLabel } from "@/components/shared/PerspectiveStatusLabel";
 
 interface PerspectiveBlockProps {
   item: TimelineItem;
@@ -26,38 +23,41 @@ export function PerspectiveBlock({
   timelineScale,
 }: PerspectiveBlockProps) {
   const setNodes = useWorkflowStore((state) => state.setNodes);
-  const [draftReflection, setDraftReflection] = useState(item.content);
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedReflection, setEditedReflection] = useState(item.content);
 
-  useEffect(() => {
-    setDraftReflection(item.content);
-  }, [item.content]);
+  const perspectiveNode = nodes.find(
+    (node): node is PerspectiveNodeType =>
+      node.id === item.nodeId && node.type === "perspective",
+  );
+  const perspectiveData = perspectiveNode?.data;
+
+  const isLoading = perspectiveData?.isLoading ?? false;
+  const isAnalyzingEvidence = perspectiveData?.isAnalyzingEvidence ?? false;
+  const analysisStatus = perspectiveData?.analysisStatus ?? "idle";
+  const analysisStatusMessage = perspectiveData?.analysisStatusMessage?.trim();
+  const hasReflectionContent = Boolean(perspectiveData?.reflection?.trim());
 
   const safeWidth = Math.max(timelineScale - 8, 24);
   const itemWidth = Math.min(safeWidth, timelineScale);
   const leftPosition = timeToPixel(item.position) - TIMELINE_LABEL_WIDTH;
 
-  const handleReflectionChange = useCallback(
-    (event: ChangeEvent<HTMLTextAreaElement>) => {
-      const nextValue = event.target.value;
-      setDraftReflection(nextValue);
-      setNodes((nodes) =>
-        nodes.map((node) => {
+  const handleToggleEdit = useCallback(() => {
+    if (isEditing) {
+      // Save the edited reflection
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
           if (node.id !== item.nodeId || node.type !== "perspective") {
             return node;
           }
-
-          const currentData = node.data as
-            | PerspectiveNodeType["data"]
-            | undefined;
-          if (!currentData) {
-            return node;
-          }
-
+          const existingData = node.data as PerspectiveNodeType["data"];
           return {
             ...node,
             data: {
-              ...currentData,
-              reflection: nextValue,
+              ...existingData,
+              reflection: editedReflection,
+              // Clear evidence analysis when reflection is edited
               analysisEvidence: [],
               analysisStatus: "idle",
               analysisStatusMessage: undefined,
@@ -65,9 +65,23 @@ export function PerspectiveBlock({
           };
         }),
       );
-    },
-    [item.nodeId, setNodes],
-  );
+      setIsEditing(false);
+    } else {
+      // Enter edit mode
+      setEditedReflection(perspectiveData?.reflection ?? "");
+      setIsEditing(true);
+    }
+  }, [
+    isEditing,
+    editedReflection,
+    perspectiveData?.reflection,
+    item.nodeId,
+    setNodes,
+  ]);
+
+  const handleReflectionChange = useCallback((newReflection: string) => {
+    setEditedReflection(newReflection);
+  }, []);
 
   const title = useMemo(
     () => `Perspective ${item.position + 1}`,
@@ -83,6 +97,19 @@ export function PerspectiveBlock({
       }}
     >
       <div className="group relative flex h-full flex-col rounded-lg border-2 border-secondary bg-white/95 px-3 py-2 text-xs text-zinc-800 transition-shadow hover:shadow-lg">
+        {isLoading && (
+          <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
+            <span className="loading loading-spinner text-secondary"></span>
+            <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-secondary">
+              Preparing perspective...
+            </span>
+          </div>
+        )}
+        <PerspectiveBlockMenu
+          item={item}
+          isEditing={isEditing}
+          onToggleEdit={handleToggleEdit}
+        />
         <div
           className={cn(
             geistMono.className,
@@ -93,33 +120,19 @@ export function PerspectiveBlock({
             <span>💬</span>
             <span>{title}</span>
           </span>
-          <span className="text-[9px] font-medium tracking-wide text-secondary">
-            Aligned with workflow canvas reflection
-          </span>
+          <PerspectiveStatusLabel
+            isAnalyzingEvidence={isAnalyzingEvidence}
+            analysisStatus={analysisStatus}
+            analysisStatusMessage={analysisStatusMessage}
+            hasReflectionContent={hasReflectionContent}
+          />
         </div>
-        <textarea
-          value={draftReflection}
-          onChange={handleReflectionChange}
-          placeholder="Write the reflection..."
-          rows={4}
-          onPointerDown={(event) => {
-            event.stopPropagation();
-          }}
-          onWheel={(event) => {
-            if (event.ctrlKey || event.metaKey) {
-              return;
-            }
-            event.stopPropagation();
-            event.nativeEvent.stopImmediatePropagation?.();
-          }}
-          onWheelCapture={(event) => {
-            if (event.ctrlKey || event.metaKey) {
-              return;
-            }
-            event.stopPropagation();
-            event.nativeEvent.stopImmediatePropagation?.();
-          }}
-          className="mt-2 w-full flex-1 resize-none rounded border border-zinc-300 bg-white/80 px-2 py-1 text-[11px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400 nodrag nopan"
+        <PerspectiveBlockContent
+          perspectiveNodeId={item.nodeId}
+          reflection={perspectiveData?.reflection ?? ""}
+          analysisEvidence={perspectiveData?.analysisEvidence}
+          isEditing={isEditing}
+          onReflectionChange={handleReflectionChange}
         />
       </div>
     </div>
