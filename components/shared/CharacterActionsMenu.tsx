@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, type ReactNode } from "react";
-import { TbRefresh } from "react-icons/tb";
+import { TbRefresh, TbTrash } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type {
   CharacterNodeType,
@@ -12,10 +12,10 @@ import {
   type WorkflowNodesSetter,
 } from "@/lib/utiils/characterUtils";
 import { cn } from "@/lib/utiils/sharedUtils";
+import { deleteNodeWithEdges } from "@/lib/utiils/workflowUtils";
 
 type CharacterRefreshMenuProps = {
   nodeId: string;
-  wrapperClassName?: string;
   buttonPadding?: string;
   iconSize?: number;
   linkedTooltip?: string;
@@ -27,7 +27,6 @@ type CharacterRefreshMenuProps = {
 
 export function CharacterRefreshMenu({
   nodeId,
-  wrapperClassName = "flex items-center gap-1",
   buttonPadding = "p-1",
   iconSize = 12,
   linkedTooltip = "Refresh snapshot from perspective narration",
@@ -37,7 +36,9 @@ export function CharacterRefreshMenu({
   extraButtons,
 }: CharacterRefreshMenuProps) {
   const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
   const setNodes = useWorkflowStore((state) => state.setNodes);
+  const setEdges = useWorkflowStore((state) => state.setEdges);
 
   const { characterNode, perspectiveNode } = useMemo(() => {
     const foundCharacter = nodes.find(
@@ -110,8 +111,14 @@ export function CharacterRefreshMenu({
   const tooltipText = hasPerspectiveLink ? linkedTooltip : unlinkedTooltip;
   const ariaLabel = hasPerspectiveLink ? ariaLabelLinked : ariaLabelUnlinked;
 
+  const handleDelete = useCallback(() => {
+    const result = deleteNodeWithEdges(nodeId, nodes, edges);
+    setNodes(result.nodes);
+    setEdges(result.edges);
+  }, [edges, nodeId, nodes, setEdges, setNodes]);
+
   return (
-    <div className={cn(wrapperClassName)}>
+    <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
       <button
         type="button"
         onClick={handleRefresh}
@@ -136,6 +143,18 @@ export function CharacterRefreshMenu({
         )}
       </button>
       {extraButtons}
+      <button
+        type="button"
+        onClick={handleDelete}
+        className={cn(
+          "pointer-events-auto rounded-full text-red-500 transition hover:bg-red-50 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-red-500 cursor-pointer",
+          buttonPadding,
+        )}
+        title="Delete node"
+        aria-label="Delete node"
+      >
+        <TbTrash size={iconSize} />
+      </button>
     </div>
   );
 }

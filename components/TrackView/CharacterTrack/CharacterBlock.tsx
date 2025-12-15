@@ -140,7 +140,6 @@ export function CharacterBlock({
           ariaLabelLinked={`Refresh ${
             characterName || "character"
           } from perspective`}
-          wrapperClassName="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-warning/40 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
         />
         <div className="flex flex-1 flex-col gap-3 p-3 min-h-0">
           <div
