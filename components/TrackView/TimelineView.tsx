@@ -12,6 +12,10 @@ import {
   TIMELINE_RIGHT_PADDING,
   TIMELINE_RULER_HEIGHT,
   TIMELINE_UNIT_WIDTH,
+  TIMELINE_STORY_TRACK_HEIGHT,
+  TIMELINE_CHARACTER_HEADER_HEIGHT,
+  TIMELINE_CHARACTER_SUBTRACK_HEIGHT,
+  TIMELINE_NARRATIVE_TRACK_HEIGHT,
 } from "@/components/TrackView/constants";
 import { buildTimelineData } from "@/lib/utiils/timelineUtils";
 
@@ -94,6 +98,30 @@ export function TimelineView() {
     return acc;
   }, {} as Record<string, typeof characterTracks>);
 
+  // Calculate total timeline height
+  const totalTimelineHeight = useMemo(() => {
+    let height = TIMELINE_RULER_HEIGHT;
+
+    // Story track
+    if (storyTrack) {
+      height += TIMELINE_STORY_TRACK_HEIGHT;
+    }
+
+    // Character tracks (header + subtracks)
+    Object.values(groupedCharacterTracks).forEach(() => {
+      height += TIMELINE_CHARACTER_HEADER_HEIGHT;
+      height += TIMELINE_CHARACTER_SUBTRACK_HEIGHT; // Perspective
+      height += TIMELINE_CHARACTER_SUBTRACK_HEIGHT; // Character snapshot
+    });
+
+    // Narrative track
+    if (narrativeTrack) {
+      height += TIMELINE_NARRATIVE_TRACK_HEIGHT;
+    }
+
+    return height;
+  }, [storyTrack, groupedCharacterTracks, narrativeTrack]);
+
   return (
     <div className="h-full bg-white flex flex-col overflow-hidden">
       {/* Header */}
@@ -166,8 +194,13 @@ export function TimelineView() {
 
           {/* Grid Lines */}
           <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ top: TIMELINE_RULER_HEIGHT }}
+            className="absolute pointer-events-none"
+            style={{
+              top: TIMELINE_RULER_HEIGHT,
+              left: 0,
+              right: 0,
+              height: `${totalTimelineHeight - TIMELINE_RULER_HEIGHT}px`,
+            }}
           >
             {Array.from({ length: Math.ceil(totalDuration) + 1 }, (_, i) => (
               <div
