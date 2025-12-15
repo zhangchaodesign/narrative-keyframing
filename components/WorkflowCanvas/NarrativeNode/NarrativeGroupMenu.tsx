@@ -211,7 +211,7 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
         );
 
         // Call the API with filtered events and custom prompt
-        const response = await fetch("/api/narrative", {
+        const response = await fetch("/api/generate-narrative", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

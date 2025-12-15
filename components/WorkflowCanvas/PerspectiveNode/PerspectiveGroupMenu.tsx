@@ -90,7 +90,7 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
         }),
       );
 
-      const response = await fetch("/api/perspective", {
+      const response = await fetch("/api/generate-perspective", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -211,10 +211,14 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     // Prepare analysis targets for all valid perspective nodes
     const analysisTargets = perspectiveNodesInGroup
       .map((perspectiveNode) => {
-        const perspectiveData = perspectiveNode.data as PerspectiveNodeType["data"];
+        const perspectiveData =
+          perspectiveNode.data as PerspectiveNodeType["data"];
 
         // Skip if no reflection or already analyzing
-        if (!perspectiveData?.reflection?.trim() || perspectiveData?.isAnalyzingEvidence) {
+        if (
+          !perspectiveData?.reflection?.trim() ||
+          perspectiveData?.isAnalyzingEvidence
+        ) {
           return null;
         }
 
@@ -251,7 +255,9 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     }
 
     // Set all nodes to analyzing state
-    const analyzingNodeIds = new Set(analysisTargets.map((item) => item.nodeId));
+    const analyzingNodeIds = new Set(
+      analysisTargets.map((item) => item.nodeId),
+    );
     setNodes((currentNodes) =>
       currentNodes.map((node) => {
         if (node.type !== "perspective" || !analyzingNodeIds.has(node.id)) {
@@ -271,51 +277,57 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     );
 
     // Process all API calls in parallel
-    const analysisPromises = analysisTargets.map(async ({ nodeId: perspectiveNodeId, target }) => {
-      try {
-        const response = await fetch("/api/evidence", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(target),
-        });
+    const analysisPromises = analysisTargets.map(
+      async ({ nodeId: perspectiveNodeId, target }) => {
+        try {
+          const response = await fetch("/api/extract-evidence", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(target),
+          });
 
-        if (!response.ok) {
-          throw new Error(`Failed to analyze evidence (${response.status}).`);
+          if (!response.ok) {
+            throw new Error(`Failed to analyze evidence (${response.status}).`);
+          }
+
+          const data =
+            (await response.json()) as EvidenceAnalysisResponse | null;
+          const evidence = data?.characterEvidence ?? [];
+          const supportedCharacters = evidence.filter(
+            (entry) => entry.items.length > 0,
+          );
+          const uniqueCharacterNames = [
+            ...new Set(supportedCharacters.map((entry) => entry.characterName)),
+          ];
+          const successMessage =
+            uniqueCharacterNames.length > 0
+              ? uniqueCharacterNames
+                  .map((name) => `Found evidence for ${name}`)
+                  .join(", ")
+              : "No supporting evidence found.";
+
+          return {
+            nodeId: perspectiveNodeId,
+            success: true,
+            evidence,
+            message: successMessage,
+          };
+        } catch (error) {
+          console.error(
+            `Error analyzing evidence for ${perspectiveNodeId}:`,
+            error,
+          );
+          return {
+            nodeId: perspectiveNodeId,
+            success: false,
+            evidence: [],
+            message: "Evidence analysis failed. Try again.",
+          };
         }
-
-        const data = (await response.json()) as EvidenceAnalysisResponse | null;
-        const evidence = data?.characterEvidence ?? [];
-        const supportedCharacters = evidence.filter(
-          (entry) => entry.items.length > 0,
-        );
-        const uniqueCharacterNames = [
-          ...new Set(supportedCharacters.map((entry) => entry.characterName)),
-        ];
-        const successMessage =
-          uniqueCharacterNames.length > 0
-            ? uniqueCharacterNames
-                .map((name) => `Found evidence for ${name}`)
-                .join(", ")
-            : "No supporting evidence found.";
-
-        return {
-          nodeId: perspectiveNodeId,
-          success: true,
-          evidence,
-          message: successMessage,
-        };
-      } catch (error) {
-        console.error(`Error analyzing evidence for ${perspectiveNodeId}:`, error);
-        return {
-          nodeId: perspectiveNodeId,
-          success: false,
-          evidence: [],
-          message: "Evidence analysis failed. Try again.",
-        };
-      }
-    });
+      },
+    );
 
     try {
       // Wait for all analyses to complete

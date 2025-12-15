@@ -20,7 +20,7 @@ export function Header() {
 
   return (
     <div className="flex flex-row w-full justify-between items-center px-3 py-2 bg-zinc-50 border-b border-zinc-100">
-      <h1 className={cn(geistMono.className, "font-extrabold")}>
+      <h1 className={cn(geistMono.className, "font-bold")}>
         <Link href="/">Conceptual Keyframing</Link>
       </h1>
       <div className="flex flex-row gap-4 justify-center items-center">

@@ -30,6 +30,10 @@ export type GeneratePerspectiveResponse = {
   }>;
 };
 
+export type GenerateSinglePerspectiveResponse = {
+  reflection: string;
+};
+
 export type PerspectivePreparationResult = {
   eventSequence: Array<{
     label: string;
