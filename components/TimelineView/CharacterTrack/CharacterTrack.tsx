@@ -39,35 +39,42 @@ export function CharacterTrack({
         style={{ height: TIMELINE_CHARACTER_HEADER_HEIGHT }}
       >
         <div
-          className="absolute left-0 top-0 h-full bg-blue-50 border-r border-gray-200 flex items-center justify-center z-10"
+          className="absolute left-0 top-0 h-full bg-gray-50 border-r border-gray-200 flex items-center justify-center z-10"
           style={{ width: TIMELINE_LABEL_WIDTH }}
         >
           <div className="flex flex-col items-center gap-1 px-2">
             <span
               className={cn(
                 geistMono.className,
-                "text-xs font-semibold text-blue-600 text-center",
+                "text-xs font-semibold text-gray-800 text-center",
               )}
             >
               {characterName}
             </span>
           </div>
         </div>
+        <div
+          className="absolute top-0 right-0 h-full bg-gray-50"
+          style={{ left: TIMELINE_LABEL_WIDTH }}
+        ></div>
       </div>
 
       {/* Perspective Subtrack */}
       {perspectiveTrack && (
         <div
-          className="relative border-t border-gray-200"
+          className="relative border-t border-gray-200 bg-blue-50/50"
           style={{ height: TIMELINE_CHARACTER_SUBTRACK_HEIGHT }}
         >
           <div
-            className="absolute left-0 top-0 h-full bg-gray-50 border-r border-gray-200 flex items-center justify-center z-10"
+            className="absolute left-0 top-0 h-full bg-blue-50 border-r border-gray-200 flex items-center justify-center z-10"
             style={{ width: TIMELINE_LABEL_WIDTH }}
           >
             <div className="flex flex-col gap-2 items-center">
               <span
-                className={cn(geistMono.className, "text-xs text-gray-600")}
+                className={cn(
+                  geistMono.className,
+                  "text-xs font-semibold text-blue-600 text-center",
+                )}
               >
                 Perspective
               </span>
@@ -78,7 +85,7 @@ export function CharacterTrack({
             </div>
           </div>
           <div
-            className="absolute top-0 right-0 h-full bg-blue-50/10"
+            className="absolute top-0 right-0 h-full bg-blue-50/50"
             style={{ left: TIMELINE_LABEL_WIDTH }}
           >
             {perspectiveTrack.items.map((item) => (
@@ -100,15 +107,20 @@ export function CharacterTrack({
           style={{ height: TIMELINE_CHARACTER_SUBTRACK_HEIGHT }}
         >
           <div
-            className="absolute left-0 top-0 h-full bg-gray-50 border-r border-gray-200 flex items-center justify-center z-10"
+            className="absolute left-0 top-0 h-full bg-amber-50 border-r border-gray-200 flex items-center justify-center z-10"
             style={{ width: TIMELINE_LABEL_WIDTH }}
           >
-            <span className={cn(geistMono.className, "text-xs text-gray-600")}>
+            <span
+              className={cn(
+                geistMono.className,
+                "text-xs font-semibold text-amber-600 text-center",
+              )}
+            >
               Snapshot
             </span>
           </div>
           <div
-            className="absolute top-0 right-0 h-full bg-purple-50/10"
+            className="absolute top-0 right-0 h-full bg-amber-50/50"
             style={{ left: TIMELINE_LABEL_WIDTH }}
           >
             {characterTrack.items.map((item) => (

@@ -47,7 +47,7 @@ export function EventTrack({
 
       {/* Track Content */}
       <div
-        className="absolute top-0 right-0 h-full bg-pink-50/30"
+        className="absolute top-0 right-0 h-full bg-pink-50/50"
         style={{ left: TIMELINE_LABEL_WIDTH }}
       >
         {track.items.map((item) => (

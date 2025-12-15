@@ -47,7 +47,7 @@ export function NarrativeTrack({
 
       {/* Track Content */}
       <div
-        className="absolute top-0 right-0 h-full bg-green-50/30"
+        className="absolute top-0 right-0 h-full bg-green-50/50"
         style={{ left: TIMELINE_LABEL_WIDTH }}
       >
         {track.items.map((item) => (
