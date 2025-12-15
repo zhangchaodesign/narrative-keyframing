@@ -34,14 +34,14 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const [editedReflection, setEditedReflection] = useState(
     data?.reflection ?? "",
   );
-  const [isInterpolatingCharacter, setIsInterpolatingCharacter] =
-    useState(false);
+  const isInterpolatingCharacter = data?.isCreatingSnapshot ?? false;
 
   const hasDirectCharacter = useMemo(() => {
     const characterNode = nodes.find(
-      (node) => node.data?.perspectiveId === id && node.type === "character",
-    ) as CharacterNodeType | undefined;
-
+      (node): node is CharacterNodeType =>
+        node.type === "character" &&
+        (node.data as CharacterNodeType["data"])?.perspectiveId === id,
+    );
     return Boolean(characterNode);
   }, [id, nodes]);
 
@@ -187,7 +187,21 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     const fallbackNarratorName =
       perspectiveData?.narrator?.trim() || "New Character";
 
-    setIsInterpolatingCharacter(true);
+    setNodes((nodesState) =>
+      nodesState.map((node) => {
+        if (node.id !== id || node.type !== "perspective") {
+          return node;
+        }
+        const existingData = node.data as PerspectiveNodeType["data"];
+        return {
+          ...node,
+          data: {
+            ...existingData,
+            isCreatingSnapshot: true,
+          },
+        };
+      }),
+    );
     try {
       await createCharacterSnapshotFromPerspective({
         perspectiveNodeId: id,
@@ -199,7 +213,21 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     } catch (error) {
       console.error("Error creating character snapshot:", error);
     } finally {
-      setIsInterpolatingCharacter(false);
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
+          if (node.id !== id || node.type !== "perspective") {
+            return node;
+          }
+          const existingData = node.data as PerspectiveNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              isCreatingSnapshot: false,
+            },
+          };
+        }),
+      );
     }
   }, [edges, id, isInterpolatingCharacter, nodes, setEdges, setNodes]);
 
@@ -269,7 +297,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       {!hasDirectCharacter && (
         <AddCharacterButton
           onClick={handleCreateCharacterSnapshot}
-          disabled={isLoading}
+          disabled={isLoading || isInterpolatingCharacter}
           isProcessing={isInterpolatingCharacter}
         />
       )}

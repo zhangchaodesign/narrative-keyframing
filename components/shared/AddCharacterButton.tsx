@@ -27,7 +27,7 @@ export function AddCharacterButton({
     default:
       "absolute left-1/2 top-full z-10 mt-10 h-48 w-64 -translate-x-1/2 border-zinc-300 bg-zinc-100/70 text-zinc-400 focus-visible:outline-indigo-500",
     timeline:
-      "absolute inset-0 border-amber-300 bg-amber-50/50 text-amber-400 hover:bg-amber-100/70 focus-visible:outline-amber-500",
+      "absolute inset-0 border-zinc-300 bg-zinc-100/70 text-zinc-400 focus-visible:outline-indigo-500",
   };
 
   const iconSize = variant === "timeline" ? 20 : 24;

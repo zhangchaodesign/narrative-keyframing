@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback } from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 import { PerspectiveBlock } from "@/components/TrackView/CharacterTrack/PerspectiveBlock";
@@ -14,7 +14,10 @@ import {
   TIMELINE_CHARACTER_SUBTRACK_HEIGHT,
 } from "@/components/TrackView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
-import type { CharacterNodeType } from "@/lib/types/workflow";
+import type {
+  CharacterNodeType,
+  PerspectiveNodeType,
+} from "@/lib/types/workflow";
 import { createCharacterSnapshotFromPerspective } from "@/lib/utiils/characterUtils";
 
 interface CharacterTrackProps {
@@ -39,11 +42,6 @@ export function CharacterTrack({
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const setEdges = useWorkflowStore((state) => state.setEdges);
 
-  // Track which perspectives are currently processing character creation
-  const [processingPerspectives, setProcessingPerspectives] = useState<
-    Set<string>
-  >(new Set());
-
   // For each perspective, check if it has a character snapshot
   const perspectivesWithoutCharacters = useCallback(() => {
     if (!perspectiveTrack) return [];
@@ -61,8 +59,25 @@ export function CharacterTrack({
   // Handler to create character snapshot for a perspective
   const handleCreateCharacter = useCallback(
     async (perspectiveNodeId: string) => {
-      setProcessingPerspectives((prev) => new Set(prev).add(perspectiveNodeId));
+      const updateFlag = (next: boolean) => {
+        setNodes((nodesState) =>
+          nodesState.map((node) => {
+            if (node.id !== perspectiveNodeId || node.type !== "perspective") {
+              return node;
+            }
+            const existingData = node.data as PerspectiveNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                isCreatingSnapshot: next,
+              },
+            };
+          }),
+        );
+      };
 
+      updateFlag(true);
       try {
         await createCharacterSnapshotFromPerspective({
           perspectiveNodeId,
@@ -74,11 +89,7 @@ export function CharacterTrack({
       } catch (error) {
         console.error("Error creating character snapshot:", error);
       } finally {
-        setProcessingPerspectives((prev) => {
-          const next = new Set(prev);
-          next.delete(perspectiveNodeId);
-          return next;
-        });
+        updateFlag(false);
       }
     },
     [nodes, setNodes, setEdges, characterName],
@@ -192,9 +203,13 @@ export function CharacterTrack({
               const itemWidth = Math.min(safeWidth, timelineScale);
               const leftPosition =
                 timeToPixel(perspectiveItem.position) - TIMELINE_LABEL_WIDTH;
-              const isProcessing = processingPerspectives.has(
-                perspectiveItem.nodeId,
+              const perspectiveNode = nodes.find(
+                (node): node is PerspectiveNodeType =>
+                  node.id === perspectiveItem.nodeId &&
+                  node.type === "perspective",
               );
+              const isProcessing =
+                perspectiveNode?.data?.isCreatingSnapshot ?? false;
 
               return (
                 <div
@@ -210,6 +225,7 @@ export function CharacterTrack({
                       onClick={() =>
                         handleCreateCharacter(perspectiveItem.nodeId)
                       }
+                      disabled={isProcessing}
                       isProcessing={isProcessing}
                       variant="timeline"
                     />

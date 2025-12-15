@@ -10,6 +10,7 @@ export type PerspectiveNodeData = {
   reflection: string;
   snippets?: string[];
   isLoading?: boolean;
+  isCreatingSnapshot?: boolean;
   eventId: string;
   isAnalyzingEvidence?: boolean;
   analysisStatus?: "idle" | "running" | "success" | "error";
