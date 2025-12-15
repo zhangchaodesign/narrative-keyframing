@@ -195,7 +195,8 @@ export function TraitItem({
           value={editValue}
           onChange={handleEditChange}
           onKeyDown={onKeyDown}
-          className="flex-1 rounded border border-zinc-300 bg-white/80 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
+          onPointerDown={(event) => event.stopPropagation()}
+          className="flex-1 rounded border border-zinc-300 bg-white/80 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400 nodrag nopan"
           aria-label={`Edit ${label} trait`}
         />
       ) : (

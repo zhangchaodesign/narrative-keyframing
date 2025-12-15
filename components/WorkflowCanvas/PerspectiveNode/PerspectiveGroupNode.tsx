@@ -102,8 +102,9 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           <input
             value={data?.characterName ?? ""}
             onChange={handleCharacterNameChange}
+            onPointerDown={(event) => event.stopPropagation()}
             placeholder="Name..."
-            className="w-28 rounded border border-transparent bg-zinc-50 px-2 py-0.5 font-medium normal-case text-zinc-700 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400"
+            className="w-28 rounded border border-transparent bg-zinc-50 px-2 py-0.5 font-medium normal-case text-zinc-700 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 nodrag nopan"
           />
         </label>
       </div>
