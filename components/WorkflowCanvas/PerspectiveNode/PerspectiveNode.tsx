@@ -10,7 +10,7 @@ import {
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { PerspectiveHandle } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveHandle";
 import { PerspectiveSingleActionsMenu } from "@/components/shared/PerspectiveNodeMenu";
-import { AddCharacterButton } from "@/components/WorkflowCanvas/PerspectiveNode/AddCharacterButton";
+import { AddCharacterButton } from "@/components/shared/AddCharacterButton";
 import { PerspectiveContent } from "@/components/shared/PerspectiveContent";
 import { PerspectiveStatusLabel } from "@/components/shared/PerspectiveStatusLabel";
 import type {
