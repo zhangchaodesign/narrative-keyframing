@@ -6,6 +6,7 @@ import { TimelineRuler } from "@/components/TrackView/TimelineRuler";
 import { EventTrack } from "@/components/TrackView/EventTrack/EventTrack";
 import { CharacterTrack } from "@/components/TrackView/CharacterTrack/CharacterTrack";
 import { NarrativeTrack } from "@/components/TrackView/NarrativeTrack/NarrativeTrack";
+import { TimelineHeader } from "@/components/TrackView/TimelineHeader";
 import {
   TIMELINE_LABEL_WIDTH,
   TIMELINE_LEFT_PADDING,
@@ -267,66 +268,18 @@ export function TimelineView() {
 
   return (
     <div className="h-full bg-white flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="bg-gray-50 border-b border-gray-200">
-        <div className="px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-            Timeline Overview
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Story Outline Cluster Dropdown */}
-            {storyOutlineClusters.length > 0 && (
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="story-cluster-select"
-                  className="text-xs text-gray-600"
-                >
-                  Story Outline:
-                </label>
-                <select
-                  id="story-cluster-select"
-                  value={selectedStoryClusterId || ""}
-                  onChange={(e) => setSelectedStoryClusterId(e.target.value)}
-                  className="text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {storyOutlineClusters.map((cluster) => (
-                    <option key={cluster.id} value={cluster.id}>
-                      {cluster.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Narrative Cluster Dropdown */}
-            {filteredNarrativeClusters.length > 0 && (
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="narrative-cluster-select"
-                  className="text-xs text-gray-600"
-                >
-                  Narrative:
-                </label>
-                <select
-                  id="narrative-cluster-select"
-                  value={selectedNarrativeClusterId || ""}
-                  onChange={(e) =>
-                    setSelectedNarrativeClusterId(e.target.value || null)
-                  }
-                  className="text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">None</option>
-                  {filteredNarrativeClusters.map((cluster) => (
-                    <option key={cluster.id} value={cluster.id}>
-                      {cluster.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <TimelineHeader
+        storyOutlineClusters={storyOutlineClusters}
+        filteredNarrativeClusters={filteredNarrativeClusters}
+        selectedStoryClusterId={selectedStoryClusterId}
+        onStoryClusterChange={(clusterId) =>
+          setSelectedStoryClusterId(clusterId)
+        }
+        selectedNarrativeClusterId={selectedNarrativeClusterId}
+        onNarrativeClusterChange={(clusterId) =>
+          setSelectedNarrativeClusterId(clusterId)
+        }
+      />
 
       {/* Timeline Container */}
       <div
