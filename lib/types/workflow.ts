@@ -8,6 +8,7 @@ export type EventNodeData = {
 export type PerspectiveNodeData = {
   narrator: string;
   reflection: string;
+  snippets?: string[];
   isLoading?: boolean;
   eventId: string;
   isAnalyzingEvidence?: boolean;
@@ -18,6 +19,7 @@ export type PerspectiveNodeData = {
 
 export type NarrativeNodeData = {
   narration: string;
+  content?: string;
   isLoading?: boolean;
   eventId: string;
   snippetUsages?: Array<{
@@ -60,6 +62,7 @@ export type NarrativeNodeType = Node<NarrativeNodeData, "narrative">;
 export type CharacterNodeType = Node<CharacterNodeData, "character">;
 export type EventGroupNodeType = Node<GroupNodeData, "eventGroup">;
 export type NarrationGroupNodeType = Node<GroupNodeData, "perspectiveGroup">;
+export type PerspectiveGroupNodeType = Node<GroupNodeData, "perspectiveGroup">;
 export type ThirdPersonGroupNodeType = Node<GroupNodeData, "narrativeGroup">;
 
 // Deprecated: Use EventGroupNodeType instead
