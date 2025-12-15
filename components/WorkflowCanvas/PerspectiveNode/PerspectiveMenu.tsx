@@ -241,13 +241,15 @@ export function PerspectiveMenu({
       );
 
       if (currentIndex > 0) {
-        const content =
-          (sortedSiblings[currentIndex - 1].data?.reflection ?? "").trim();
+        const content = (
+          sortedSiblings[currentIndex - 1].data?.reflection ?? ""
+        ).trim();
         previousPerspective = content.length > 0 ? content : undefined;
       }
       if (currentIndex >= 0 && currentIndex < sortedSiblings.length - 1) {
-        const content =
-          (sortedSiblings[currentIndex + 1].data?.reflection ?? "").trim();
+        const content = (
+          sortedSiblings[currentIndex + 1].data?.reflection ?? ""
+        ).trim();
         nextPerspective = content.length > 0 ? content : undefined;
       }
     }
@@ -269,7 +271,7 @@ export function PerspectiveMenu({
     );
 
     try {
-      const response = await fetch("/api/perspective-node", {
+      const response = await fetch("/api/update-perspective", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
