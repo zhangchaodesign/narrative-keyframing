@@ -1,13 +1,21 @@
 "use client";
 
-import { useCallback } from "react";
-import { useReactFlow } from "@xyflow/react";
-import { TbCopy, TbTrash } from "react-icons/tb";
+import { useCallback, useState } from "react";
+import { useReactFlow, useStore } from "@xyflow/react";
+import { TbCopy, TbTrash, TbRefresh } from "react-icons/tb";
 
-import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
+import type {
+  CharacterNodeType,
+  PerspectiveEvidenceItem,
+  PerspectiveNodeType,
+  WorkflowEdge,
+  WorkflowNode,
+} from "@/lib/types/workflow";
 import {
   deleteNodeWithEdges,
   duplicateWorkflowNode,
+  buildCharacterInterpolationContext,
+  interpolateCharacterSnapshot,
 } from "@/lib/workflow/workflowUtils";
 
 type CharacterMenuProps = {
@@ -16,7 +24,31 @@ type CharacterMenuProps = {
 };
 
 export function CharacterMenu({ nodeId, nodeType }: CharacterMenuProps) {
-  const { setNodes, setEdges } = useReactFlow<WorkflowNode, WorkflowEdge>();
+  const { setNodes, setEdges, getNodes } = useReactFlow<
+    WorkflowNode,
+    WorkflowEdge
+  >();
+  const { characterData, perspectiveData } = useStore((store) => {
+    const characterNode = store.nodes.find(
+      (candidate): candidate is CharacterNodeType =>
+        candidate.id === nodeId && candidate.type === "character",
+    );
+    const perspectiveId = characterNode?.data?.perspectiveId;
+    const perspectiveNode = perspectiveId
+      ? store.nodes.find(
+          (candidate): candidate is PerspectiveNodeType =>
+            candidate.id === perspectiveId && candidate.type === "perspective",
+        )
+      : undefined;
+    return {
+      characterData: characterNode?.data,
+      perspectiveData: perspectiveNode?.data,
+    };
+  });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const hasPerspectiveLink =
+    Boolean(characterData?.perspectiveId) &&
+    Boolean(perspectiveData?.reflection?.trim());
 
   const handleDelete = useCallback(() => {
     setNodes((nodes) => {
@@ -43,8 +75,134 @@ export function CharacterMenu({ nodeId, nodeType }: CharacterMenuProps) {
     });
   }, [nodeId, setNodes]);
 
+  const handleRefreshCharacter = useCallback(async () => {
+    if (isRefreshing || !hasPerspectiveLink) {
+      return;
+    }
+
+    const nodes = getNodes();
+    const workflowNodes = nodes as WorkflowNode[];
+    const characterNode = workflowNodes.find(
+      (node): node is CharacterNodeType =>
+        node.id === nodeId && node.type === "character",
+    );
+    if (!characterNode) {
+      return;
+    }
+
+    const perspectiveId = characterNode.data?.perspectiveId;
+    if (!perspectiveId) {
+      console.warn("Character is not linked to a perspective:", nodeId);
+      return;
+    }
+
+    const perspectiveNode = workflowNodes.find(
+      (node): node is PerspectiveNodeType =>
+        node.id === perspectiveId && node.type === "perspective",
+    );
+    if (!perspectiveNode) {
+      console.warn("Perspective node missing for character:", nodeId);
+      return;
+    }
+
+    const interpolationContext = buildCharacterInterpolationContext({
+      nodes: workflowNodes,
+      perspectiveNode,
+      fallbackNarratorName:
+        characterNode.data?.name?.trim() ||
+        perspectiveNode.data?.narrator?.trim() ||
+        "Character",
+    });
+
+    if (!interpolationContext) {
+      console.warn("Cannot refresh character; perspective text is empty.");
+      return;
+    }
+
+    setIsRefreshing(true);
+    try {
+      const { characterName, characterTraits, evidenceItems } =
+        await interpolateCharacterSnapshot(interpolationContext);
+
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.id === nodeId && node.type === "character") {
+            const existingData = node.data as CharacterNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                traits: characterTraits,
+              },
+            };
+          }
+
+          if (node.id === perspectiveId && node.type === "perspective") {
+            const existingData = node.data as PerspectiveNodeType["data"];
+            const existingEvidence = Array.isArray(
+              existingData?.analysisEvidence,
+            )
+              ? (existingData.analysisEvidence as PerspectiveEvidenceItem[])
+              : [];
+            const filteredEvidence = existingEvidence.filter(
+              (entry) => entry.characterId !== nodeId,
+            );
+
+            if (evidenceItems.length === 0) {
+              return {
+                ...node,
+                data: {
+                  ...existingData,
+                  analysisEvidence: filteredEvidence,
+                },
+              };
+            }
+
+            const evidenceEntry: PerspectiveEvidenceItem = {
+              characterId: nodeId,
+              characterName,
+              items: evidenceItems as PerspectiveEvidenceItem["items"],
+            };
+
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                analysisEvidence: [...filteredEvidence, evidenceEntry],
+              },
+            };
+          }
+
+          return node;
+        }),
+      );
+    } catch (error) {
+      console.error("Error refreshing character snapshot:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [getNodes, hasPerspectiveLink, isRefreshing, nodeId, setNodes]);
+
   return (
     <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+      <button
+        type="button"
+        onClick={handleRefreshCharacter}
+        className="pointer-events-auto rounded-full p-1 transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 disabled:cursor-not-allowed disabled:opacity-60"
+        title={
+          hasPerspectiveLink
+            ? "Refresh snapshot from perspective narration"
+            : "Link this character to a perspective with text to refresh"
+        }
+        aria-label="Refresh snapshot from perspective narration"
+        disabled={!hasPerspectiveLink || isRefreshing}
+      >
+        {isRefreshing ? (
+          <span className="block h-3 w-3 animate-spin rounded-full border-2 border-green-600 border-t-transparent align-middle" />
+        ) : (
+          <TbRefresh size={12} />
+        )}
+      </button>
       <button
         type="button"
         onClick={handleDuplicate}

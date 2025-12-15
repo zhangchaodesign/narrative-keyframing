@@ -23,24 +23,14 @@ import type {
   WorkflowNode,
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utils";
+import {
+  buildCharacterInterpolationContext,
+  interpolateCharacterSnapshot,
+} from "@/lib/workflow/workflowUtils";
 import { geistMono } from "@/app/fonts";
 
 const CHARACTER_VERTICAL_GAP = 210;
 const DEFAULT_NARRATION_GROUP_ID = "perspective-group";
-
-type TraitEvidencePayload = {
-  traitCategory: keyof CharacterTraits;
-  trait: string;
-  evidenceText: string;
-};
-
-type InterpolateCharacterResponse = {
-  characterSnapshot?: {
-    name: string;
-    traits: CharacterTraits;
-  };
-  traitEvidence?: TraitEvidencePayload[];
-};
 
 export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const { setNodes, setEdges, getNode } = useReactFlow<
@@ -174,7 +164,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   }, []);
 
   // function to create a new character node linked to this perspective
-  const handleCreateCharacter = useCallback(async () => {
+  const handleCreateCharacterSnapshot = useCallback(async () => {
     if (isInterpolatingCharacter) {
       return;
     }
@@ -186,11 +176,11 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       return;
     }
 
-    const perspectiveNode =
-      getNode(id) ??
-      (nodes.find((node) => node.id === id && node.type === "perspective") as
-        | PerspectiveNodeType
-        | undefined);
+    const workflowNodes = nodes as WorkflowNode[];
+    const perspectiveNode = workflowNodes.find(
+      (node): node is PerspectiveNodeType =>
+        node.id === id && node.type === "perspective",
+    );
     if (!perspectiveNode) {
       return;
     }
@@ -199,160 +189,47 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     try {
       const perspectiveData =
         perspectiveNode.data as PerspectiveNodeType["data"];
-      const perspectiveText = perspectiveData?.reflection?.trim() || "";
-      const narratorName = perspectiveData?.narrator?.trim() || "New Character";
+      const fallbackNarratorName =
+        perspectiveData?.narrator?.trim() || "New Character";
 
       const groupId = perspectiveNode.parentId;
-      const fullPerspectiveText = (() => {
-        if (!groupId) {
-          return perspectiveText;
-        }
-
-        const groupReflections = nodes
-          .filter(
-            (node): node is PerspectiveNodeType =>
-              node.type === "perspective" && node.parentId === groupId,
-          )
-          .sort(
-            (a, b) =>
-              a.position.x - b.position.x || a.position.y - b.position.y,
-          )
-          .map((node) => (node.data?.reflection ?? "").trim())
-          .filter((text) => text.length > 0)
-          .join("\n\n");
-
-        return groupReflections || perspectiveText;
-      })();
       const timestamp = Date.now();
       const newCharacterId = `character-${timestamp}`;
       const newEdgeId = `edge-${newCharacterId}-${id}`;
 
-      // Find nearby character snapshots for context
-      const findNearbySnapshots = () => {
-        // Get all perspectives in the same group
-        const perspectivesInGroup = nodes.filter(
-          (node): node is PerspectiveNodeType =>
-            node.type === "perspective" && node.parentId === groupId,
-        );
-
-        // Sort by x position to get before/after perspectives
-        const sortedPerspectives = perspectivesInGroup.sort(
-          (a, b) => a.position.x - b.position.x,
-        );
-
-        const currentIndex = sortedPerspectives.findIndex(
-          (node) => node.id === id,
-        );
-
-        const nearbySnapshots = [];
-
-        // Find previous perspective's character
-        if (currentIndex > 0) {
-          const prevPerspective = sortedPerspectives[currentIndex - 1];
-          const prevCharacter = nodes.find(
-            (node): node is CharacterNodeType =>
-              node.type === "character" &&
-              node.data?.perspectiveId === prevPerspective.id,
-          );
-
-          if (prevCharacter?.data) {
-            nearbySnapshots.push({
-              name: prevCharacter.data.name,
-              traits: prevCharacter.data.traits,
-              position: "before" as const,
-            });
-          }
-        }
-
-        // Find next perspective's character
-        if (currentIndex < sortedPerspectives.length - 1) {
-          const nextPerspective = sortedPerspectives[currentIndex + 1];
-          const nextCharacter = nodes.find(
-            (node): node is CharacterNodeType =>
-              node.type === "character" &&
-              node.data?.perspectiveId === nextPerspective.id,
-          );
-
-          if (nextCharacter?.data) {
-            nearbySnapshots.push({
-              name: nextCharacter.data.name,
-              traits: nextCharacter.data.traits,
-              position: "after" as const,
-            });
-          }
-        }
-
-        return nearbySnapshots;
-      };
-
+      const interpolationContext = buildCharacterInterpolationContext({
+        nodes: workflowNodes,
+        perspectiveNode,
+        fallbackNarratorName,
+      });
+      let resolvedNarratorName = fallbackNarratorName;
       let characterTraits: CharacterTraits = {
         physiology: [],
         psychology: [],
         sociology: [],
       };
-      let interpolatedEvidence: TraitEvidencePayload[] = [];
+      let perspectiveEvidenceItems: Array<{
+        text: string;
+        category: keyof CharacterTraits;
+        attributes: string[];
+      }> = [];
 
       // If perspective has text, interpolate character snapshot from LLM
-      if (perspectiveText) {
+      if (interpolationContext) {
         try {
-          const nearbySnapshots = findNearbySnapshots();
-          const eventNode = nodes.find(
-            (node): node is EventNodeType =>
-              node.id === perspectiveData.eventId && node.type === "event",
-          );
-          const eventDescription = eventNode?.data?.description;
+          const {
+            characterName,
+            characterTraits: traits,
+            evidenceItems,
+          } = await interpolateCharacterSnapshot(interpolationContext);
 
-          const response = await fetch("/api/interpolate-character", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              perspectiveText,
-              fullPerspectiveText,
-              narratorName,
-              nearbySnapshots,
-              eventDescription,
-            }),
-          });
-
-          if (response.ok) {
-            const result =
-              (await response.json()) as InterpolateCharacterResponse;
-            if (result.characterSnapshot?.traits) {
-              characterTraits = result.characterSnapshot.traits;
-            }
-            if (Array.isArray(result.traitEvidence)) {
-              interpolatedEvidence = result.traitEvidence;
-            }
-          } else {
-            console.error(
-              "Failed to interpolate character snapshot:",
-              response.statusText,
-            );
-          }
+          resolvedNarratorName = characterName;
+          characterTraits = traits;
+          perspectiveEvidenceItems = evidenceItems;
         } catch (error) {
           console.error("Error calling interpolate-character API:", error);
         }
       }
-
-      const perspectiveEvidenceItems = interpolatedEvidence
-        .map((entry) => {
-          const snippet = entry.evidenceText?.trim();
-          const traitValue = entry.trait?.trim();
-          if (!snippet || !traitValue) {
-            return null;
-          }
-          return {
-            text: snippet,
-            category: entry.traitCategory,
-            attributes: [traitValue],
-          } as PerspectiveEvidenceItem["items"][number];
-        })
-        .filter(
-          (
-            item,
-          ): item is PerspectiveEvidenceItem["items"][number] =>
-            Boolean(item),
-        );
 
       setNodes((nodesState) => {
         const characterNodes = nodesState.filter(
@@ -371,7 +248,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
             y: characterRowY,
           },
           data: {
-            name: narratorName,
+            name: resolvedNarratorName,
             traits: characterTraits,
             perspectiveId: id,
           },
@@ -403,7 +280,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           );
           const evidenceEntry: PerspectiveEvidenceItem = {
             characterId: newCharacterId,
-            characterName: narratorName,
+            characterName: resolvedNarratorName,
             items: perspectiveEvidenceItems,
           };
 
@@ -496,7 +373,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       />
       {!hasDirectCharacter && (
         <AddCharacterButton
-          onClick={handleCreateCharacter}
+          onClick={handleCreateCharacterSnapshot}
           disabled={isLoading}
           isProcessing={isInterpolatingCharacter}
         />
