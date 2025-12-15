@@ -15,25 +15,17 @@ import { PerspectiveContent } from "@/components/shared/PerspectiveContent";
 import { PerspectiveStatusLabel } from "@/components/shared/PerspectiveStatusLabel";
 import type {
   CharacterNodeType,
-  CharacterTraits,
   EventNodeType,
   PerspectiveNodeType,
-  PerspectiveEvidenceItem,
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
-import { interpolateCharacterSnapshot } from "@/lib/utiils/characterUtils";
+import { createCharacterSnapshotFromPerspective } from "@/lib/utiils/characterUtils";
 import { geistMono } from "@/app/fonts";
 
-const CHARACTER_VERTICAL_GAP = 210;
-const DEFAULT_NARRATION_GROUP_ID = "perspective-group";
-
 export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
-  const { setNodes, setEdges, getNode } = useReactFlow<
-    WorkflowNode,
-    WorkflowEdge
-  >();
+  const { setNodes, setEdges } = useReactFlow<WorkflowNode, WorkflowEdge>();
   const edges = useStore((store) => store.edges);
   const nodes = useStore((store) => store.nodes);
   const isLoading = data?.isLoading ?? false;
@@ -195,126 +187,25 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       return;
     }
 
+    const perspectiveData = perspectiveNode.data as PerspectiveNodeType["data"];
+    const fallbackNarratorName =
+      perspectiveData?.narrator?.trim() || "New Character";
+
     setIsInterpolatingCharacter(true);
     try {
-      const perspectiveData =
-        perspectiveNode.data as PerspectiveNodeType["data"];
-      const fallbackNarratorName =
-        perspectiveData?.narrator?.trim() || "New Character";
-
-      const groupId = perspectiveNode.parentId;
-      const timestamp = Date.now();
-      const newCharacterId = `character-${timestamp}`;
-      const newEdgeId = `edge-${newCharacterId}-${id}`;
-
-      let resolvedNarratorName = fallbackNarratorName;
-      let characterTraits: CharacterTraits = {
-        physiology: [],
-        psychology: [],
-        sociology: [],
-      };
-      let perspectiveEvidenceItems: Array<{
-        text: string;
-        category: keyof CharacterTraits;
-        attributes: string[];
-      }> = [];
-
-      // If perspective has text, interpolate character snapshot from LLM
-      try {
-        const result = await interpolateCharacterSnapshot({
-          nodes: workflowNodes,
-          perspectiveNode,
-          fallbackNarratorName,
-        });
-
-        if (result) {
-          resolvedNarratorName = result.characterName;
-          characterTraits = result.characterTraits;
-          perspectiveEvidenceItems = result.evidenceItems;
-        }
-      } catch (error) {
-        console.error("Error calling interpolate-character API:", error);
-      }
-
-      setNodes((nodesState) => {
-        const characterNodes = nodesState.filter(
-          (nodeState): nodeState is CharacterNodeType =>
-            nodeState.type === "character",
-        );
-        const characterRowY =
-          characterNodes[0]?.position.y ??
-          perspectiveNode.position.y + CHARACTER_VERTICAL_GAP;
-
-        const newCharacterNode: WorkflowNode = {
-          id: newCharacterId,
-          type: "character",
-          position: {
-            x: perspectiveNode.position.x,
-            y: characterRowY,
-          },
-          data: {
-            name: resolvedNarratorName,
-            traits: characterTraits,
-            perspectiveId: id,
-          },
-          draggable: false,
-          parentId: groupId ?? DEFAULT_NARRATION_GROUP_ID,
-          extent: "parent",
-        };
-
-        const nodesWithCharacter = [...nodesState, newCharacterNode];
-
-        if (perspectiveEvidenceItems.length === 0) {
-          return nodesWithCharacter;
-        }
-
-        return nodesWithCharacter.map((nodeState) => {
-          if (nodeState.id !== id || nodeState.type !== "perspective") {
-            return nodeState;
-          }
-
-          const perspectiveData =
-            (nodeState.data as PerspectiveNodeType["data"]) ?? undefined;
-          const existingEvidence: PerspectiveEvidenceItem[] = Array.isArray(
-            perspectiveData?.analysisEvidence,
-          )
-            ? (perspectiveData?.analysisEvidence as PerspectiveEvidenceItem[])
-            : [];
-          const filteredEvidence = existingEvidence.filter(
-            (entry) => entry.characterId !== newCharacterId,
-          );
-          const evidenceEntry: PerspectiveEvidenceItem = {
-            characterId: newCharacterId,
-            characterName: resolvedNarratorName,
-            items: perspectiveEvidenceItems,
-          };
-
-          return {
-            ...nodeState,
-            data: {
-              ...(perspectiveData ?? {}),
-              analysisEvidence: [...filteredEvidence, evidenceEntry],
-            } as PerspectiveNodeType["data"],
-          };
-        });
+      await createCharacterSnapshotFromPerspective({
+        perspectiveNodeId: id,
+        nodes: workflowNodes,
+        fallbackNarratorName,
+        setNodes,
+        setEdges,
       });
-
-      setEdges((edgesState) => [
-        ...edgesState,
-        {
-          id: newEdgeId,
-          source: newCharacterId,
-          target: id,
-          sourceHandle: "perspective",
-          targetHandle: "character",
-          type: "customEdge",
-          animated: true,
-        },
-      ]);
+    } catch (error) {
+      console.error("Error creating character snapshot:", error);
     } finally {
       setIsInterpolatingCharacter(false);
     }
-  }, [edges, getNode, id, isInterpolatingCharacter, nodes, setEdges, setNodes]);
+  }, [edges, id, isInterpolatingCharacter, nodes, setEdges, setNodes]);
 
   return (
     <div className="group relative flex gap-2 h-48 w-64 flex-col rounded-lg border-2 border-secondary bg-white p-3 text-xs hover:shadow-lg">

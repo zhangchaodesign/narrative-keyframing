@@ -407,3 +407,157 @@ export async function refreshCharacterSnapshotFromPerspective({
 
   return true;
 }
+
+/**
+ * Parameters for creating a character snapshot from a perspective
+ */
+export type CreateCharacterSnapshotParams = {
+  perspectiveNodeId: string;
+  nodes: WorkflowNode[];
+  fallbackNarratorName: string;
+  setNodes: (updater: (nodes: WorkflowNode[]) => WorkflowNode[]) => void;
+  setEdges: (updater: (edges: any[]) => any[]) => void;
+};
+
+/**
+ * Creates a character snapshot node linked to a perspective node
+ * Handles both node creation and edge connection
+ * @param params Parameters for character snapshot creation
+ * @returns Promise that resolves when creation is complete
+ */
+export async function createCharacterSnapshotFromPerspective(
+  params: CreateCharacterSnapshotParams,
+): Promise<void> {
+  const {
+    perspectiveNodeId,
+    nodes,
+    fallbackNarratorName,
+    setNodes,
+    setEdges,
+  } = params;
+
+  const perspectiveNode = nodes.find(
+    (node): node is PerspectiveNodeType =>
+      node.id === perspectiveNodeId && node.type === "perspective",
+  );
+
+  if (!perspectiveNode) {
+    throw new Error(`Perspective node not found: ${perspectiveNodeId}`);
+  }
+
+  const CHARACTER_VERTICAL_GAP = 210;
+  const DEFAULT_NARRATION_GROUP_ID = "perspective-group";
+
+  const groupId = perspectiveNode.parentId;
+  const timestamp = Date.now();
+  const newCharacterId = `character-${timestamp}`;
+  const newEdgeId = `edge-${newCharacterId}-${perspectiveNodeId}`;
+
+  let resolvedNarratorName = fallbackNarratorName;
+  let characterTraits: CharacterTraits = {
+    physiology: [],
+    psychology: [],
+    sociology: [],
+  };
+  let perspectiveEvidenceItems: Array<{
+    text: string;
+    category: keyof CharacterTraits;
+    attributes: string[];
+  }> = [];
+
+  // Interpolate character snapshot from LLM
+  try {
+    const result = await interpolateCharacterSnapshot({
+      nodes,
+      perspectiveNode,
+      fallbackNarratorName,
+    });
+
+    if (result) {
+      resolvedNarratorName = result.characterName;
+      characterTraits = result.characterTraits;
+      perspectiveEvidenceItems = result.evidenceItems;
+    }
+  } catch (error) {
+    console.error("Error calling interpolate-character API:", error);
+  }
+
+  // Create character node
+  setNodes((nodesState) => {
+    const characterNodes = nodesState.filter(
+      (nodeState): nodeState is CharacterNodeType =>
+        nodeState.type === "character",
+    );
+    const characterRowY =
+      characterNodes[0]?.position.y ??
+      perspectiveNode.position.y + CHARACTER_VERTICAL_GAP;
+
+    const newCharacterNode: WorkflowNode = {
+      id: newCharacterId,
+      type: "character",
+      position: {
+        x: perspectiveNode.position.x,
+        y: characterRowY,
+      },
+      data: {
+        name: resolvedNarratorName,
+        traits: characterTraits,
+        perspectiveId: perspectiveNodeId,
+      },
+      draggable: false,
+      parentId: groupId ?? DEFAULT_NARRATION_GROUP_ID,
+      extent: "parent",
+    };
+
+    const nodesWithCharacter = [...nodesState, newCharacterNode];
+
+    if (perspectiveEvidenceItems.length === 0) {
+      return nodesWithCharacter;
+    }
+
+    // Add evidence to perspective node
+    return nodesWithCharacter.map((nodeState) => {
+      if (nodeState.id !== perspectiveNodeId || nodeState.type !== "perspective") {
+        return nodeState;
+      }
+
+      const perspectiveData =
+        (nodeState.data as PerspectiveNodeType["data"]) ?? undefined;
+      const existingEvidence: PerspectiveEvidenceItem[] = Array.isArray(
+        perspectiveData?.analysisEvidence,
+      )
+        ? (perspectiveData?.analysisEvidence as PerspectiveEvidenceItem[])
+        : [];
+      const filteredEvidence = existingEvidence.filter(
+        (entry) => entry.characterId !== newCharacterId,
+      );
+      const evidenceEntry: PerspectiveEvidenceItem = {
+        characterId: newCharacterId,
+        characterName: resolvedNarratorName,
+        items: perspectiveEvidenceItems,
+      };
+
+      return {
+        ...nodeState,
+        data: {
+          ...(perspectiveData ?? {}),
+          analysisEvidence: [...filteredEvidence, evidenceEntry],
+        } as PerspectiveNodeType["data"],
+      };
+    });
+  });
+
+  // Create edge connecting character to perspective
+  setEdges((edgesState) => [
+    ...edgesState,
+    {
+      id: newEdgeId,
+      source: newCharacterId,
+      target: perspectiveNodeId,
+      sourceHandle: "perspective",
+      targetHandle: "character",
+      type: "customEdge",
+      animated: true,
+    },
+  ]);
+}
