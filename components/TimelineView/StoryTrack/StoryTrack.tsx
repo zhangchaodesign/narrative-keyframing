@@ -3,7 +3,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { geistMono } from "@/app/fonts";
-import { TimelineItem } from "@/components/TimelineView/TimelineItem";
+import { StoryOutlineItem } from "@/components/TimelineView/StoryTrack/StoryOutlineItem";
 import type { TimelineTrack } from "@/lib/types/timeline";
 import {
   TIMELINE_LABEL_WIDTH,
@@ -51,12 +51,11 @@ export function StoryTrack({
         style={{ left: TIMELINE_LABEL_WIDTH }}
       >
         {track.items.map((item) => (
-          <TimelineItem
+          <StoryOutlineItem
             key={item.id}
             item={item}
             timeToPixel={timeToPixel}
             timelineScale={timelineScale}
-            color="pink"
           />
         ))}
       </div>
