@@ -1,12 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Position,
-  type NodeProps,
-  useReactFlow,
-  useStore,
-} from "@xyflow/react";
+import { Position, type NodeProps } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { PerspectiveHandle } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveHandle";
 import { PerspectiveSingleActionsMenu } from "@/components/shared/PerspectiveNodeMenu";
@@ -17,17 +12,18 @@ import type {
   CharacterNodeType,
   EventNodeType,
   PerspectiveNodeType,
-  WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { createCharacterSnapshotFromPerspective } from "@/lib/utiils/characterUtils";
 import { geistMono } from "@/app/fonts";
+import { useWorkflowStore } from "@/lib/stores/workflowStore";
 
 export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
-  const { setNodes, setEdges } = useReactFlow<WorkflowNode, WorkflowEdge>();
-  const edges = useStore((store) => store.edges);
-  const nodes = useStore((store) => store.nodes);
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
+  const setNodes = useWorkflowStore((state) => state.setNodes);
+  const setEdges = useWorkflowStore((state) => state.setEdges);
   const isLoading = data?.isLoading ?? false;
   const isAnalyzingEvidence = data?.isAnalyzingEvidence ?? false;
   const analysisStatus = data?.analysisStatus ?? "idle";
