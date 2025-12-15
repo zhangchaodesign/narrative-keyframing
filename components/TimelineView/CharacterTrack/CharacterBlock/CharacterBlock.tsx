@@ -13,7 +13,7 @@ import type { TimelineItem } from "@/lib/types/timeline";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TimelineView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { TraitSection } from "@/components/shared/TraitSection";
-import { CharacterBlockMenu } from "@/components/TimelineView/CharacterTrack/CharacterBlock/CharacterBlockMenu";
+import { CharacterRefreshMenu } from "@/components/shared/CharacterActionsMenu";
 import type { CharacterNodeData, CharacterTraits } from "@/lib/types/workflow";
 import {
   CHARACTER_TRAIT_CATEGORIES,
@@ -132,7 +132,16 @@ export function CharacterBlock({
             </span>
           </div>
         )}
-        <CharacterBlockMenu item={item} characterName={characterName} />
+        <CharacterRefreshMenu
+          nodeId={item.nodeId}
+          linkedTooltip={`Refresh ${
+            characterName || "character"
+          } from perspective`}
+          ariaLabelLinked={`Refresh ${
+            characterName || "character"
+          } from perspective`}
+          wrapperClassName="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-warning/40 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+        />
         <div className="flex flex-1 flex-col gap-3 p-3 min-h-0">
           <div
             className={cn(

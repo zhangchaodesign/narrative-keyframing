@@ -3,11 +3,9 @@
 import { useMemo, useState, useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { TbX, TbHighlight, TbRefresh } from "react-icons/tb";
-import { useReactFlow } from "@xyflow/react";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { SelectedSnippet } from "@/lib/stores/workflowStore";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
-import type { WorkflowNode, WorkflowEdge } from "@/lib/types/workflow";
 
 type EventData = {
   narrativeNodeId: string;
@@ -48,7 +46,7 @@ export function NarrativeTableModal({
   const [customPrompt, setCustomPrompt] = useState("");
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [eventsData, setEventsData] = useState<EventData[]>(initialEventsData);
-  const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
+  const setNodes = useWorkflowStore((state) => state.setNodes);
   const selectedSnippets = useWorkflowStore((state) => state.selectedSnippets);
   const toggleSnippet = useWorkflowStore((state) => state.toggleSnippet);
   const toggleEvidenceAttribute = useWorkflowStore(

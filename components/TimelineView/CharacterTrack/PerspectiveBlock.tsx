@@ -7,7 +7,7 @@ import type { TimelineItem } from "@/lib/types/timeline";
 import type { PerspectiveNodeType } from "@/lib/types/workflow";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TimelineView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
-import { PerspectiveBlockMenu } from "@/components/TimelineView/CharacterTrack/PerspectiveBlock/PerspectiveBlockMenu";
+import { PerspectiveSingleActionsMenu } from "@/components/shared/PerspectiveNodeMenu";
 import { PerspectiveContent } from "@/components/shared/PerspectiveContent";
 import { PerspectiveStatusLabel } from "@/components/shared/PerspectiveStatusLabel";
 
@@ -105,10 +105,11 @@ export function PerspectiveBlock({
             </span>
           </div>
         )}
-        <PerspectiveBlockMenu
-          item={item}
+        <PerspectiveSingleActionsMenu
+          nodeId={item.nodeId}
           isEditing={isEditing}
           onToggleEdit={handleToggleEdit}
+          wrapperClassName="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
         />
         <div
           className={cn(

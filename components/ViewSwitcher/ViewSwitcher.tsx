@@ -35,7 +35,7 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
         )}
       >
         <TbTimeline size={16} />
-        Timeline
+        Track
       </button>
     </div>
   );

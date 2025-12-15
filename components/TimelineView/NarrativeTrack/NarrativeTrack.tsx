@@ -4,6 +4,7 @@ import React from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 import { NarrativeBlock } from "@/components/TimelineView/NarrativeTrack/NarrativeBlock";
+import { NarrativeTrackMenu } from "@/components/TimelineView/NarrativeTrack/NarrativeTrackMenu";
 import type { TimelineTrack } from "@/lib/types/timeline";
 import {
   TIMELINE_LABEL_WIDTH,
@@ -42,6 +43,7 @@ export function NarrativeTrack({
           >
             NARRATIVE
           </span>
+          <NarrativeTrackMenu track={track} />
         </div>
       </div>
 

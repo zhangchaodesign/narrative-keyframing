@@ -1,47 +1,55 @@
 "use client";
 
-import { useCallback } from "react";
-import { TbListSearch, TbPencil, TbCheck, TbRefresh } from "react-icons/tb";
-
+import { useCallback, useMemo } from "react";
+import { TbListSearch, TbRefresh } from "react-icons/tb";
+import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { PerspectiveNodeType } from "@/lib/types/workflow";
 import {
   analyzeSinglePerspectiveEvidence,
   regenerateSinglePerspective,
   PERSPECTIVE_MESSAGES,
 } from "@/lib/utiils/perspectiveUtils";
-import { useWorkflowStore } from "@/lib/stores/workflowStore";
+import { cn } from "@/lib/utiils/sharedUtils";
+import { TbPencil, TbCheck } from "react-icons/tb";
 
-type PerspectiveMenuProps = {
+type PerspectiveSingleActionsMenuProps = {
   nodeId: string;
   isEditing?: boolean;
   onToggleEdit?: () => void;
+  wrapperClassName?: string;
+  buttonPadding?: string;
+  iconSize?: number;
 };
 
-export function PerspectiveMenu({
+export function PerspectiveSingleActionsMenu({
   nodeId,
   isEditing = false,
   onToggleEdit,
-}: PerspectiveMenuProps) {
+  wrapperClassName = "flex items-center gap-1",
+  buttonPadding = "p-1",
+  iconSize = 12,
+}: PerspectiveSingleActionsMenuProps) {
   const nodes = useWorkflowStore((state) => state.nodes);
   const edges = useWorkflowStore((state) => state.edges);
   const setNodes = useWorkflowStore((state) => state.setNodes);
-  const perspectiveNode = useWorkflowStore((state) =>
-    state.nodes.find(
-      (candidate): candidate is PerspectiveNodeType =>
-        candidate.id === nodeId && candidate.type === "perspective",
-    ),
+
+  const perspectiveNode = nodes.find(
+    (node): node is PerspectiveNodeType =>
+      node.id === nodeId && node.type === "perspective",
   );
-  const perspectiveData = perspectiveNode?.data as
-    | PerspectiveNodeType["data"]
-    | undefined;
-  const hasCharacterConnection = useWorkflowStore((state) =>
-    state.edges.some(
-      (edge) =>
-        edge.target === nodeId &&
-        edge.targetHandle === "character" &&
-        edge.sourceHandle === "perspective",
-    ),
+  const perspectiveData = perspectiveNode?.data;
+
+  const hasCharacterConnection = useMemo(
+    () =>
+      edges.some(
+        (edge) =>
+          edge.target === nodeId &&
+          edge.targetHandle === "character" &&
+          edge.sourceHandle === "perspective",
+      ),
+    [edges, nodeId],
   );
+
   const isAnalyzingEvidence = perspectiveData?.isAnalyzingEvidence ?? false;
   const isRegenerating = perspectiveData?.isLoading ?? false;
   const hasReflection = Boolean(perspectiveData?.reflection?.trim());
@@ -79,11 +87,7 @@ export function PerspectiveMenu({
       analysisEvidence: [],
     });
 
-    const result = await analyzeSinglePerspectiveEvidence(
-      nodeId,
-      nodes,
-      edges,
-    );
+    const result = await analyzeSinglePerspectiveEvidence(nodeId, nodes, edges);
 
     updateAnalysisState({
       isAnalyzingEvidence: false,
@@ -115,7 +119,11 @@ export function PerspectiveMenu({
     );
 
     try {
-      const reflection = await regenerateSinglePerspective(nodeId, nodes, edges);
+      const reflection = await regenerateSinglePerspective(
+        nodeId,
+        nodes,
+        edges,
+      );
       const hasContent = reflection.trim().length > 0;
 
       setNodes((currentNodes) =>
@@ -161,47 +169,59 @@ export function PerspectiveMenu({
       );
     }
   }, [
+    edges,
     hasCharacterConnection,
     isEditing,
     isRegenerating,
     nodeId,
     nodes,
-    edges,
     setNodes,
   ]);
 
   return (
-    <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+    <div className={cn(wrapperClassName)}>
       <button
         type="button"
         onClick={onToggleEdit}
-        className="pointer-events-auto rounded-full p-1 transition hover:bg-purple-50 hover:text-purple-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-purple-500 disabled:cursor-not-allowed disabled:opacity-60"
+        className={cn(
+          "pointer-events-auto rounded-full transition hover:bg-purple-50 hover:text-purple-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-purple-500 disabled:cursor-not-allowed disabled:opacity-60",
+          buttonPadding,
+        )}
         title={isEditing ? "Save and finish editing" : "Edit perspective text"}
         aria-label={
           isEditing ? "Save and finish editing" : "Edit perspective text"
         }
         disabled={!hasReflection}
       >
-        {isEditing ? <TbCheck size={12} /> : <TbPencil size={12} />}
+        {isEditing ? <TbCheck size={iconSize} /> : <TbPencil size={iconSize} />}
       </button>
       <button
         type="button"
         onClick={handleAnalyzeEvidence}
-        className="pointer-events-auto rounded-full p-1 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+        className={cn(
+          "pointer-events-auto rounded-full transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60",
+          buttonPadding,
+        )}
         title="Analyze textual evidence that supports character attributes"
         aria-label="Analyze textual evidence that supports character attributes"
         disabled={isAnalyzingEvidence || !hasReflection || isEditing}
       >
         {isAnalyzingEvidence ? (
-          <span className="block h-3 w-3 animate-spin rounded-full border-2 border-blue-600 border-t-transparent align-middle" />
+          <span
+            className="block animate-spin rounded-full border-2 border-blue-600 border-t-transparent align-middle"
+            style={{ width: iconSize, height: iconSize }}
+          />
         ) : (
-          <TbListSearch size={12} />
+          <TbListSearch size={iconSize} />
         )}
       </button>
       <button
         type="button"
         onClick={handleRegeneratePerspective}
-        className="pointer-events-auto rounded-full p-1 transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 disabled:cursor-not-allowed disabled:opacity-60"
+        className={cn(
+          "pointer-events-auto rounded-full transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 disabled:cursor-not-allowed disabled:opacity-60",
+          buttonPadding,
+        )}
         title={
           hasCharacterConnection
             ? "Regenerate this perspective from its character snapshot"
@@ -215,7 +235,7 @@ export function PerspectiveMenu({
         disabled={isRegenerating || isEditing || !hasCharacterConnection}
       >
         <TbRefresh
-          size={12}
+          size={iconSize}
           className={isRegenerating ? "animate-spin" : undefined}
         />
       </button>

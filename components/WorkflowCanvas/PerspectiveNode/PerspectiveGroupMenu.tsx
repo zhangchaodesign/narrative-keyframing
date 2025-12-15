@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { TbCopy, TbTrash, TbPlayerPlay, TbListSearch } from "react-icons/tb";
+import { useCallback } from "react";
+import { TbCopy, TbTrash } from "react-icons/tb";
 
 import type {
   WorkflowEdge,
@@ -14,14 +14,7 @@ import {
   generateUniqueUuidId,
 } from "@/lib/utiils/workflowUtils";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
-import {
-  generateMultiplePerspectives,
-  analyzeMultiplePerspectivesEvidence,
-  setPerspectivesLoading,
-  setPerspectivesAnalyzing,
-  applyGeneratedPerspectives,
-  applyAnalysisResults,
-} from "@/lib/utiils/perspectiveUtils";
+import { PerspectiveActionsMenu } from "@/components/shared/PerspectiveActionsMenu";
 
 type PerspectiveGroupMenuProps = {
   nodeId: string;
@@ -34,92 +27,9 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
   const edges = useWorkflowStore((state) => state.edges);
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const setEdges = useWorkflowStore((state) => state.setEdges);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  const handleGeneratePerspectives = useCallback(async () => {
-    if (isGenerating) {
-      return;
-    }
-
-    const perspectiveNodesInGroup = nodes.filter(
-      (node) => node.type === "perspective" && node.parentId === nodeId,
-    );
-
-    if (perspectiveNodesInGroup.length === 0) {
-      return;
-    }
-
-    const targetNodeIds = perspectiveNodesInGroup.map((node) => node.id);
-
-    setIsGenerating(true);
-
-    try {
-      // Set loading state
-      setNodes((currentNodes) =>
-        setPerspectivesLoading(currentNodes, new Set(targetNodeIds), true),
-      );
-
-      // Generate perspectives
-      const updateMap = await generateMultiplePerspectives(
-        targetNodeIds,
-        nodes,
-        edges,
-      );
-
-      // Apply generated perspectives
-      setNodes((currentNodes) =>
-        applyGeneratedPerspectives(currentNodes, updateMap),
-      );
-    } catch (error) {
-      console.error("Error generating perspectives:", error);
-    } finally {
-      // Clear loading state
-      setNodes((currentNodes) =>
-        setPerspectivesLoading(currentNodes, new Set(targetNodeIds), false),
-      );
-      setIsGenerating(false);
-    }
-  }, [edges, isGenerating, nodeId, nodes, setNodes]);
-
-  const handleAnalyzeAllEvidence = useCallback(async () => {
-    if (isAnalyzing) {
-      return;
-    }
-
-    const perspectiveNodesInGroup = nodes.filter(
-      (node) => node.type === "perspective" && node.parentId === nodeId,
-    );
-
-    if (perspectiveNodesInGroup.length === 0) {
-      return;
-    }
-
-    const targetNodeIds = perspectiveNodesInGroup.map((node) => node.id);
-
-    setIsAnalyzing(true);
-
-    try {
-      // Set analyzing state
-      setNodes((currentNodes) =>
-        setPerspectivesAnalyzing(currentNodes, new Set(targetNodeIds), true),
-      );
-
-      // Analyze evidence for all perspectives
-      const results = await analyzeMultiplePerspectivesEvidence(
-        targetNodeIds,
-        nodes,
-        edges,
-      );
-
-      // Apply analysis results
-      setNodes((currentNodes) => applyAnalysisResults(currentNodes, results));
-    } catch (error) {
-      console.error("Error analyzing evidence for group:", error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [edges, isAnalyzing, nodeId, nodes, setNodes]);
+  const perspectiveNodeIds = nodes
+    .filter((node) => node.type === "perspective" && node.parentId === nodeId)
+    .map((node) => node.id);
 
   const handleDelete = useCallback(() => {
     const result = deleteNodeCluster(nodeId, nodes, edges);
@@ -300,30 +210,13 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
 
   return (
     <div className="pointer-events-none absolute -top-16 right-0 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
-      <button
-        type="button"
-        onClick={handleGeneratePerspectives}
-        className="pointer-events-auto rounded-full p-2 transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-        title="Generate first-person limited narration for all perspectives"
-        aria-label="Generate first-person limited narration for all perspectives"
-        disabled={isGenerating}
-      >
-        <TbPlayerPlay size={18} />
-      </button>
-      <button
-        type="button"
-        onClick={handleAnalyzeAllEvidence}
-        className="pointer-events-auto rounded-full p-2 transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-        title="Analyze textual evidence for all perspectives in this group"
-        aria-label="Analyze textual evidence for all perspectives in this group"
-        disabled={isAnalyzing}
-      >
-        {isAnalyzing ? (
-          <span className="block h-[18px] w-[18px] animate-spin rounded-full border-2 border-blue-600 border-t-transparent align-middle" />
-        ) : (
-          <TbListSearch size={18} />
-        )}
-      </button>
+      <PerspectiveActionsMenu
+        targetNodeIds={perspectiveNodeIds}
+        label="this perspective group"
+        wrapperClassName="flex items-center gap-2"
+        buttonPadding="p-2"
+        iconSize={18}
+      />
       <button
         type="button"
         onClick={handleDuplicate}

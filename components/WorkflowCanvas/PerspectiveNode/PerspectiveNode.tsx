@@ -9,7 +9,7 @@ import {
 } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { PerspectiveHandle } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveHandle";
-import { PerspectiveMenu } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveMenu";
+import { PerspectiveSingleActionsMenu } from "@/components/shared/PerspectiveNodeMenu";
 import { AddCharacterButton } from "@/components/WorkflowCanvas/PerspectiveNode/AddCharacterButton";
 import { PerspectiveContent } from "@/components/shared/PerspectiveContent";
 import { PerspectiveStatusLabel } from "@/components/shared/PerspectiveStatusLabel";
@@ -326,10 +326,11 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           </span>
         </div>
       )}
-      <PerspectiveMenu
+      <PerspectiveSingleActionsMenu
         nodeId={id}
         isEditing={isEditing}
         onToggleEdit={handleToggleEdit}
+        wrapperClassName="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
       />
       <div
         className={cn(
