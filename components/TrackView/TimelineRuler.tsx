@@ -6,7 +6,7 @@ import { geistMono } from "@/app/fonts";
 import {
   TIMELINE_LABEL_WIDTH,
   TIMELINE_RULER_HEIGHT,
-} from "@/components/TimelineView/constants";
+} from "@/components/TrackView/constants";
 
 interface TimelineRulerProps {
   totalDuration: number;

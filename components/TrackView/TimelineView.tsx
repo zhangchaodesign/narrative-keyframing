@@ -2,17 +2,17 @@
 
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
-import { TimelineRuler } from "@/components/TimelineView/TimelineRuler";
-import { EventTrack } from "@/components/TimelineView/EventTrack/EventTrack";
-import { CharacterTrack } from "@/components/TimelineView/CharacterTrack/CharacterTrack";
-import { NarrativeTrack } from "@/components/TimelineView/NarrativeTrack/NarrativeTrack";
+import { TimelineRuler } from "@/components/TrackView/TimelineRuler";
+import { EventTrack } from "@/components/TrackView/EventTrack/EventTrack";
+import { CharacterTrack } from "@/components/TrackView/CharacterTrack/CharacterTrack";
+import { NarrativeTrack } from "@/components/TrackView/NarrativeTrack/NarrativeTrack";
 import {
   TIMELINE_LABEL_WIDTH,
   TIMELINE_LEFT_PADDING,
   TIMELINE_RIGHT_PADDING,
   TIMELINE_RULER_HEIGHT,
   TIMELINE_UNIT_WIDTH,
-} from "@/components/TimelineView/constants";
+} from "@/components/TrackView/constants";
 import { buildTimelineData } from "@/lib/utiils/timelineUtils";
 
 export function TimelineView() {

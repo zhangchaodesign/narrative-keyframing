@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 import type { TimelineItem } from "@/lib/types/timeline";
-import { TIMELINE_LABEL_WIDTH } from "@/components/TimelineView/constants";
+import { TIMELINE_LABEL_WIDTH } from "@/components/TrackView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { TraitSection } from "@/components/shared/TraitSection";
 import { CharacterRefreshMenu } from "@/components/shared/CharacterActionsMenu";

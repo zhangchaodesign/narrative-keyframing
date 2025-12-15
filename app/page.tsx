@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { DynamicTextEditor } from "@/components/TextEditor/DynamicTextEditor";
 import { WorkflowCanvas } from "@/components/WorkflowCanvas/WorkflowCanvas";
-import { TimelineView } from "@/components/TimelineView/TimelineView";
+import { TimelineView } from "@/components/TrackView/TimelineView";
 import {
   ViewSwitcher,
   type ViewMode,

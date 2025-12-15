@@ -5,7 +5,7 @@ import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 import type { TimelineItem } from "@/lib/types/timeline";
 import type { NarrativeNodeType } from "@/lib/types/workflow";
-import { TIMELINE_LABEL_WIDTH } from "@/components/TimelineView/constants";
+import { TIMELINE_LABEL_WIDTH } from "@/components/TrackView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { NarrativeContent } from "@/components/shared/NarrativeContent";
 

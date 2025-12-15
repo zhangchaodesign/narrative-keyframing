@@ -3,15 +3,15 @@
 import React from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
-import { PerspectiveBlock } from "@/components/TimelineView/CharacterTrack/PerspectiveBlock";
-import { CharacterBlock } from "@/components/TimelineView/CharacterTrack/CharacterBlock/CharacterBlock";
-import { PerspectiveTrackMenu } from "@/components/TimelineView/CharacterTrack/PerspectiveTrackMenu";
+import { PerspectiveBlock } from "@/components/TrackView/CharacterTrack/PerspectiveBlock";
+import { CharacterBlock } from "@/components/TrackView/CharacterTrack/CharacterBlock/CharacterBlock";
+import { PerspectiveTrackMenu } from "@/components/TrackView/CharacterTrack/PerspectiveTrackMenu";
 import type { TimelineTrack } from "@/lib/types/timeline";
 import {
   TIMELINE_LABEL_WIDTH,
   TIMELINE_CHARACTER_HEADER_HEIGHT,
   TIMELINE_CHARACTER_SUBTRACK_HEIGHT,
-} from "@/components/TimelineView/constants";
+} from "@/components/TrackView/constants";
 
 interface CharacterTrackProps {
   characterName: string;
