@@ -7,8 +7,8 @@ import type { TimelineItem } from "@/lib/types/timeline";
 import type { PerspectiveNodeType } from "@/lib/types/workflow";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TimelineView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
-import { PerspectiveBlockMenu } from "@/components/TimelineView/CharacterTrack/PerspectiveBlockMenu";
-import { PerspectiveBlockContent } from "@/components/TimelineView/CharacterTrack/PerspectiveBlockContent";
+import { PerspectiveBlockMenu } from "@/components/TimelineView/CharacterTrack/PerspectiveBlock/PerspectiveBlockMenu";
+import { PerspectiveBlockContent } from "@/components/TimelineView/CharacterTrack/PerspectiveBlock/PerspectiveBlockContent";
 import { PerspectiveStatusLabel } from "@/components/shared/PerspectiveStatusLabel";
 
 interface PerspectiveBlockProps {
