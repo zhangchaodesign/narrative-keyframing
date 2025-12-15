@@ -57,6 +57,19 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     return Boolean(characterNode);
   }, [id, nodes]);
 
+  // Calculate perspective sequence number based on position
+  const perspectiveSequence = useMemo(() => {
+    const currentNode = nodes.find((node) => node.id === id);
+    if (!currentNode) return 1;
+
+    const perspectiveNodes = nodes
+      .filter((node) => node.type === "perspective")
+      .filter((node) => node.parentId === currentNode.parentId)
+      .sort((a, b) => a.position.x - b.position.x);
+    const index = perspectiveNodes.findIndex((node) => node.id === id);
+    return index >= 0 ? index + 1 : 1;
+  }, [id, nodes]);
+
   // Find the event node and its timeline
   const eventTimeline = useMemo(() => {
     if (!data?.eventId) {
@@ -324,7 +337,9 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
           "flex flex-col w-full gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase",
         )}
       >
-        <span className="flex items-center">💬 Perspective</span>
+        <span className="flex items-center">
+          💬 Perspective {perspectiveSequence}
+        </span>
         <PerspectiveStatusLabel
           isAnalyzingEvidence={isAnalyzingEvidence}
           analysisStatus={analysisStatus}

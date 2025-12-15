@@ -14,6 +14,19 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
   const nodes = useStore((store) => store.nodes);
   const isLoading = data?.isLoading ?? false;
 
+  // Calculate narrative sequence number based on position
+  const narrativeSequence = useMemo(() => {
+    const currentNode = nodes.find((node) => node.id === id);
+    if (!currentNode) return 1;
+
+    const narrativeNodes = nodes
+      .filter((node) => node.type === "narrative")
+      .filter((node) => node.parentId === currentNode.parentId)
+      .sort((a, b) => a.position.x - b.position.x);
+    const index = narrativeNodes.findIndex((node) => node.id === id);
+    return index >= 0 ? index + 1 : 1;
+  }, [id, nodes]);
+
   // Find the event node and its timeline
   const eventTimeline = useMemo(() => {
     if (!data?.eventId) {
@@ -41,7 +54,9 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
           "flex flex-col w-full gap-1 text-[10px] font-semibold tracking-wide text-zinc-800 uppercase",
         )}
       >
-        <span className="flex items-center">📖 Narration</span>
+        <span className="flex items-center">
+          📖 Narration {narrativeSequence}
+        </span>
       </div>
 
       <NarrativeContent
