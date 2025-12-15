@@ -1,14 +1,11 @@
 "use client";
 
 import { useCallback } from "react";
-import { useReactFlow, useStore } from "@xyflow/react";
 import { TbCopy, TbTrash, TbRefresh } from "react-icons/tb";
 
 import type {
   CharacterNodeType,
   PerspectiveNodeType,
-  WorkflowEdge,
-  WorkflowNode,
 } from "@/lib/types/workflow";
 import {
   deleteNodeWithEdges,
@@ -18,67 +15,69 @@ import {
   refreshCharacterSnapshotFromPerspective,
   type WorkflowNodesSetter,
 } from "@/lib/utiils/characterUtils";
+import { useWorkflowStore } from "@/lib/stores/workflowStore";
 
-type CharacterMenuProps = {
-  nodeId: string;
-  nodeType: WorkflowNode["type"];
-  isRefreshing?: boolean;
-  onRefreshStateChange?: (isRefreshing: boolean) => void;
-};
-
-export function CharacterMenu({
-  nodeId,
-  nodeType,
-  isRefreshing = false,
-  onRefreshStateChange,
-}: CharacterMenuProps) {
-  const { setNodes, setEdges, getNodes } = useReactFlow<
-    WorkflowNode,
-    WorkflowEdge
-  >();
-  const { characterData, perspectiveData } = useStore((store) => {
-    const characterNode = store.nodes.find(
-      (candidate): candidate is CharacterNodeType =>
-        candidate.id === nodeId && candidate.type === "character",
-    );
-    const perspectiveId = characterNode?.data?.perspectiveId;
-    const perspectiveNode = perspectiveId
-      ? store.nodes.find(
-          (candidate): candidate is PerspectiveNodeType =>
-            candidate.id === perspectiveId && candidate.type === "perspective",
-        )
-      : undefined;
-    return {
-      characterData: characterNode?.data,
-      perspectiveData: perspectiveNode?.data,
-    };
-  });
+export function CharacterMenu({ nodeId }: { nodeId: string }) {
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
+  const setNodes = useWorkflowStore((state) => state.setNodes);
+  const setEdges = useWorkflowStore((state) => state.setEdges);
+  const characterNode = nodes.find(
+    (candidate): candidate is CharacterNodeType =>
+      candidate.id === nodeId && candidate.type === "character",
+  );
+  const perspectiveId = characterNode?.data?.perspectiveId;
+  const perspectiveNode = perspectiveId
+    ? nodes.find(
+        (candidate): candidate is PerspectiveNodeType =>
+          candidate.id === perspectiveId && candidate.type === "perspective",
+      )
+    : undefined;
+  const characterData = characterNode?.data;
+  const perspectiveData = perspectiveNode?.data;
   const hasPerspectiveLink =
     Boolean(characterData?.perspectiveId) &&
     Boolean(perspectiveData?.reflection?.trim());
+  const isRefreshing = Boolean(characterData?.isRefreshing);
+
+  const updateRefreshingState = useCallback(
+    (nextState: boolean) => {
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.id !== nodeId || node.type !== "character") {
+            return node;
+          }
+          const existingData = node.data as CharacterNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              isRefreshing: nextState,
+            },
+          };
+        }),
+      );
+    },
+    [nodeId, setNodes],
+  );
 
   const handleDelete = useCallback(() => {
-    setNodes((nodes) => {
-      setEdges((edges) => {
-        const result = deleteNodeWithEdges(nodeId, nodes, edges);
-        setNodes(result.nodes);
-        return result.edges;
-      });
-      return nodes;
-    });
-  }, [nodeId, setEdges, setNodes]);
+    const result = deleteNodeWithEdges(nodeId, nodes, edges);
+    setNodes(result.nodes);
+    setEdges(result.edges);
+  }, [edges, nodeId, nodes, setEdges, setNodes]);
 
   const handleDuplicate = useCallback(() => {
-    setNodes((nodes) => {
-      const original = nodes.find((node) => node.id === nodeId);
+    setNodes((currentNodes) => {
+      const original = currentNodes.find((node) => node.id === nodeId);
       if (!original) {
-        return nodes;
+        return currentNodes;
       }
 
-      const existingIds = new Set(nodes.map((node) => node.id));
+      const existingIds = new Set(currentNodes.map((node) => node.id));
       const duplicatedNode = duplicateWorkflowNode(original, existingIds);
 
-      return [...nodes, duplicatedNode];
+      return [...currentNodes, duplicatedNode];
     });
   }, [nodeId, setNodes]);
 
@@ -87,25 +86,24 @@ export function CharacterMenu({
       return;
     }
 
-    onRefreshStateChange?.(true);
+    updateRefreshingState(true);
     try {
-      const workflowNodes = getNodes() as WorkflowNode[];
       await refreshCharacterSnapshotFromPerspective({
         nodeId,
-        nodes: workflowNodes,
+        nodes,
         setNodes: setNodes as WorkflowNodesSetter,
       });
     } catch (error) {
       console.error("Error refreshing character snapshot:", error);
     } finally {
-      onRefreshStateChange?.(false);
+      updateRefreshingState(false);
     }
   }, [
-    getNodes,
     hasPerspectiveLink,
     isRefreshing,
     nodeId,
-    onRefreshStateChange,
+    nodes,
+    updateRefreshingState,
     setNodes,
   ]);
 

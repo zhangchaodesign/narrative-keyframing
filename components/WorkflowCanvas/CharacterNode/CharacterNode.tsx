@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { CharacterMenu } from "@/components/WorkflowCanvas/CharacterNode/CharacterMenu";
@@ -17,7 +17,6 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   const { setNodes } = useReactFlow();
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [isRefreshingSnapshot, setIsRefreshingSnapshot] = useState(false);
 
   const traits = useMemo<CharacterTraits>(
     () => normalizeCharacterTraits(data?.traits),
@@ -62,7 +61,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         ref={containerRef}
         className="relative flex max-h-88 flex-col rounded-lg border-2 border-warning bg-white text-xs hover:shadow-lg"
       >
-        {isRefreshingSnapshot && (
+        {data?.isRefreshing && (
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-warning" />
             <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-warning">
@@ -70,12 +69,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
             </span>
           </div>
         )}
-        <CharacterMenu
-          nodeId={id}
-          nodeType="character"
-          isRefreshing={isRefreshingSnapshot}
-          onRefreshStateChange={setIsRefreshingSnapshot}
-        />
+        <CharacterMenu nodeId={id} />
         <div className="flex flex-1 flex-col gap-3 p-3 min-h-0">
           <div className="flex items-center justify-between">
             <span

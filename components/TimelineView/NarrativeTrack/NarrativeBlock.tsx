@@ -26,11 +26,27 @@ export function NarrativeBlock({
   timelineScale,
 }: NarrativeBlockProps) {
   const setNodes = useWorkflowStore((state) => state.setNodes);
-  const [draftNarration, setDraftNarration] = useState(item.content);
+  const narrativeNode = useWorkflowStore(
+    useCallback(
+      (state) =>
+        state.nodes.find(
+          (node): node is NarrativeNodeType =>
+            node.id === item.nodeId && node.type === "narrative",
+        ) ?? null,
+      [item.nodeId],
+    ),
+  );
+  const narrativeData = narrativeNode?.data as
+    | NarrativeNodeType["data"]
+    | undefined;
+  const isLoading = narrativeData?.isLoading ?? false;
+  const [draftNarration, setDraftNarration] = useState(
+    narrativeData?.narration ?? item.content,
+  );
 
   useEffect(() => {
-    setDraftNarration(item.content);
-  }, [item.content]);
+    setDraftNarration(narrativeData?.narration ?? item.content);
+  }, [item.content, narrativeData?.narration]);
 
   const safeWidth = Math.max(timelineScale - 8, 24);
   const itemWidth = Math.min(safeWidth, timelineScale);
@@ -81,6 +97,14 @@ export function NarrativeBlock({
       }}
     >
       <div className="group relative flex h-full flex-col rounded-lg border-2 border-primary bg-white/95 px-3 py-2 text-xs text-zinc-800 transition-shadow hover:shadow-lg">
+        {isLoading && (
+          <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
+            <span className="loading loading-spinner text-green-600"></span>
+            <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-green-600">
+              Preparing narration...
+            </span>
+          </div>
+        )}
         <div
           className={cn(
             geistMono.className,

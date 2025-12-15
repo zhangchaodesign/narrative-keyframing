@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useReactFlow, useStore } from "@xyflow/react";
 import {
   TbCopy,
   TbTrash,
@@ -14,7 +13,6 @@ import type {
   NarrativeNodeType,
   PerspectiveNodeType,
   EventNodeType,
-  WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
 import {
@@ -53,10 +51,10 @@ type EventData = {
 const CLONE_OFFSET = 80;
 
 export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
-  const { setNodes, setEdges, getNodes, getEdges } = useReactFlow<
-    WorkflowNode,
-    WorkflowEdge
-  >();
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
+  const setNodes = useWorkflowStore((state) => state.setNodes);
+  const setEdges = useWorkflowStore((state) => state.setEdges);
   const { setValue } = useEditorStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,8 +63,6 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
   const [preSelectedSnippets, setPreSelectedSnippets] = useState<Set<string>>(
     new Set(),
   );
-  const nodes = useStore((store) => store.nodes);
-  const edges = useStore((store) => store.edges);
   const selectedSnippets = useWorkflowStore((state) => state.selectedSnippets);
 
   const handleOpenModal = useCallback(() => {
@@ -280,17 +276,14 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
   );
 
   const handleDelete = useCallback(() => {
-    const nodes = getNodes();
-    const edges = getEdges();
     const result = deleteNodeCluster(nodeId, nodes, edges);
 
     setNodes(result.nodes);
     setEdges(result.edges);
-  }, [getNodes, getEdges, nodeId, setEdges, setNodes]);
+  }, [edges, nodeId, nodes, setEdges, setNodes]);
 
   const handlePopulateEditor = useCallback(() => {
-    const currentNodes = getNodes();
-
+    const currentNodes = nodes;
     // Find all narrative nodes within this group
     const narrativeNodes = currentNodes.filter(
       (node): node is NarrativeNodeType =>
@@ -327,8 +320,8 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
 
     // Update all narrative group nodes to mark this one as active
     setNodes(
-      (nodes) =>
-        nodes.map((node) => {
+      (nodesState) =>
+        nodesState.map((node) => {
           if (node.type === "narrativeGroup") {
             return {
               ...node,
@@ -341,11 +334,11 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
           return node;
         }) as WorkflowNode[],
     );
-  }, [getNodes, nodeId, setValue, setNodes]);
+  }, [nodeId, nodes, setValue, setNodes]);
 
   const handleDuplicate = useCallback(() => {
-    const currentNodes = getNodes();
-    const currentEdges = getEdges();
+    const currentNodes = nodes;
+    const currentEdges = edges;
 
     const groupNode = currentNodes.find(
       (node) => node.id === nodeId && node.type === "narrativeGroup",
@@ -444,9 +437,9 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
       };
     });
 
-    setNodes((nodes) => [...nodes, ...newNodes]);
-    setEdges((edges) => [...edges, ...newEdges, ...duplicatedBridges]);
-  }, [getEdges, getNodes, nodeId, setEdges, setNodes]);
+    setNodes((existing) => [...existing, ...newNodes]);
+    setEdges((existing) => [...existing, ...newEdges, ...duplicatedBridges]);
+  }, [edges, nodeId, nodes, setEdges, setNodes]);
 
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);

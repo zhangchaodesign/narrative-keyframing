@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useReactFlow } from "@xyflow/react";
 import { TbCopy, TbTrash, TbPlayerPlay, TbListSearch } from "react-icons/tb";
 
 import type {
@@ -14,6 +13,7 @@ import {
   deleteNodeCluster,
   generateUniqueUuidId,
 } from "@/lib/utiils/workflowUtils";
+import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import {
   generateMultiplePerspectives,
   analyzeMultiplePerspectivesEvidence,
@@ -30,10 +30,10 @@ type PerspectiveGroupMenuProps = {
 const CLONE_OFFSET = 80;
 
 export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
-  const { setNodes, setEdges, getNodes, getEdges } = useReactFlow<
-    WorkflowNode,
-    WorkflowEdge
-  >();
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
+  const setNodes = useWorkflowStore((state) => state.setNodes);
+  const setEdges = useWorkflowStore((state) => state.setEdges);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -42,10 +42,6 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
       return;
     }
 
-    const nodes = getNodes();
-    const edges = getEdges();
-
-    // Get all perspective nodes in this group
     const perspectiveNodesInGroup = nodes.filter(
       (node) => node.type === "perspective" && node.parentId === nodeId,
     );
@@ -84,17 +80,13 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
       );
       setIsGenerating(false);
     }
-  }, [isGenerating, getNodes, getEdges, setNodes, nodeId]);
+  }, [edges, isGenerating, nodeId, nodes, setNodes]);
 
   const handleAnalyzeAllEvidence = useCallback(async () => {
     if (isAnalyzing) {
       return;
     }
 
-    const nodes = getNodes();
-    const edges = getEdges();
-
-    // Get all perspective nodes in this group
     const perspectiveNodesInGroup = nodes.filter(
       (node) => node.type === "perspective" && node.parentId === nodeId,
     );
@@ -127,20 +119,18 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [isAnalyzing, getNodes, getEdges, setNodes, nodeId]);
+  }, [edges, isAnalyzing, nodeId, nodes, setNodes]);
 
   const handleDelete = useCallback(() => {
-    const nodes = getNodes();
-    const edges = getEdges();
     const result = deleteNodeCluster(nodeId, nodes, edges);
 
     setNodes(result.nodes);
     setEdges(result.edges);
-  }, [getNodes, getEdges, nodeId, setEdges, setNodes]);
+  }, [edges, nodeId, nodes, setEdges, setNodes]);
 
   const handleDuplicate = useCallback(() => {
-    const currentNodes = getNodes();
-    const currentEdges = getEdges();
+    const currentNodes = nodes;
+    const currentEdges = edges;
 
     const groupNode = currentNodes.find(
       (node) => node.id === nodeId && node.type === "perspectiveGroup",
@@ -306,7 +296,7 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
       ...duplicatedBridges,
       ...fallbackBridge,
     ]);
-  }, [getEdges, getNodes, nodeId, setEdges, setNodes]);
+  }, [edges, nodeId, nodes, setEdges, setNodes]);
 
   return (
     <div className="pointer-events-none absolute -top-16 right-0 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">

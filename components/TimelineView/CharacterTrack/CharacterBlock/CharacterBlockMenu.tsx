@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { TbRefresh } from "react-icons/tb";
 import {
   refreshCharacterSnapshotFromPerspective,
@@ -10,7 +10,6 @@ import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type {
   CharacterNodeType,
   PerspectiveNodeType,
-  WorkflowNode,
 } from "@/lib/types/workflow";
 import type { TimelineItem } from "@/lib/types/timeline";
 
@@ -23,44 +22,73 @@ export function CharacterBlockMenu({
   item,
   characterName,
 }: CharacterBlockMenuProps) {
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const nodes = useWorkflowStore((state) => state.nodes);
   const setNodes = useWorkflowStore((state) => state.setNodes);
 
+  const characterNode = useMemo(
+    () =>
+      nodes.find(
+        (node): node is CharacterNodeType =>
+          node.id === item.nodeId && node.type === "character",
+      ),
+    [item.nodeId, nodes],
+  );
+  const perspectiveId = characterNode?.data?.perspectiveId;
+  const perspectiveNode = perspectiveId
+    ? nodes.find(
+        (node): node is PerspectiveNodeType =>
+          node.id === perspectiveId && node.type === "perspective",
+      )
+    : undefined;
+  const hasPerspectiveLink = Boolean(perspectiveNode?.data?.reflection?.trim());
+  const isRefreshing = Boolean(characterNode?.data?.isRefreshing);
+
+  const updateRefreshingState = useCallback(
+    (nextState: boolean) => {
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.id !== item.nodeId || node.type !== "character") {
+            return node;
+          }
+          const existingData = node.data as CharacterNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              isRefreshing: nextState,
+            },
+          };
+        }),
+      );
+    },
+    [item.nodeId, setNodes],
+  );
+
   const handleRefreshSnapshot = useCallback(async () => {
-    if (isRefreshing) {
+    if (isRefreshing || !hasPerspectiveLink) {
       return;
     }
 
-    setIsRefreshing(true);
+    updateRefreshingState(true);
     try {
       await refreshCharacterSnapshotFromPerspective({
         nodeId: item.nodeId,
-        nodes: nodes as WorkflowNode[],
+        nodes,
         setNodes: setNodes as WorkflowNodesSetter,
       });
     } catch (error) {
       console.error("Error refreshing character snapshot:", error);
     } finally {
-      setIsRefreshing(false);
+      updateRefreshingState(false);
     }
-  }, [isRefreshing, item.nodeId, nodes, setNodes]);
-
-  const hasPerspectiveLink = (() => {
-    const characterNode = nodes.find(
-      (node): node is CharacterNodeType =>
-        node.id === item.nodeId && node.type === "character",
-    );
-    const perspectiveId = characterNode?.data?.perspectiveId;
-    if (!perspectiveId) {
-      return false;
-    }
-    const perspectiveNode = nodes.find(
-      (node): node is PerspectiveNodeType =>
-        node.id === perspectiveId && node.type === "perspective",
-    );
-    return Boolean(perspectiveNode?.data?.reflection?.trim());
-  })();
+  }, [
+    hasPerspectiveLink,
+    isRefreshing,
+    item.nodeId,
+    nodes,
+    setNodes,
+    updateRefreshingState,
+  ]);
 
   return (
     <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">

@@ -53,6 +53,7 @@ export function CharacterBlock({
   );
 
   const characterName = characterData?.name?.trim() ?? "";
+  const isRefreshing = Boolean(characterData?.isRefreshing);
   const [nameValue, setNameValue] = useState(characterName);
 
   useEffect(() => {
@@ -123,6 +124,14 @@ export function CharacterBlock({
       }}
     >
       <div className="group relative flex h-full flex-col rounded-lg border-2 border-warning bg-white text-xs text-zinc-800 transition-shadow hover:shadow-lg">
+        {isRefreshing && (
+          <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
+            <span className="loading loading-spinner text-warning"></span>
+            <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-warning">
+              Updating snapshot...
+            </span>
+          </div>
+        )}
         <CharacterBlockMenu item={item} characterName={characterName} />
         <div className="flex flex-1 flex-col gap-3 p-3 min-h-0">
           <div

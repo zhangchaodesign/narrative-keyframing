@@ -38,6 +38,7 @@ export type CharacterNodeData = {
   name: string;
   traits: CharacterTraits;
   perspectiveId: string;
+  isRefreshing?: boolean;
 };
 
 export type PerspectiveEvidenceItem = {
