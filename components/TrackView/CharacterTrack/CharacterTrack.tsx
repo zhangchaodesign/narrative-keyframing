@@ -4,7 +4,7 @@ import React from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 import { PerspectiveBlock } from "@/components/TrackView/CharacterTrack/PerspectiveBlock";
-import { CharacterBlock } from "@/components/TrackView/CharacterTrack/CharacterBlock/CharacterBlock";
+import { CharacterBlock } from "@/components/TrackView/CharacterTrack/CharacterBlock";
 import { PerspectiveTrackMenu } from "@/components/TrackView/CharacterTrack/PerspectiveTrackMenu";
 import type { TimelineTrack } from "@/lib/types/timeline";
 import {
