@@ -12,10 +12,7 @@ import {
   useWorkflowStore,
   type SelectedSnippet,
 } from "@/lib/stores/workflowStore";
-import type {
-  PerspectiveEvidenceItem,
-  WorkflowNode,
-} from "@/lib/types/workflow";
+import type { PerspectiveEvidenceItem } from "@/lib/types/workflow";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
 
 interface PerspectiveContentProps {
@@ -24,8 +21,6 @@ interface PerspectiveContentProps {
   analysisEvidence?: PerspectiveEvidenceItem[];
   isEditing?: boolean;
   onReflectionChange?: (newReflection: string) => void;
-  nodes: WorkflowNode[];
-  variant?: "node" | "block";
 }
 
 type SnippetRange = {
@@ -107,8 +102,6 @@ export function PerspectiveContent({
   analysisEvidence,
   isEditing = false,
   onReflectionChange,
-  nodes,
-  variant = "node",
 }: PerspectiveContentProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [editValue, setEditValue] = useState(reflection);
@@ -118,23 +111,33 @@ export function PerspectiveContent({
   );
   const selectedSnippets = useWorkflowStore((state) => state.selectedSnippets);
   const toggleSnippet = useWorkflowStore((state) => state.toggleSnippet);
+  const workflowNodes = useWorkflowStore((state) => state.nodes);
 
   // Get the parent group ID of this perspective node to filter character selections
-  const perspectiveNode = nodes.find((node) => node.id === perspectiveNodeId);
-  const perspectiveParentId = perspectiveNode?.parentId;
+  const perspectiveParentId = useMemo(() => {
+    if (!workflowNodes || workflowNodes.length === 0) {
+      return undefined;
+    }
+    const perspectiveNode = workflowNodes.find(
+      (node) => node.id === perspectiveNodeId,
+    );
+    return perspectiveNode?.parentId;
+  }, [workflowNodes, perspectiveNodeId]);
 
   // Get character nodes in this group to check their parentId
   const characterNodesInGroup = useMemo(() => {
-    if (!perspectiveParentId) return new Set<string>();
+    if (!workflowNodes || !perspectiveParentId) {
+      return new Set<string>();
+    }
 
     const characterIds = new Set<string>();
-    nodes.forEach((node) => {
+    workflowNodes.forEach((node) => {
       if (node.type === "character" && node.parentId === perspectiveParentId) {
         characterIds.add(node.id);
       }
     });
     return characterIds;
-  }, [nodes, perspectiveParentId]);
+  }, [workflowNodes, perspectiveParentId]);
 
   // Update edit value when reflection changes externally
   useEffect(() => {
@@ -242,16 +245,7 @@ export function PerspectiveContent({
     perspectiveNodeId,
     characterNodesInGroup,
     handleToggleSnippet,
-    perspectiveParentId,
   ]);
-
-  // Variant-specific styles
-  const textSize = variant === "block" ? "text-[11px]" : "text-[10px]";
-  const marginTop = variant === "block" ? "mt-2" : "";
-  const placeholder =
-    variant === "block" ? "Write the reflection..." : undefined;
-  const textareaBg =
-    variant === "block" ? "bg-white/80 focus:bg-white" : "bg-white";
 
   if (isEditing) {
     return (
@@ -259,9 +253,7 @@ export function PerspectiveContent({
         ref={textareaRef}
         value={editValue}
         onChange={handleTextChange}
-        placeholder={placeholder}
-        onPointerDown={(event) => event.stopPropagation()}
-        className={`${marginTop} w-full flex-1 resize-none rounded border border-zinc-300 ${textareaBg} px-2 py-1 ${textSize} leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 nodrag nopan`}
+        className="flex-1 w-full resize-none rounded bg-white border border-zinc-300 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400"
         onWheel={(event) => {
           if (event.ctrlKey || event.metaKey) {
             return;
@@ -282,8 +274,7 @@ export function PerspectiveContent({
 
   return (
     <div
-      className={`${marginTop} flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 ${textSize} leading-snug text-zinc-800 nodrag nopan`}
-      onPointerDown={(event) => event.stopPropagation()}
+      className="flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800"
       onWheel={(event) => {
         if (event.ctrlKey || event.metaKey) {
           return;

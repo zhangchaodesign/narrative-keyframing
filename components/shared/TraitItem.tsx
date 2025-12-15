@@ -9,7 +9,6 @@ import {
   type ChangeEvent,
   type KeyboardEvent,
 } from "react";
-import { useStore } from "@xyflow/react";
 import { TbCheck, TbPencil, TbX } from "react-icons/tb";
 import { cn } from "@/lib/utiils/sharedUtils";
 import {
@@ -52,18 +51,21 @@ export function TraitItem({
   const toggleEvidenceAttribute = useWorkflowStore(
     (state) => state.toggleEvidenceAttribute,
   );
+  const workflowNodes = useWorkflowStore((state) => state.nodes);
 
   const attributeKey = buildEvidenceAttributeKey(nodeId, trait);
   const isSelected = Boolean(selectedEvidenceAttributes[attributeKey]);
 
   // Calculate evidence count for this trait from all perspective nodes in the same group
-  const evidenceCount = useStore((store) => {
-    // Find the character node to get its parent group
-    const characterNode = store.nodes.find(
+  const evidenceCount = useMemo(() => {
+    if (!workflowNodes || workflowNodes.length === 0) {
+      return 0;
+    }
+
+    const characterNode = workflowNodes.find(
       (node): node is CharacterNodeType =>
         node.id === nodeId && node.type === "character",
     );
-
     if (!characterNode) {
       return 0;
     }
@@ -73,8 +75,7 @@ export function TraitItem({
       return 0;
     }
 
-    // Find all perspective nodes in the same group
-    const perspectiveNodes = store.nodes.filter(
+    const perspectiveNodes = workflowNodes.filter(
       (node): node is PerspectiveNodeType =>
         node.type === "perspective" &&
         node.parentId === parentId &&
@@ -85,7 +86,6 @@ export function TraitItem({
       return 0;
     }
 
-    // Aggregate evidence count from all perspective nodes
     const normalizedTrait = trait.trim().toLowerCase();
     let totalCount = 0;
 
@@ -105,7 +105,7 @@ export function TraitItem({
     }
 
     return totalCount;
-  });
+  }, [workflowNodes, nodeId, trait]);
 
   const handleToggleHighlight = useCallback(
     (event: React.MouseEvent) => {

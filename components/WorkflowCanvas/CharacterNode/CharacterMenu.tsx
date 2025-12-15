@@ -6,7 +6,6 @@ import { TbCopy, TbTrash, TbRefresh } from "react-icons/tb";
 
 import type {
   CharacterNodeType,
-  PerspectiveEvidenceItem,
   PerspectiveNodeType,
   WorkflowEdge,
   WorkflowNode,
@@ -15,7 +14,10 @@ import {
   deleteNodeWithEdges,
   duplicateWorkflowNode,
 } from "@/lib/utiils/workflowUtils";
-import { interpolateCharacterSnapshot } from "@/lib/utiils/characterUtils";
+import {
+  refreshCharacterSnapshotFromPerspective,
+  type WorkflowNodesSetter,
+} from "@/lib/utiils/characterUtils";
 
 type CharacterMenuProps = {
   nodeId: string;
@@ -85,101 +87,14 @@ export function CharacterMenu({
       return;
     }
 
-    const nodes = getNodes();
-    const workflowNodes = nodes as WorkflowNode[];
-    const characterNode = workflowNodes.find(
-      (node): node is CharacterNodeType =>
-        node.id === nodeId && node.type === "character",
-    );
-    if (!characterNode) {
-      return;
-    }
-
-    const perspectiveId = characterNode.data?.perspectiveId;
-    if (!perspectiveId) {
-      console.warn("Character is not linked to a perspective:", nodeId);
-      return;
-    }
-
-    const perspectiveNode = workflowNodes.find(
-      (node): node is PerspectiveNodeType =>
-        node.id === perspectiveId && node.type === "perspective",
-    );
-    if (!perspectiveNode) {
-      console.warn("Perspective node missing for character:", nodeId);
-      return;
-    }
-
     onRefreshStateChange?.(true);
     try {
-      const result = await interpolateCharacterSnapshot({
+      const workflowNodes = getNodes() as WorkflowNode[];
+      await refreshCharacterSnapshotFromPerspective({
+        nodeId,
         nodes: workflowNodes,
-        perspectiveNode,
-        fallbackNarratorName:
-          characterNode.data?.name?.trim() ||
-          perspectiveNode.data?.narrator?.trim() ||
-          "Character",
+        setNodes: setNodes as WorkflowNodesSetter,
       });
-
-      if (!result) {
-        console.warn("Cannot refresh character; perspective text is empty.");
-        return;
-      }
-
-      const { characterName, characterTraits, evidenceItems } = result;
-
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          if (node.id === nodeId && node.type === "character") {
-            const existingData = node.data as CharacterNodeType["data"];
-            return {
-              ...node,
-              data: {
-                ...existingData,
-                traits: characterTraits,
-              },
-            };
-          }
-
-          if (node.id === perspectiveId && node.type === "perspective") {
-            const existingData = node.data as PerspectiveNodeType["data"];
-            const existingEvidence = Array.isArray(
-              existingData?.analysisEvidence,
-            )
-              ? (existingData.analysisEvidence as PerspectiveEvidenceItem[])
-              : [];
-            const filteredEvidence = existingEvidence.filter(
-              (entry) => entry.characterId !== nodeId,
-            );
-
-            if (evidenceItems.length === 0) {
-              return {
-                ...node,
-                data: {
-                  ...existingData,
-                  analysisEvidence: filteredEvidence,
-                },
-              };
-            }
-
-            const evidenceEntry: PerspectiveEvidenceItem = {
-              characterId: nodeId,
-              characterName,
-              items: evidenceItems as PerspectiveEvidenceItem["items"],
-            };
-
-            return {
-              ...node,
-              data: {
-                ...existingData,
-                analysisEvidence: [...filteredEvidence, evidenceEntry],
-              },
-            };
-          }
-
-          return node;
-        }),
-      );
     } catch (error) {
       console.error("Error refreshing character snapshot:", error);
     } finally {

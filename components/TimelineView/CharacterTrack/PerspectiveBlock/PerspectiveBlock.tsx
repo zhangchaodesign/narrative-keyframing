@@ -8,7 +8,7 @@ import type { PerspectiveNodeType } from "@/lib/types/workflow";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TimelineView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { PerspectiveBlockMenu } from "@/components/TimelineView/CharacterTrack/PerspectiveBlock/PerspectiveBlockMenu";
-import { PerspectiveBlockContent } from "@/components/TimelineView/CharacterTrack/PerspectiveBlock/PerspectiveBlockContent";
+import { PerspectiveContent } from "@/components/shared/PerspectiveContent";
 import { PerspectiveStatusLabel } from "@/components/shared/PerspectiveStatusLabel";
 
 interface PerspectiveBlockProps {
@@ -127,7 +127,7 @@ export function PerspectiveBlock({
             hasReflectionContent={hasReflectionContent}
           />
         </div>
-        <PerspectiveBlockContent
+        <PerspectiveContent
           perspectiveNodeId={item.nodeId}
           reflection={perspectiveData?.reflection ?? ""}
           analysisEvidence={perspectiveData?.analysisEvidence}

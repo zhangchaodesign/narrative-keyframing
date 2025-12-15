@@ -11,7 +11,7 @@ import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { PerspectiveHandle } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveHandle";
 import { PerspectiveMenu } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveMenu";
 import { AddCharacterButton } from "@/components/WorkflowCanvas/PerspectiveNode/AddCharacterButton";
-import { PerspectiveContent } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveContent";
+import { PerspectiveContent } from "@/components/shared/PerspectiveContent";
 import { PerspectiveStatusLabel } from "@/components/shared/PerspectiveStatusLabel";
 import type {
   CharacterNodeType,

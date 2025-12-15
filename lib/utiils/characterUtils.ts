@@ -2,9 +2,63 @@ import type {
   CharacterNodeType,
   CharacterTraits,
   EventNodeType,
+  PerspectiveEvidenceItem,
   PerspectiveNodeType,
   WorkflowNode,
 } from "@/lib/types/workflow";
+
+export type TraitCategory = keyof CharacterTraits;
+
+export type TraitCategoryDefinition = {
+  key: TraitCategory;
+  label: string;
+  titleClass: string;
+  chipClass: string;
+  emptyClass: string;
+  selectedClass: string;
+};
+
+export const CHARACTER_TRAIT_CATEGORIES: TraitCategoryDefinition[] = [
+  {
+    key: "physiology",
+    label: "Physiology",
+    titleClass: "text-blue-700",
+    chipClass:
+      "border-blue-200 bg-blue-50 text-blue-900 hover:bg-blue-500 hover:text-white focus-visible:ring focus-visible:ring-blue-200",
+    emptyClass: "border-blue-200 text-blue-700",
+    selectedClass: "border-transparent bg-blue-500 text-white",
+  },
+  {
+    key: "psychology",
+    label: "Psychology",
+    titleClass: "text-purple-700",
+    chipClass:
+      "border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-500 hover:text-white focus-visible:ring focus-visible:ring-purple-200",
+    emptyClass: "border-purple-200 text-purple-700",
+    selectedClass: "border-transparent bg-purple-500 text-white",
+  },
+  {
+    key: "sociology",
+    label: "Sociology",
+    titleClass: "text-green-700",
+    chipClass:
+      "border-green-200 bg-green-50 text-green-900 hover:bg-green-500 hover:text-white focus-visible:ring focus-visible:ring-green-200",
+    emptyClass: "border-green-200 text-green-700",
+    selectedClass: "border-transparent bg-green-500 text-white",
+  },
+];
+
+export const normalizeCharacterTraits = (
+  traits?: CharacterTraits | null,
+): CharacterTraits => ({
+  physiology: [...(traits?.physiology ?? [])],
+  psychology: [...(traits?.psychology ?? [])],
+  sociology: [...(traits?.sociology ?? [])],
+});
+
+export type WorkflowNodesSetter = (
+  updater: (nodes: WorkflowNode[]) => WorkflowNode[],
+) => void;
 
 type NearbySnapshot = {
   name: string;
@@ -240,4 +294,116 @@ export async function interpolateCharacterSnapshot(
     characterTraits,
     evidenceItems,
   };
+}
+
+type RefreshCharacterSnapshotParams = {
+  nodeId: string;
+  nodes: WorkflowNode[];
+  setNodes: WorkflowNodesSetter;
+};
+
+export async function refreshCharacterSnapshotFromPerspective({
+  nodeId,
+  nodes,
+  setNodes,
+}: RefreshCharacterSnapshotParams): Promise<boolean> {
+  const characterNode = nodes.find(
+    (node): node is CharacterNodeType =>
+      node.id === nodeId && node.type === "character",
+  );
+  if (!characterNode) {
+    console.warn("Character node not found for refresh:", nodeId);
+    return false;
+  }
+
+  const perspectiveId = characterNode.data?.perspectiveId;
+  if (!perspectiveId) {
+    console.warn("Character is not linked to a perspective:", nodeId);
+    return false;
+  }
+
+  const perspectiveNode = nodes.find(
+    (node): node is PerspectiveNodeType =>
+      node.id === perspectiveId && node.type === "perspective",
+  );
+  if (!perspectiveNode) {
+    console.warn("Perspective node missing for character:", nodeId);
+    return false;
+  }
+
+  if (!perspectiveNode.data?.reflection?.trim()) {
+    console.warn("Perspective has no reflection text to refresh character.");
+    return false;
+  }
+
+  const fallbackNarratorName =
+    characterNode.data?.name?.trim() ||
+    perspectiveNode.data?.narrator?.trim() ||
+    "Character";
+
+  const result = await interpolateCharacterSnapshot({
+    nodes,
+    perspectiveNode,
+    fallbackNarratorName,
+  });
+
+  if (!result) {
+    console.warn("Cannot refresh character; perspective text is empty.");
+    return false;
+  }
+
+  const { characterName, characterTraits, evidenceItems } = result;
+
+  setNodes((currentNodes) =>
+    currentNodes.map((node) => {
+      if (node.id === nodeId && node.type === "character") {
+        const existingData = node.data as CharacterNodeType["data"];
+        return {
+          ...node,
+          data: {
+            ...existingData,
+            traits: characterTraits,
+          },
+        };
+      }
+
+      if (node.id === perspectiveId && node.type === "perspective") {
+        const existingData = node.data as PerspectiveNodeType["data"];
+        const existingEvidence = Array.isArray(existingData?.analysisEvidence)
+          ? (existingData.analysisEvidence as PerspectiveEvidenceItem[])
+          : [];
+        const filteredEvidence = existingEvidence.filter(
+          (entry) => entry.characterId !== nodeId,
+        );
+
+        if (evidenceItems.length === 0) {
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              analysisEvidence: filteredEvidence,
+            },
+          };
+        }
+
+        const evidenceEntry: PerspectiveEvidenceItem = {
+          characterId: nodeId,
+          characterName,
+          items: evidenceItems as PerspectiveEvidenceItem["items"],
+        };
+
+        return {
+          ...node,
+          data: {
+            ...existingData,
+            analysisEvidence: [...filteredEvidence, evidenceEntry],
+          },
+        };
+      }
+
+      return node;
+    }),
+  );
+
+  return true;
 }
