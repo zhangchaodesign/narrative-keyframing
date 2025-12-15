@@ -18,15 +18,80 @@ import {
   TIMELINE_NARRATIVE_TRACK_HEIGHT,
 } from "@/components/TrackView/constants";
 import { buildTimelineData } from "@/lib/utiils/timelineUtils";
+import type {
+  PerspectiveNodeData,
+  CharacterNodeData,
+} from "@/lib/types/workflow";
 
 export function TimelineView() {
   const nodes = useWorkflowStore((state) => state.nodes);
-  const { storyTrack, characterTracks, narrativeTrack, maxPosition } = useMemo(
-    () => buildTimelineData(nodes),
-    [nodes],
-  );
+  const {
+    storyTrack,
+    characterTracks,
+    narrativeTrack,
+    maxPosition,
+    storyOutlineClusters,
+    narrativeClusters,
+  } = useMemo(() => buildTimelineData(nodes), [nodes]);
+
+  // Cluster selection state
+  const [selectedStoryClusterId, setSelectedStoryClusterId] = React.useState<
+    string | null
+  >(null);
+  const [selectedNarrativeClusterId, setSelectedNarrativeClusterId] =
+    React.useState<string | null>(null);
+
+  // Auto-select first cluster on load
+  useEffect(() => {
+    if (storyOutlineClusters.length > 0 && !selectedStoryClusterId) {
+      setSelectedStoryClusterId(storyOutlineClusters[0].id);
+    }
+  }, [storyOutlineClusters, selectedStoryClusterId]);
+
+  // Filter narrative clusters based on selected story cluster
+  const filteredNarrativeClusters = useMemo(() => {
+    if (!selectedStoryClusterId) return narrativeClusters;
+    return narrativeClusters.filter(
+      (cluster) => cluster.linkedEventGroupId === selectedStoryClusterId,
+    );
+  }, [narrativeClusters, selectedStoryClusterId]);
+
+  // Reset narrative cluster selection if current selection is no longer in filtered list
+  useEffect(() => {
+    if (
+      selectedNarrativeClusterId &&
+      !filteredNarrativeClusters.find(
+        (c) => c.id === selectedNarrativeClusterId,
+      )
+    ) {
+      setSelectedNarrativeClusterId(null);
+    }
+  }, [filteredNarrativeClusters, selectedNarrativeClusterId]);
+
+  // Get selected tracks
+  const selectedStoryTrack = useMemo(() => {
+    if (!selectedStoryClusterId) return storyTrack;
+    const cluster = storyOutlineClusters.find(
+      (c) => c.id === selectedStoryClusterId,
+    );
+    return cluster?.track || null;
+  }, [selectedStoryClusterId, storyOutlineClusters, storyTrack]);
+
+  const selectedNarrativeTrack = useMemo(() => {
+    if (!selectedNarrativeClusterId) {
+      // Return null when no cluster selected - hide track completely
+      return null;
+    }
+    const cluster = narrativeClusters.find(
+      (c) => c.id === selectedNarrativeClusterId,
+    );
+    return cluster?.track || null;
+  }, [selectedNarrativeClusterId, narrativeClusters]);
+
   const snapToGrid = true;
-  const totalDuration = storyTrack ? storyTrack.items.length : maxPosition;
+  const totalDuration = selectedStoryTrack
+    ? selectedStoryTrack.items.length
+    : maxPosition;
 
   const timelineRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = React.useState(0);
@@ -88,22 +153,100 @@ export function TimelineView() {
     [snapToGrid],
   );
 
-  // Group character tracks by character
-  const groupedCharacterTracks = characterTracks.reduce((acc, track) => {
-    const charName = track.characterName || "Unknown";
-    if (!acc[charName]) {
-      acc[charName] = [];
+  // Filter character tracks based on connections between story and narrative clusters
+  const filteredCharacterTracks = useMemo(() => {
+    if (!selectedStoryClusterId || !selectedNarrativeClusterId) {
+      // Return empty array - don't show tracks when no narrative cluster selected
+      return [];
     }
-    acc[charName].push(track);
-    return acc;
-  }, {} as Record<string, typeof characterTracks>);
+
+    // Get event IDs from selected story cluster
+    const selectedStoryCluster = storyOutlineClusters.find(
+      (c) => c.id === selectedStoryClusterId,
+    );
+    const storyEventIds = new Set(
+      selectedStoryCluster?.track.items.map((item) => item.nodeId) || [],
+    );
+
+    // Find perspectives that connect story events to narratives
+    const validPerspectiveIds = new Set<string>();
+    characterTracks.forEach((track) => {
+      if (track.type !== "perspective") return;
+
+      track.items.forEach((item) => {
+        const perspectiveNode = nodes.find((n) => n.id === item.nodeId);
+        const perspectiveData = perspectiveNode?.data as
+          | PerspectiveNodeData
+          | undefined;
+
+        // Check if this perspective references an event in the selected story cluster
+        if (
+          perspectiveData?.eventId &&
+          storyEventIds.has(perspectiveData.eventId)
+        ) {
+          validPerspectiveIds.add(item.nodeId);
+        }
+      });
+    });
+
+    // Filter character tracks - only return tracks with valid items
+    const tracksWithItems: typeof characterTracks = [];
+
+    characterTracks.forEach((track) => {
+      if (track.type === "perspective") {
+        // Filter perspective items that reference events in selected story cluster
+        const filteredItems = track.items.filter((item) => {
+          return validPerspectiveIds.has(item.nodeId);
+        });
+        if (filteredItems.length > 0) {
+          tracksWithItems.push({ ...track, items: filteredItems });
+        }
+      } else if (track.type === "character") {
+        // Filter character items that reference valid perspectives
+        const filteredItems = track.items.filter((item) => {
+          const characterNode = nodes.find((n) => n.id === item.nodeId);
+          const characterData = characterNode?.data as
+            | CharacterNodeData
+            | undefined;
+          return characterData?.perspectiveId
+            ? validPerspectiveIds.has(characterData.perspectiveId)
+            : false;
+        });
+        if (filteredItems.length > 0) {
+          tracksWithItems.push({ ...track, items: filteredItems });
+        }
+      }
+    });
+
+    return tracksWithItems;
+  }, [
+    selectedStoryClusterId,
+    selectedNarrativeClusterId,
+    storyOutlineClusters,
+    narrativeClusters,
+    characterTracks,
+    nodes,
+  ]);
+
+  // Group filtered character tracks by character
+  const groupedCharacterTracks = filteredCharacterTracks.reduce(
+    (acc, track) => {
+      const charName = track.characterName || "Unknown";
+      if (!acc[charName]) {
+        acc[charName] = [];
+      }
+      acc[charName].push(track);
+      return acc;
+    },
+    {} as Record<string, typeof characterTracks>,
+  );
 
   // Calculate total timeline height
   const totalTimelineHeight = useMemo(() => {
     let height = TIMELINE_RULER_HEIGHT;
 
     // Story track
-    if (storyTrack) {
+    if (selectedStoryTrack) {
       height += TIMELINE_STORY_TRACK_HEIGHT;
     }
 
@@ -114,13 +257,13 @@ export function TimelineView() {
       height += TIMELINE_CHARACTER_SUBTRACK_HEIGHT; // Character snapshot
     });
 
-    // Narrative track
-    if (narrativeTrack) {
+    // Narrative track - always add height when track exists
+    if (selectedNarrativeTrack) {
       height += TIMELINE_NARRATIVE_TRACK_HEIGHT;
     }
 
     return height;
-  }, [storyTrack, groupedCharacterTracks, narrativeTrack]);
+  }, [selectedStoryTrack, groupedCharacterTracks, selectedNarrativeTrack]);
 
   return (
     <div className="h-full bg-white flex flex-col overflow-hidden">
@@ -129,6 +272,58 @@ export function TimelineView() {
         <div className="px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
             Timeline Overview
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Story Outline Cluster Dropdown */}
+            {storyOutlineClusters.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="story-cluster-select"
+                  className="text-xs text-gray-600"
+                >
+                  Story Outline:
+                </label>
+                <select
+                  id="story-cluster-select"
+                  value={selectedStoryClusterId || ""}
+                  onChange={(e) => setSelectedStoryClusterId(e.target.value)}
+                  className="text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {storyOutlineClusters.map((cluster) => (
+                    <option key={cluster.id} value={cluster.id}>
+                      {cluster.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Narrative Cluster Dropdown */}
+            {filteredNarrativeClusters.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="narrative-cluster-select"
+                  className="text-xs text-gray-600"
+                >
+                  Narrative:
+                </label>
+                <select
+                  id="narrative-cluster-select"
+                  value={selectedNarrativeClusterId || ""}
+                  onChange={(e) =>
+                    setSelectedNarrativeClusterId(e.target.value || null)
+                  }
+                  className="text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">None</option>
+                  {filteredNarrativeClusters.map((cluster) => (
+                    <option key={cluster.id} value={cluster.id}>
+                      {cluster.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -156,9 +351,9 @@ export function TimelineView() {
           />
 
           {/* Story Track */}
-          {storyTrack && (
+          {selectedStoryTrack && (
             <EventTrack
-              track={storyTrack}
+              track={selectedStoryTrack}
               timeToPixel={timeToPixel}
               pixelToTime={pixelToTime}
               snapTime={snapTime}
@@ -181,10 +376,10 @@ export function TimelineView() {
             ),
           )}
 
-          {/* Narrative Cluster Track */}
-          {narrativeTrack && (
+          {/* Narrative Cluster Track - Always show, but items filtered based on selection */}
+          {selectedNarrativeTrack && (
             <NarrativeTrack
-              track={narrativeTrack}
+              track={selectedNarrativeTrack}
               timeToPixel={timeToPixel}
               pixelToTime={pixelToTime}
               snapTime={snapTime}

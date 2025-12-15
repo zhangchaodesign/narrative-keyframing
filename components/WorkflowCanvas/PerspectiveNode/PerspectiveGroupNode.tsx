@@ -96,7 +96,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       >
         {data?.label}
       </div>
-      <div className="absolute right-1 top-1 flex items-center gap-2 rounded bg-white border border-zinc-300 px-2 py-1 text-xs font-semibold tracking-wide text-zinc-800">
+      <div className="absolute right-1 bottom-1 flex items-center gap-2 rounded bg-white border border-zinc-300 px-2 py-1 text-xs font-semibold tracking-wide text-zinc-800">
         <label className="flex items-center gap-2">
           <span>Narrator</span>
           <input

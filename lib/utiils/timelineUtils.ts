@@ -4,11 +4,14 @@ import type {
   PerspectiveNodeData,
   CharacterNodeData,
   NarrativeNodeData,
+  GroupNodeData,
 } from "@/lib/types/workflow";
 import type {
   TimelineData,
   TimelineItem,
   TimelineTrack,
+  StoryOutlineCluster,
+  NarrativeCluster,
 } from "@/lib/types/timeline";
 
 const sortByXPosition = (
@@ -211,10 +214,141 @@ const buildNarrativeTrack = (
   return track;
 };
 
+const buildStoryOutlineClusters = (
+  nodes: WorkflowNode[],
+): {
+  clusters: StoryOutlineCluster[];
+  eventPositionMapByGroup: Map<string, Map<string, number>>;
+} => {
+  const eventGroups = nodes.filter((node) => node.type === "eventGroup");
+  const clusters: StoryOutlineCluster[] = [];
+  const eventPositionMapByGroup = new Map<string, Map<string, number>>();
+
+  eventGroups.forEach((group) => {
+    const groupData = group.data as GroupNodeData | undefined;
+    const groupEvents = nodes
+      .filter((node) => node.type === "event" && node.parentId === group.id)
+      .sort(sortByXPosition);
+
+    const storyItems: TimelineItem[] = [];
+    const eventPositionMap = new Map<string, number>();
+
+    groupEvents.forEach((event, index) => {
+      const position = storyItems.length;
+      const eventData = event.data as EventNodeData | undefined;
+
+      storyItems.push({
+        id: `story-${event.id}`,
+        content:
+          eventData?.description || eventData?.timeline || `Event ${index + 1}`,
+        position,
+        nodeId: event.id,
+        nodeType: "event",
+      });
+
+      eventPositionMap.set(event.id, position);
+    });
+
+    if (storyItems.length > 0) {
+      clusters.push({
+        id: group.id,
+        label: groupData?.label || "Story Outline",
+        track: {
+          id: `story-track-${group.id}`,
+          label: groupData?.label || "Story Outline",
+          type: "story",
+          items: storyItems,
+        },
+        eventGroupId: group.id,
+      });
+      eventPositionMapByGroup.set(group.id, eventPositionMap);
+    }
+  });
+
+  return { clusters, eventPositionMapByGroup };
+};
+
+const buildNarrativeClusters = (
+  nodes: WorkflowNode[],
+  eventPositionMapByGroup: Map<string, Map<string, number>>,
+): NarrativeCluster[] => {
+  const narrativeGroups = nodes.filter(
+    (node) => node.type === "narrativeGroup",
+  );
+  const clusters: NarrativeCluster[] = [];
+
+  narrativeGroups.forEach((group) => {
+    const groupData = group.data as GroupNodeData | undefined;
+    const narratives = nodes
+      .filter((node) => node.type === "narrative" && node.parentId === group.id)
+      .sort(sortByXPosition);
+
+    const narrativeItems: TimelineItem[] = [];
+    let linkedEventGroupId: string | undefined;
+
+    narratives.forEach((node) => {
+      const narrativeData = node.data as NarrativeNodeData | undefined;
+      const eventId = narrativeData?.eventId;
+
+      // Find which event group this narrative is linked to
+      if (eventId && !linkedEventGroupId) {
+        for (const [groupId, eventMap] of eventPositionMapByGroup.entries()) {
+          if (eventMap.has(eventId)) {
+            linkedEventGroupId = groupId;
+            break;
+          }
+        }
+      }
+
+      const eventPositionMap = linkedEventGroupId
+        ? eventPositionMapByGroup.get(linkedEventGroupId)
+        : undefined;
+      const position =
+        (eventId && eventPositionMap
+          ? eventPositionMap.get(eventId)
+          : undefined) ?? 0;
+
+      narrativeItems.push({
+        id: `narrative-${node.id}`,
+        content:
+          narrativeData?.content || narrativeData?.narration || "Narrative",
+        position,
+        nodeId: node.id,
+        nodeType: "narrative",
+      });
+    });
+
+    if (narrativeItems.length > 0) {
+      clusters.push({
+        id: group.id,
+        label: groupData?.label || "Narrative Cluster",
+        track: {
+          id: `narrative-track-${group.id}`,
+          label: groupData?.label || "Narrative Cluster",
+          type: "narrative",
+          items: narrativeItems,
+        },
+        narrativeGroupId: group.id,
+        linkedEventGroupId,
+      });
+    }
+  });
+
+  return clusters;
+};
+
 export const buildTimelineData = (nodes: WorkflowNode[]): TimelineData => {
   const { track: storyTrack, eventPositionMap } = buildEventTrack(nodes);
   const characterTracks = buildPerspectiveTracks(nodes, eventPositionMap);
   const narrativeTrack = buildNarrativeTrack(nodes, eventPositionMap);
+
+  // Build cluster data
+  const { clusters: storyOutlineClusters, eventPositionMapByGroup } =
+    buildStoryOutlineClusters(nodes);
+  const narrativeClusters = buildNarrativeClusters(
+    nodes,
+    eventPositionMapByGroup,
+  );
 
   const maxPosition =
     storyTrack && storyTrack.items.length > 0
@@ -226,5 +360,7 @@ export const buildTimelineData = (nodes: WorkflowNode[]): TimelineData => {
     characterTracks,
     narrativeTrack,
     maxPosition,
+    storyOutlineClusters,
+    narrativeClusters,
   };
 };
