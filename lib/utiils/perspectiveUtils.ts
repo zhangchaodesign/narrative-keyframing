@@ -6,7 +6,7 @@ import type {
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
-import { sortEventsByTimeline } from "@/lib/workflow/workflowUtils";
+import { sortEventsByTimeline } from "@/lib/utiils/workflowUtils";
 
 // =============================================================================
 // STATUS MESSAGES
@@ -529,30 +529,31 @@ export const preparePerspectiveRequest = ({
       const fallbackNarratorName =
         perspectiveNode.data?.narrator?.trim() || "Narrator";
 
-      const characterSnapshotsWithPosition: PositionedCharacterSnapshot[] = characterNodes
-        .filter((characterNode) => {
-          const assignedPerspectiveId =
-            characterNode.data?.perspectiveId?.trim() ?? "";
-          return assignedPerspectiveId === perspectiveNode.id;
-        })
-        .map((characterNode) => {
-          const name = characterNode.data?.name?.trim() || characterNode.id;
-          const traits = characterNode.data?.traits ?? {
-            physiology: [],
-            psychology: [],
-            sociology: [],
-          };
+      const characterSnapshotsWithPosition: PositionedCharacterSnapshot[] =
+        characterNodes
+          .filter((characterNode) => {
+            const assignedPerspectiveId =
+              characterNode.data?.perspectiveId?.trim() ?? "";
+            return assignedPerspectiveId === perspectiveNode.id;
+          })
+          .map((characterNode) => {
+            const name = characterNode.data?.name?.trim() || characterNode.id;
+            const traits = characterNode.data?.traits ?? {
+              physiology: [],
+              psychology: [],
+              sociology: [],
+            };
 
-          return {
-            name,
-            positionX: characterNode.position.x,
-            traits: {
-              physiology: traits.physiology ?? [],
-              psychology: traits.psychology ?? [],
-              sociology: traits.sociology ?? [],
-            },
-          };
-        });
+            return {
+              name,
+              positionX: characterNode.position.x,
+              traits: {
+                physiology: traits.physiology ?? [],
+                psychology: traits.psychology ?? [],
+                sociology: traits.sociology ?? [],
+              },
+            };
+          });
 
       let characterSnapshots: CharacterSnapshotPayload[] =
         characterSnapshotsWithPosition
@@ -693,9 +694,7 @@ export async function analyzeSinglePerspectiveEvidence(
   }
 
   const hasCharacterAttributes = target.characters.some((character) =>
-    character.attributes.some(
-      (attribute) => attribute.value.trim().length > 0,
-    ),
+    character.attributes.some((attribute) => attribute.value.trim().length > 0),
   );
 
   if (!hasCharacterAttributes) {

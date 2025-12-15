@@ -3,23 +3,19 @@
 import { useCallback } from "react";
 import { TbListSearch, TbPencil, TbCheck, TbRefresh } from "react-icons/tb";
 import type { TimelineItem } from "@/lib/types/timeline";
-import type {
-  PerspectiveNodeType,
-  WorkflowNode,
-} from "@/lib/types/workflow";
+import type { PerspectiveNodeType, WorkflowNode } from "@/lib/types/workflow";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import {
   analyzeSinglePerspectiveEvidence,
   regenerateSinglePerspective,
   PERSPECTIVE_MESSAGES,
-} from "@/lib/workflow/perspectiveActions";
+} from "@/lib/utiils/perspectiveUtils";
 
 type PerspectiveBlockMenuProps = {
   item: TimelineItem;
   isEditing?: boolean;
   onToggleEdit?: () => void;
 };
-
 
 export function PerspectiveBlockMenu({
   item,
@@ -92,13 +88,7 @@ export function PerspectiveBlockMenu({
       analysisStatusMessage: result.message,
       analysisEvidence: result.evidence,
     });
-  }, [
-    edges,
-    isAnalyzingEvidence,
-    item.nodeId,
-    nodes,
-    updateAnalysisState,
-  ]);
+  }, [edges, isAnalyzingEvidence, item.nodeId, nodes, updateAnalysisState]);
 
   const handleRegeneratePerspective = useCallback(async () => {
     if (isRegenerating || isEditing || !hasCharacterConnection) {

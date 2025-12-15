@@ -29,7 +29,7 @@ import {
   createStoryOutlineCluster,
   createNarrativeGroup,
   nodeColor,
-} from "@/lib/workflow/workflowUtils";
+} from "@/lib/utiils/workflowUtils";
 
 const nodeTypes: NodeTypes = {
   event: EventNode,

@@ -16,7 +16,7 @@ import type {
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 
 const zoomSelector = (s: any) => s.transform[2] >= 0.9;

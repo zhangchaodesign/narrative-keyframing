@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 import { PerspectiveBlock } from "@/components/TimelineView/CharacterTrack/PerspectiveBlock";
 import { CharacterBlock } from "@/components/TimelineView/CharacterTrack/CharacterBlock";
@@ -66,7 +66,9 @@ export function CharacterTrack({
             style={{ width: TIMELINE_LABEL_WIDTH }}
           >
             <div className="flex items-center">
-              <span className={cn(geistMono.className, "text-xs text-gray-600")}>
+              <span
+                className={cn(geistMono.className, "text-xs text-gray-600")}
+              >
                 Perspective
               </span>
               <PerspectiveTrackMenu

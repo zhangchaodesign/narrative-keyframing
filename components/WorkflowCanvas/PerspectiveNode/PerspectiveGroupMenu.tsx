@@ -13,7 +13,7 @@ import {
   cloneData,
   deleteNodeCluster,
   generateUniqueUuidId,
-} from "@/lib/workflow/workflowUtils";
+} from "@/lib/utiils/workflowUtils";
 import {
   generateMultiplePerspectives,
   analyzeMultiplePerspectivesEvidence,
@@ -21,7 +21,7 @@ import {
   setPerspectivesAnalyzing,
   applyGeneratedPerspectives,
   applyAnalysisResults,
-} from "@/lib/workflow/perspectiveActions";
+} from "@/lib/utiils/perspectiveUtils";
 
 type PerspectiveGroupMenuProps = {
   nodeId: string;

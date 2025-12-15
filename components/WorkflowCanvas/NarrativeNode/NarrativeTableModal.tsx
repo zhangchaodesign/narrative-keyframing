@@ -6,7 +6,7 @@ import { TbX, TbHighlight, TbRefresh } from "react-icons/tb";
 import { useReactFlow } from "@xyflow/react";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { SelectedSnippet } from "@/lib/stores/workflowStore";
-import { findTextMatches } from "@/lib/utils";
+import { findTextMatches } from "@/lib/utiils/sharedUtils";
 import type { WorkflowNode, WorkflowEdge } from "@/lib/types/workflow";
 
 type EventData = {

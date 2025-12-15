@@ -14,7 +14,7 @@ import {
   analyzeSinglePerspectiveEvidence,
   regenerateSinglePerspective,
   PERSPECTIVE_MESSAGES,
-} from "@/lib/workflow/perspectiveActions";
+} from "@/lib/utiils/perspectiveUtils";
 
 type PerspectiveMenuProps = {
   nodeId: string;
@@ -94,13 +94,7 @@ export function PerspectiveMenu({
       analysisStatusMessage: result.message,
       analysisEvidence: result.evidence,
     });
-  }, [
-    getEdges,
-    getNodes,
-    isAnalyzingEvidence,
-    nodeId,
-    updateAnalysisState,
-  ]);
+  }, [getEdges, getNodes, isAnalyzingEvidence, nodeId, updateAnalysisState]);
 
   const handleRegeneratePerspective = useCallback(async () => {
     if (isRegenerating || isEditing || !hasCharacterConnection) {
@@ -127,7 +121,11 @@ export function PerspectiveMenu({
     );
 
     try {
-      const reflection = await regenerateSinglePerspective(nodeId, nodes, edges);
+      const reflection = await regenerateSinglePerspective(
+        nodeId,
+        nodes,
+        edges,
+      );
       const hasContent = reflection.trim().length > 0;
 
       setNodes((currentNodes) =>

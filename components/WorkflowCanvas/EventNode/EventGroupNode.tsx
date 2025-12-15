@@ -7,14 +7,14 @@ import { TbRefresh, TbPlus } from "react-icons/tb";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { EventGroupMenu } from "@/components/WorkflowCanvas/EventNode/EventGroupMenu";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
-import { createPerspectiveGroup } from "@/lib/workflow/workflowUtils";
+import { createPerspectiveGroup } from "@/lib/utiils/workflowUtils";
 import type {
   GroupNodeType,
   EventNodeType,
   WorkflowNode,
   WorkflowEdge,
 } from "@/lib/types/workflow";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 
 export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {

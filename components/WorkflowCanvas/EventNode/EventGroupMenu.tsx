@@ -9,7 +9,7 @@ import {
   cloneData,
   deleteNodeCluster,
   generateUniqueUuidId,
-} from "@/lib/workflow/workflowUtils";
+} from "@/lib/utiils/workflowUtils";
 
 type EventGroupMenuProps = {
   nodeId: string;
@@ -72,7 +72,8 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
 
     // Generate new IDs for all child nodes and build the complete ID map
     const childNodesWithNewIds = childNodes.map((original) => {
-      const prefix = original.type === "event" ? "event" : original.type ?? "node";
+      const prefix =
+        original.type === "event" ? "event" : original.type ?? "node";
       const newId = generateUniqueUuidId(prefix, existingNodeIds);
       existingNodeIds.add(newId);
       idMap.set(original.id, newId);

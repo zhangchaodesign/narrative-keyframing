@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from "react";
-import { findTextMatches } from "@/lib/utils";
+import { findTextMatches } from "@/lib/utiils/sharedUtils";
 
 interface NarrativeContentProps {
   narration: string;

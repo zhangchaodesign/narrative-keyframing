@@ -12,7 +12,7 @@ import {
   TIMELINE_RIGHT_PADDING,
   TIMELINE_RULER_HEIGHT,
 } from "@/components/TimelineView/constants";
-import { buildTimelineData } from "@/lib/timeline/buildTimelineData";
+import { buildTimelineData } from "@/lib/utiils/timelineUtils";
 
 export function TimelineView() {
   const nodes = useWorkflowStore((state) => state.nodes);

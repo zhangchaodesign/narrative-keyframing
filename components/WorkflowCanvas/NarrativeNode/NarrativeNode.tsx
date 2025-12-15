@@ -5,7 +5,7 @@ import { Position, type NodeProps, useStore } from "@xyflow/react";
 import { NarrativeHandle } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeHandle";
 import { NarrativeContent } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeContent";
 import type { EventNodeType, NarrativeNodeType } from "@/lib/types/workflow";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 
 const DEFAULT_NARRATIVE_GROUP_ID = "narrative-group";

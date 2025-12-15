@@ -10,7 +10,7 @@ import {
   setPerspectivesAnalyzing,
   applyGeneratedPerspectives,
   applyAnalysisResults,
-} from "@/lib/workflow/perspectiveActions";
+} from "@/lib/utiils/perspectiveUtils";
 
 type PerspectiveTrackMenuProps = {
   characterName: string;

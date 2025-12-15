@@ -10,7 +10,7 @@ import {
   type EvidenceCategory,
   type EvidenceAnalysisResponse,
   type PerspectiveEvidenceTarget,
-} from "@/lib/workflow/perspectiveActions";
+} from "@/lib/utiils/perspectiveUtils";
 
 const TraitCategorySchema = z.enum(TRAIT_CATEGORIES);
 const EvidenceCategorySchema = z.enum(EVIDENCE_CATEGORIES);

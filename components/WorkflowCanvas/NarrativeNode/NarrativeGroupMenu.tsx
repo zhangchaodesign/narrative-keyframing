@@ -21,9 +21,9 @@ import {
   cloneData,
   deleteNodeCluster,
   generateUniqueUuidId,
-} from "@/lib/workflow/workflowUtils";
+} from "@/lib/utiils/workflowUtils";
 import { useEditorStore } from "@/lib/stores/editorStore";
-import { SlateUtils } from "@/lib/slateUtils";
+import { SlateUtils } from "@/lib/utiils/slateUtils";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { NarrativeGenerationModal } from "./NarrativeGenerationModal";
 import { NarrativeTableModal } from "./NarrativeTableModal";

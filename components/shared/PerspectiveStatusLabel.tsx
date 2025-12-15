@@ -1,6 +1,6 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
-import { PERSPECTIVE_MESSAGES } from "@/lib/workflow/perspectiveActions";
+import { PERSPECTIVE_MESSAGES } from "@/lib/utiils/perspectiveUtils";
 
 interface PerspectiveStatusLabelProps {
   isAnalyzingEvidence: boolean;

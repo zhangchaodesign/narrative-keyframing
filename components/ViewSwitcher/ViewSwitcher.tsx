@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utiils/sharedUtils";
 import { TbLayoutGrid, TbTimeline } from "react-icons/tb";
 
 export type ViewMode = "workflow" | "timeline";

@@ -22,8 +22,8 @@ import type {
   WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
-import { cn } from "@/lib/utils";
-import { interpolateCharacterSnapshot } from "@/lib/workflow/workflowUtils";
+import { cn } from "@/lib/utiils/sharedUtils";
+import { interpolateCharacterSnapshot } from "@/lib/utiils/characterUtils";
 import { geistMono } from "@/app/fonts";
 
 const CHARACTER_VERTICAL_GAP = 210;

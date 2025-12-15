@@ -2,7 +2,7 @@
 
 import React from "react";
 import { geistMono } from "@/app/fonts";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utiils/sharedUtils";
 import type { TimelineItem } from "@/lib/types/timeline";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TimelineView/constants";
 

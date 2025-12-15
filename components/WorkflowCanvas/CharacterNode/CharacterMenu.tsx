@@ -14,8 +14,8 @@ import type {
 import {
   deleteNodeWithEdges,
   duplicateWorkflowNode,
-  interpolateCharacterSnapshot,
-} from "@/lib/workflow/workflowUtils";
+} from "@/lib/utiils/workflowUtils";
+import { interpolateCharacterSnapshot } from "@/lib/utiils/characterUtils";
 
 type CharacterMenuProps = {
   nodeId: string;

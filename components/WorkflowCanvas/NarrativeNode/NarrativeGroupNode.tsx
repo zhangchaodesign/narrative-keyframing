@@ -4,7 +4,7 @@ import { Position, type NodeProps } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { NarrativeGroupMenu } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeGroupMenu";
 import type { GroupNodeType } from "@/lib/types/workflow";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 
 export function NarrativeGroupNode({ id, data }: NodeProps<GroupNodeType>) {

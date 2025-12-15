@@ -11,7 +11,7 @@ import {
 } from "react";
 import { useStore } from "@xyflow/react";
 import { TbCheck, TbPencil, TbX } from "react-icons/tb";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utiils/sharedUtils";
 import {
   buildEvidenceAttributeKey,
   useWorkflowStore,

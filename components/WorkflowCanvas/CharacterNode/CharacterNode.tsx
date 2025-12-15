@@ -6,7 +6,7 @@ import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { CharacterMenu } from "@/components/WorkflowCanvas/CharacterNode/CharacterMenu";
 import { TraitSection } from "@/components/WorkflowCanvas/CharacterNode/TraitSection";
 import type { CharacterNodeType, CharacterTraits } from "@/lib/types/workflow";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 
 type TraitCategory = keyof CharacterTraits;

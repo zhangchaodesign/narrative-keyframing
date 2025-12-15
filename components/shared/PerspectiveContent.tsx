@@ -16,7 +16,7 @@ import type {
   PerspectiveEvidenceItem,
   WorkflowNode,
 } from "@/lib/types/workflow";
-import { findTextMatches } from "@/lib/utils";
+import { findTextMatches } from "@/lib/utiils/sharedUtils";
 
 interface PerspectiveContentProps {
   perspectiveNodeId: string;
@@ -120,9 +120,7 @@ export function PerspectiveContent({
   const toggleSnippet = useWorkflowStore((state) => state.toggleSnippet);
 
   // Get the parent group ID of this perspective node to filter character selections
-  const perspectiveNode = nodes.find(
-    (node) => node.id === perspectiveNodeId,
-  );
+  const perspectiveNode = nodes.find((node) => node.id === perspectiveNodeId);
   const perspectiveParentId = perspectiveNode?.parentId;
 
   // Get character nodes in this group to check their parentId
@@ -250,8 +248,10 @@ export function PerspectiveContent({
   // Variant-specific styles
   const textSize = variant === "block" ? "text-[11px]" : "text-[10px]";
   const marginTop = variant === "block" ? "mt-2" : "";
-  const placeholder = variant === "block" ? "Write the reflection..." : undefined;
-  const textareaBg = variant === "block" ? "bg-white/80 focus:bg-white" : "bg-white";
+  const placeholder =
+    variant === "block" ? "Write the reflection..." : undefined;
+  const textareaBg =
+    variant === "block" ? "bg-white/80 focus:bg-white" : "bg-white";
 
   if (isEditing) {
     return (
