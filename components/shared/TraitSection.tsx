@@ -8,7 +8,7 @@ import {
 } from "react";
 import { TbCheck, TbPlus, TbX } from "react-icons/tb";
 import type { CharacterTraits } from "@/lib/types/workflow";
-import { TraitItem } from "@/components/WorkflowCanvas/CharacterNode/TraitItem";
+import { TraitItem } from "@/components/shared/TraitItem";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 
 type TraitCategory = keyof CharacterTraits;
