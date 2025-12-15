@@ -11,6 +11,7 @@ import {
   TIMELINE_LEFT_PADDING,
   TIMELINE_RIGHT_PADDING,
   TIMELINE_RULER_HEIGHT,
+  TIMELINE_UNIT_WIDTH,
 } from "@/components/TimelineView/constants";
 import { buildTimelineData } from "@/lib/utiils/timelineUtils";
 
@@ -39,25 +40,28 @@ export function TimelineView() {
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
-  // Calculate adaptive spacing based on container width
-  const availableWidth = Math.max(
-    0,
-    containerWidth -
-      TIMELINE_LABEL_WIDTH -
-      TIMELINE_LEFT_PADDING -
-      TIMELINE_RIGHT_PADDING,
+  // Calculate timeline width based on fixed spacing
+  const timelineScale = TIMELINE_UNIT_WIDTH;
+  const timelineUnits = Math.max(
+    1,
+    Math.ceil(totalDuration),
+    (maxPosition ?? 0) + 1,
   );
-  const adaptiveScale =
-    maxPosition > 0 ? availableWidth / (maxPosition + 1) : 100;
+  const targetTimelineWidth =
+    TIMELINE_LABEL_WIDTH +
+    TIMELINE_LEFT_PADDING +
+    TIMELINE_RIGHT_PADDING +
+    timelineUnits * timelineScale;
+  const timelineWidth = Math.max(containerWidth, targetTimelineWidth);
 
   // Convert time to pixel position
   const timeToPixel = useCallback(
     (time: number) => {
       return (
-        TIMELINE_LABEL_WIDTH + TIMELINE_LEFT_PADDING + time * adaptiveScale
+        TIMELINE_LABEL_WIDTH + TIMELINE_LEFT_PADDING + time * timelineScale
       );
     },
-    [adaptiveScale],
+    [timelineScale],
   );
 
   // Convert pixel position to time
@@ -65,10 +69,10 @@ export function TimelineView() {
     (pixel: number) => {
       return Math.max(
         0,
-        (pixel - TIMELINE_LABEL_WIDTH - TIMELINE_LEFT_PADDING) / adaptiveScale,
+        (pixel - TIMELINE_LABEL_WIDTH - TIMELINE_LEFT_PADDING) / timelineScale,
       );
     },
-    [adaptiveScale],
+    [timelineScale],
   );
 
   // Snap time to grid if enabled
@@ -113,7 +117,7 @@ export function TimelineView() {
         <div
           className="relative h-full"
           style={{
-            width: "100%",
+            width: `${timelineWidth}px`,
             minHeight: "100%",
           }}
         >
@@ -130,7 +134,7 @@ export function TimelineView() {
               timeToPixel={timeToPixel}
               pixelToTime={pixelToTime}
               snapTime={snapTime}
-              timelineScale={adaptiveScale}
+              timelineScale={timelineScale}
             />
           )}
 
@@ -144,7 +148,7 @@ export function TimelineView() {
                 timeToPixel={timeToPixel}
                 pixelToTime={pixelToTime}
                 snapTime={snapTime}
-                timelineScale={adaptiveScale}
+                timelineScale={timelineScale}
               />
             ),
           )}
@@ -156,7 +160,7 @@ export function TimelineView() {
               timeToPixel={timeToPixel}
               pixelToTime={pixelToTime}
               snapTime={snapTime}
-              timelineScale={adaptiveScale}
+              timelineScale={timelineScale}
             />
           )}
 

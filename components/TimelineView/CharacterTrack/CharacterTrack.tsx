@@ -65,7 +65,7 @@ export function CharacterTrack({
             className="absolute left-0 top-0 h-full bg-gray-50 border-r border-gray-200 flex items-center justify-center z-10"
             style={{ width: TIMELINE_LABEL_WIDTH }}
           >
-            <div className="flex items-center">
+            <div className="flex flex-col gap-2 items-center">
               <span
                 className={cn(geistMono.className, "text-xs text-gray-600")}
               >
