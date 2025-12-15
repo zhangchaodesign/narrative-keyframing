@@ -23,8 +23,8 @@ import {
 import { useEditorStore } from "@/lib/stores/editorStore";
 import { SlateUtils } from "@/lib/utiils/slateUtils";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
-import { NarrativeGenerationModal } from "./NarrativeGenerationModal";
-import { NarrativeTableModal } from "./NarrativeTableModal";
+import { NarrativeGenerationModal } from "@/components/shared/NarrativeGenerationModal";
+import { NarrativeTableModal } from "@/components/shared/NarrativeTableModal";
 
 type NarrativeGroupMenuProps = {
   nodeId: string;

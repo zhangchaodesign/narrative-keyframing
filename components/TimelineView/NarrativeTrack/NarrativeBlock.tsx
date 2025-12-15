@@ -1,18 +1,13 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ChangeEvent,
-} from "react";
+import React, { useCallback, useMemo } from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 import type { TimelineItem } from "@/lib/types/timeline";
 import type { NarrativeNodeType } from "@/lib/types/workflow";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TimelineView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
+import { NarrativeContent } from "@/components/shared/NarrativeContent";
 
 interface NarrativeBlockProps {
   item: TimelineItem;
@@ -25,7 +20,7 @@ export function NarrativeBlock({
   timeToPixel,
   timelineScale,
 }: NarrativeBlockProps) {
-  const setNodes = useWorkflowStore((state) => state.setNodes);
+  const nodes = useWorkflowStore((state) => state.nodes);
   const narrativeNode = useWorkflowStore(
     useCallback(
       (state) =>
@@ -40,53 +35,29 @@ export function NarrativeBlock({
     | NarrativeNodeType["data"]
     | undefined;
   const isLoading = narrativeData?.isLoading ?? false;
-  const [draftNarration, setDraftNarration] = useState(
-    narrativeData?.narration ?? item.content,
-  );
-
-  useEffect(() => {
-    setDraftNarration(narrativeData?.narration ?? item.content);
-  }, [item.content, narrativeData?.narration]);
+  const narrationText = narrativeData?.narration ?? item.content;
 
   const safeWidth = Math.max(timelineScale - 8, 24);
   const itemWidth = Math.min(safeWidth, timelineScale);
   const leftPosition = timeToPixel(item.position) - TIMELINE_LABEL_WIDTH;
 
-  const handleNarrationChange = useCallback(
-    (event: ChangeEvent<HTMLTextAreaElement>) => {
-      const nextValue = event.target.value;
-      setDraftNarration(nextValue);
-      setNodes((nodes) =>
-        nodes.map((node) => {
-          if (node.id !== item.nodeId || node.type !== "narrative") {
-            return node;
-          }
-
-          const currentData = node.data as
-            | NarrativeNodeType["data"]
-            | undefined;
-          if (!currentData) {
-            return node;
-          }
-
-          return {
-            ...node,
-            data: {
-              ...currentData,
-              narration: nextValue,
-              content: nextValue,
-            },
-          };
-        }),
-      );
-    },
-    [item.nodeId, setNodes],
-  );
-
-  const title = useMemo(
-    () => `Narrative ${item.position + 1}`,
-    [item.position],
-  );
+  const narrativeSequence = useMemo(() => {
+    if (!nodes || nodes.length === 0) {
+      return item.position + 1;
+    }
+    const narrativeNodes = nodes
+      .filter(
+        (node): node is NarrativeNodeType =>
+          node.type === "narrative" &&
+          node.parentId === narrativeNode?.parentId,
+      )
+      .sort((a, b) => a.position.x - b.position.x);
+    const index = narrativeNodes.findIndex((node) => node.id === item.nodeId);
+    if (index >= 0) {
+      return index + 1;
+    }
+    return item.position + 1;
+  }, [item.nodeId, item.position, narrativeNode?.parentId, nodes]);
 
   return (
     <div
@@ -96,7 +67,7 @@ export function NarrativeBlock({
         width: `${itemWidth}px`,
       }}
     >
-      <div className="group relative flex h-full flex-col rounded-lg border-2 border-primary bg-white/95 px-3 py-2 text-xs text-zinc-800 transition-shadow hover:shadow-lg">
+      <div className="group relative flex h-full flex-col rounded-lg border-2 border-primary bg-white text-xs text-zinc-800 transition-shadow hover:shadow-lg">
         {isLoading && (
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-green-600"></span>
@@ -105,39 +76,23 @@ export function NarrativeBlock({
             </span>
           </div>
         )}
-        <div
-          className={cn(
-            geistMono.className,
-            "flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-800",
-          )}
-        >
-          <span aria-hidden="true">📖</span>
-          <span>{title}</span>
+        <div className="flex flex-1 flex-col gap-2 p-3 min-h-0">
+          <div
+            className={cn(
+              geistMono.className,
+              "flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-800",
+            )}
+          >
+            <span className="flex items-center gap-1" aria-hidden="true">
+              <span>📖</span>
+              <span>Narration {narrativeSequence}</span>
+            </span>
+          </div>
+          <NarrativeContent
+            narration={narrationText}
+            snippetUsages={narrativeData?.snippetUsages}
+          />
         </div>
-        <textarea
-          value={draftNarration}
-          onChange={handleNarrationChange}
-          placeholder="Write the narration..."
-          rows={4}
-          onPointerDown={(event) => {
-            event.stopPropagation();
-          }}
-          onWheel={(event) => {
-            if (event.ctrlKey || event.metaKey) {
-              return;
-            }
-            event.stopPropagation();
-            event.nativeEvent.stopImmediatePropagation?.();
-          }}
-          onWheelCapture={(event) => {
-            if (event.ctrlKey || event.metaKey) {
-              return;
-            }
-            event.stopPropagation();
-            event.nativeEvent.stopImmediatePropagation?.();
-          }}
-          className="mt-2 w-full flex-1 resize-none rounded border border-zinc-300 bg-white/80 px-2 py-1 text-[11px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400 nodrag nopan"
-        />
       </div>
     </div>
   );
