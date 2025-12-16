@@ -6,6 +6,7 @@ import type {
   WorkflowNode,
   EventNodeType,
   GroupNodeData,
+  ThirdPersonGroupNodeType,
 } from "@/lib/types/workflow";
 import { cloneData, generateUniqueUuidId } from "@/lib/utiils/workflowUtils";
 
@@ -176,6 +177,36 @@ export const buildNarrativeEventsData = (
     return [];
   }
 
+  const narrativeGroupNode = nodes.find(
+    (node): node is ThirdPersonGroupNodeType =>
+      node.id === groupId && node.type === "narrativeGroup",
+  );
+  const connectedEventGroupId =
+    narrativeGroupNode?.data?.connectedEventGroup?.id;
+
+  const eventNodes = nodes.filter(
+    (node): node is EventNodeType => node.type === "event",
+  );
+  const eventNodeMap = new Map(
+    eventNodes.map((eventNode) => [eventNode.id, eventNode]),
+  );
+  const eventNodesByGroup = new Map<string, EventNodeType[]>();
+  eventNodes.forEach((eventNode) => {
+    if (!eventNode.parentId) {
+      return;
+    }
+    const existing = eventNodesByGroup.get(eventNode.parentId) ?? [];
+    existing.push(eventNode);
+    eventNodesByGroup.set(eventNode.parentId, existing);
+  });
+  eventNodesByGroup.forEach((events) => {
+    events.sort(
+      (a, b) =>
+        (a.position.x ?? 0) - (b.position.x ?? 0) ||
+        (a.position.y ?? 0) - (b.position.y ?? 0),
+    );
+  });
+
   const connectedPerspectiveGroupIds = edges
     .filter((edge) => edge.target === groupId)
     .map((edge) => edge.source)
@@ -190,26 +221,67 @@ export const buildNarrativeEventsData = (
       node.parentId &&
       connectedPerspectiveGroupIds.includes(node.parentId),
   ) as PerspectiveNodeType[];
+  const perspectiveNodesByGroup = new Map<string, PerspectiveNodeType[]>();
+  connectedPerspectiveGroupIds.forEach((perspectiveGroupId) => {
+    const groupNodes = linkedPerspectiveNodes
+      .filter((node) => node.parentId === perspectiveGroupId)
+      .sort(
+        (a, b) =>
+          (a.position.x ?? 0) - (b.position.x ?? 0) ||
+          (a.position.y ?? 0) - (b.position.y ?? 0),
+      );
+    perspectiveNodesByGroup.set(perspectiveGroupId, groupNodes);
+  });
+
+  const orderedNarratives = [...narrativeNodes].sort(
+    (a, b) =>
+      (a.position.x ?? 0) - (b.position.x ?? 0) ||
+      (a.position.y ?? 0) - (b.position.y ?? 0),
+  );
+  const narrativeIndexMap = new Map<string, number>();
+  orderedNarratives.forEach((node, index) => {
+    narrativeIndexMap.set(node.id, index);
+  });
+
+  const groupedEvents = connectedEventGroupId
+    ? eventNodesByGroup.get(connectedEventGroupId)
+    : undefined;
 
   return narrativeNodes.map((narrativeNode) => {
-    const eventId = narrativeNode.data?.eventId;
-    let eventDescription = "";
-    let eventTimeline = "";
-
-    if (eventId) {
-      const eventNode = nodes.find(
-        (node): node is EventNodeType =>
-          node.id === eventId && node.type === "event",
-      );
-      if (eventNode) {
-        eventDescription = eventNode.data?.description ?? "";
-        eventTimeline = eventNode.data?.timeline ?? "";
-      }
+    const narrativeIndex = narrativeIndexMap.get(narrativeNode.id) ?? 0;
+    let eventNodeForNarrative: EventNodeType | undefined;
+    if (groupedEvents && groupedEvents.length > 0) {
+      eventNodeForNarrative =
+        groupedEvents[Math.min(narrativeIndex, groupedEvents.length - 1)];
     }
 
-    const perspectiveNodesForEvent = linkedPerspectiveNodes.filter(
-      (pNode) => pNode.data?.eventId === eventId,
-    );
+    const fallbackEventId = narrativeNode.data?.eventId;
+    if (!eventNodeForNarrative && fallbackEventId) {
+      eventNodeForNarrative = eventNodeMap.get(fallbackEventId);
+    }
+
+    const resolvedEventId = eventNodeForNarrative?.id ?? fallbackEventId;
+    const eventDescription = eventNodeForNarrative?.data?.description ?? "";
+    const eventTimeline = eventNodeForNarrative?.data?.timeline ?? "";
+
+    let perspectiveNodesForEvent: PerspectiveNodeType[] = [];
+    connectedPerspectiveGroupIds.forEach((groupId) => {
+      const groupNodes = perspectiveNodesByGroup.get(groupId);
+      if (!groupNodes || groupNodes.length === 0) {
+        return;
+      }
+      const targetIndex = Math.min(narrativeIndex, groupNodes.length - 1);
+      const candidate = groupNodes[targetIndex];
+      if (candidate) {
+        perspectiveNodesForEvent.push(candidate);
+      }
+    });
+
+    if (perspectiveNodesForEvent.length === 0 && resolvedEventId) {
+      perspectiveNodesForEvent = linkedPerspectiveNodes.filter(
+        (pNode) => pNode.data?.eventId === resolvedEventId,
+      );
+    }
 
     const snippetsForEvent: NarrativeEventData["snippets"] = [];
     perspectiveNodesForEvent.forEach((pNode) => {
@@ -234,7 +306,7 @@ export const buildNarrativeEventsData = (
 
     return {
       narrativeNodeId: narrativeNode.id,
-      eventId,
+      eventId: resolvedEventId,
       eventDescription,
       eventTimeline,
       snippets: snippetsForEvent,

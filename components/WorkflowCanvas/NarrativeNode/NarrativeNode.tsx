@@ -7,7 +7,7 @@ import { NarrativeContent } from "@/components/shared/NarrativeContent";
 import type {
   EventNodeType,
   NarrativeNodeType,
-  PerspectiveGroupNodeType,
+  ThirdPersonGroupNodeType,
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
@@ -16,7 +16,6 @@ const DEFAULT_NARRATIVE_GROUP_ID = "narrative-group";
 
 export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
   const nodes = useStore((store) => store.nodes);
-  const edges = useStore((store) => store.edges);
   const isLoading = data?.isLoading ?? false;
 
   // Calculate narrative sequence number based on position
@@ -40,27 +39,12 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
     );
     const narrativeGroupId =
       narrativeNode?.parentId ?? DEFAULT_NARRATIVE_GROUP_ID;
-    const perspectiveBridgeEdge = edges.find(
-      (edge) =>
-        ((edge.target === narrativeGroupId &&
-          edge.targetHandle === "group-bridge") ||
-          (edge.source === narrativeGroupId &&
-            edge.sourceHandle === "group-bridge")) &&
-        (edge.sourceHandle === "narrative-bridge" ||
-          edge.targetHandle === "narrative-bridge"),
+    const narrativeGroup = nodes.find(
+      (node): node is ThirdPersonGroupNodeType =>
+        node.type === "narrativeGroup" && node.id === narrativeGroupId,
     );
-    if (!perspectiveBridgeEdge) {
-      return undefined;
-    }
-
-    const perspectiveGroupNode = nodes.find(
-      (node): node is PerspectiveGroupNodeType =>
-        node.type === "perspectiveGroup" &&
-        (node.id === perspectiveBridgeEdge.source ||
-          node.id === perspectiveBridgeEdge.target),
-    );
-    return perspectiveGroupNode?.data?.connectedEventGroup;
-  }, [edges, id, nodes]);
+    return narrativeGroup?.data?.connectedEventGroup;
+  }, [id, nodes]);
 
   // Find the event node and related metadata for display
   const eventMetadata = useMemo(() => {

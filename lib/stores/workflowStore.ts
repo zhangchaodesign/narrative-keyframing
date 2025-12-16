@@ -10,12 +10,15 @@ import {
 import {
   initialEdges,
   initialNodes,
-  type CharacterNodeType,
-  type PerspectiveGroupNodeType,
-  type PerspectiveNodeType,
-  type WorkflowEdge,
-  type WorkflowNode,
 } from "@/components/WorkflowCanvas/workflow.constants";
+import type {
+  CharacterNodeType,
+  PerspectiveGroupNodeType,
+  PerspectiveNodeType,
+  ThirdPersonGroupNodeType,
+  WorkflowEdge,
+  WorkflowNode,
+} from "@/lib/types/workflow";
 
 type StateUpdater<T> = T | ((state: T) => T);
 
@@ -92,12 +95,11 @@ const buildCharacterNodeData = (
   currentData: CharacterNodeType["data"] | undefined,
   perspectiveId: string,
 ): CharacterNodeType["data"] => {
-  const baseTraits =
-    currentData?.traits ?? {
-      physiology: [],
-      psychology: [],
-      sociology: [],
-    };
+  const baseTraits = currentData?.traits ?? {
+    physiology: [],
+    psychology: [],
+    sociology: [],
+  };
 
   return {
     ...(currentData ?? {
@@ -155,7 +157,9 @@ const synchronizeCharacterPerspectiveLinks = (
   const nodeLookup = new Map(nodes.map((node) => [node.id, node]));
   const perspectiveParentLookup = new Map(
     nodes
-      .filter((node): node is PerspectiveNodeType => node.type === "perspective")
+      .filter(
+        (node): node is PerspectiveNodeType => node.type === "perspective",
+      )
       .map((node) => [node.id, node.parentId]),
   );
   const characterAssignments = new Map<string, string>();
@@ -227,7 +231,8 @@ const synchronizePerspectiveGroupEventLinks = (
   }
 
   const perspectiveGroups = nodes.filter(
-    (node): node is PerspectiveGroupNodeType => node.type === "perspectiveGroup",
+    (node): node is PerspectiveGroupNodeType =>
+      node.type === "perspectiveGroup",
   );
   if (perspectiveGroups.length === 0) {
     return nodes;
@@ -305,10 +310,8 @@ const synchronizePerspectiveGroupEventLinks = (
         return node;
       }
 
-      const { connectedEventGroup: _removed, ...restData } = currentData as Record<
-        string,
-        unknown
-      >;
+      const { connectedEventGroup: _removed, ...restData } =
+        currentData as Record<string, unknown>;
       changed = true;
       return {
         ...node,
@@ -338,12 +341,128 @@ const synchronizePerspectiveGroupEventLinks = (
   return changed ? updatedNodes : nodes;
 };
 
+const synchronizeNarrativeGroupEventLinks = (
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+): WorkflowNode[] => {
+  if (!nodes || nodes.length === 0) {
+    return nodes ?? [];
+  }
+
+  const narrativeGroups = nodes.filter(
+    (node): node is ThirdPersonGroupNodeType => node.type === "narrativeGroup",
+  );
+  if (narrativeGroups.length === 0) {
+    return nodes;
+  }
+
+  const nodeLookup = new Map(nodes.map((node) => [node.id, node]));
+  const perspectiveEventMetadata = new Map(
+    nodes
+      .filter(
+        (node): node is PerspectiveGroupNodeType =>
+          node.type === "perspectiveGroup",
+      )
+      .map((node) => [
+        node.id,
+        (node.data as PerspectiveGroupNodeType["data"])?.connectedEventGroup,
+      ]),
+  );
+
+  const narrativeAssignments = new Map<
+    string,
+    PerspectiveGroupNodeType["data"]["connectedEventGroup"]
+  >();
+
+  edges.forEach((edge) => {
+    const sourceNode = nodeLookup.get(edge.source);
+    const targetNode = nodeLookup.get(edge.target);
+    if (!sourceNode || !targetNode) {
+      return;
+    }
+
+    if (
+      edge.sourceHandle === "narrative-bridge" &&
+      edge.targetHandle === "group-bridge" &&
+      sourceNode.type === "perspectiveGroup" &&
+      targetNode.type === "narrativeGroup"
+    ) {
+      narrativeAssignments.set(
+        targetNode.id,
+        perspectiveEventMetadata.get(sourceNode.id),
+      );
+      return;
+    }
+
+    if (
+      edge.targetHandle === "narrative-bridge" &&
+      edge.sourceHandle === "group-bridge" &&
+      targetNode.type === "perspectiveGroup" &&
+      sourceNode.type === "narrativeGroup"
+    ) {
+      narrativeAssignments.set(
+        sourceNode.id,
+        perspectiveEventMetadata.get(targetNode.id),
+      );
+    }
+  });
+
+  let changed = false;
+
+  const updatedNodes = nodes.map((node) => {
+    if (node.type !== "narrativeGroup") {
+      return node;
+    }
+
+    const currentData = (node.data ?? {}) as ThirdPersonGroupNodeType["data"];
+    const existingConnected = currentData.connectedEventGroup;
+    const nextConnected = narrativeAssignments.get(node.id);
+
+    if (!nextConnected) {
+      if (!existingConnected) {
+        return node;
+      }
+      const { connectedEventGroup: _removed, ...restData } =
+        currentData as Record<string, unknown>;
+      changed = true;
+      return {
+        ...node,
+        data: restData as ThirdPersonGroupNodeType["data"],
+      };
+    }
+
+    if (
+      existingConnected &&
+      existingConnected.id === nextConnected?.id &&
+      existingConnected.label === nextConnected?.label &&
+      existingConnected.eventGroupId === nextConnected?.eventGroupId
+    ) {
+      return node;
+    }
+
+    changed = true;
+    return {
+      ...node,
+      data: {
+        ...currentData,
+        connectedEventGroup: nextConnected,
+      },
+    };
+  });
+
+  return changed ? updatedNodes : nodes;
+};
+
 const applyDerivedNodeState = (
   nodes: WorkflowNode[],
   edges: WorkflowEdge[],
 ): WorkflowNode[] => {
   const withCharacterLinks = synchronizeCharacterPerspectiveLinks(nodes, edges);
-  return synchronizePerspectiveGroupEventLinks(withCharacterLinks, edges);
+  const withPerspectiveGroupLinks = synchronizePerspectiveGroupEventLinks(
+    withCharacterLinks,
+    edges,
+  );
+  return synchronizeNarrativeGroupEventLinks(withPerspectiveGroupLinks, edges);
 };
 
 const getInitialState = () => {
