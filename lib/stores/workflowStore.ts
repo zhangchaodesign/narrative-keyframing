@@ -87,6 +87,28 @@ const sanitizeEdges = (edges: WorkflowEdge[]): WorkflowEdge[] =>
     );
   });
 
+const buildCharacterNodeData = (
+  currentData: CharacterNodeType["data"] | undefined,
+  perspectiveId: string,
+): CharacterNodeType["data"] => {
+  const baseTraits =
+    currentData?.traits ?? {
+      physiology: [],
+      psychology: [],
+      sociology: [],
+    };
+
+  return {
+    ...(currentData ?? {
+      name: "",
+      traits: baseTraits,
+      perspectiveId: "",
+    }),
+    traits: baseTraits,
+    perspectiveId,
+  };
+};
+
 // Keep each character node's perspectiveId in sync with the actual edges that
 // connect characters to perspective nodes so UI affordances stay accurate.
 const synchronizeCharacterPerspectiveLinks = (
@@ -106,32 +128,17 @@ const synchronizeCharacterPerspectiveLinks = (
 
       const currentData = node.data as CharacterNodeType["data"] | undefined;
       const currentPerspectiveId = currentData?.perspectiveId ?? "";
-      if (currentPerspectiveId === "") {
+      const shouldBeDraggable = true;
+      if (currentPerspectiveId === "" && node.draggable === shouldBeDraggable) {
         return node;
       }
 
       changed = true;
-      const nextData: CharacterNodeType["data"] = {
-        ...(currentData ?? {
-          name: "",
-          traits: {
-            physiology: [],
-            psychology: [],
-            sociology: [],
-          },
-          perspectiveId: "",
-        }),
-        traits: currentData?.traits ?? {
-          physiology: [],
-          psychology: [],
-          sociology: [],
-        },
-        perspectiveId: "",
-      };
 
       return {
         ...node,
-        data: nextData,
+        data: buildCharacterNodeData(currentData, ""),
+        draggable: shouldBeDraggable,
       };
     });
 
@@ -168,32 +175,21 @@ const synchronizeCharacterPerspectiveLinks = (
     const targetPerspectiveId = characterAssignments.get(node.id) ?? "";
     const currentData = node.data as CharacterNodeType["data"] | undefined;
     const currentPerspectiveId = currentData?.perspectiveId ?? "";
+    const shouldBeDraggable = targetPerspectiveId === "";
 
-    if (currentPerspectiveId === targetPerspectiveId) {
+    if (
+      currentPerspectiveId === targetPerspectiveId &&
+      node.draggable === shouldBeDraggable
+    ) {
       return node;
     }
 
     updated = true;
 
-    const baseTraits = currentData?.traits ?? {
-      physiology: [],
-      psychology: [],
-      sociology: [],
-    };
-
-    const nextData: CharacterNodeType["data"] = {
-      ...(currentData ?? {
-        name: "",
-        traits: baseTraits,
-        perspectiveId: "",
-      }),
-      traits: baseTraits,
-      perspectiveId: targetPerspectiveId,
-    };
-
     return {
       ...node,
-      data: nextData,
+      data: buildCharacterNodeData(currentData, targetPerspectiveId),
+      draggable: shouldBeDraggable,
     };
   });
 
@@ -274,14 +270,18 @@ export const useWorkflowStore = create<WorkflowState>()(
     (set, get) => ({
       ...getInitialState(),
       setNodes: (updater) =>
-        set((state) => ({
-          nodes:
+        set((state) => {
+          const nextNodes =
             typeof updater === "function"
               ? (updater as (nodes: WorkflowNode[]) => WorkflowNode[])(
                   state.nodes,
                 )
-              : updater,
-        })),
+              : updater;
+
+          return {
+            nodes: synchronizeCharacterPerspectiveLinks(nextNodes, state.edges),
+          };
+        }),
       setEdges: (updater) =>
         set((state) => {
           const nextEdges = sanitizeEdges(

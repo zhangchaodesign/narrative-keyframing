@@ -163,49 +163,8 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
       };
     });
 
-    const bridgingEdges = currentEdges.filter(
-      (edge) => edge.target === nodeId && edge.targetHandle === "group-bridge",
-    );
-
-    const duplicatedBridges = bridgingEdges.map((edge) => {
-      const newId = generateUniqueUuidId("edge", existingEdgeIds);
-      existingEdgeIds.add(newId);
-      return {
-        ...edge,
-        id: newId,
-        target: newGroupId,
-        data: cloneData(edge.data),
-        selected: false,
-      };
-    });
-
-    const fallbackBridge: WorkflowEdge[] = [];
-    if (duplicatedBridges.length === 0) {
-      const eventGroupNode = currentNodes.find(
-        (node) => node.type === "eventGroup",
-      );
-      if (eventGroupNode) {
-        const newId = generateUniqueUuidId("edge", existingEdgeIds);
-        existingEdgeIds.add(newId);
-        fallbackBridge.push({
-          id: newId,
-          source: eventGroupNode.id,
-          target: newGroupId,
-          sourceHandle: "group-bridge",
-          targetHandle: "group-bridge",
-          type: "customEdge",
-          animated: true,
-        });
-      }
-    }
-
     setNodes((nodes) => [...nodes, ...newNodes]);
-    setEdges((edges) => [
-      ...edges,
-      ...newEdges,
-      ...duplicatedBridges,
-      ...fallbackBridge,
-    ]);
+    setEdges((edges) => [...edges, ...newEdges]);
   }, [edges, nodeId, nodes, setEdges, setNodes]);
 
   return (

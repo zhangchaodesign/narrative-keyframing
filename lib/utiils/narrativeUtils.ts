@@ -135,25 +135,9 @@ export const duplicateNarrativeGroupCluster = ({
     };
   });
 
-  const bridgingEdges = edges.filter(
-    (edge) => edge.target === groupId && edge.targetHandle === "group-bridge",
-  );
-
-  const duplicatedBridges = bridgingEdges.map((edge) => {
-    const newId = generateUniqueUuidId("edge", existingEdgeIds);
-    existingEdgeIds.add(newId);
-    return {
-      ...edge,
-      id: newId,
-      target: newGroupId,
-      data: cloneData(edge.data),
-      selected: false,
-    };
-  });
-
   return {
     newNodes,
-    newEdges: [...clonedInternalEdges, ...duplicatedBridges],
+    newEdges: [...clonedInternalEdges],
   };
 };
 
