@@ -26,6 +26,7 @@ import { NarrativeGroupNode } from "@/components/WorkflowCanvas/NarrativeNode/Na
 import { WorkflowCanvasMenu } from "@/components/WorkflowCanvas/WorkflowCanvasMenu";
 import {
   createStoryOutlineCluster,
+  adjustEventCountForAllClusters,
   nodeColor,
 } from "@/lib/utiils/workflowUtils";
 
@@ -71,17 +72,39 @@ export function WorkflowCanvas() {
     [setEdges],
   );
 
-  const handleAddStoryOutlineCluster = useCallback(() => {
-    const result = createStoryOutlineCluster(nodes, { eventCount: 4 });
+  const handleAddStoryOutlineCluster = useCallback(
+    (eventCount: number) => {
+      const result = createStoryOutlineCluster(nodes, { eventCount });
 
-    setNodes((currentNodes) => [...currentNodes, ...result.nodes]);
-    setEdges((currentEdges) => [...currentEdges, ...result.edges]);
-  }, [nodes, setNodes, setEdges]);
+      setNodes((currentNodes) => [...currentNodes, ...result.nodes]);
+      setEdges((currentEdges) => [...currentEdges, ...result.edges]);
+    },
+    [nodes, setNodes, setEdges],
+  );
+
+  const handleEventCountChange = useCallback(
+    (newEventCount: number) => {
+      // Get current state directly from the store to avoid stale closures
+      const currentNodes = useWorkflowStore.getState().nodes;
+      const currentEdges = useWorkflowStore.getState().edges;
+
+      const result = adjustEventCountForAllClusters(
+        currentNodes,
+        currentEdges,
+        newEventCount,
+      );
+
+      setNodes(result.nodes);
+      setEdges(result.edges);
+    },
+    [setNodes, setEdges],
+  );
 
   return (
     <div className="h-full min-h-0 w-full relative">
       <WorkflowCanvasMenu
         onAddStoryOutlineCluster={handleAddStoryOutlineCluster}
+        onEventCountChange={handleEventCountChange}
       />
       <ReactFlow
         nodes={nodes}

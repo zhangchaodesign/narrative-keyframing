@@ -299,6 +299,315 @@ export type CreateStoryOutlineClusterOptions = {
   eventCount?: number;
 };
 
+// ============================================================================
+// NODE ADJUSTMENT UTILITIES
+// ============================================================================
+
+/**
+ * Adjust event count for all clusters by adding or removing nodes
+ * @param currentNodes Array of existing workflow nodes
+ * @param currentEdges Array of existing workflow edges
+ * @param newEventCount New target event count
+ * @returns Object with updated nodes and edges
+ */
+export function adjustEventCountForAllClusters(
+  currentNodes: WorkflowNode[],
+  currentEdges: WorkflowEdge[],
+  newEventCount: number,
+): {
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+} {
+  if (newEventCount < 1 || newEventCount > 20) {
+    return { nodes: currentNodes, edges: currentEdges };
+  }
+
+  const EVENT_HORIZONTAL_SPACING = 300;
+
+  let updatedNodes = [...currentNodes];
+  let updatedEdges = [...currentEdges];
+
+  // Get all event groups
+  const eventGroups = currentNodes.filter(
+    (node): node is EventGroupNodeType => node.type === "eventGroup",
+  );
+
+  for (const eventGroup of eventGroups) {
+    const groupId = eventGroup.id;
+
+    // Get existing event nodes for this group
+    const existingEventNodes = currentNodes.filter(
+      (node): node is EventNodeType =>
+        node.type === "event" && node.parentId === groupId,
+    );
+
+    const currentEventCount = existingEventNodes.length;
+    const sortedEventNodes = [...existingEventNodes].sort(
+      (a, b) => a.position.x - b.position.x,
+    );
+
+    if (newEventCount > currentEventCount) {
+      // Add new event nodes
+      const nodesToAdd = newEventCount - currentEventCount;
+      const timestamp = Date.now();
+      const lastEventNode = sortedEventNodes[sortedEventNodes.length - 1];
+      const startX = lastEventNode
+        ? lastEventNode.position.x + EVENT_HORIZONTAL_SPACING
+        : 20;
+      const startY = lastEventNode?.position.y ?? 60;
+
+      for (let i = 0; i < nodesToAdd; i++) {
+        const newEventId = `${groupId}-event-add-${timestamp}-${i}`;
+        const newEventNode: WorkflowNode = {
+          id: newEventId,
+          type: "event",
+          position: {
+            x: startX + i * EVENT_HORIZONTAL_SPACING,
+            y: startY,
+          },
+          draggable: false,
+          data: {
+            description: "",
+            timeline: `Event ${currentEventCount + i + 1}`,
+          },
+          parentId: groupId,
+          extent: "parent",
+        };
+        updatedNodes.push(newEventNode);
+
+        // Add edge from previous node
+        const previousNode =
+          i === 0
+            ? sortedEventNodes[sortedEventNodes.length - 1]
+            : updatedNodes[updatedNodes.length - 1];
+        if (previousNode) {
+          updatedEdges.push({
+            id: `edge-${previousNode.id}-${newEventId}`,
+            source: previousNode.id,
+            target: newEventId,
+            sourceHandle: "event-next",
+            targetHandle: "event-prev",
+            type: "eventEdge",
+            animated: true,
+          });
+        }
+      }
+
+      // Add perspective and narrative nodes for connected groups
+      const perspectiveGroups = currentNodes.filter(
+        (node): node is NarrationGroupNodeType =>
+          node.type === "perspectiveGroup",
+      );
+
+      for (const perspectiveGroup of perspectiveGroups) {
+        const perspectiveGroupId = perspectiveGroup.id;
+        const existingPerspectives = currentNodes.filter(
+          (node): node is PerspectiveNodeType =>
+            node.type === "perspective" &&
+            node.parentId === perspectiveGroupId,
+        );
+
+        if (existingPerspectives.length === currentEventCount) {
+          const sortedPerspectives = [...existingPerspectives].sort(
+            (a, b) => a.position.x - b.position.x,
+          );
+          const lastPerspective =
+            sortedPerspectives[sortedPerspectives.length - 1];
+          const perspectiveY = lastPerspective?.position.y ?? 50;
+
+          for (let i = 0; i < nodesToAdd; i++) {
+            const newEventNode = updatedNodes.find(
+              (n) => n.id === `${groupId}-event-add-${timestamp}-${i}`,
+            );
+            if (!newEventNode) continue;
+
+            const newPerspectiveId = `${perspectiveGroupId}-perspective-add-${timestamp}-${i}`;
+            const newPerspectiveNode: WorkflowNode = {
+              id: newPerspectiveId,
+              type: "perspective",
+              position: {
+                x: newEventNode.position.x,
+                y: perspectiveY,
+              },
+              data: {
+                narrator: perspectiveGroup.data?.characterName || "",
+                reflection: "",
+                isLoading: false,
+                eventId: newEventNode.id,
+              },
+              draggable: false,
+              parentId: perspectiveGroupId,
+              extent: "parent",
+            };
+            updatedNodes.push(newPerspectiveNode);
+
+            // Add edge from previous perspective node
+            const previousPerspective =
+              i === 0
+                ? sortedPerspectives[sortedPerspectives.length - 1]
+                : updatedNodes[updatedNodes.length - 1];
+            if (previousPerspective) {
+              updatedEdges.push({
+                id: `edge-${previousPerspective.id}-${newPerspectiveId}`,
+                source: previousPerspective.id,
+                target: newPerspectiveId,
+                sourceHandle: "perspective-next",
+                targetHandle: "perspective-prev",
+                type: "customEdge",
+                animated: true,
+              });
+            }
+          }
+        }
+      }
+
+      // Add narrative nodes
+      const narrativeGroups = currentNodes.filter(
+        (node): node is NarrationGroupNodeType =>
+          node.type === "narrativeGroup",
+      );
+
+      for (const narrativeGroup of narrativeGroups) {
+        const narrativeGroupId = narrativeGroup.id;
+        const existingNarratives = currentNodes.filter(
+          (node): node is NarrativeNodeType =>
+            node.type === "narrative" && node.parentId === narrativeGroupId,
+        );
+
+        if (existingNarratives.length === currentEventCount) {
+          const sortedNarratives = [...existingNarratives].sort(
+            (a, b) => a.position.x - b.position.x,
+          );
+          const lastNarrative = sortedNarratives[sortedNarratives.length - 1];
+          const narrativeY = lastNarrative?.position.y ?? 50;
+
+          for (let i = 0; i < nodesToAdd; i++) {
+            const newEventNode = updatedNodes.find(
+              (n) => n.id === `${groupId}-event-add-${timestamp}-${i}`,
+            );
+            if (!newEventNode) continue;
+
+            const newNarrativeId = `${narrativeGroupId}-narrative-add-${timestamp}-${i}`;
+            const newNarrativeNode: WorkflowNode = {
+              id: newNarrativeId,
+              type: "narrative",
+              position: {
+                x: newEventNode.position.x,
+                y: narrativeY,
+              },
+              data: {
+                narration: "",
+                isLoading: false,
+                eventId: newEventNode.id,
+              },
+              draggable: false,
+              parentId: narrativeGroupId,
+              extent: "parent",
+            };
+            updatedNodes.push(newNarrativeNode);
+
+            // Add edge from previous narrative node
+            const previousNarrative =
+              i === 0
+                ? sortedNarratives[sortedNarratives.length - 1]
+                : updatedNodes[updatedNodes.length - 1];
+            if (previousNarrative) {
+              updatedEdges.push({
+                id: `edge-${previousNarrative.id}-${newNarrativeId}`,
+                source: previousNarrative.id,
+                target: newNarrativeId,
+                sourceHandle: "narrative-next",
+                targetHandle: "narrative-prev",
+                type: "customEdge",
+                animated: true,
+              });
+            }
+          }
+        }
+      }
+    } else if (newEventCount < currentEventCount) {
+      // Remove excess event nodes (from the end)
+      const nodeIdsToRemove = new Set(
+        sortedEventNodes.slice(newEventCount).map((n) => n.id),
+      );
+
+      // Remove event nodes and their edges
+      updatedNodes = updatedNodes.filter((node) => !nodeIdsToRemove.has(node.id));
+      updatedEdges = updatedEdges.filter(
+        (edge) =>
+          !nodeIdsToRemove.has(edge.source) && !nodeIdsToRemove.has(edge.target),
+      );
+
+      // Remove corresponding perspective nodes
+      const perspectiveGroups = currentNodes.filter(
+        (node): node is NarrationGroupNodeType =>
+          node.type === "perspectiveGroup",
+      );
+
+      for (const perspectiveGroup of perspectiveGroups) {
+        const perspectiveGroupId = perspectiveGroup.id;
+        const existingPerspectives = currentNodes.filter(
+          (node): node is PerspectiveNodeType =>
+            node.type === "perspective" &&
+            node.parentId === perspectiveGroupId,
+        );
+
+        if (existingPerspectives.length === currentEventCount) {
+          const sortedPerspectives = [...existingPerspectives].sort(
+            (a, b) => a.position.x - b.position.x,
+          );
+          const perspectiveIdsToRemove = new Set(
+            sortedPerspectives.slice(newEventCount).map((n) => n.id),
+          );
+
+          updatedNodes = updatedNodes.filter(
+            (node) => !perspectiveIdsToRemove.has(node.id),
+          );
+          updatedEdges = updatedEdges.filter(
+            (edge) =>
+              !perspectiveIdsToRemove.has(edge.source) &&
+              !perspectiveIdsToRemove.has(edge.target),
+          );
+        }
+      }
+
+      // Remove corresponding narrative nodes
+      const narrativeGroups = currentNodes.filter(
+        (node): node is NarrationGroupNodeType =>
+          node.type === "narrativeGroup",
+      );
+
+      for (const narrativeGroup of narrativeGroups) {
+        const narrativeGroupId = narrativeGroup.id;
+        const existingNarratives = currentNodes.filter(
+          (node): node is NarrativeNodeType =>
+            node.type === "narrative" && node.parentId === narrativeGroupId,
+        );
+
+        if (existingNarratives.length === currentEventCount) {
+          const sortedNarratives = [...existingNarratives].sort(
+            (a, b) => a.position.x - b.position.x,
+          );
+          const narrativeIdsToRemove = new Set(
+            sortedNarratives.slice(newEventCount).map((n) => n.id),
+          );
+
+          updatedNodes = updatedNodes.filter(
+            (node) => !narrativeIdsToRemove.has(node.id),
+          );
+          updatedEdges = updatedEdges.filter(
+            (edge) =>
+              !narrativeIdsToRemove.has(edge.source) &&
+              !narrativeIdsToRemove.has(edge.target),
+          );
+        }
+      }
+    }
+  }
+
+  return { nodes: updatedNodes, edges: updatedEdges };
+}
+
 /**
  * Create a story outline cluster (event group with event nodes)
  * @param currentNodes Array of existing workflow nodes

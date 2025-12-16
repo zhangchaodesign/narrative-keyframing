@@ -3,9 +3,6 @@
 import { useCallback, type ChangeEvent } from "react";
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { EventHandle } from "@/components/WorkflowCanvas/EventNode/EventHandle";
-import { EventMenu } from "@/components/WorkflowCanvas/EventNode/EventMenu";
-import { AddEventButton } from "@/components/WorkflowCanvas/EventNode/AddEventButton";
-import { useEventAdjacency } from "@/components/WorkflowCanvas/EventNode/useEventAdjacency";
 import type {
   EventNodeType,
   WorkflowEdge,
@@ -16,8 +13,6 @@ import { geistMono } from "@/app/fonts";
 
 export function EventNode({ id, data }: NodeProps<EventNodeType>) {
   const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
-  const { hasPreviousEvent, hasNextEvent, handleAddAdjacentEvent } =
-    useEventAdjacency(id);
 
   const handleDescriptionChange = useCallback(
     (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -42,13 +37,6 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
 
   return (
     <div className="group relative w-64 rounded-lg border-2 border-pink-500 bg-white p-3 text-xs hover:shadow-lg">
-      {/* {!hasPreviousEvent && (
-        <AddEventButton direction="before" onAdd={handleAddAdjacentEvent} />
-      )}
-      {!hasNextEvent && (
-        <AddEventButton direction="after" onAdd={handleAddAdjacentEvent} />
-      )} */}
-      {/* <EventMenu nodeId={id} nodeType="event" /> */}
       <div
         className={cn(
           geistMono.className,
