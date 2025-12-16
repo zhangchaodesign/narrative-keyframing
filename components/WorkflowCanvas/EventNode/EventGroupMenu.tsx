@@ -15,6 +15,7 @@ import {
   deleteNodeCluster,
   generateUniqueUuidId,
 } from "@/lib/utiils/workflowUtils";
+import { ZoomInvariantWrapper } from "@/components/WorkflowCanvas/ZoomInvariantWrapper";
 
 type EventGroupMenuProps = {
   nodeId: string;
@@ -147,7 +148,7 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
   }, [getEdges, getNodes, nodeId, setEdges, setNodes]);
 
   return (
-    <div className="pointer-events-none absolute -top-16 right-0 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+    <ZoomInvariantWrapper className="pointer-events-none absolute -top-16 right-0 flex items-center gap-2 rounded-lg border border-zinc-200 bg-white p-2 text-zinc-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
       <button
         type="button"
         onClick={handleDuplicate}
@@ -166,6 +167,6 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
       >
         <TbTrash size={18} />
       </button>
-    </div>
+    </ZoomInvariantWrapper>
   );
 }
