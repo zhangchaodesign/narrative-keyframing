@@ -106,7 +106,7 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
             title={`Event: ${data?.eventId}`}
           >
             {eventMetadata.clusterDisplay
-              ? `${eventMetadata.clusterDisplay}: ${eventMetadata.timelineLabel}`
+              ? `${eventMetadata.clusterDisplay} / ${eventMetadata.timelineLabel}`
               : eventMetadata.timelineLabel}
           </span>
         </div>

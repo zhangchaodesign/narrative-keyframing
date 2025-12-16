@@ -313,7 +313,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
             title={`Event: ${data?.eventId}`}
           >
             {eventMetadata.clusterDisplay
-              ? `${eventMetadata.clusterDisplay}: ${eventMetadata.timelineLabel}`
+              ? `${eventMetadata.clusterDisplay} / ${eventMetadata.timelineLabel}`
               : eventMetadata.timelineLabel}
           </span>
         </div>
