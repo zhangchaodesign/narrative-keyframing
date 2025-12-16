@@ -11,7 +11,7 @@ import { NarrativeTableModal } from "@/components/shared/NarrativeTableModal";
 import { cn } from "@/lib/utiils/sharedUtils";
 import {
   combineNarrativeTextsInGroup,
-  regenerateNarrativesForEvents,
+  generateNarratives,
 } from "@/lib/utiils/narrativeUtils";
 
 type NarrativeActionsMenuProps = {
@@ -83,7 +83,7 @@ export function NarrativeActionsMenu({
 
         console.log("Generating narratives for events:", filteredEventsData);
 
-        await regenerateNarrativesForEvents({
+        await generateNarratives({
           events: filteredEventsData,
           customPrompt,
           setNodes,

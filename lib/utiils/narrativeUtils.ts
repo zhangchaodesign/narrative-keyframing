@@ -62,12 +62,12 @@ type RegenerateNarrativesParams = {
   customPrompt?: string;
 };
 
-export const regenerateNarrativesForEvents = async ({
+export const generateNarratives = async ({
   events,
   setNodes,
   customPrompt,
 }: RegenerateNarrativesParams): Promise<NarrativeGenerationResponse> => {
-  console.log("Regenerating narratives for events:", events);
+  // console.log("Regenerating narratives for events:", events);
 
   const narrativeNodeIds = new Set(
     events.map((event) => event.narrativeNodeId).filter(Boolean),

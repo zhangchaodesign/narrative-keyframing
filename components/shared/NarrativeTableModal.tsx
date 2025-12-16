@@ -6,7 +6,7 @@ import { TbX, TbHighlight, TbRefresh } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { SelectedSnippet } from "@/lib/stores/workflowStore";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
-import { regenerateNarrativesForEvents } from "@/lib/utiils/narrativeUtils";
+import { generateNarratives } from "@/lib/utiils/narrativeUtils";
 
 type EventData = {
   narrativeNodeId: string;
@@ -91,7 +91,7 @@ export function NarrativeTableModal({
         }),
       }));
 
-      const data = await regenerateNarrativesForEvents({
+      const data = await generateNarratives({
         events: filteredEventsData,
         customPrompt,
         setNodes,
