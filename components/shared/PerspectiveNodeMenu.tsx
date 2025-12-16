@@ -32,6 +32,12 @@ export function PerspectiveSingleActionsMenu({
   const nodes = useWorkflowStore((state) => state.nodes);
   const edges = useWorkflowStore((state) => state.edges);
   const setNodes = useWorkflowStore((state) => state.setNodes);
+  const getPerspectiveEvidenceTarget = useWorkflowStore(
+    (state) => state.getPerspectiveEvidenceTarget,
+  );
+  const preparePerspectiveGeneration = useWorkflowStore(
+    (state) => state.preparePerspectiveGeneration,
+  );
 
   const perspectiveNode = nodes.find(
     (node): node is PerspectiveNodeType =>
@@ -87,7 +93,8 @@ export function PerspectiveSingleActionsMenu({
       analysisEvidence: [],
     });
 
-    const result = await analyzeSinglePerspectiveEvidence(nodeId, nodes, edges);
+    const target = getPerspectiveEvidenceTarget(nodeId);
+    const result = await analyzeSinglePerspectiveEvidence(target);
 
     updateAnalysisState({
       isAnalyzingEvidence: false,
@@ -95,7 +102,56 @@ export function PerspectiveSingleActionsMenu({
       analysisStatusMessage: result.message,
       analysisEvidence: result.evidence,
     });
-  }, [edges, isAnalyzingEvidence, nodeId, nodes, updateAnalysisState]);
+  }, [
+    getPerspectiveEvidenceTarget,
+    isAnalyzingEvidence,
+    nodeId,
+    updateAnalysisState,
+  ]);
+
+  const computeNeighborReflections = useCallback(() => {
+    const perspectiveNode = nodes.find(
+      (node): node is PerspectiveNodeType =>
+        node.id === nodeId && node.type === "perspective",
+    );
+
+    if (!perspectiveNode?.parentId) {
+      return { previousPerspective: undefined, nextPerspective: undefined };
+    }
+
+    const siblings = nodes.filter(
+      (node): node is PerspectiveNodeType =>
+        node.type === "perspective" &&
+        node.parentId === perspectiveNode.parentId,
+    );
+    const sortedSiblings = [...siblings].sort(
+      (a, b) => a.position.x - b.position.x || a.position.y - b.position.y,
+    );
+    const currentIndex = sortedSiblings.findIndex(
+      (node) => node.id === perspectiveNode.id,
+    );
+
+    let previousPerspective: string | undefined;
+    let nextPerspective: string | undefined;
+
+    if (currentIndex > 0) {
+      const content =
+        sortedSiblings[currentIndex - 1].data?.reflection?.trim() ?? "";
+      if (content.length > 0) {
+        previousPerspective = content;
+      }
+    }
+
+    if (currentIndex >= 0 && currentIndex < sortedSiblings.length - 1) {
+      const content =
+        sortedSiblings[currentIndex + 1].data?.reflection?.trim() ?? "";
+      if (content.length > 0) {
+        nextPerspective = content;
+      }
+    }
+
+    return { previousPerspective, nextPerspective };
+  }, [nodeId, nodes]);
 
   const handleRegeneratePerspective = useCallback(async () => {
     if (isRegenerating || isEditing || !hasCharacterConnection) {
@@ -119,11 +175,19 @@ export function PerspectiveSingleActionsMenu({
     );
 
     try {
-      const reflection = await regenerateSinglePerspective(
-        nodeId,
-        nodes,
-        edges,
-      );
+      const preparation = preparePerspectiveGeneration([nodeId]);
+      if (!preparation) {
+        throw new Error("Unable to prepare regeneration payload");
+      }
+
+      const { previousPerspective, nextPerspective } =
+        computeNeighborReflections();
+
+      const reflection = await regenerateSinglePerspective({
+        preparation,
+        previousPerspective,
+        nextPerspective,
+      });
       const hasContent = reflection.trim().length > 0;
 
       setNodes((currentNodes) =>
@@ -169,12 +233,12 @@ export function PerspectiveSingleActionsMenu({
       );
     }
   }, [
-    edges,
+    computeNeighborReflections,
     hasCharacterConnection,
     isEditing,
     isRegenerating,
     nodeId,
-    nodes,
+    preparePerspectiveGeneration,
     setNodes,
   ]);
 

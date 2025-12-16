@@ -10,7 +10,7 @@ import {
   type EvidenceCategory,
   type EvidenceAnalysisResponse,
   type PerspectiveEvidenceTarget,
-} from "@/lib/utiils/perspectiveUtils";
+} from "@/lib/types/perspective";
 
 const TraitCategorySchema = z.enum(TRAIT_CATEGORIES);
 const EvidenceCategorySchema = z.enum(EVIDENCE_CATEGORIES);

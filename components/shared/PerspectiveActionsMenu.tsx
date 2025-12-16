@@ -28,9 +28,13 @@ export function PerspectiveActionsMenu({
   buttonPadding = "p-1",
   iconSize = 14,
 }: PerspectiveActionsMenuProps) {
-  const nodes = useWorkflowStore((state) => state.nodes);
-  const edges = useWorkflowStore((state) => state.edges);
   const setNodes = useWorkflowStore((state) => state.setNodes);
+  const preparePerspectiveGeneration = useWorkflowStore(
+    (state) => state.preparePerspectiveGeneration,
+  );
+  const getPerspectiveEvidenceTargets = useWorkflowStore(
+    (state) => state.getPerspectiveEvidenceTargets,
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -52,11 +56,12 @@ export function PerspectiveActionsMenu({
         setPerspectivesLoading(currentNodes, targetIdSet, true),
       );
 
-      const updateMap = await generateMultiplePerspectives(
-        uniqueTargetIds,
-        nodes,
-        edges,
-      );
+      const preparation = preparePerspectiveGeneration(uniqueTargetIds);
+      if (!preparation) {
+        throw new Error("Unable to prepare generation payload");
+      }
+
+      const updateMap = await generateMultiplePerspectives(preparation);
 
       setNodes((currentNodes) =>
         applyGeneratedPerspectives(currentNodes, updateMap),
@@ -69,7 +74,7 @@ export function PerspectiveActionsMenu({
       );
       setIsGenerating(false);
     }
-  }, [edges, isGenerating, nodes, setNodes, uniqueTargetIds]);
+  }, [isGenerating, preparePerspectiveGeneration, setNodes, uniqueTargetIds]);
 
   const handleAnalyzeAllEvidence = useCallback(async () => {
     if (isAnalyzing || uniqueTargetIds.length === 0) {
@@ -84,10 +89,13 @@ export function PerspectiveActionsMenu({
         setPerspectivesAnalyzing(currentNodes, targetIdSet, true),
       );
 
+      const preparedTargets = getPerspectiveEvidenceTargets(uniqueTargetIds);
+      if (preparedTargets.length === 0) {
+        return;
+      }
+
       const results = await analyzeMultiplePerspectivesEvidence(
-        uniqueTargetIds,
-        nodes,
-        edges,
+        preparedTargets,
       );
 
       setNodes((currentNodes) => applyAnalysisResults(currentNodes, results));
@@ -96,7 +104,7 @@ export function PerspectiveActionsMenu({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [edges, isAnalyzing, nodes, setNodes, uniqueTargetIds]);
+  }, [getPerspectiveEvidenceTargets, isAnalyzing, setNodes, uniqueTargetIds]);
 
   if (uniqueTargetIds.length === 0) {
     return null;

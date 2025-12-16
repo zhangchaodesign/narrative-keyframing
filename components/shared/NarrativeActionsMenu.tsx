@@ -28,9 +28,7 @@ export function NarrativeActionsMenu({
 }: NarrativeActionsMenuProps) {
   const nodes = useWorkflowStore((state) => state.nodes);
   const setNodes = useWorkflowStore((state) => state.setNodes);
-  const selectedSnippets = useWorkflowStore(
-    (state) => state.selectedSnippets,
-  );
+  const selectedSnippets = useWorkflowStore((state) => state.selectedSnippets);
   const getNarrativeEventsData = useWorkflowStore(
     (state) => state.getNarrativeEventsData,
   );
@@ -125,9 +123,7 @@ export function NarrativeActionsMenu({
                 data: {
                   ...node.data,
                   narration:
-                    narrativeForNode?.narration ??
-                    node.data?.narration ??
-                    "",
+                    narrativeForNode?.narration ?? node.data?.narration ?? "",
                   snippetUsages: narrativeForNode?.snippetUsages ?? [],
                   isLoading: false,
                 },
@@ -185,20 +181,19 @@ export function NarrativeActionsMenu({
     const slateValue = SlateUtils.textToSlateState(combinedText);
     setValue(slateValue);
 
-    setNodes(
-      (nodesState) =>
-        nodesState.map((node) => {
-          if (node.type === "narrativeGroup") {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                isActiveInEditor: node.id === nodeId,
-              },
-            };
-          }
-          return node;
-        }) as WorkflowNode[],
+    setNodes((nodesState) =>
+      nodesState.map((node) => {
+        if (node.type === "narrativeGroup") {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              isActiveInEditor: node.id === nodeId,
+            },
+          };
+        }
+        return node;
+      }),
     );
   }, [nodeId, nodes, setNodes, setValue]);
 

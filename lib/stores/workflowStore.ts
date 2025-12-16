@@ -13,6 +13,7 @@ import {
 } from "@/components/WorkflowCanvas/workflow.constants";
 import type {
   CharacterNodeType,
+  CharacterTraits,
   EventNodeType,
   GroupNodeData,
   NarrativeNodeType,
@@ -23,7 +24,20 @@ import type {
   WorkflowNode,
 } from "@/lib/types/workflow";
 import type { NarrativeEventData } from "@/lib/types/narrative";
-import { cloneData, generateUniqueUuidId } from "@/lib/utiils/workflowUtils";
+import {
+  TRAIT_CATEGORIES,
+  type CharacterAttributePayload,
+  type CharacterEvidenceTarget,
+  type CharacterSnapshotPayload,
+  type PerspectiveEvidenceTarget,
+  type PerspectivePreparationResult,
+  type PerspectiveTaskPayload,
+} from "@/lib/types/perspective";
+import {
+  cloneData,
+  generateUniqueUuidId,
+  sortEventsByTimeline,
+} from "@/lib/utiils/workflowUtils";
 
 type StateUpdater<T> = T | ((state: T) => T);
 
@@ -70,6 +84,15 @@ type WorkflowState = {
     eventGroupId: string,
     characters: ExtractedCharacter[],
   ) => void;
+  getPerspectiveEvidenceTarget: (
+    perspectiveId: string,
+  ) => PerspectiveEvidenceTarget | null;
+  getPerspectiveEvidenceTargets: (
+    perspectiveIds: string[],
+  ) => Array<{ nodeId: string; target: PerspectiveEvidenceTarget }>;
+  preparePerspectiveGeneration: (
+    targetNodeIds?: string[],
+  ) => PerspectivePreparationResult | null;
   duplicateNarrativeGroup: (groupId: string) => void;
   getNarrativeEventsData: (groupId: string) => NarrativeEventData[];
   reset: () => void;
@@ -806,6 +829,617 @@ const prepareNarrativeEventsData = (
   });
 };
 
+type PositionedCharacterSnapshot = CharacterSnapshotPayload & {
+  positionX: number;
+};
+
+const collectCharacterAttributes = (
+  traits: CharacterTraits | undefined | null,
+): CharacterAttributePayload[] => {
+  if (!traits) {
+    return [];
+  }
+
+  const attributes: CharacterAttributePayload[] = [];
+  for (const category of TRAIT_CATEGORIES) {
+    const values = traits[category] ?? [];
+    if (!Array.isArray(values)) {
+      continue;
+    }
+    values.forEach((rawValue) => {
+      const value = typeof rawValue === "string" ? rawValue.trim() : "";
+      if (!value) {
+        return;
+      }
+      attributes.push({
+        traitCategory: category,
+        value,
+      });
+    });
+  }
+  return attributes;
+};
+
+const buildEvidenceTarget = ({
+  node,
+  characters,
+  groupContext,
+}: {
+  node: PerspectiveNodeType;
+  characters: CharacterEvidenceTarget[];
+  groupContext: string;
+}): PerspectiveEvidenceTarget => {
+  const reflectionRaw = node.data?.reflection;
+  const reflection = typeof reflectionRaw === "string" ? reflectionRaw : "";
+
+  return {
+    perspectiveId: node.id,
+    reflection,
+    characters,
+    groupContext,
+  };
+};
+
+const getCharactersForPerspective = ({
+  perspectiveId,
+  edges,
+  characterMap,
+}: {
+  perspectiveId: string;
+  edges: WorkflowEdge[];
+  characterMap: Map<string, CharacterNodeType>;
+}): CharacterEvidenceTarget[] => {
+  const connectedCharacterIds = edges
+    .filter(
+      (edge) =>
+        edge.target === perspectiveId && edge.targetHandle === "character",
+    )
+    .map((edge) => edge.source);
+
+  if (connectedCharacterIds.length === 0) {
+    return [];
+  }
+
+  const uniqueCharacterIds = Array.from(new Set(connectedCharacterIds));
+  return uniqueCharacterIds
+    .map((characterId) => characterMap.get(characterId))
+    .filter((node): node is CharacterNodeType => Boolean(node))
+    .map((characterNode) => {
+      const rawName = characterNode.data?.name;
+      const characterName =
+        typeof rawName === "string" && rawName.trim().length > 0
+          ? rawName.trim()
+          : characterNode.id;
+
+      const attributes = collectCharacterAttributes(characterNode.data?.traits);
+
+      return {
+        characterId: characterNode.id,
+        characterName,
+        attributes,
+      };
+    });
+};
+
+const buildGroupContext = (
+  perspective: PerspectiveNodeType,
+  allPerspectives: PerspectiveNodeType[],
+): string => {
+  const parentId = perspective.parentId;
+  if (!parentId) {
+    return "";
+  }
+
+  return allPerspectives
+    .filter((sibling) => sibling.parentId === parentId)
+    .sort((a, b) => a.position.x - b.position.x || a.position.y - b.position.y)
+    .map((sibling) => (sibling.data?.reflection ?? "").trim())
+    .filter((reflection) => reflection.length > 0)
+    .join("\n\n");
+};
+
+const findPerspectiveWithCharacters = ({
+  startPerspectiveId,
+  direction,
+  edges,
+  perspectiveMap,
+  characterMap,
+}: {
+  startPerspectiveId: string;
+  direction: "previous" | "next";
+  edges: WorkflowEdge[];
+  perspectiveMap: Map<string, PerspectiveNodeType>;
+  characterMap: Map<string, CharacterNodeType>;
+}): {
+  node: PerspectiveNodeType;
+  characters: CharacterEvidenceTarget[];
+} | null => {
+  const visited = new Set<string>([startPerspectiveId]);
+  let currentId = startPerspectiveId;
+
+  while (true) {
+    const adjacentIds = edges
+      .filter((edge) => {
+        if (direction === "previous") {
+          return (
+            edge.target === currentId &&
+            edge.targetHandle === "perspective-prev" &&
+            typeof edge.source === "string"
+          );
+        }
+        return (
+          edge.source === currentId &&
+          edge.sourceHandle === "perspective-next" &&
+          typeof edge.target === "string"
+        );
+      })
+      .map((edge) => (direction === "previous" ? edge.source : edge.target))
+      .filter((candidateId): candidateId is string => Boolean(candidateId));
+
+    if (adjacentIds.length === 0) {
+      return null;
+    }
+
+    const nextId = adjacentIds[0]!;
+    if (visited.has(nextId)) {
+      return null;
+    }
+    visited.add(nextId);
+
+    const perspectiveNode = perspectiveMap.get(nextId);
+    if (!perspectiveNode) {
+      currentId = nextId;
+      continue;
+    }
+
+    const characters = getCharactersForPerspective({
+      perspectiveId: perspectiveNode.id,
+      edges,
+      characterMap,
+    });
+    if (characters.length > 0) {
+      return {
+        node: perspectiveNode,
+        characters,
+      };
+    }
+
+    currentId = perspectiveNode.id;
+  }
+};
+
+const prepareEvidenceAnalysisPayload = (
+  perspectiveId: string,
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+): PerspectiveEvidenceTarget | null => {
+  const perspectiveNodes = nodes.filter(
+    (node): node is PerspectiveNodeType => node.type === "perspective",
+  );
+  const characterNodes = nodes.filter(
+    (node): node is CharacterNodeType => node.type === "character",
+  );
+
+  const perspectiveMap = new Map(
+    perspectiveNodes.map((node) => [node.id, node]),
+  );
+  const characterMap = new Map(characterNodes.map((node) => [node.id, node]));
+
+  const targetPerspective = perspectiveMap.get(perspectiveId);
+  if (!targetPerspective) {
+    return null;
+  }
+
+  const groupContext = buildGroupContext(targetPerspective, perspectiveNodes);
+
+  const primaryCharacters = getCharactersForPerspective({
+    perspectiveId,
+    edges,
+    characterMap,
+  });
+
+  if (primaryCharacters.length > 0) {
+    return buildEvidenceTarget({
+      node: targetPerspective,
+      characters: primaryCharacters,
+      groupContext,
+    });
+  }
+
+  const fallbackCharacters: CharacterEvidenceTarget[] = [];
+
+  const previous = findPerspectiveWithCharacters({
+    startPerspectiveId: perspectiveId,
+    direction: "previous",
+    edges,
+    perspectiveMap,
+    characterMap,
+  });
+  if (previous) {
+    fallbackCharacters.push(...previous.characters);
+  }
+
+  const next = findPerspectiveWithCharacters({
+    startPerspectiveId: perspectiveId,
+    direction: "next",
+    edges,
+    perspectiveMap,
+    characterMap,
+  });
+  if (next) {
+    fallbackCharacters.push(...next.characters);
+  }
+
+  if (fallbackCharacters.length === 0) {
+    return null;
+  }
+
+  return buildEvidenceTarget({
+    node: targetPerspective,
+    characters: fallbackCharacters,
+    groupContext,
+  });
+};
+
+const buildBatchEvidenceTargets = (
+  perspectiveIds: string[],
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+): Array<{ nodeId: string; target: PerspectiveEvidenceTarget }> => {
+  if (perspectiveIds.length === 0) {
+    return [];
+  }
+
+  const perspectiveMap = new Map(
+    nodes
+      .filter(
+        (node): node is PerspectiveNodeType => node.type === "perspective",
+      )
+      .map((node) => [node.id, node]),
+  );
+
+  const results: Array<{ nodeId: string; target: PerspectiveEvidenceTarget }> =
+    [];
+
+  perspectiveIds.forEach((perspectiveId) => {
+    const perspectiveNode = perspectiveMap.get(perspectiveId);
+    if (!perspectiveNode) {
+      return;
+    }
+
+    const perspectiveData = perspectiveNode.data as
+      | PerspectiveNodeType["data"]
+      | undefined;
+    if (
+      perspectiveData?.isAnalyzingEvidence ||
+      !perspectiveData?.reflection?.trim()
+    ) {
+      return;
+    }
+
+    const target = prepareEvidenceAnalysisPayload(perspectiveId, nodes, edges);
+    if (!target || !target.reflection.trim()) {
+      return;
+    }
+
+    const hasCharacterAttributes = target.characters.some((character) =>
+      character.attributes.some(
+        (attribute) => attribute.value.trim().length > 0,
+      ),
+    );
+    if (!hasCharacterAttributes) {
+      return;
+    }
+
+    results.push({ nodeId: perspectiveId, target });
+  });
+
+  return results;
+};
+
+const preparePerspectiveGenerationPayload = (
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+  targetNodeIds?: string[],
+): PerspectivePreparationResult | null => {
+  const eventNodes = nodes.filter(
+    (node): node is EventNodeType => node.type === "event",
+  );
+  const perspectiveNodes = nodes.filter(
+    (node): node is PerspectiveNodeType => node.type === "perspective",
+  );
+  const characterNodes = nodes.filter(
+    (node): node is CharacterNodeType => node.type === "character",
+  );
+
+  const sortedEventNodes = sortEventsByTimeline(eventNodes);
+  const nodeLookup = new Map(nodes.map((node) => [node.id, node]));
+  const perspectiveGroupNodes = nodes.filter(
+    (node): node is PerspectiveGroupNodeType =>
+      node.type === "perspectiveGroup",
+  );
+  const perspectiveGroupMap = new Map(
+    perspectiveGroupNodes.map((node) => [node.id, node]),
+  );
+  const perspectiveGroupToEventGroupEdgeMap = new Map<string, string>();
+
+  edges.forEach((edge) => {
+    if (
+      edge.sourceHandle !== "group-bridge" ||
+      edge.targetHandle !== "group-bridge"
+    ) {
+      return;
+    }
+
+    const left =
+      typeof edge.source === "string" ? nodeLookup.get(edge.source) : undefined;
+    const right =
+      typeof edge.target === "string" ? nodeLookup.get(edge.target) : undefined;
+
+    if (left?.type === "perspectiveGroup" && right?.type === "eventGroup") {
+      perspectiveGroupToEventGroupEdgeMap.set(left.id, right.id);
+      return;
+    }
+
+    if (right?.type === "perspectiveGroup" && left?.type === "eventGroup") {
+      perspectiveGroupToEventGroupEdgeMap.set(right.id, left.id);
+    }
+  });
+
+  const eventNodeMap = new Map(
+    sortedEventNodes.map((eventNode) => [eventNode.id, eventNode]),
+  );
+  const eventNodesByGroup = new Map<string, EventNodeType[]>();
+  sortedEventNodes.forEach((eventNode) => {
+    if (!eventNode.parentId) {
+      return;
+    }
+    const existing = eventNodesByGroup.get(eventNode.parentId) ?? [];
+    existing.push(eventNode);
+    eventNodesByGroup.set(eventNode.parentId, existing);
+  });
+  eventNodesByGroup.forEach((events) => {
+    events.sort(
+      (a, b) =>
+        (a.position?.x ?? 0) - (b.position?.x ?? 0) ||
+        (a.position?.y ?? 0) - (b.position?.y ?? 0),
+    );
+  });
+  const eventOrderMap = new Map(
+    sortedEventNodes.map((eventNode, indexPosition) => [
+      eventNode.id,
+      indexPosition,
+    ]),
+  );
+
+  const targetIdSet =
+    targetNodeIds && targetNodeIds.length > 0
+      ? new Set(targetNodeIds)
+      : undefined;
+
+  const relevantPerspectiveNodes = targetIdSet
+    ? perspectiveNodes.filter((node) => targetIdSet.has(node.id))
+    : perspectiveNodes;
+
+  const relevantEventGroupIds = new Set<string>();
+
+  const getConnectedEventGroupId = (
+    perspectiveNode: PerspectiveNodeType,
+  ): string | undefined => {
+    const perspectiveGroupId = perspectiveNode.parentId;
+    if (!perspectiveGroupId) return undefined;
+
+    const perspectiveGroupNode = perspectiveGroupMap.get(perspectiveGroupId);
+    const dataConnected = perspectiveGroupNode?.data?.connectedEventGroup?.id;
+    if (dataConnected) {
+      return dataConnected;
+    }
+
+    const edgeConnected =
+      perspectiveGroupToEventGroupEdgeMap.get(perspectiveGroupId);
+    if (edgeConnected) {
+      return edgeConnected;
+    }
+
+    return undefined;
+  };
+
+  relevantPerspectiveNodes.forEach((perspectiveNode) => {
+    const eventId = perspectiveNode.data?.eventId?.trim();
+    const connectedEventGroupId = getConnectedEventGroupId(perspectiveNode);
+
+    if (connectedEventGroupId) {
+      relevantEventGroupIds.add(connectedEventGroupId);
+      return;
+    }
+
+    if (eventId) {
+      const parentEventGroupId = eventNodeMap.get(eventId)?.parentId;
+      if (parentEventGroupId) {
+        relevantEventGroupIds.add(parentEventGroupId);
+      }
+    }
+  });
+
+  const shouldFilterEvents = relevantEventGroupIds.size > 0;
+  const filteredEventNodes = shouldFilterEvents
+    ? sortedEventNodes.filter((eventNode) => {
+        const belongsToRelevantGroup =
+          eventNode.parentId && relevantEventGroupIds.has(eventNode.parentId);
+        return Boolean(belongsToRelevantGroup);
+      })
+    : sortedEventNodes;
+
+  const eventSequence = filteredEventNodes.map((eventNode) => {
+    const timeline = eventNode.data?.timeline?.trim();
+    const description = eventNode.data?.description?.trim();
+    const safeDescription =
+      description && description.length > 0
+        ? description
+        : "No description provided.";
+
+    const label =
+      timeline && timeline.length > 0
+        ? timeline
+        : description && description.length > 0
+        ? description
+        : eventNode.id;
+
+    return {
+      label,
+      description: safeDescription,
+    };
+  });
+
+  const tasksWithOrdering = relevantPerspectiveNodes
+    .map((perspectiveNode) => {
+      const connectedEventGroupId = getConnectedEventGroupId(perspectiveNode);
+      const perspectiveGroupId = perspectiveNode.parentId;
+
+      let eventNode: EventNodeType | null = null;
+      if (connectedEventGroupId && perspectiveGroupId) {
+        const groupedEvents = eventNodesByGroup.get(connectedEventGroupId);
+        if (groupedEvents && groupedEvents.length > 0) {
+          const siblingPerspectives = perspectiveNodes
+            .filter((node) => node.parentId === perspectiveGroupId)
+            .sort(
+              (a, b) =>
+                (a.position.x ?? 0) - (b.position.x ?? 0) ||
+                (a.position.y ?? 0) - (b.position.y ?? 0),
+            );
+          const siblingIndex = siblingPerspectives.findIndex(
+            (node) => node.id === perspectiveNode.id,
+          );
+          if (siblingIndex >= 0) {
+            const targetIndex = Math.min(
+              siblingIndex,
+              groupedEvents.length - 1,
+            );
+            eventNode = groupedEvents[targetIndex] ?? null;
+          }
+        }
+      }
+
+      if (!eventNode) {
+        const eventId = perspectiveNode.data?.eventId?.trim();
+        eventNode = eventId ? eventNodeMap.get(eventId) ?? null : null;
+      }
+
+      if (!eventNode) {
+        return null;
+      }
+
+      const eventOrder =
+        eventOrderMap.get(eventNode.id) ?? Number.MAX_SAFE_INTEGER;
+
+      const eventLabel =
+        eventNode.data?.timeline?.trim() ||
+        eventNode.data?.description?.trim() ||
+        eventNode.id;
+      const rawObjective = eventNode.data?.description?.trim();
+      const eventObjective =
+        rawObjective && rawObjective.length > 0
+          ? rawObjective
+          : `Describe what happens during ${eventLabel}.`;
+
+      const fallbackNarratorName =
+        perspectiveNode.data?.narrator?.trim() || "Narrator";
+
+      const characterSnapshotsWithPosition: PositionedCharacterSnapshot[] =
+        characterNodes
+          .filter((characterNode) => {
+            const assignedPerspectiveId =
+              characterNode.data?.perspectiveId?.trim() ?? "";
+            return assignedPerspectiveId === perspectiveNode.id;
+          })
+          .map((characterNode) => {
+            const name = characterNode.data?.name?.trim() || characterNode.id;
+            const traits = characterNode.data?.traits ?? {
+              physiology: [],
+              psychology: [],
+              sociology: [],
+            };
+
+            return {
+              name,
+              positionX: characterNode.position.x,
+              traits: {
+                physiology: traits.physiology ?? [],
+                psychology: traits.psychology ?? [],
+                sociology: traits.sociology ?? [],
+              },
+            };
+          });
+
+      let characterSnapshots: CharacterSnapshotPayload[] =
+        characterSnapshotsWithPosition
+          .sort((a, b) => a.positionX - b.positionX)
+          .map((snapshot) => {
+            const { positionX: _ignore, ...rest } = snapshot;
+            return rest;
+          });
+
+      if (characterSnapshots.length === 0) {
+        characterSnapshots = [
+          {
+            name: fallbackNarratorName,
+            traits: {
+              physiology: [],
+              psychology: [],
+              sociology: [],
+            },
+          },
+        ];
+      }
+
+      const narratorName = characterSnapshots[0]?.name || fallbackNarratorName;
+
+      const payload: PerspectiveTaskPayload = {
+        id: perspectiveNode.id,
+        narrator: narratorName,
+        eventLabel,
+        eventObjective,
+        characterSnapshots,
+      };
+
+      return {
+        order: eventOrder,
+        secondaryOrder: perspectiveNode.position.x,
+        task: payload,
+      };
+    })
+    .filter(
+      (
+        entry,
+      ): entry is {
+        order: number;
+        secondaryOrder: number;
+        task: PerspectiveTaskPayload;
+      } => entry != null,
+    );
+
+  if (tasksWithOrdering.length === 0) {
+    return null;
+  }
+
+  const tasks = tasksWithOrdering
+    .sort((a, b) => {
+      if (a.order !== b.order) {
+        return a.order - b.order;
+      }
+      if (a.secondaryOrder !== b.secondaryOrder) {
+        return a.secondaryOrder - b.secondaryOrder;
+      }
+      return a.task.id.localeCompare(b.task.id);
+    })
+    .map((entry) => entry.task);
+
+  return {
+    eventSequence,
+    tasks,
+  };
+};
+
 export const useWorkflowStore = create<WorkflowState>()(
   persist(
     (set, get) => ({
@@ -941,6 +1575,30 @@ export const useWorkflowStore = create<WorkflowState>()(
             [eventGroupId]: characters,
           },
         })),
+      getPerspectiveEvidenceTarget: (perspectiveId) => {
+        const state = get();
+        return prepareEvidenceAnalysisPayload(
+          perspectiveId,
+          state.nodes,
+          state.edges,
+        );
+      },
+      getPerspectiveEvidenceTargets: (perspectiveIds) => {
+        const state = get();
+        return buildBatchEvidenceTargets(
+          perspectiveIds,
+          state.nodes,
+          state.edges,
+        );
+      },
+      preparePerspectiveGeneration: (targetNodeIds) => {
+        const state = get();
+        return preparePerspectiveGenerationPayload(
+          state.nodes,
+          state.edges,
+          targetNodeIds,
+        );
+      },
       duplicateNarrativeGroup: (groupId) =>
         set((state) => {
           const result = duplicateNarrativeGroupCluster(
@@ -953,10 +1611,7 @@ export const useWorkflowStore = create<WorkflowState>()(
             return {};
           }
 
-          const nextEdges = sanitizeEdges([
-            ...state.edges,
-            ...result.newEdges,
-          ]);
+          const nextEdges = sanitizeEdges([...state.edges, ...result.newEdges]);
           const nextNodes = applyDerivedNodeState(
             [...state.nodes, ...result.newNodes],
             nextEdges,
