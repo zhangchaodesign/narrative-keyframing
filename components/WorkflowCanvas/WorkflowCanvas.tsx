@@ -25,7 +25,6 @@ import { PerspectiveGroupNode } from "@/components/WorkflowCanvas/PerspectiveNod
 import { NarrativeGroupNode } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeGroupNode";
 import { WorkflowCanvasMenu } from "@/components/WorkflowCanvas/WorkflowCanvasMenu";
 import {
-  createPerspectiveGroup,
   createStoryOutlineCluster,
   nodeColor,
 } from "@/lib/utiils/workflowUtils";

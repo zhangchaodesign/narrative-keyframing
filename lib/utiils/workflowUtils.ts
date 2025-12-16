@@ -277,13 +277,13 @@ export function nodeColor(node: WorkflowNode) {
     case "perspectiveGroup":
       return "oklch(97% 0.014 254.604)";
     case "narrativeGroup":
-      return "oklch(97% 0.014 300)";
+      return "oklch(97.9% 0.021 166.113)";
     case "event":
       return "oklch(89.9% 0.061 343.231)";
     case "perspective":
       return "oklch(88.2% 0.059 254.128)";
     case "narrative":
-      return "oklch(98.2% 0.018 155.826)";
+      return "oklch(95% 0.052 163.051)";
     case "character":
       return "oklch(95.4% 0.038 75.164)";
     default:
