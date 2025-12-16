@@ -47,6 +47,17 @@ export function NarrativeGenerationModal({
   const selectedEvidenceAttributes = useWorkflowStore(
     (state) => state.selectedEvidenceAttributes,
   );
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const characterNamesById = useMemo(() => {
+    const result: Record<string, string> = {};
+    nodes.forEach((node) => {
+      if (node.type === "character") {
+        const trimmed = node.data?.name?.trim() ?? "";
+        result[node.id] = trimmed.length > 0 ? trimmed : node.data?.name ?? "";
+      }
+    });
+    return result;
+  }, [nodes]);
 
   // Get unique characters from all events
   const allCharacters = useMemo(() => {
@@ -68,9 +79,9 @@ export function NarrativeGenerationModal({
 
     return Array.from(charactersMap.entries()).map(([id, name]) => ({
       id,
-      name,
+      name: characterNamesById[id]?.trim() || name,
     }));
-  }, [eventsData]);
+  }, [eventsData, characterNamesById]);
 
   // Initialize only pre-selected snippets as selected when modal opens
   useEffect(() => {
