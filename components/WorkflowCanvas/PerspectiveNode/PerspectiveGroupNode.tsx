@@ -7,8 +7,10 @@ import {
   useReactFlow,
   useStore,
 } from "@xyflow/react";
+import { TbPlus } from "react-icons/tb";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { PerspectiveGroupMenu } from "@/components/WorkflowCanvas/PerspectiveNode/PerspectiveGroupMenu";
+import { createNarrativeGroup } from "@/lib/utiils/workflowUtils";
 import type {
   CharacterNodeType,
   GroupNodeType,
@@ -23,7 +25,10 @@ const zoomSelector = (s: any) => s.transform[2] >= 0.9;
 
 export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   const showContent = useStore(zoomSelector);
-  const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
+  const { getNodes, getEdges, setNodes, setEdges } = useReactFlow<
+    WorkflowNode,
+    WorkflowEdge
+  >();
 
   const handleCharacterNameChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -85,6 +90,86 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
     [id, setNodes],
   );
 
+  const handleAddNarrativeGroup = useCallback(() => {
+    const currentNodes = getNodes() as WorkflowNode[];
+    const currentEdges = getEdges() as WorkflowEdge[];
+
+    const eventBridgeEdge = currentEdges.find(
+      (edge) =>
+        edge.target === id &&
+        edge.targetHandle === "group-bridge" &&
+        edge.sourceHandle === "group-bridge",
+    );
+
+    const eventGroupId = eventBridgeEdge
+      ? currentNodes.find(
+          (node) =>
+            node.id === eventBridgeEdge.source && node.type === "eventGroup",
+        )?.id
+      : undefined;
+
+    const result = createNarrativeGroup(currentNodes, { eventGroupId });
+
+    if (result.nodes.length === 0) {
+      return;
+    }
+
+    const createdGroupNode = result.nodes.find(
+      (node) => node.type === "narrativeGroup",
+    );
+
+    if (!createdGroupNode) {
+      return;
+    }
+
+    const perspectiveGroup = currentNodes.find(
+      (node) => node.id === id && node.type === "perspectiveGroup",
+    );
+    const baselineHeight =
+      typeof perspectiveGroup?.style?.height === "number"
+        ? perspectiveGroup.style.height
+        : 640;
+    const targetX = perspectiveGroup?.position.x ?? createdGroupNode.position.x;
+    const targetY =
+      (perspectiveGroup?.position.y ?? createdGroupNode.position.y) +
+      baselineHeight +
+      80;
+
+    const repositionedNodes = result.nodes.map((node) => {
+      if (node.id === createdGroupNode.id) {
+        return {
+          ...node,
+          position: {
+            x: targetX,
+            y: targetY,
+          },
+        };
+      }
+      return node;
+    });
+
+    const newGroupNode = repositionedNodes.find(
+      (node) => node.type === "narrativeGroup",
+    );
+
+    if (!newGroupNode) {
+      return;
+    }
+
+    const bridgingEdge: WorkflowEdge = {
+      id: `edge-${id}-${newGroupNode.id}`,
+      source: id,
+      target: newGroupNode.id,
+      sourceHandle: "narrative-bridge",
+      targetHandle: "group-bridge",
+      type: "customEdge",
+      animated: true,
+    };
+
+    setNodes((nodes) => [...nodes, ...repositionedNodes]);
+    setEdges((edges) => [...edges, ...result.edges, bridgingEdge]);
+  }, [getEdges, getNodes, id, setEdges, setNodes]);
+
   return (
     <div className="group relative h-full w-full rounded-lg border-4 border-blue-100 bg-blue-50/50 shadow">
       <PerspectiveGroupMenu nodeId={id} />
@@ -125,6 +210,20 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
         )}
       >
         {data?.characterName}
+      </div>
+      <div className="absolute -bottom-12 left-1/2 flex -translate-x-1/2 items-center">
+        <button
+          type="button"
+          onClick={handleAddNarrativeGroup}
+          onPointerDown={(event) => event.stopPropagation()}
+          className={cn(
+            geistMono.className,
+            "btn btn-xs btn-outline btn-primary gap-1 whitespace-nowrap nodrag nopan hover:text-white",
+          )}
+        >
+          <TbPlus size={14} />
+          Add a Third-Person Omniscient Cluster
+        </button>
       </div>
       <CustomHandle type="target" position={Position.Top} id="group-bridge" />
       <CustomHandle
