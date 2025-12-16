@@ -10,6 +10,7 @@ import { PerspectiveContent } from "@/components/shared/PerspectiveContent";
 import { PerspectiveStatusLabel } from "@/components/shared/PerspectiveStatusLabel";
 import type {
   CharacterNodeType,
+  EventGroupNodeType,
   EventNodeType,
   PerspectiveNodeType,
   WorkflowNode,
@@ -58,16 +59,61 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     return index >= 0 ? index + 1 : 1;
   }, [id, nodes]);
 
-  // Find the event node and its timeline
-  const eventTimeline = useMemo(() => {
+  // Determine which event group (story outline) this perspective group is linked to
+  const connectedEventGroupNode = useMemo(() => {
+    const perspectiveNode = nodes.find(
+      (node): node is PerspectiveNodeType =>
+        node.id === id && node.type === "perspective",
+    );
+    const perspectiveGroupId = perspectiveNode?.parentId;
+    if (!perspectiveGroupId) {
+      return undefined;
+    }
+
+    const bridgingEdge = edges.find(
+      (edge) =>
+        edge.target === perspectiveGroupId &&
+        edge.targetHandle === "group-bridge" &&
+        edge.sourceHandle === "group-bridge",
+    );
+    if (!bridgingEdge) {
+      return undefined;
+    }
+
+    const eventGroupNode = nodes.find(
+      (node): node is EventGroupNodeType =>
+        node.id === bridgingEdge.source && node.type === "eventGroup",
+    );
+    return eventGroupNode;
+  }, [edges, id, nodes]);
+
+  // Find the event node and related metadata for display
+  const eventMetadata = useMemo(() => {
     if (!data?.eventId) {
       return null;
     }
     const eventNode = nodes.find(
-      (node) => node.id === data.eventId && node.type === "event",
-    ) as EventNodeType | undefined;
-    return eventNode?.data?.timeline ?? data.eventId;
-  }, [data?.eventId, nodes]);
+      (node): node is EventNodeType =>
+        node.id === data.eventId && node.type === "event",
+    );
+    const timelineLabel = eventNode?.data?.timeline ?? data.eventId;
+    let clusterDisplay: string | undefined;
+
+    if (connectedEventGroupNode) {
+      const clusterLabel = connectedEventGroupNode.data?.label?.trim() ?? "";
+      const clusterId = connectedEventGroupNode.data?.eventGroupId;
+      const assembledDisplay = [clusterLabel, clusterId]
+        .filter((value) => value !== undefined && value !== "")
+        .join(" ")
+        .trim();
+      clusterDisplay = assembledDisplay.length > 0 ? assembledDisplay : undefined;
+    }
+
+    return {
+      timelineLabel,
+      clusterDisplay,
+    };
+  }, [connectedEventGroupNode, data?.eventId, nodes]);
 
   // keep character nodes aligned with perspective node
   useEffect(() => {
@@ -271,7 +317,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         isEditing={isEditing}
         onReflectionChange={handleReflectionChange}
       />
-      {eventTimeline && (
+      {eventMetadata && (
         <div className="mt-1 flex gap-2">
           <span
             className={cn(
@@ -280,7 +326,9 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
             )}
             title={`Event: ${data?.eventId}`}
           >
-            {eventTimeline}
+            {eventMetadata.clusterDisplay
+              ? `${eventMetadata.clusterDisplay}: ${eventMetadata.timelineLabel}`
+              : eventMetadata.timelineLabel}
           </span>
         </div>
       )}

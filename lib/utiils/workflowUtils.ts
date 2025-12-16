@@ -6,6 +6,7 @@ import type {
   PerspectiveNodeType,
   WorkflowNode,
   WorkflowEdge,
+  GroupNodeData,
 } from "@/lib/types/workflow";
 
 // ============================================================================
@@ -323,6 +324,11 @@ export function adjustEventCountForAllClusters(
   }
 
   const EVENT_HORIZONTAL_SPACING = 300;
+  const EVENT_ROW_START_X = 20;
+  const EVENT_NODE_WIDTH = 256;
+  const EVENT_GROUP_RIGHT_PADDING = 24;
+  const DEFAULT_EVENT_GROUP_WIDTH = 1200;
+  const DEFAULT_NARRATION_GROUP_WIDTH = 1200;
 
   let updatedNodes = [...currentNodes];
   let updatedEdges = [...currentEdges];
@@ -349,12 +355,15 @@ export function adjustEventCountForAllClusters(
     if (newEventCount > currentEventCount) {
       // Add new event nodes
       const nodesToAdd = newEventCount - currentEventCount;
-      const timestamp = Date.now();
+      const timestamp = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       const lastEventNode = sortedEventNodes[sortedEventNodes.length - 1];
       const startX = lastEventNode
         ? lastEventNode.position.x + EVENT_HORIZONTAL_SPACING
         : 20;
       const startY = lastEventNode?.position.y ?? 60;
+
+      let previousEventNode: WorkflowNode | undefined =
+        sortedEventNodes[sortedEventNodes.length - 1];
 
       for (let i = 0; i < nodesToAdd; i++) {
         const newEventId = `${groupId}-event-add-${timestamp}-${i}`;
@@ -375,15 +384,14 @@ export function adjustEventCountForAllClusters(
         };
         updatedNodes.push(newEventNode);
 
-        // Add edge from previous node
-        const previousNode =
-          i === 0
-            ? sortedEventNodes[sortedEventNodes.length - 1]
-            : updatedNodes[updatedNodes.length - 1];
-        if (previousNode) {
+        // Add edge from previous event node
+        if (previousEventNode) {
+          const edgeId = `edge-${previousEventNode.id}-${newEventId}`;
+          // Remove any existing edge with this ID first
+          updatedEdges = updatedEdges.filter((e) => e.id !== edgeId);
           updatedEdges.push({
-            id: `edge-${previousNode.id}-${newEventId}`,
-            source: previousNode.id,
+            id: edgeId,
+            source: previousEventNode.id,
             target: newEventId,
             sourceHandle: "event-next",
             targetHandle: "event-prev",
@@ -391,16 +399,37 @@ export function adjustEventCountForAllClusters(
             animated: true,
           });
         }
+
+        // Track this node as the previous for the next iteration
+        previousEventNode = newEventNode;
       }
 
-      // Add perspective and narrative nodes for connected groups
-      const perspectiveGroups = currentNodes.filter(
-        (node): node is NarrationGroupNodeType =>
-          node.type === "perspectiveGroup",
-      );
+      // Find connected perspective groups via bridge edges
+      const connectedPerspectiveGroupIds = new Set<string>();
+      currentEdges.forEach((edge) => {
+        const isBridgeEdge =
+          edge.sourceHandle === "group-bridge" &&
+          edge.targetHandle === "group-bridge";
 
-      for (const perspectiveGroup of perspectiveGroups) {
-        const perspectiveGroupId = perspectiveGroup.id;
+        if (!isBridgeEdge) {
+          return;
+        }
+
+        if (edge.source === groupId) {
+          connectedPerspectiveGroupIds.add(edge.target);
+        } else if (edge.target === groupId) {
+          connectedPerspectiveGroupIds.add(edge.source);
+        }
+      });
+
+      // Add perspective nodes ONLY for connected perspective groups
+      for (const perspectiveGroupId of connectedPerspectiveGroupIds) {
+        const perspectiveGroup = currentNodes.find(
+          (node) => node.id === perspectiveGroupId && node.type === "perspectiveGroup",
+        );
+
+        if (!perspectiveGroup) continue;
+
         const existingPerspectives = currentNodes.filter(
           (node): node is PerspectiveNodeType =>
             node.type === "perspective" &&
@@ -414,6 +443,9 @@ export function adjustEventCountForAllClusters(
           const lastPerspective =
             sortedPerspectives[sortedPerspectives.length - 1];
           const perspectiveY = lastPerspective?.position.y ?? 50;
+
+          let previousPerspectiveNode: WorkflowNode | undefined =
+            sortedPerspectives[sortedPerspectives.length - 1];
 
           for (let i = 0; i < nodesToAdd; i++) {
             const newEventNode = updatedNodes.find(
@@ -430,7 +462,7 @@ export function adjustEventCountForAllClusters(
                 y: perspectiveY,
               },
               data: {
-                narrator: perspectiveGroup.data?.characterName || "",
+                narrator: (perspectiveGroup.data as GroupNodeData)?.characterName || "",
                 reflection: "",
                 isLoading: false,
                 eventId: newEventNode.id,
@@ -442,14 +474,13 @@ export function adjustEventCountForAllClusters(
             updatedNodes.push(newPerspectiveNode);
 
             // Add edge from previous perspective node
-            const previousPerspective =
-              i === 0
-                ? sortedPerspectives[sortedPerspectives.length - 1]
-                : updatedNodes[updatedNodes.length - 1];
-            if (previousPerspective) {
+            if (previousPerspectiveNode) {
+              const edgeId = `edge-${previousPerspectiveNode.id}-${newPerspectiveId}`;
+              // Remove any existing edge with this ID first
+              updatedEdges = updatedEdges.filter((e) => e.id !== edgeId);
               updatedEdges.push({
-                id: `edge-${previousPerspective.id}-${newPerspectiveId}`,
-                source: previousPerspective.id,
+                id: edgeId,
+                source: previousPerspectiveNode.id,
                 target: newPerspectiveId,
                 sourceHandle: "perspective-next",
                 targetHandle: "perspective-prev",
@@ -457,18 +488,42 @@ export function adjustEventCountForAllClusters(
                 animated: true,
               });
             }
+
+            // Track this node as the previous for the next iteration
+            previousPerspectiveNode = newPerspectiveNode;
           }
         }
       }
 
-      // Add narrative nodes
-      const narrativeGroups = currentNodes.filter(
-        (node): node is NarrationGroupNodeType =>
-          node.type === "narrativeGroup",
-      );
+      // Find connected narrative groups via perspective groups
+      const connectedNarrativeGroupIds = new Set<string>();
+      if (connectedPerspectiveGroupIds.size > 0) {
+        currentEdges.forEach((edge) => {
+          const connectsFromPerspective =
+            connectedPerspectiveGroupIds.has(edge.source) &&
+            edge.sourceHandle === "narrative-bridge" &&
+            edge.targetHandle === "group-bridge";
+          const connectsToPerspective =
+            connectedPerspectiveGroupIds.has(edge.target) &&
+            edge.targetHandle === "narrative-bridge" &&
+            edge.sourceHandle === "group-bridge";
 
-      for (const narrativeGroup of narrativeGroups) {
-        const narrativeGroupId = narrativeGroup.id;
+          if (connectsFromPerspective) {
+            connectedNarrativeGroupIds.add(edge.target);
+          } else if (connectsToPerspective) {
+            connectedNarrativeGroupIds.add(edge.source);
+          }
+        });
+      }
+
+      // Add narrative nodes ONLY for connected narrative groups
+      for (const narrativeGroupId of connectedNarrativeGroupIds) {
+        const narrativeGroup = currentNodes.find(
+          (node) => node.id === narrativeGroupId && node.type === "narrativeGroup",
+        );
+
+        if (!narrativeGroup) continue;
+
         const existingNarratives = currentNodes.filter(
           (node): node is NarrativeNodeType =>
             node.type === "narrative" && node.parentId === narrativeGroupId,
@@ -480,6 +535,9 @@ export function adjustEventCountForAllClusters(
           );
           const lastNarrative = sortedNarratives[sortedNarratives.length - 1];
           const narrativeY = lastNarrative?.position.y ?? 50;
+
+          let previousNarrativeNode: WorkflowNode | undefined =
+            sortedNarratives[sortedNarratives.length - 1];
 
           for (let i = 0; i < nodesToAdd; i++) {
             const newEventNode = updatedNodes.find(
@@ -507,14 +565,13 @@ export function adjustEventCountForAllClusters(
             updatedNodes.push(newNarrativeNode);
 
             // Add edge from previous narrative node
-            const previousNarrative =
-              i === 0
-                ? sortedNarratives[sortedNarratives.length - 1]
-                : updatedNodes[updatedNodes.length - 1];
-            if (previousNarrative) {
+            if (previousNarrativeNode) {
+              const edgeId = `edge-${previousNarrativeNode.id}-${newNarrativeId}`;
+              // Remove any existing edge with this ID first
+              updatedEdges = updatedEdges.filter((e) => e.id !== edgeId);
               updatedEdges.push({
-                id: `edge-${previousNarrative.id}-${newNarrativeId}`,
-                source: previousNarrative.id,
+                id: edgeId,
+                source: previousNarrativeNode.id,
                 target: newNarrativeId,
                 sourceHandle: "narrative-next",
                 targetHandle: "narrative-prev",
@@ -522,6 +579,9 @@ export function adjustEventCountForAllClusters(
                 animated: true,
               });
             }
+
+            // Track this node as the previous for the next iteration
+            previousNarrativeNode = newNarrativeNode;
           }
         }
       }
@@ -538,20 +598,39 @@ export function adjustEventCountForAllClusters(
           !nodeIdsToRemove.has(edge.source) && !nodeIdsToRemove.has(edge.target),
       );
 
-      // Remove corresponding perspective nodes
-      const perspectiveGroups = currentNodes.filter(
-        (node): node is NarrationGroupNodeType =>
-          node.type === "perspectiveGroup",
-      );
+      // Find connected perspective groups via bridge edges
+      const connectedPerspectiveGroupIds = new Set<string>();
+      updatedEdges.forEach((edge) => {
+        const isBridgeEdge =
+          edge.sourceHandle === "group-bridge" &&
+          edge.targetHandle === "group-bridge";
 
-      for (const perspectiveGroup of perspectiveGroups) {
-        const perspectiveGroupId = perspectiveGroup.id;
-        const existingPerspectives = currentNodes.filter(
+        if (!isBridgeEdge) {
+          return;
+        }
+
+        if (edge.source === groupId) {
+          connectedPerspectiveGroupIds.add(edge.target);
+        } else if (edge.target === groupId) {
+          connectedPerspectiveGroupIds.add(edge.source);
+        }
+      });
+
+      // Remove perspective nodes ONLY from connected perspective groups
+      for (const perspectiveGroupId of connectedPerspectiveGroupIds) {
+        const perspectiveGroup = updatedNodes.find(
+          (node) => node.id === perspectiveGroupId && node.type === "perspectiveGroup",
+        );
+
+        if (!perspectiveGroup) continue;
+
+        const existingPerspectives = updatedNodes.filter(
           (node): node is PerspectiveNodeType =>
             node.type === "perspective" &&
             node.parentId === perspectiveGroupId,
         );
 
+        // Remove perspective nodes if this group has the same count as the original event count
         if (existingPerspectives.length === currentEventCount) {
           const sortedPerspectives = [...existingPerspectives].sort(
             (a, b) => a.position.x - b.position.x,
@@ -571,19 +650,41 @@ export function adjustEventCountForAllClusters(
         }
       }
 
-      // Remove corresponding narrative nodes
-      const narrativeGroups = currentNodes.filter(
-        (node): node is NarrationGroupNodeType =>
-          node.type === "narrativeGroup",
-      );
+      // Find connected narrative groups via perspective groups
+      const connectedNarrativeGroupIds = new Set<string>();
+      if (connectedPerspectiveGroupIds.size > 0) {
+        updatedEdges.forEach((edge) => {
+          const connectsFromPerspective =
+            connectedPerspectiveGroupIds.has(edge.source) &&
+            edge.sourceHandle === "narrative-bridge" &&
+            edge.targetHandle === "group-bridge";
+          const connectsToPerspective =
+            connectedPerspectiveGroupIds.has(edge.target) &&
+            edge.targetHandle === "narrative-bridge" &&
+            edge.sourceHandle === "group-bridge";
 
-      for (const narrativeGroup of narrativeGroups) {
-        const narrativeGroupId = narrativeGroup.id;
-        const existingNarratives = currentNodes.filter(
+          if (connectsFromPerspective) {
+            connectedNarrativeGroupIds.add(edge.target);
+          } else if (connectsToPerspective) {
+            connectedNarrativeGroupIds.add(edge.source);
+          }
+        });
+      }
+
+      // Remove narrative nodes ONLY from connected narrative groups
+      for (const narrativeGroupId of connectedNarrativeGroupIds) {
+        const narrativeGroup = updatedNodes.find(
+          (node) => node.id === narrativeGroupId && node.type === "narrativeGroup",
+        );
+
+        if (!narrativeGroup) continue;
+
+        const existingNarratives = updatedNodes.filter(
           (node): node is NarrativeNodeType =>
             node.type === "narrative" && node.parentId === narrativeGroupId,
         );
 
+        // Remove narrative nodes if this group has the same count as the original event count
         if (existingNarratives.length === currentEventCount) {
           const sortedNarratives = [...existingNarratives].sort(
             (a, b) => a.position.x - b.position.x,
@@ -602,6 +703,59 @@ export function adjustEventCountForAllClusters(
           );
         }
       }
+    }
+
+    // Update the width of the event group based on the new event count
+    const eventGroupNode = updatedNodes.find((n) => n.id === groupId);
+    if (eventGroupNode) {
+      const rightmostEventEdge =
+        EVENT_ROW_START_X +
+        (newEventCount - 1) * EVENT_HORIZONTAL_SPACING +
+        EVENT_NODE_WIDTH;
+      const computedWidth = rightmostEventEdge + EVENT_GROUP_RIGHT_PADDING;
+      const newWidth = Math.max(DEFAULT_EVENT_GROUP_WIDTH, computedWidth);
+
+      // Update event group width
+      updatedNodes = updatedNodes.map((node) => {
+        if (node.id === groupId) {
+          return {
+            ...node,
+            style: {
+              ...node.style,
+              width: newWidth,
+            },
+          };
+        }
+        return node;
+      });
+
+      // Update connected perspective and narrative group widths
+      const connectedPerspectiveGroups = updatedNodes.filter(
+        (node): node is NarrationGroupNodeType =>
+          node.type === "perspectiveGroup",
+      );
+
+      const connectedNarrativeGroups = updatedNodes.filter(
+        (node): node is NarrationGroupNodeType =>
+          node.type === "narrativeGroup",
+      );
+
+      updatedNodes = updatedNodes.map((node) => {
+        // Update perspective group widths
+        if (
+          connectedPerspectiveGroups.some((g) => g.id === node.id) ||
+          connectedNarrativeGroups.some((g) => g.id === node.id)
+        ) {
+          return {
+            ...node,
+            style: {
+              ...node.style,
+              width: Math.max(DEFAULT_NARRATION_GROUP_WIDTH, newWidth),
+            },
+          };
+        }
+        return node;
+      });
     }
   }
 
