@@ -11,6 +11,7 @@ import {
   initialEdges,
   initialNodes,
   type CharacterNodeType,
+  type PerspectiveGroupNodeType,
   type PerspectiveNodeType,
   type WorkflowEdge,
   type WorkflowNode,
@@ -73,7 +74,7 @@ const deepClone = <T>(value: T): T => {
 };
 
 const ATTRIBUTE_HANDLE_PATTERN = /-(physiology|psychology|sociology)-/;
-const STORAGE_VERSION = 4;
+const STORAGE_VERSION = 5;
 
 const sanitizeEdges = (edges: WorkflowEdge[]): WorkflowEdge[] =>
   edges.filter((edge) => {
@@ -217,12 +218,140 @@ const synchronizeCharacterPerspectiveLinks = (
   return updated ? normalizedNodes : nodes;
 };
 
+const synchronizePerspectiveGroupEventLinks = (
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+): WorkflowNode[] => {
+  if (!nodes || nodes.length === 0) {
+    return nodes ?? [];
+  }
+
+  const perspectiveGroups = nodes.filter(
+    (node): node is PerspectiveGroupNodeType => node.type === "perspectiveGroup",
+  );
+  if (perspectiveGroups.length === 0) {
+    return nodes;
+  }
+
+  const nodeLookup = new Map(nodes.map((node) => [node.id, node]));
+  const eventGroupMetadata = new Map(
+    nodes
+      .filter((node) => node.type === "eventGroup")
+      .map((node) => {
+        const data = node.data as {
+          label?: string;
+          eventGroupId?: number;
+        };
+        return [
+          node.id,
+          {
+            id: node.id,
+            label: data?.label,
+            eventGroupId: data?.eventGroupId,
+          },
+        ];
+      }),
+  );
+
+  const perspectiveGroupConnections = new Map<string, string>();
+
+  edges.forEach((edge) => {
+    if (
+      edge.sourceHandle !== "group-bridge" ||
+      edge.targetHandle !== "group-bridge"
+    ) {
+      return;
+    }
+
+    const sourceNode = nodeLookup.get(edge.source);
+    const targetNode = nodeLookup.get(edge.target);
+    if (!sourceNode || !targetNode) {
+      return;
+    }
+
+    if (
+      sourceNode.type === "eventGroup" &&
+      targetNode.type === "perspectiveGroup"
+    ) {
+      perspectiveGroupConnections.set(targetNode.id, sourceNode.id);
+      return;
+    }
+
+    if (
+      sourceNode.type === "perspectiveGroup" &&
+      targetNode.type === "eventGroup"
+    ) {
+      perspectiveGroupConnections.set(sourceNode.id, targetNode.id);
+    }
+  });
+
+  let changed = false;
+
+  const updatedNodes = nodes.map((node) => {
+    if (node.type !== "perspectiveGroup") {
+      return node;
+    }
+
+    const currentData = (node.data ?? {}) as PerspectiveGroupNodeType["data"];
+    const existingConnected = currentData.connectedEventGroup;
+
+    const connectedEventGroupId = perspectiveGroupConnections.get(node.id);
+    const eventGroupData = connectedEventGroupId
+      ? eventGroupMetadata.get(connectedEventGroupId)
+      : undefined;
+
+    if (!eventGroupData) {
+      if (!existingConnected) {
+        return node;
+      }
+
+      const { connectedEventGroup: _removed, ...restData } = currentData as Record<
+        string,
+        unknown
+      >;
+      changed = true;
+      return {
+        ...node,
+        data: restData as PerspectiveGroupNodeType["data"],
+      };
+    }
+
+    if (
+      existingConnected &&
+      existingConnected.id === eventGroupData.id &&
+      existingConnected.label === eventGroupData.label &&
+      existingConnected.eventGroupId === eventGroupData.eventGroupId
+    ) {
+      return node;
+    }
+
+    changed = true;
+    return {
+      ...node,
+      data: {
+        ...currentData,
+        connectedEventGroup: eventGroupData,
+      },
+    };
+  });
+
+  return changed ? updatedNodes : nodes;
+};
+
+const applyDerivedNodeState = (
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+): WorkflowNode[] => {
+  const withCharacterLinks = synchronizeCharacterPerspectiveLinks(nodes, edges);
+  return synchronizePerspectiveGroupEventLinks(withCharacterLinks, edges);
+};
+
 const getInitialState = () => {
   const nodes = deepClone(initialNodes);
   const edges = sanitizeEdges(deepClone(initialEdges));
 
   return {
-    nodes: synchronizeCharacterPerspectiveLinks(nodes, edges),
+    nodes: applyDerivedNodeState(nodes, edges),
     edges,
     selectedEvidenceAttributes: {},
     selectedSnippets: {},
@@ -300,7 +429,7 @@ export const useWorkflowStore = create<WorkflowState>()(
               : updater;
 
           return {
-            nodes: synchronizeCharacterPerspectiveLinks(nextNodes, state.edges),
+            nodes: applyDerivedNodeState(nextNodes, state.edges),
           };
         }),
       setEdges: (updater) =>
@@ -313,10 +442,7 @@ export const useWorkflowStore = create<WorkflowState>()(
               : updater,
           );
 
-          const nextNodes = synchronizeCharacterPerspectiveLinks(
-            state.nodes,
-            nextEdges,
-          );
+          const nextNodes = applyDerivedNodeState(state.nodes, nextEdges);
 
           return {
             edges: nextEdges,
@@ -324,18 +450,18 @@ export const useWorkflowStore = create<WorkflowState>()(
           };
         }),
       onNodesChange: (changes) =>
-        set({
-          nodes: applyNodeChanges(changes, get().nodes),
+        set((state) => {
+          const updatedNodes = applyNodeChanges(changes, state.nodes);
+          return {
+            nodes: applyDerivedNodeState(updatedNodes, state.edges),
+          };
         }),
       onEdgesChange: (changes) =>
         set((state) => {
           const nextEdges = sanitizeEdges(
             applyEdgeChanges(changes, state.edges),
           );
-          const nextNodes = synchronizeCharacterPerspectiveLinks(
-            state.nodes,
-            nextEdges,
-          );
+          const nextNodes = applyDerivedNodeState(state.nodes, nextEdges);
 
           return {
             edges: nextEdges,
@@ -440,10 +566,7 @@ export const useWorkflowStore = create<WorkflowState>()(
         const nodesWithNames = shouldEnsureNames
           ? ensureNarrationGroupCharacterNames(state.nodes)
           : state.nodes ?? [];
-        const normalizedNodes = synchronizeCharacterPerspectiveLinks(
-          nodesWithNames,
-          edges,
-        );
+        const normalizedNodes = applyDerivedNodeState(nodesWithNames, edges);
 
         return {
           ...state,

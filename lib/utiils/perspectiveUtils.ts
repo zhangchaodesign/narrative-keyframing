@@ -2,6 +2,7 @@ import type {
   CharacterNodeType,
   CharacterTraits,
   EventNodeType,
+  PerspectiveGroupNodeType,
   PerspectiveNodeType,
   WorkflowEdge,
   WorkflowNode,
@@ -449,6 +450,7 @@ export const prepareEvidenceAnalysis = ({
  */
 export const preparePerspectiveRequest = ({
   nodes,
+  edges,
   targetNodeIds,
 }: {
   nodes: WorkflowNode[];
@@ -466,10 +468,62 @@ export const preparePerspectiveRequest = ({
   );
 
   const sortedEventNodes = sortEventsByTimeline(eventNodes);
+  const nodeLookup = new Map(nodes.map((node) => [node.id, node]));
+  const perspectiveGroupNodes = nodes.filter(
+    (node): node is PerspectiveGroupNodeType =>
+      node.type === "perspectiveGroup",
+  );
+  const perspectiveGroupMap = new Map(
+    perspectiveGroupNodes.map((node) => [node.id, node]),
+  );
+  const perspectiveGroupToEventGroupEdgeMap = new Map<string, string>();
+
+  edges.forEach((edge) => {
+    if (
+      edge.sourceHandle !== "group-bridge" ||
+      edge.targetHandle !== "group-bridge"
+    ) {
+      return;
+    }
+
+    const left =
+      typeof edge.source === "string"
+        ? nodeLookup.get(edge.source)
+        : undefined;
+    const right =
+      typeof edge.target === "string"
+        ? nodeLookup.get(edge.target)
+        : undefined;
+
+    if (left?.type === "perspectiveGroup" && right?.type === "eventGroup") {
+      perspectiveGroupToEventGroupEdgeMap.set(left.id, right.id);
+      return;
+    }
+
+    if (right?.type === "perspectiveGroup" && left?.type === "eventGroup") {
+      perspectiveGroupToEventGroupEdgeMap.set(right.id, left.id);
+    }
+  });
 
   const eventNodeMap = new Map(
     sortedEventNodes.map((eventNode) => [eventNode.id, eventNode]),
   );
+  const eventNodesByGroup = new Map<string, EventNodeType[]>();
+  sortedEventNodes.forEach((eventNode) => {
+    if (!eventNode.parentId) {
+      return;
+    }
+    const existing = eventNodesByGroup.get(eventNode.parentId) ?? [];
+    existing.push(eventNode);
+    eventNodesByGroup.set(eventNode.parentId, existing);
+  });
+  eventNodesByGroup.forEach((events, groupId) => {
+    events.sort(
+      (a, b) =>
+        (a.position?.x ?? 0) -
+          (b.position?.x ?? 0) || (a.position?.y ?? 0) - (b.position?.y ?? 0),
+    );
+  });
   const eventOrderMap = new Map(
     sortedEventNodes.map((eventNode, indexPosition) => [
       eventNode.id,
@@ -477,7 +531,64 @@ export const preparePerspectiveRequest = ({
     ]),
   );
 
-  const eventSequence = sortedEventNodes.map((eventNode) => {
+  const targetIdSet =
+    targetNodeIds && targetNodeIds.length > 0 ? new Set(targetNodeIds) : null;
+
+  const relevantPerspectiveNodes = targetIdSet
+    ? perspectiveNodes.filter((node) => targetIdSet.has(node.id))
+    : perspectiveNodes;
+
+  const relevantEventGroupIds = new Set<string>();
+
+  const getConnectedEventGroupId = (
+    perspectiveNode: PerspectiveNodeType,
+  ): string | undefined => {
+    const perspectiveGroupId = perspectiveNode.parentId;
+    if (!perspectiveGroupId) return undefined;
+
+    const perspectiveGroupNode = perspectiveGroupMap.get(perspectiveGroupId);
+    const dataConnected = perspectiveGroupNode?.data?.connectedEventGroup?.id;
+    if (dataConnected) {
+      return dataConnected;
+    }
+
+    const edgeConnected = perspectiveGroupToEventGroupEdgeMap.get(
+      perspectiveGroupId,
+    );
+    if (edgeConnected) {
+      return edgeConnected;
+    }
+
+    return undefined;
+  };
+
+  relevantPerspectiveNodes.forEach((perspectiveNode) => {
+    const eventId = perspectiveNode.data?.eventId?.trim();
+    const connectedEventGroupId = getConnectedEventGroupId(perspectiveNode);
+
+    if (connectedEventGroupId) {
+      relevantEventGroupIds.add(connectedEventGroupId);
+      return;
+    }
+
+    if (eventId) {
+      const parentEventGroupId = eventNodeMap.get(eventId)?.parentId;
+      if (parentEventGroupId) {
+        relevantEventGroupIds.add(parentEventGroupId);
+      }
+    }
+  });
+
+  const shouldFilterEvents = relevantEventGroupIds.size > 0;
+  const filteredEventNodes = shouldFilterEvents
+    ? sortedEventNodes.filter((eventNode) => {
+        const belongsToRelevantGroup =
+          eventNode.parentId && relevantEventGroupIds.has(eventNode.parentId);
+        return Boolean(belongsToRelevantGroup);
+      })
+    : sortedEventNodes;
+
+  const eventSequence = filteredEventNodes.map((eventNode) => {
     const timeline = eventNode.data?.timeline?.trim();
     const description = eventNode.data?.description?.trim();
     const safeDescription =
@@ -498,17 +609,40 @@ export const preparePerspectiveRequest = ({
     };
   });
 
-  const targetIdSet =
-    targetNodeIds && targetNodeIds.length > 0 ? new Set(targetNodeIds) : null;
-
-  const relevantPerspectiveNodes = targetIdSet
-    ? perspectiveNodes.filter((node) => targetIdSet.has(node.id))
-    : perspectiveNodes;
-
   const tasksWithOrdering = relevantPerspectiveNodes
     .map((perspectiveNode) => {
-      const eventId = perspectiveNode.data?.eventId?.trim();
-      const eventNode = eventId ? eventNodeMap.get(eventId) ?? null : null;
+      const connectedEventGroupId = getConnectedEventGroupId(perspectiveNode);
+      const perspectiveGroupId = perspectiveNode.parentId;
+
+      let eventNode: EventNodeType | null = null;
+      if (connectedEventGroupId && perspectiveGroupId) {
+        const groupedEvents = eventNodesByGroup.get(connectedEventGroupId);
+        if (groupedEvents && groupedEvents.length > 0) {
+          const siblingPerspectives = perspectiveNodes
+            .filter((node) => node.parentId === perspectiveGroupId)
+            .sort(
+              (a, b) =>
+                (a.position.x ?? 0) - (b.position.x ?? 0) ||
+                (a.position.y ?? 0) - (b.position.y ?? 0),
+            );
+          const siblingIndex = siblingPerspectives.findIndex(
+            (node) => node.id === perspectiveNode.id,
+          );
+          if (siblingIndex >= 0) {
+            const targetIndex = Math.min(
+              siblingIndex,
+              groupedEvents.length - 1,
+            );
+            eventNode = groupedEvents[targetIndex] ?? null;
+          }
+        }
+      }
+
+      if (!eventNode) {
+        const eventId = perspectiveNode.data?.eventId?.trim();
+        eventNode = eventId ? eventNodeMap.get(eventId) ?? null : null;
+      }
+
       if (!eventNode) {
         return null;
       }

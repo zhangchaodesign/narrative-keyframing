@@ -5,9 +5,9 @@ import { Position, type NodeProps, useStore } from "@xyflow/react";
 import { NarrativeHandle } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeHandle";
 import { NarrativeContent } from "@/components/shared/NarrativeContent";
 import type {
-  EventGroupNodeType,
   EventNodeType,
   NarrativeNodeType,
+  PerspectiveGroupNodeType,
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
@@ -33,37 +33,33 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
   }, [id, nodes]);
 
   // Determine which event group (story outline) this narrative cluster is linked to
-  const connectedEventGroupNode = useMemo(() => {
+  const connectedEventGroup = useMemo(() => {
     const narrativeNode = nodes.find(
       (node): node is NarrativeNodeType =>
         node.id === id && node.type === "narrative",
     );
-    const narrativeGroupId = narrativeNode?.parentId ?? DEFAULT_NARRATIVE_GROUP_ID;
+    const narrativeGroupId =
+      narrativeNode?.parentId ?? DEFAULT_NARRATIVE_GROUP_ID;
     const perspectiveBridgeEdge = edges.find(
       (edge) =>
-        edge.target === narrativeGroupId &&
-        edge.targetHandle === "group-bridge" &&
-        edge.sourceHandle === "narrative-bridge",
+        ((edge.target === narrativeGroupId &&
+          edge.targetHandle === "group-bridge") ||
+          (edge.source === narrativeGroupId &&
+            edge.sourceHandle === "group-bridge")) &&
+        (edge.sourceHandle === "narrative-bridge" ||
+          edge.targetHandle === "narrative-bridge"),
     );
     if (!perspectiveBridgeEdge) {
       return undefined;
     }
 
-    const eventBridgeEdge = edges.find(
-      (edge) =>
-        edge.target === perspectiveBridgeEdge.source &&
-        edge.targetHandle === "group-bridge" &&
-        edge.sourceHandle === "group-bridge",
+    const perspectiveGroupNode = nodes.find(
+      (node): node is PerspectiveGroupNodeType =>
+        node.type === "perspectiveGroup" &&
+        (node.id === perspectiveBridgeEdge.source ||
+          node.id === perspectiveBridgeEdge.target),
     );
-    if (!eventBridgeEdge) {
-      return undefined;
-    }
-
-    const eventGroupNode = nodes.find(
-      (node): node is EventGroupNodeType =>
-        node.id === eventBridgeEdge.source && node.type === "eventGroup",
-    );
-    return eventGroupNode;
+    return perspectiveGroupNode?.data?.connectedEventGroup;
   }, [edges, id, nodes]);
 
   // Find the event node and related metadata for display
@@ -76,23 +72,20 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
         node.id === data.eventId && node.type === "event",
     );
     const timelineLabel = eventNode?.data?.timeline ?? data.eventId;
-    let clusterDisplay: string | undefined;
-
-    if (connectedEventGroupNode) {
-      const clusterLabel = connectedEventGroupNode.data?.label?.trim() ?? "";
-      const clusterId = connectedEventGroupNode.data?.eventGroupId;
-      const assembledDisplay = [clusterLabel, clusterId]
-        .filter((value) => value !== undefined && value !== "")
-        .join(" ")
-        .trim();
-      clusterDisplay = assembledDisplay.length > 0 ? assembledDisplay : undefined;
-    }
+    const clusterLabel = connectedEventGroup?.label?.trim() ?? "";
+    const clusterId = connectedEventGroup?.eventGroupId;
+    const assembledDisplay = [clusterLabel, clusterId]
+      .filter((value) => value !== undefined && value !== "")
+      .join(" ")
+      .trim();
+    const clusterDisplay =
+      assembledDisplay.length > 0 ? assembledDisplay : undefined;
 
     return {
       timelineLabel,
       clusterDisplay,
     };
-  }, [connectedEventGroupNode, data?.eventId, nodes]);
+  }, [connectedEventGroup, data?.eventId, nodes]);
 
   return (
     <div className="group relative flex gap-2 h-80 w-64 flex-col rounded-lg border-2 border-primary bg-white p-3 text-xs hover:shadow-lg">

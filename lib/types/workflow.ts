@@ -58,6 +58,11 @@ export type GroupNodeData = {
   isActiveInEditor?: boolean;
   eventGroupId?: number;
   narrativeGroupId?: number;
+  connectedEventGroup?: {
+    id: string;
+    label?: string;
+    eventGroupId?: number;
+  };
 };
 
 export type EventNodeType = Node<EventNodeData, "event">;
