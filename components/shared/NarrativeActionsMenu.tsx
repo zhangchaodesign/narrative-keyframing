@@ -2,18 +2,14 @@
 
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { TbFileText, TbPlayerPlay, TbTable } from "react-icons/tb";
-import type { WorkflowNode } from "@/lib/types/workflow";
+import type { NarrativeEventData } from "@/lib/types/narrative";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { useEditorStore } from "@/lib/stores/editorStore";
 import { SlateUtils } from "@/lib/utiils/slateUtils";
 import { NarrativeGenerationModal } from "@/components/shared/NarrativeGenerationModal";
 import { NarrativeTableModal } from "@/components/shared/NarrativeTableModal";
 import { cn } from "@/lib/utiils/sharedUtils";
-import {
-  buildNarrativeEventsData,
-  combineNarrativeTextsInGroup,
-  type NarrativeEventData,
-} from "@/lib/utiils/narrativeUtils";
+import { combineNarrativeTextsInGroup } from "@/lib/utiils/narrativeUtils";
 
 type NarrativeActionsMenuProps = {
   nodeId: string;
@@ -31,10 +27,12 @@ export function NarrativeActionsMenu({
   extraButtons,
 }: NarrativeActionsMenuProps) {
   const nodes = useWorkflowStore((state) => state.nodes);
-  const edges = useWorkflowStore((state) => state.edges);
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const selectedSnippets = useWorkflowStore(
     (state) => state.selectedSnippets,
+  );
+  const getNarrativeEventsData = useWorkflowStore(
+    (state) => state.getNarrativeEventsData,
   );
   const { setValue } = useEditorStore();
 
@@ -51,7 +49,7 @@ export function NarrativeActionsMenu({
   }, []);
 
   const handleOpenModal = useCallback(() => {
-    const preparedEventsData = buildNarrativeEventsData(nodeId, nodes, edges);
+    const preparedEventsData = getNarrativeEventsData(nodeId);
     if (preparedEventsData.length === 0) {
       alert("No narrative nodes found in this group");
       return;
@@ -65,7 +63,7 @@ export function NarrativeActionsMenu({
     setEventsData(preparedEventsData);
     setPreSelectedSnippets(preSelected);
     setIsModalOpen(true);
-  }, [edges, nodeId, nodes, selectedSnippets]);
+  }, [getNarrativeEventsData, nodeId, selectedSnippets]);
 
   const handleGenerateNarratives = useCallback(
     async (selectedSnippetKeys: Set<string>, customPrompt: string) => {
@@ -164,14 +162,14 @@ export function NarrativeActionsMenu({
   );
 
   const handleOpenTableModal = useCallback(() => {
-    const preparedEventsData = buildNarrativeEventsData(nodeId, nodes, edges);
+    const preparedEventsData = getNarrativeEventsData(nodeId);
     if (preparedEventsData.length === 0) {
       alert("No narrative nodes found in this group");
       return;
     }
     setEventsData(preparedEventsData);
     setIsTableModalOpen(true);
-  }, [edges, nodeId, nodes]);
+  }, [getNarrativeEventsData, nodeId]);
 
   const handleCloseTableModal = useCallback(() => {
     setIsTableModalOpen(false);

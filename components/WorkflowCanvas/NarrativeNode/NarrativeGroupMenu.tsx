@@ -4,7 +4,6 @@ import { useCallback } from "react";
 import { TbCopy, TbTrash } from "react-icons/tb";
 
 import { deleteNodeCluster } from "@/lib/utiils/workflowUtils";
-import { duplicateNarrativeGroupCluster } from "@/lib/utiils/narrativeUtils";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { NarrativeActionsMenu } from "@/components/shared/NarrativeActionsMenu";
 
@@ -17,6 +16,9 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
   const edges = useWorkflowStore((state) => state.edges);
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const setEdges = useWorkflowStore((state) => state.setEdges);
+  const duplicateNarrativeGroup = useWorkflowStore(
+    (state) => state.duplicateNarrativeGroup,
+  );
 
   const handleDelete = useCallback(() => {
     const result = deleteNodeCluster(nodeId, nodes, edges);
@@ -26,19 +28,8 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
   }, [edges, nodeId, nodes, setEdges, setNodes]);
 
   const handleDuplicate = useCallback(() => {
-    const result = duplicateNarrativeGroupCluster({
-      groupId: nodeId,
-      nodes,
-      edges,
-    });
-
-    if (!result) {
-      return;
-    }
-
-    setNodes((existing) => [...existing, ...result.newNodes]);
-    setEdges((existing) => [...existing, ...result.newEdges]);
-  }, [edges, nodeId, nodes, setEdges, setNodes]);
+    duplicateNarrativeGroup(nodeId);
+  }, [duplicateNarrativeGroup, nodeId]);
 
   return (
     <NarrativeActionsMenu
