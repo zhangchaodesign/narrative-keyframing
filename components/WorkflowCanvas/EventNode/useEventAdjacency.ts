@@ -30,6 +30,64 @@ type Position = { x: number; y: number };
 const getParentId = (node: WorkflowNode, fallbackId: string): string =>
   (node as { parentId?: string }).parentId ?? fallbackId;
 
+const getConnectedPerspectiveGroupIds = (
+  eventGroupId: string,
+  edges: WorkflowEdge[],
+) => {
+  const connectedIds = new Set<string>();
+
+  edges.forEach((edge) => {
+    const isBridgeEdge =
+      edge.sourceHandle === "group-bridge" &&
+      edge.targetHandle === "group-bridge";
+
+    if (!isBridgeEdge) {
+      return;
+    }
+
+    if (edge.source === eventGroupId) {
+      connectedIds.add(edge.target);
+      return;
+    }
+
+    if (edge.target === eventGroupId) {
+      connectedIds.add(edge.source);
+    }
+  });
+
+  return connectedIds;
+};
+
+const getConnectedNarrativeGroupIds = (
+  perspectiveGroupIds: Set<string>,
+  edges: WorkflowEdge[],
+) => {
+  const connectedIds = new Set<string>();
+
+  if (perspectiveGroupIds.size === 0) {
+    return connectedIds;
+  }
+
+  edges.forEach((edge) => {
+    const connectsFromPerspective =
+      perspectiveGroupIds.has(edge.source) &&
+      edge.sourceHandle === "narrative-bridge" &&
+      edge.targetHandle === "group-bridge";
+    const connectsToPerspective =
+      perspectiveGroupIds.has(edge.target) &&
+      edge.targetHandle === "narrative-bridge" &&
+      edge.sourceHandle === "group-bridge";
+
+    if (connectsFromPerspective) {
+      connectedIds.add(edge.target);
+    } else if (connectsToPerspective) {
+      connectedIds.add(edge.source);
+    }
+  });
+
+  return connectedIds;
+};
+
 interface EventLayoutParams {
   sortedEvents: WorkflowNode[];
   eventRowY: number;
@@ -498,7 +556,7 @@ const updateGroupWidths = ({
 };
 
 export function useEventAdjacency(nodeId: string) {
-  const { getNode, setNodes, setEdges } = useReactFlow<
+  const { getNode, getEdges, setNodes, setEdges } = useReactFlow<
     WorkflowNode,
     WorkflowEdge
   >();
@@ -533,6 +591,15 @@ export function useEventAdjacency(nodeId: string) {
       const eventGroupId =
         (referenceNode as { parentId?: string }).parentId ??
         DEFAULT_EVENT_GROUP_ID;
+      const edges = getEdges();
+      const connectedPerspectiveGroupIds = getConnectedPerspectiveGroupIds(
+        eventGroupId,
+        edges,
+      );
+      const connectedNarrativeGroupIds = getConnectedNarrativeGroupIds(
+        connectedPerspectiveGroupIds,
+        edges,
+      );
 
       const timestamp = Date.now();
       const newEventId = `event-${timestamp}`;
@@ -548,16 +615,26 @@ export function useEventAdjacency(nodeId: string) {
           (nodeState) => nodeState.type === "event",
         );
         const perspectiveNodes = nodesState.filter(
-          (nodeState) => nodeState.type === "perspective",
+          (nodeState) =>
+            nodeState.type === "perspective" &&
+            connectedPerspectiveGroupIds.has(
+              getParentId(nodeState, ""),
+            ),
         );
         const narrativeNodes = nodesState.filter(
-          (nodeState) => nodeState.type === "narrative",
+          (nodeState) =>
+            nodeState.type === "narrative" &&
+            connectedNarrativeGroupIds.has(getParentId(nodeState, "")),
         );
         const perspectiveGroups = nodesState.filter(
-          (nodeState) => nodeState.type === "perspectiveGroup",
+          (nodeState) =>
+            nodeState.type === "perspectiveGroup" &&
+            connectedPerspectiveGroupIds.has(nodeState.id),
         );
         const narrativeGroups = nodesState.filter(
-          (nodeState) => nodeState.type === "narrativeGroup",
+          (nodeState) =>
+            nodeState.type === "narrativeGroup" &&
+            connectedNarrativeGroupIds.has(nodeState.id),
         );
 
         const perspectiveNodesByGroup = new Map<string, WorkflowNode[]>();
@@ -823,6 +900,14 @@ export function useEventAdjacency(nodeId: string) {
 
         return nodesWithNew.map((nodeState) => {
           if (nodeState.type === "event") {
+            const nodeParentId = getParentId(
+              nodeState,
+              DEFAULT_EVENT_GROUP_ID,
+            );
+            if (nodeParentId !== eventGroupId) {
+              return nodeState;
+            }
+
             const newPosition = eventLayout.eventPositionMap.get(nodeState.id);
             if (newPosition) {
               return {
@@ -836,11 +921,7 @@ export function useEventAdjacency(nodeId: string) {
               };
             }
 
-            return {
-              ...nodeState,
-              parentId: eventGroupId,
-              extent: "parent",
-            };
+            return nodeState;
           }
 
           if (nodeState.type === "perspective") {
@@ -927,7 +1008,7 @@ export function useEventAdjacency(nodeId: string) {
         return [...preservedEdges, ...rebuiltEdges];
       });
     },
-    [getNode, nodeId, setEdges, setNodes],
+    [getEdges, getNode, nodeId, setEdges, setNodes],
   );
 
   const handleRemoveEvent = useCallback(() => {
@@ -1094,6 +1175,14 @@ export function useEventAdjacency(nodeId: string) {
 
       return remainingNodes.map((nodeState) => {
         if (nodeState.type === "event") {
+          const nodeParentId = getParentId(
+            nodeState,
+            DEFAULT_EVENT_GROUP_ID,
+          );
+          if (nodeParentId !== eventGroupId) {
+            return nodeState;
+          }
+
           const newPosition = eventLayout.eventPositionMap.get(nodeState.id);
           if (!newPosition) {
             return nodeState;

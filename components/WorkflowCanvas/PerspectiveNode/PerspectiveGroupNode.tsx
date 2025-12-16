@@ -218,7 +218,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           onPointerDown={(event) => event.stopPropagation()}
           className={cn(
             geistMono.className,
-            "btn btn-xs btn-outline btn-primary gap-1 whitespace-nowrap nodrag nopan hover:text-white",
+            "btn btn-xs btn-primary gap-1 whitespace-nowrap nodrag nopan text-white",
           )}
         >
           <TbPlus size={14} />

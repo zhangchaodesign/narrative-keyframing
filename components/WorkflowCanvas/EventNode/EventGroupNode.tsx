@@ -153,7 +153,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           title="Add a custom perspective group"
         >
           <TbPlus size={14} />
-          Customize
+          Add a First-Person Limited Cluster
         </button>
       </div>
 
