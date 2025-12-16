@@ -4,7 +4,12 @@ import { useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { TbCopy, TbTrash } from "react-icons/tb";
 
-import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
+import type {
+  EventGroupNodeType,
+  GroupNodeData,
+  WorkflowEdge,
+  WorkflowNode,
+} from "@/lib/types/workflow";
 import {
   cloneData,
   deleteNodeCluster,
@@ -37,12 +42,22 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
     const currentEdges = getEdges();
 
     const groupNode = currentNodes.find(
-      (node) => node.id === nodeId && node.type === "eventGroup",
+      (node): node is EventGroupNodeType =>
+        node.id === nodeId && node.type === "eventGroup",
     );
 
     if (!groupNode) {
       return;
     }
+
+    const eventGroupNodes = currentNodes.filter(
+      (node): node is EventGroupNodeType => node.type === "eventGroup",
+    );
+    const highestEventGroupId = eventGroupNodes.reduce((accumulator, node) => {
+      const eventGroupId = node.data?.eventGroupId ?? 0;
+      return eventGroupId > accumulator ? eventGroupId : accumulator;
+    }, 0);
+    const nextEventGroupId = highestEventGroupId + 1;
 
     const childNodes = currentNodes.filter((node) => node.parentId === nodeId);
     const clusterNodeIds = new Set<string>([
@@ -58,6 +73,13 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
     existingNodeIds.add(newGroupId);
     idMap.set(nodeId, newGroupId);
 
+    const clonedGroupData = cloneData(groupNode.data) as GroupNodeData;
+    const nextGroupData: GroupNodeData = {
+      ...clonedGroupData,
+      label: clonedGroupData?.label || "Story Outline",
+      eventGroupId: nextEventGroupId,
+    };
+
     const newGroupNode: WorkflowNode = {
       ...groupNode,
       id: newGroupId,
@@ -65,7 +87,7 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
         x: groupNode.position.x,
         y: groupNode.position.y + CLONE_OFFSET,
       },
-      data: cloneData(groupNode.data),
+      data: nextGroupData,
       selected: false,
       dragging: false,
     } as WorkflowNode;

@@ -56,6 +56,8 @@ export type GroupNodeData = {
   label: string;
   characterName?: string;
   isActiveInEditor?: boolean;
+  eventGroupId?: number;
+  narrativeGroupId?: number;
 };
 
 export type EventNodeType = Node<EventNodeData, "event">;

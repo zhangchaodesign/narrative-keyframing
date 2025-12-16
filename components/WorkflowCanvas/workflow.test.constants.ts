@@ -20,7 +20,7 @@ export const initialNodes: WorkflowNode[] = [
     id: "event-group",
     type: "eventGroup",
     position: { x: 200, y: 20 },
-    data: { label: "Story Outline" },
+    data: { label: "Story Outline", eventGroupId: 1 },
     style: {
       width: 1200,
       height: 220,
@@ -81,6 +81,23 @@ export const initialNodes: WorkflowNode[] = [
     },
     parentId: "event-group",
     extent: "parent",
+  },
+  {
+    id: "narration-group",
+    type: "narrativeGroup",
+    position: { x: 520, y: 1200 },
+    data: {
+      label: "Third-Person Omniscient Cluster",
+      narrativeGroupId: 1,
+    },
+    style: {
+      width: 1200,
+      height: 420,
+      backgroundColor: "transparent",
+      border: "none",
+      padding: 0,
+      boxShadow: "none",
+    },
   },
 ];
 

@@ -39,6 +39,26 @@ export function TimelineHeader({
     onNarrativeClusterChange(value || null);
   };
 
+  const formatStoryClusterLabel = (cluster: StoryOutlineCluster) => {
+    if (typeof cluster.eventGroupNumber === "number") {
+      return `${cluster.label} ${cluster.eventGroupNumber}`;
+    }
+    if (cluster.eventGroupId) {
+      return `${cluster.label} (${cluster.eventGroupId})`;
+    }
+    return cluster.label;
+  };
+
+  const formatNarrativeClusterLabel = (cluster: NarrativeCluster) => {
+    if (typeof cluster.narrativeGroupNumber === "number") {
+      return `${cluster.label} ${cluster.narrativeGroupNumber}`;
+    }
+    if (cluster.narrativeGroupId) {
+      return `${cluster.label} (${cluster.narrativeGroupId})`;
+    }
+    return cluster.label;
+  };
+
   return (
     <div className="bg-gray-50 border-b border-gray-200">
       <div className="px-4 py-2 flex items-center justify-between">
@@ -62,7 +82,7 @@ export function TimelineHeader({
               >
                 {storyOutlineClusters.map((cluster) => (
                   <option key={cluster.id} value={cluster.id}>
-                    {cluster.label}
+                    {formatStoryClusterLabel(cluster)}
                   </option>
                 ))}
               </select>
@@ -86,7 +106,7 @@ export function TimelineHeader({
                 <option value="">None</option>
                 {filteredNarrativeClusters.map((cluster) => (
                   <option key={cluster.id} value={cluster.id}>
-                    {cluster.label}
+                    {formatNarrativeClusterLabel(cluster)}
                   </option>
                 ))}
               </select>

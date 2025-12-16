@@ -260,6 +260,7 @@ const buildStoryOutlineClusters = (
           items: storyItems,
         },
         eventGroupId: group.id,
+        eventGroupNumber: groupData?.eventGroupId,
       });
       eventPositionMapByGroup.set(group.id, eventPositionMap);
     }
@@ -329,6 +330,7 @@ const buildNarrativeClusters = (
           items: narrativeItems,
         },
         narrativeGroupId: group.id,
+        narrativeGroupNumber: groupData?.narrativeGroupId,
         linkedEventGroupId,
       });
     }

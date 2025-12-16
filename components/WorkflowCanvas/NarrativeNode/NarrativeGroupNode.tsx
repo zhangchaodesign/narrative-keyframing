@@ -9,6 +9,11 @@ import { geistMono } from "@/app/fonts";
 
 export function NarrativeGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   const isActive = data?.isActiveInEditor ?? false;
+  const baseLabel = data?.label ?? "Third-Person Omniscient Cluster";
+  const labelWithId =
+    typeof data?.narrativeGroupId === "number"
+      ? `${baseLabel} ${data.narrativeGroupId}`
+      : baseLabel;
 
   return (
     <div
@@ -27,7 +32,7 @@ export function NarrativeGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           isActive ? "bg-green-600 text-white" : "bg-primary text-white",
         )}
       >
-        {data?.label}
+        {labelWithId}
       </div>
       {isActive && (
         <div className="absolute right-1 top-1 flex items-center gap-1 rounded bg-green-600 px-2 py-1">

@@ -5,6 +5,7 @@ import type {
   WorkflowEdge,
   WorkflowNode,
   EventNodeType,
+  GroupNodeData,
 } from "@/lib/types/workflow";
 import { cloneData, generateUniqueUuidId } from "@/lib/utiils/workflowUtils";
 
@@ -47,6 +48,18 @@ export const duplicateNarrativeGroupCluster = ({
     return null;
   }
 
+  const narrativeGroups = nodes.filter(
+    (node) => node.type === "narrativeGroup",
+  );
+  const highestNarrativeGroupId = narrativeGroups.reduce(
+    (accumulator, node) => {
+      const groupId = node.data?.narrativeGroupId ?? 0;
+      return groupId > accumulator ? groupId : accumulator;
+    },
+    0,
+  );
+  const nextNarrativeGroupId = highestNarrativeGroupId + 1;
+
   const childNodes = nodes.filter((node) => node.parentId === groupId);
   const clusterNodeIds = new Set<string>([
     groupId,
@@ -61,6 +74,13 @@ export const duplicateNarrativeGroupCluster = ({
   existingNodeIds.add(newGroupId);
   idMap.set(groupId, newGroupId);
 
+  const clonedGroupData = cloneData(groupNode.data) as GroupNodeData;
+  const nextGroupData: GroupNodeData = {
+    ...clonedGroupData,
+    isActiveInEditor: false,
+    narrativeGroupId: nextNarrativeGroupId,
+  };
+
   const newGroupNode: WorkflowNode = {
     ...groupNode,
     id: newGroupId,
@@ -68,10 +88,7 @@ export const duplicateNarrativeGroupCluster = ({
       x: groupNode.position.x + CLONE_OFFSET,
       y: groupNode.position.y + CLONE_OFFSET,
     },
-    data: {
-      ...cloneData(groupNode.data),
-      isActiveInEditor: false,
-    },
+    data: nextGroupData,
     selected: false,
     dragging: false,
   } as WorkflowNode;

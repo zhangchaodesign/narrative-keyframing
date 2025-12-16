@@ -20,6 +20,7 @@ export interface StoryOutlineCluster {
   label: string;
   track: TimelineTrack;
   eventGroupId: string;
+  eventGroupNumber?: number;
 }
 
 export interface NarrativeCluster {
@@ -27,6 +28,7 @@ export interface NarrativeCluster {
   label: string;
   track: TimelineTrack;
   narrativeGroupId: string;
+  narrativeGroupNumber?: number;
   linkedEventGroupId?: string;
 }
 

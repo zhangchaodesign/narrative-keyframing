@@ -317,6 +317,11 @@ export function createStoryOutlineCluster(
   const eventGroups = currentNodes.filter(
     (node): node is EventGroupNodeType => node.type === "eventGroup",
   );
+  const highestEventGroupId = eventGroups.reduce((accumulator, group) => {
+    const groupId = group.data?.eventGroupId ?? 0;
+    return groupId > accumulator ? groupId : accumulator;
+  }, 0);
+  const nextEventGroupId = highestEventGroupId + 1;
 
   const DEFAULT_GROUP_STYLE = {
     width: 1200,
@@ -366,6 +371,7 @@ export function createStoryOutlineCluster(
     },
     data: {
       label: "Story Outline",
+      eventGroupId: nextEventGroupId,
     },
     style: {
       ...DEFAULT_GROUP_STYLE,
@@ -713,6 +719,14 @@ export function createNarrativeGroup(
   const narrativeGroups = currentNodes.filter(
     (node): node is NarrationGroupNodeType => node.type === "narrativeGroup",
   );
+  const highestNarrativeGroupId = narrativeGroups.reduce(
+    (accumulator, group) => {
+      const groupId = group.data?.narrativeGroupId ?? 0;
+      return groupId > accumulator ? groupId : accumulator;
+    },
+    0,
+  );
+  const nextNarrativeGroupId = highestNarrativeGroupId + 1;
 
   const eventGroup = eventGroupId
     ? currentNodes.find(
@@ -806,6 +820,7 @@ export function createNarrativeGroup(
     },
     data: {
       label: "Third-Person Omniscient Cluster",
+      narrativeGroupId: nextNarrativeGroupId,
     },
     style: {
       ...DEFAULT_GROUP_STYLE,

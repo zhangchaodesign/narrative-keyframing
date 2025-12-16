@@ -28,6 +28,11 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   const [isExtracting, setIsExtracting] = useState(false);
 
   const characters = extractedCharacters[id] || [];
+  const baseLabel = data?.label ?? "Story Outline";
+  const labelWithSequence =
+    typeof data?.eventGroupId === "number"
+      ? `${baseLabel} ${data.eventGroupId}`
+      : baseLabel;
 
   const handleExtractCharacters = useCallback(async () => {
     if (isExtracting) {
@@ -103,7 +108,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           "absolute left-1 top-1 rounded bg-pink-500 px-2 py-1 text-xs font-bold text-white",
         )}
       >
-        {data?.label}
+        {labelWithSequence}
       </div>
       <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex flex-row items-center gap-1">
         <button
