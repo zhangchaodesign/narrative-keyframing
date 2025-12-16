@@ -129,7 +129,12 @@ const synchronizeCharacterPerspectiveLinks = (
       const currentData = node.data as CharacterNodeType["data"] | undefined;
       const currentPerspectiveId = currentData?.perspectiveId ?? "";
       const shouldBeDraggable = true;
-      if (currentPerspectiveId === "" && node.draggable === shouldBeDraggable) {
+      const shouldClampToParent: CharacterNodeType["extent"] = undefined;
+      if (
+        currentPerspectiveId === "" &&
+        node.draggable === shouldBeDraggable &&
+        node.extent === shouldClampToParent
+      ) {
         return node;
       }
 
@@ -139,6 +144,7 @@ const synchronizeCharacterPerspectiveLinks = (
         ...node,
         data: buildCharacterNodeData(currentData, ""),
         draggable: shouldBeDraggable,
+        extent: shouldClampToParent,
       };
     });
 
@@ -146,6 +152,11 @@ const synchronizeCharacterPerspectiveLinks = (
   }
 
   const nodeLookup = new Map(nodes.map((node) => [node.id, node]));
+  const perspectiveParentLookup = new Map(
+    nodes
+      .filter((node): node is PerspectiveNodeType => node.type === "perspective")
+      .map((node) => [node.id, node.parentId]),
+  );
   const characterAssignments = new Map<string, string>();
 
   edges.forEach((edge) => {
@@ -176,10 +187,18 @@ const synchronizeCharacterPerspectiveLinks = (
     const currentData = node.data as CharacterNodeType["data"] | undefined;
     const currentPerspectiveId = currentData?.perspectiveId ?? "";
     const shouldBeDraggable = targetPerspectiveId === "";
+    const targetParentId =
+      targetPerspectiveId === ""
+        ? node.parentId
+        : perspectiveParentLookup.get(targetPerspectiveId) ?? node.parentId;
+    const targetExtent: CharacterNodeType["extent"] =
+      targetPerspectiveId === "" ? undefined : "parent";
 
     if (
       currentPerspectiveId === targetPerspectiveId &&
-      node.draggable === shouldBeDraggable
+      node.draggable === shouldBeDraggable &&
+      node.parentId === targetParentId &&
+      node.extent === targetExtent
     ) {
       return node;
     }
@@ -190,6 +209,8 @@ const synchronizeCharacterPerspectiveLinks = (
       ...node,
       data: buildCharacterNodeData(currentData, targetPerspectiveId),
       draggable: shouldBeDraggable,
+      parentId: targetParentId,
+      extent: targetExtent,
     };
   });
 

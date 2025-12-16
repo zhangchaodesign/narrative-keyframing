@@ -75,7 +75,7 @@ export const EventEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
         onMouseLeave={() => setIsHovered(false)}
       >
         <BezierEdge {...props} />
-        <EdgeLabelRenderer>
+        {/* <EdgeLabelRenderer>
           {isHovered && (
             <div
               className="absolute flex items-center gap-1"
@@ -95,7 +95,7 @@ export const EventEdge: React.FC<EdgeProps<WorkflowEdge>> = (props) => {
               </button>
             </div>
           )}
-        </EdgeLabelRenderer>
+        </EdgeLabelRenderer> */}
       </g>
     </>
   );

@@ -42,13 +42,13 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
 
   return (
     <div className="group relative w-64 rounded-lg border-2 border-pink-500 bg-white p-3 text-xs hover:shadow-lg">
-      {!hasPreviousEvent && (
+      {/* {!hasPreviousEvent && (
         <AddEventButton direction="before" onAdd={handleAddAdjacentEvent} />
       )}
       {!hasNextEvent && (
         <AddEventButton direction="after" onAdd={handleAddAdjacentEvent} />
-      )}
-      <EventMenu nodeId={id} nodeType="event" />
+      )} */}
+      {/* <EventMenu nodeId={id} nodeType="event" /> */}
       <div
         className={cn(
           geistMono.className,
