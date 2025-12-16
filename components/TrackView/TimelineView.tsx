@@ -35,6 +35,7 @@ const getTrackUnitCount = (track: TimelineTrack | null) => {
 
 export function TimelineView() {
   const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
   const {
     storyTrack,
     characterTracks,
@@ -42,7 +43,7 @@ export function TimelineView() {
     maxPosition,
     storyOutlineClusters,
     narrativeClusters,
-  } = useMemo(() => buildTimelineData(nodes), [nodes]);
+  } = useMemo(() => buildTimelineData(nodes, edges), [nodes, edges]);
 
   // Cluster selection state
   const [selectedStoryClusterId, setSelectedStoryClusterId] = React.useState<

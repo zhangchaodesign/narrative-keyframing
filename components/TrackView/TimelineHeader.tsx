@@ -24,7 +24,12 @@ export function TimelineHeader({
   onNarrativeClusterChange,
 }: TimelineHeaderProps) {
   const hasStoryClusters = storyOutlineClusters.length > 0;
-  const hasNarrativeClusters = filteredNarrativeClusters.length > 0;
+  const narrativeOptions = selectedStoryClusterId
+    ? filteredNarrativeClusters.filter(
+        (cluster) => cluster.linkedEventGroupId === selectedStoryClusterId,
+      )
+    : filteredNarrativeClusters;
+  const hasNarrativeClusters = narrativeOptions.length > 0;
 
   const handleStoryClusterChange = (
     event: React.ChangeEvent<HTMLSelectElement>,
@@ -104,7 +109,7 @@ export function TimelineHeader({
                 className="text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">None</option>
-                {filteredNarrativeClusters.map((cluster) => (
+                {narrativeOptions.map((cluster) => (
                   <option key={cluster.id} value={cluster.id}>
                     {formatNarrativeClusterLabel(cluster)}
                   </option>

@@ -1,5 +1,6 @@
 import type {
   WorkflowNode,
+  WorkflowEdge,
   EventNodeData,
   PerspectiveNodeData,
   CharacterNodeData,
@@ -269,14 +270,56 @@ const buildStoryOutlineClusters = (
   return { clusters, eventPositionMapByGroup };
 };
 
+const sortNodesByXPosition = <T extends WorkflowNode>(nodes: T[]) =>
+  [...nodes].sort(sortByXPosition);
+
+const findLinkedEventGroupIdFromPerspectives = (
+  narrativeGroupId: string,
+  nodesById: Map<string, WorkflowNode>,
+  edges: WorkflowEdge[],
+) => {
+  const connectedPerspectiveNodes = edges
+    .filter(
+      (edge) =>
+        edge.target === narrativeGroupId &&
+        edge.targetHandle === "group-bridge",
+    )
+    .map((edge) => nodesById.get(edge.source))
+    .filter((node): node is WorkflowNode => node?.type === "perspectiveGroup");
+
+  const orderedPerspectiveNodes = sortNodesByXPosition(
+    connectedPerspectiveNodes,
+  );
+
+  for (const perspectiveNode of orderedPerspectiveNodes) {
+    const connectedEventGroup = edges
+      .filter(
+        (edge) =>
+          edge.target === perspectiveNode.id &&
+          edge.targetHandle === "group-bridge",
+      )
+      .map((edge) => nodesById.get(edge.source))
+      .filter((node): node is WorkflowNode => node?.type === "eventGroup")
+      .sort(sortByXPosition)[0];
+
+    if (connectedEventGroup) {
+      return connectedEventGroup.id;
+    }
+  }
+
+  return undefined;
+};
+
 const buildNarrativeClusters = (
   nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
   eventPositionMapByGroup: Map<string, Map<string, number>>,
 ): NarrativeCluster[] => {
   const narrativeGroups = nodes.filter(
     (node) => node.type === "narrativeGroup",
   );
   const clusters: NarrativeCluster[] = [];
+  const nodesById = new Map(nodes.map((node) => [node.id, node]));
 
   narrativeGroups.forEach((group) => {
     const groupData = group.data as GroupNodeData | undefined;
@@ -285,21 +328,15 @@ const buildNarrativeClusters = (
       .sort(sortByXPosition);
 
     const narrativeItems: TimelineItem[] = [];
-    let linkedEventGroupId: string | undefined;
+    const linkedEventGroupId = findLinkedEventGroupIdFromPerspectives(
+      group.id,
+      nodesById,
+      edges,
+    );
 
     narratives.forEach((node) => {
       const narrativeData = node.data as NarrativeNodeData | undefined;
       const eventId = narrativeData?.eventId;
-
-      // Find which event group this narrative is linked to
-      if (eventId && !linkedEventGroupId) {
-        for (const [groupId, eventMap] of eventPositionMapByGroup.entries()) {
-          if (eventMap.has(eventId)) {
-            linkedEventGroupId = groupId;
-            break;
-          }
-        }
-      }
 
       const eventPositionMap = linkedEventGroupId
         ? eventPositionMapByGroup.get(linkedEventGroupId)
@@ -339,7 +376,10 @@ const buildNarrativeClusters = (
   return clusters;
 };
 
-export const buildTimelineData = (nodes: WorkflowNode[]): TimelineData => {
+export const buildTimelineData = (
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+): TimelineData => {
   const { track: storyTrack, eventPositionMap } = buildEventTrack(nodes);
   const characterTracks = buildPerspectiveTracks(nodes, eventPositionMap);
   const narrativeTrack = buildNarrativeTrack(nodes, eventPositionMap);
@@ -349,6 +389,7 @@ export const buildTimelineData = (nodes: WorkflowNode[]): TimelineData => {
     buildStoryOutlineClusters(nodes);
   const narrativeClusters = buildNarrativeClusters(
     nodes,
+    edges,
     eventPositionMapByGroup,
   );
 
