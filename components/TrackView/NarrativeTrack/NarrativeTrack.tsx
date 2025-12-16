@@ -38,10 +38,10 @@ export function NarrativeTrack({
           <span
             className={cn(
               geistMono.className,
-              "text-xs font-semibold text-green-600 text-center uppercase",
+              "text-xs font-semibold text-green-600 text-center",
             )}
           >
-            NARRATIVE
+            Narrative
           </span>
           <NarrativeTrackMenu track={track} />
         </div>

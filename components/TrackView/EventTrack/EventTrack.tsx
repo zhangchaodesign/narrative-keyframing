@@ -37,10 +37,10 @@ export function EventTrack({
           <span
             className={cn(
               geistMono.className,
-              "text-xs font-semibold text-pink-600 text-center uppercase",
+              "text-xs font-semibold text-pink-600 text-center",
             )}
           >
-            STORY OUTLINE
+            Story Outline
           </span>
         </div>
       </div>
