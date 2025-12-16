@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import clsx from "clsx";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Header } from "@/components/Header";
 import { DynamicTextEditor } from "@/components/TextEditor/DynamicTextEditor";
 import { WorkflowCanvas } from "@/components/WorkflowCanvas/WorkflowCanvas";
@@ -12,6 +14,7 @@ import {
 
 export default function Page() {
   const [viewMode, setViewMode] = useState<ViewMode>("workflow");
+  const [isEditorCollapsed, setIsEditorCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -22,8 +25,37 @@ export default function Page() {
       <div className="flex-1 overflow-hidden">
         <div className="h-full">
           <div className="flex h-full items-stretch overflow-hidden">
-            <div className="w-[600px] shrink-0 h-full overflow-y-auto">
-              <DynamicTextEditor conflictHighlight={null} />
+            <div
+              className={clsx(
+                "relative h-full transition-all duration-300 ease-in-out shrink-0",
+                isEditorCollapsed ? "w-0" : "w-[600px]",
+              )}
+            >
+              <div
+                className={clsx(
+                  "absolute inset-y-0 left-0 w-[600px] h-full transition-transform duration-300 ease-in-out",
+                  isEditorCollapsed ? "-translate-x-full" : "translate-x-0",
+                )}
+              >
+                <div className="h-full overflow-y-auto">
+                  <DynamicTextEditor conflictHighlight={null} />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsEditorCollapsed((prev) => !prev)}
+                aria-label={
+                  isEditorCollapsed ? "Show text editor" : "Hide text editor"
+                }
+                className="absolute top-1/2 right-0 z-10 flex h-9 w-9 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow hover:bg-gray-50"
+              >
+                {isEditorCollapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+              </button>
             </div>
 
             <div className="flex-1 min-w-0 overflow-hidden h-full flex flex-col">
