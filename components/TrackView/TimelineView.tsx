@@ -204,9 +204,14 @@ export function TimelineView() {
     const storyEventIds = new Set(
       selectedStoryCluster?.track.items.map((item) => item.nodeId) || [],
     );
+    const storyEventPositionMap = new Map(
+      selectedStoryCluster?.track.items.map((item) => [item.nodeId, item.position]) ||
+        [],
+    );
 
     // Find perspectives that connect story events to narratives
     const validPerspectiveIds = new Set<string>();
+    const perspectivePositionOverrides = new Map<string, number>();
     characterTracks.forEach((track) => {
       if (track.type !== "perspective") return;
 
@@ -222,7 +227,10 @@ export function TimelineView() {
           storyEventIds.has(perspectiveData.eventId) &&
           linkedPerspectiveGroups?.has(perspectiveNode?.parentId || "")
         ) {
+          const overriddenPosition =
+            storyEventPositionMap.get(perspectiveData.eventId) ?? item.position;
           validPerspectiveIds.add(item.nodeId);
+          perspectivePositionOverrides.set(item.nodeId, overriddenPosition);
         }
       });
     });
@@ -233,23 +241,36 @@ export function TimelineView() {
     characterTracks.forEach((track) => {
       if (track.type === "perspective") {
         // Filter perspective items that reference events in selected story cluster
-        const filteredItems = track.items.filter((item) => {
-          return validPerspectiveIds.has(item.nodeId);
-        });
+        const filteredItems = track.items
+          .filter((item) => validPerspectiveIds.has(item.nodeId))
+          .map((item) => ({
+            ...item,
+            position:
+              perspectivePositionOverrides.get(item.nodeId) ?? item.position,
+          }));
         if (filteredItems.length > 0) {
           tracksWithItems.push({ ...track, items: filteredItems });
         }
       } else if (track.type === "character") {
         // Filter character items that reference valid perspectives
-        const filteredItems = track.items.filter((item) => {
-          const characterNode = nodes.find((n) => n.id === item.nodeId);
-          const characterData = characterNode?.data as
-            | CharacterNodeData
-            | undefined;
-          return characterData?.perspectiveId
-            ? validPerspectiveIds.has(characterData.perspectiveId)
-            : false;
-        });
+        const filteredItems = track.items
+          .map((item) => {
+            const characterNode = nodes.find((n) => n.id === item.nodeId);
+            const characterData = characterNode?.data as
+              | CharacterNodeData
+              | undefined;
+            if (
+              !characterData?.perspectiveId ||
+              !validPerspectiveIds.has(characterData.perspectiveId)
+            ) {
+              return null;
+            }
+            const overriddenPosition =
+              perspectivePositionOverrides.get(characterData.perspectiveId) ??
+              item.position;
+            return { ...item, position: overriddenPosition };
+          })
+          .filter((item): item is (typeof track.items)[number] => Boolean(item));
         if (filteredItems.length > 0) {
           tracksWithItems.push({ ...track, items: filteredItems });
         }
