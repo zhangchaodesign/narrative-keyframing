@@ -403,6 +403,24 @@ const synchronizeNarrativeGroupEventLinks = (
     string,
     PerspectiveGroupNodeType["data"]["connectedEventGroup"]
   >();
+  const narrativeConnectedEventGroups = new Map<
+    string,
+    Array<PerspectiveGroupNodeType["data"]["connectedEventGroup"] | undefined>
+  >();
+
+  const registerConnection = (
+    narrativeGroupId: string,
+    perspectiveGroupId: string,
+  ) => {
+    const connectedEventGroup =
+      perspectiveEventMetadata.get(perspectiveGroupId);
+    const currentConnections =
+      narrativeConnectedEventGroups.get(narrativeGroupId) ?? [];
+    currentConnections.push(connectedEventGroup);
+    narrativeConnectedEventGroups.set(narrativeGroupId, currentConnections);
+
+    narrativeAssignments.set(narrativeGroupId, connectedEventGroup);
+  };
 
   edges.forEach((edge) => {
     const sourceNode = nodeLookup.get(edge.source);
@@ -417,10 +435,7 @@ const synchronizeNarrativeGroupEventLinks = (
       sourceNode.type === "perspectiveGroup" &&
       targetNode.type === "narrativeGroup"
     ) {
-      narrativeAssignments.set(
-        targetNode.id,
-        perspectiveEventMetadata.get(sourceNode.id),
-      );
+      registerConnection(targetNode.id, sourceNode.id);
       return;
     }
 
@@ -430,12 +445,50 @@ const synchronizeNarrativeGroupEventLinks = (
       targetNode.type === "perspectiveGroup" &&
       sourceNode.type === "narrativeGroup"
     ) {
-      narrativeAssignments.set(
-        sourceNode.id,
-        perspectiveEventMetadata.get(targetNode.id),
-      );
+      registerConnection(sourceNode.id, targetNode.id);
     }
   });
+
+  if (typeof window !== "undefined") {
+    narrativeConnectedEventGroups.forEach((connections, narrativeGroupId) => {
+      if (connections.length <= 1) {
+        return;
+      }
+
+      const normalized = connections.map((entry) => {
+        if (!entry) {
+          return "NONE";
+        }
+        return [
+          entry.id ?? "",
+          entry.label?.trim() ?? "",
+          typeof entry.eventGroupId === "number"
+            ? entry.eventGroupId.toString()
+            : "",
+        ]
+          .join("::")
+          .trim();
+      });
+
+      const uniqueValues = new Set(normalized);
+      if (uniqueValues.size <= 1) {
+        return;
+      }
+
+      const narrativeGroupNode = nodeLookup.get(narrativeGroupId);
+      const groupLabel =
+        narrativeGroupNode?.type === "narrativeGroup"
+          ? (
+              (narrativeGroupNode.data ??
+                {}) as ThirdPersonGroupNodeType["data"]
+            ).label ?? narrativeGroupNode.id
+          : narrativeGroupId;
+
+      window.alert(
+        `Narrative cluster "${groupLabel}" is linked to perspective groups with conflicting story outlines. Align their connections before continuing.`,
+      );
+    });
+  }
 
   let changed = false;
 
