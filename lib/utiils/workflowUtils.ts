@@ -268,28 +268,22 @@ export const deleteNodeCluster = (
 
 /**
  * Get color for a workflow node based on its type
+ * Optimized with constant lookup for better performance during rendering
  * @param node Workflow node
  * @returns Color string for the node
  */
-export function nodeColor(node: WorkflowNode) {
-  switch (node.type) {
-    case "eventGroup":
-      return "oklch(97.1% 0.014 343.198)";
-    case "perspectiveGroup":
-      return "oklch(97% 0.014 254.604)";
-    case "narrativeGroup":
-      return "oklch(97.9% 0.021 166.113)";
-    case "event":
-      return "oklch(89.9% 0.061 343.231)";
-    case "perspective":
-      return "oklch(88.2% 0.059 254.128)";
-    case "narrative":
-      return "oklch(95% 0.052 163.051)";
-    case "character":
-      return "oklch(95.4% 0.038 75.164)";
-    default:
-      return "#67cc8a";
-  }
+const NODE_COLORS: Record<string, string> = {
+  eventGroup: "oklch(97.1% 0.014 343.198)",
+  perspectiveGroup: "oklch(97% 0.014 254.604)",
+  narrativeGroup: "oklch(97.9% 0.021 166.113)",
+  event: "oklch(89.9% 0.061 343.231)",
+  perspective: "oklch(88.2% 0.059 254.128)",
+  narrative: "oklch(95% 0.052 163.051)",
+  character: "oklch(95.4% 0.038 75.164)",
+};
+
+export function nodeColor(node: WorkflowNode): string {
+  return NODE_COLORS[node.type] ?? "#67cc8a";
 }
 
 // ============================================================================
@@ -355,7 +349,9 @@ export function adjustEventCountForAllClusters(
     if (newEventCount > currentEventCount) {
       // Add new event nodes
       const nodesToAdd = newEventCount - currentEventCount;
-      const timestamp = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const timestamp = `${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 9)}`;
       const lastEventNode = sortedEventNodes[sortedEventNodes.length - 1];
       const startX = lastEventNode
         ? lastEventNode.position.x + EVENT_HORIZONTAL_SPACING
@@ -425,15 +421,15 @@ export function adjustEventCountForAllClusters(
       // Add perspective nodes ONLY for connected perspective groups
       for (const perspectiveGroupId of connectedPerspectiveGroupIds) {
         const perspectiveGroup = currentNodes.find(
-          (node) => node.id === perspectiveGroupId && node.type === "perspectiveGroup",
+          (node) =>
+            node.id === perspectiveGroupId && node.type === "perspectiveGroup",
         );
 
         if (!perspectiveGroup) continue;
 
         const existingPerspectives = currentNodes.filter(
           (node): node is PerspectiveNodeType =>
-            node.type === "perspective" &&
-            node.parentId === perspectiveGroupId,
+            node.type === "perspective" && node.parentId === perspectiveGroupId,
         );
 
         if (existingPerspectives.length === currentEventCount) {
@@ -462,7 +458,8 @@ export function adjustEventCountForAllClusters(
                 y: perspectiveY,
               },
               data: {
-                narrator: (perspectiveGroup.data as GroupNodeData)?.characterName || "",
+                narrator:
+                  (perspectiveGroup.data as GroupNodeData)?.characterName || "",
                 reflection: "",
                 isLoading: false,
                 eventId: newEventNode.id,
@@ -519,7 +516,8 @@ export function adjustEventCountForAllClusters(
       // Add narrative nodes ONLY for connected narrative groups
       for (const narrativeGroupId of connectedNarrativeGroupIds) {
         const narrativeGroup = currentNodes.find(
-          (node) => node.id === narrativeGroupId && node.type === "narrativeGroup",
+          (node) =>
+            node.id === narrativeGroupId && node.type === "narrativeGroup",
         );
 
         if (!narrativeGroup) continue;
@@ -592,10 +590,13 @@ export function adjustEventCountForAllClusters(
       );
 
       // Remove event nodes and their edges
-      updatedNodes = updatedNodes.filter((node) => !nodeIdsToRemove.has(node.id));
+      updatedNodes = updatedNodes.filter(
+        (node) => !nodeIdsToRemove.has(node.id),
+      );
       updatedEdges = updatedEdges.filter(
         (edge) =>
-          !nodeIdsToRemove.has(edge.source) && !nodeIdsToRemove.has(edge.target),
+          !nodeIdsToRemove.has(edge.source) &&
+          !nodeIdsToRemove.has(edge.target),
       );
 
       // Find connected perspective groups via bridge edges
@@ -619,15 +620,15 @@ export function adjustEventCountForAllClusters(
       // Remove perspective nodes ONLY from connected perspective groups
       for (const perspectiveGroupId of connectedPerspectiveGroupIds) {
         const perspectiveGroup = updatedNodes.find(
-          (node) => node.id === perspectiveGroupId && node.type === "perspectiveGroup",
+          (node) =>
+            node.id === perspectiveGroupId && node.type === "perspectiveGroup",
         );
 
         if (!perspectiveGroup) continue;
 
         const existingPerspectives = updatedNodes.filter(
           (node): node is PerspectiveNodeType =>
-            node.type === "perspective" &&
-            node.parentId === perspectiveGroupId,
+            node.type === "perspective" && node.parentId === perspectiveGroupId,
         );
 
         // Remove perspective nodes if this group has the same count as the original event count
@@ -674,7 +675,8 @@ export function adjustEventCountForAllClusters(
       // Remove narrative nodes ONLY from connected narrative groups
       for (const narrativeGroupId of connectedNarrativeGroupIds) {
         const narrativeGroup = updatedNodes.find(
-          (node) => node.id === narrativeGroupId && node.type === "narrativeGroup",
+          (node) =>
+            node.id === narrativeGroupId && node.type === "narrativeGroup",
         );
 
         if (!narrativeGroup) continue;

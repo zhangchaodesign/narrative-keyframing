@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import {
   applyEdgeChanges,
   applyNodeChanges,
@@ -108,6 +108,55 @@ const deepClone = <T>(value: T): T => {
 
 const ATTRIBUTE_HANDLE_PATTERN = /-(physiology|psychology|sociology)-/;
 const STORAGE_VERSION = 5;
+
+/**
+ * Create a throttled storage wrapper to prevent excessive localStorage writes
+ * during rapid state updates (e.g., dragging nodes).
+ * Batches writes to occur at most once every 100ms.
+ */
+const createThrottledStorage = () => {
+  let pendingWrite: { key: string; value: string } | null = null;
+  let writeTimeout: ReturnType<typeof setTimeout> | null = null;
+  const THROTTLE_MS = 100;
+
+  const flushPendingWrite = () => {
+    if (pendingWrite) {
+      try {
+        localStorage.setItem(pendingWrite.key, pendingWrite.value);
+      } catch (error) {
+        console.error("Failed to persist workflow state:", error);
+      }
+      pendingWrite = null;
+      writeTimeout = null;
+    }
+  };
+
+  return {
+    getItem: (key: string) => {
+      // Flush any pending write before reading to ensure consistency
+      flushPendingWrite();
+      const value = localStorage.getItem(key);
+      return value;
+    },
+    setItem: (key: string, value: string) => {
+      // Store the pending write
+      pendingWrite = { key, value };
+
+      // Clear existing timeout
+      if (writeTimeout !== null) {
+        clearTimeout(writeTimeout);
+      }
+
+      // Schedule the write
+      writeTimeout = setTimeout(flushPendingWrite, THROTTLE_MS);
+    },
+    removeItem: (key: string) => {
+      // Immediate removal, no throttling
+      flushPendingWrite();
+      localStorage.removeItem(key);
+    },
+  };
+};
 
 const sanitizeEdges = (edges: WorkflowEdge[]): WorkflowEdge[] =>
   edges.filter((edge) => {
@@ -536,6 +585,11 @@ const synchronizeNarrativeGroupEventLinks = (
   return changed ? updatedNodes : nodes;
 };
 
+/**
+ * Apply derived node state by running synchronization functions.
+ * WARNING: This is an expensive operation that iterates through all nodes/edges.
+ * Should be called only when necessary (e.g., after drag ends, not during dragging).
+ */
 const applyDerivedNodeState = (
   nodes: WorkflowNode[],
   edges: WorkflowEdge[],
@@ -1529,7 +1583,22 @@ export const useWorkflowStore = create<WorkflowState>()(
         }),
       onNodesChange: (changes) =>
         set((state) => {
+          // Performance optimization: Skip expensive synchronization during drag operations
+          // If ANY change is a position update with dragging=true, we're in the middle of a drag
+          const isDragging = changes.some(
+            (change) =>
+              change.type === "position" &&
+              "dragging" in change &&
+              change.dragging === true,
+          );
+
           const updatedNodes = applyNodeChanges(changes, state.nodes);
+
+          // Skip synchronization during drag, run it when drag ends or for other changes
+          if (isDragging) {
+            return { nodes: updatedNodes };
+          }
+
           return {
             nodes: applyDerivedNodeState(updatedNodes, state.edges),
           };
@@ -1684,6 +1753,7 @@ export const useWorkflowStore = create<WorkflowState>()(
     {
       name: "workflow-canvas-storage",
       version: STORAGE_VERSION,
+      storage: createJSONStorage(() => createThrottledStorage()),
       migrate: (persistedState, version) => {
         if (!persistedState) {
           return getInitialState();
