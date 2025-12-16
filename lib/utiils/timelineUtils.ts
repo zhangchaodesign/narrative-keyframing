@@ -185,7 +185,7 @@ const buildNarrativeTrack = (
       .filter((node) => node.type === "narrative" && node.parentId === group.id)
       .sort(sortByXPosition);
 
-    narratives.forEach((node) => {
+    narratives.forEach((node, index) => {
       const narrativeData = node.data as NarrativeNodeData | undefined;
       const eventId = narrativeData?.eventId;
       const position =
@@ -334,17 +334,26 @@ const buildNarrativeClusters = (
       edges,
     );
 
-    narratives.forEach((node) => {
+    narratives.forEach((node, index) => {
       const narrativeData = node.data as NarrativeNodeData | undefined;
       const eventId = narrativeData?.eventId;
 
       const eventPositionMap = linkedEventGroupId
         ? eventPositionMapByGroup.get(linkedEventGroupId)
         : undefined;
-      const position =
+
+      let position =
         (eventId && eventPositionMap
           ? eventPositionMap.get(eventId)
           : undefined) ?? 0;
+
+      if (eventPositionMap && (!eventId || !eventPositionMap.has(eventId))) {
+        const sortedEventIds = [...eventPositionMap.entries()].sort(
+          (a, b) => a[1]! - b[1]!,
+        );
+        position =
+          sortedEventIds[Math.min(index, sortedEventIds.length - 1)]?.[1] ?? 0;
+      }
 
       narrativeItems.push({
         id: `narrative-${node.id}`,

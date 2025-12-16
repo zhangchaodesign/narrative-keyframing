@@ -22,6 +22,7 @@ import { buildTimelineData } from "@/lib/utiils/timelineUtils";
 import type {
   PerspectiveNodeData,
   CharacterNodeData,
+  WorkflowNode,
 } from "@/lib/types/workflow";
 import type { TimelineTrack } from "@/lib/types/timeline";
 
@@ -201,13 +202,28 @@ export function TimelineView() {
     const linkedPerspectiveGroups = narrativePerspectiveGroupMap.get(
       selectedNarrativeClusterId,
     );
-    const storyEventIds = new Set(
-      selectedStoryCluster?.track.items.map((item) => item.nodeId) || [],
-    );
+    const storyTrackItems = selectedStoryCluster?.track.items ?? [];
+    const storyEventIds = new Set(storyTrackItems.map((item) => item.nodeId));
     const storyEventPositionMap = new Map(
-      selectedStoryCluster?.track.items.map((item) => [item.nodeId, item.position]) ||
-        [],
+      storyTrackItems.map((item) => [item.nodeId, item.position]),
     );
+
+    const perspectiveGroupCache = new Map<string, WorkflowNode[]>();
+    const getOrderedPerspectivesForGroup = (groupId: string) => {
+      if (perspectiveGroupCache.has(groupId)) {
+        return perspectiveGroupCache.get(groupId)!;
+      }
+      const ordered = nodes
+        .filter(
+          (node): node is WorkflowNode =>
+            node.type === "perspective" && node.parentId === groupId,
+        )
+        .sort(
+          (a, b) => a.position.x - b.position.x || a.position.y - b.position.y,
+        );
+      perspectiveGroupCache.set(groupId, ordered);
+      return ordered;
+    };
 
     // Find perspectives that connect story events to narratives
     const validPerspectiveIds = new Set<string>();
@@ -222,16 +238,38 @@ export function TimelineView() {
           | undefined;
 
         // Check if this perspective references an event in the selected story cluster
-        if (
-          perspectiveData?.eventId &&
-          storyEventIds.has(perspectiveData.eventId) &&
-          linkedPerspectiveGroups?.has(perspectiveNode?.parentId || "")
-        ) {
+        const parentGroupId = perspectiveNode?.parentId || "";
+        if (!linkedPerspectiveGroups?.has(parentGroupId)) {
+          return;
+        }
+
+        const eventIdFromNode = perspectiveData?.eventId;
+        if (eventIdFromNode && storyEventIds.has(eventIdFromNode)) {
           const overriddenPosition =
-            storyEventPositionMap.get(perspectiveData.eventId) ?? item.position;
+            storyEventPositionMap.get(eventIdFromNode) ?? item.position;
           validPerspectiveIds.add(item.nodeId);
           perspectivePositionOverrides.set(item.nodeId, overriddenPosition);
+          return;
         }
+
+        // Fallback: align by sibling order within the perspective group
+        const orderedPerspectives =
+          getOrderedPerspectivesForGroup(parentGroupId);
+        const siblingIndex = orderedPerspectives.findIndex(
+          (node) => node.id === perspectiveNode?.id,
+        );
+        if (siblingIndex < 0 || storyTrackItems.length === 0) {
+          return;
+        }
+
+        const targetEventItem =
+          storyTrackItems[Math.min(siblingIndex, storyTrackItems.length - 1)];
+        if (!targetEventItem) {
+          return;
+        }
+
+        validPerspectiveIds.add(item.nodeId);
+        perspectivePositionOverrides.set(item.nodeId, targetEventItem.position);
       });
     });
 
@@ -270,7 +308,9 @@ export function TimelineView() {
               item.position;
             return { ...item, position: overriddenPosition };
           })
-          .filter((item): item is (typeof track.items)[number] => Boolean(item));
+          .filter((item): item is (typeof track.items)[number] =>
+            Boolean(item),
+          );
         if (filteredItems.length > 0) {
           tracksWithItems.push({ ...track, items: filteredItems });
         }
