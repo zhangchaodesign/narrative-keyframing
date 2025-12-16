@@ -46,16 +46,48 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
     return narrativeGroup?.data?.connectedEventGroup;
   }, [id, nodes]);
 
-  // Find the event node and related metadata for display
+  // Find the event node and related metadata for display using index-based matching
   const eventMetadata = useMemo(() => {
-    if (!data?.eventId) {
+    const narrativeNode = nodes.find(
+      (node): node is NarrativeNodeType =>
+        node.id === id && node.type === "narrative",
+    );
+    if (!narrativeNode) {
       return null;
     }
-    const eventNode = nodes.find(
-      (node): node is EventNodeType =>
-        node.id === data.eventId && node.type === "event",
+
+    const parentGroupId = narrativeNode.parentId;
+    if (!parentGroupId) {
+      return null;
+    }
+
+    // Get all narratives in the same group, sorted by position
+    const siblingNarratives = nodes
+      .filter(
+        (node): node is NarrativeNodeType =>
+          node.type === "narrative" && node.parentId === parentGroupId,
+      )
+      .sort((a, b) => (a.position.x ?? 0) - (b.position.x ?? 0));
+
+    // Find index of current narrative
+    const narrativeIndex = siblingNarratives.findIndex(
+      (node) => node.id === id,
     );
-    const timelineLabel = eventNode?.data?.timeline ?? data.eventId;
+
+    if (narrativeIndex < 0) {
+      return null;
+    }
+
+    // Get all event nodes sorted by position
+    const eventNodes = nodes
+      .filter((node): node is EventNodeType => node.type === "event")
+      .sort((a, b) => (a.position.x ?? 0) - (b.position.x ?? 0));
+
+    // Get event at the same index
+    const eventNode =
+      eventNodes[Math.min(narrativeIndex, eventNodes.length - 1)];
+
+    const timelineLabel = eventNode?.data?.timeline ?? `Event ${narrativeIndex + 1}`;
     const clusterLabel = connectedEventGroup?.label?.trim() ?? "";
     const clusterId = connectedEventGroup?.eventGroupId;
     const assembledDisplay = [clusterLabel, clusterId]
@@ -69,7 +101,7 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
       timelineLabel,
       clusterDisplay,
     };
-  }, [connectedEventGroup, data?.eventId, nodes]);
+  }, [connectedEventGroup, id, nodes]);
 
   return (
     <div className="group relative flex gap-2 h-80 w-64 flex-col rounded-lg border-2 border-primary bg-white p-3 text-xs hover:shadow-lg">
@@ -103,7 +135,7 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
               geistMono.className,
               "inline-flex items-center rounded bg-pink-500 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white",
             )}
-            title={`Event: ${data?.eventId}`}
+            title={`Event: ${eventMetadata.timelineLabel}`}
           >
             {eventMetadata.clusterDisplay
               ? `${eventMetadata.clusterDisplay} / ${eventMetadata.timelineLabel}`

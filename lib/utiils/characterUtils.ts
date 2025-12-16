@@ -6,6 +6,7 @@ import type {
   PerspectiveNodeType,
   WorkflowNode,
 } from "@/lib/types/workflow";
+import { getNodeByIndex } from "@/lib/utiils/workflowUtils";
 
 export type TraitCategory = keyof CharacterTraits;
 
@@ -173,10 +174,34 @@ export const buildCharacterInterpolationContext = ({
     return snapshots;
   })();
 
-  const eventNode = nodes.find(
-    (node): node is EventNodeType =>
-      node.type === "event" && node.id === perspectiveNode.data?.eventId,
-  );
+  // Find the matching event node by index
+  const perspectiveGroupId = perspectiveNode.parentId;
+  let eventNode: EventNodeType | undefined;
+
+  if (perspectiveGroupId) {
+    // Get all perspectives in the same group, sorted by position
+    const siblingPerspectives = nodes
+      .filter(
+        (node): node is PerspectiveNodeType =>
+          node.type === "perspective" && node.parentId === perspectiveGroupId,
+      )
+      .sort((a, b) => (a.position.x ?? 0) - (b.position.x ?? 0));
+
+    // Find index of current perspective
+    const perspectiveIndex = siblingPerspectives.findIndex(
+      (node) => node.id === perspectiveNode.id,
+    );
+
+    if (perspectiveIndex >= 0) {
+      // Get all event nodes sorted by position
+      const eventNodes = nodes
+        .filter((node): node is EventNodeType => node.type === "event")
+        .sort((a, b) => (a.position.x ?? 0) - (b.position.x ?? 0));
+
+      // Get event at the same index
+      eventNode = getNodeByIndex(eventNodes, perspectiveIndex);
+    }
+  }
 
   return {
     perspectiveText,

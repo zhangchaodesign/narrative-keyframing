@@ -14,6 +14,7 @@ import type {
   StoryOutlineCluster,
   NarrativeCluster,
 } from "@/lib/types/timeline";
+import { getNodeByIndex } from "@/lib/utiils/workflowUtils";
 
 const sortByXPosition = (
   a: Pick<WorkflowNode, "position" | "id">,
@@ -69,10 +70,7 @@ const buildEventTrack = (
   return { track, eventPositionMap };
 };
 
-const buildPerspectiveTracks = (
-  nodes: WorkflowNode[],
-  eventPositionMap: Map<string, number>,
-) => {
+const buildPerspectiveTracks = (nodes: WorkflowNode[]) => {
   const perspectiveGroups = nodes.filter(
     (node) => node.type === "perspectiveGroup",
   );
@@ -89,23 +87,24 @@ const buildPerspectiveTracks = (
       )
       .sort(sortByXPosition);
 
-    const perspectiveItems: TimelineItem[] = perspectiveNodes.map((node) => {
-      const perspectiveData = node.data as PerspectiveNodeData | undefined;
-      const eventId = perspectiveData?.eventId;
-      const position =
-        (eventId ? eventPositionMap.get(eventId) : undefined) ?? 0;
+    const perspectiveItems: TimelineItem[] = perspectiveNodes.map(
+      (node, index) => {
+        const perspectiveData = node.data as PerspectiveNodeData | undefined;
+        // Use index-based position matching
+        const position = index;
 
-      return {
-        id: `perspective-${node.id}`,
-        content:
-          perspectiveData?.reflection ||
-          perspectiveData?.snippets?.[0] ||
-          "Perspective",
-        position,
-        nodeId: node.id,
-        nodeType: "perspective",
-      };
-    });
+        return {
+          id: `perspective-${node.id}`,
+          content:
+            perspectiveData?.reflection ||
+            perspectiveData?.snippets?.[0] ||
+            "Perspective",
+          position,
+          nodeId: node.id,
+          nodeType: "perspective",
+        };
+      },
+    );
 
     const perspectivePositionMap = new Map(
       perspectiveItems.map((item) => [item.nodeId, item.position]),
@@ -171,10 +170,7 @@ const buildPerspectiveTracks = (
   return tracks;
 };
 
-const buildNarrativeTrack = (
-  nodes: WorkflowNode[],
-  eventPositionMap: Map<string, number>,
-) => {
+const buildNarrativeTrack = (nodes: WorkflowNode[]) => {
   const narrativeGroups = nodes.filter(
     (node) => node.type === "narrativeGroup",
   );
@@ -187,9 +183,8 @@ const buildNarrativeTrack = (
 
     narratives.forEach((node, index) => {
       const narrativeData = node.data as NarrativeNodeData | undefined;
-      const eventId = narrativeData?.eventId;
-      const position =
-        (eventId ? eventPositionMap.get(eventId) : undefined) ?? 0;
+      // Use index-based position matching
+      const position = index;
 
       narrativeItems.push({
         id: `narrative-${node.id}`,
@@ -313,7 +308,6 @@ const findLinkedEventGroupIdFromPerspectives = (
 const buildNarrativeClusters = (
   nodes: WorkflowNode[],
   edges: WorkflowEdge[],
-  eventPositionMapByGroup: Map<string, Map<string, number>>,
 ): NarrativeCluster[] => {
   const narrativeGroups = nodes.filter(
     (node) => node.type === "narrativeGroup",
@@ -336,24 +330,8 @@ const buildNarrativeClusters = (
 
     narratives.forEach((node, index) => {
       const narrativeData = node.data as NarrativeNodeData | undefined;
-      const eventId = narrativeData?.eventId;
-
-      const eventPositionMap = linkedEventGroupId
-        ? eventPositionMapByGroup.get(linkedEventGroupId)
-        : undefined;
-
-      let position =
-        (eventId && eventPositionMap
-          ? eventPositionMap.get(eventId)
-          : undefined) ?? 0;
-
-      if (eventPositionMap && (!eventId || !eventPositionMap.has(eventId))) {
-        const sortedEventIds = [...eventPositionMap.entries()].sort(
-          (a, b) => a[1]! - b[1]!,
-        );
-        position =
-          sortedEventIds[Math.min(index, sortedEventIds.length - 1)]?.[1] ?? 0;
-      }
+      // Use index-based position matching
+      const position = index;
 
       narrativeItems.push({
         id: `narrative-${node.id}`,
@@ -389,18 +367,13 @@ export const buildTimelineData = (
   nodes: WorkflowNode[],
   edges: WorkflowEdge[],
 ): TimelineData => {
-  const { track: storyTrack, eventPositionMap } = buildEventTrack(nodes);
-  const characterTracks = buildPerspectiveTracks(nodes, eventPositionMap);
-  const narrativeTrack = buildNarrativeTrack(nodes, eventPositionMap);
+  const { track: storyTrack } = buildEventTrack(nodes);
+  const characterTracks = buildPerspectiveTracks(nodes);
+  const narrativeTrack = buildNarrativeTrack(nodes);
 
   // Build cluster data
-  const { clusters: storyOutlineClusters, eventPositionMapByGroup } =
-    buildStoryOutlineClusters(nodes);
-  const narrativeClusters = buildNarrativeClusters(
-    nodes,
-    edges,
-    eventPositionMapByGroup,
-  );
+  const { clusters: storyOutlineClusters } = buildStoryOutlineClusters(nodes);
+  const narrativeClusters = buildNarrativeClusters(nodes, edges);
 
   const maxPosition =
     storyTrack && storyTrack.items.length > 0

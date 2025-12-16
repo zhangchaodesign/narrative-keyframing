@@ -11,7 +11,6 @@ export type PerspectiveNodeData = {
   snippets?: string[];
   isLoading?: boolean;
   isCreatingSnapshot?: boolean;
-  eventId: string;
   isAnalyzingEvidence?: boolean;
   analysisStatus?: "idle" | "running" | "success" | "error";
   analysisStatusMessage?: string;
@@ -22,7 +21,6 @@ export type NarrativeNodeData = {
   narration: string;
   content?: string;
   isLoading?: boolean;
-  eventId: string;
   snippetUsages?: Array<{
     originalSnippet: string;
     verbatimInNarrative: string;

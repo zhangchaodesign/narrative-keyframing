@@ -874,16 +874,11 @@ const prepareNarrativeEventsData = (
         groupedEvents[Math.min(narrativeIndex, groupedEvents.length - 1)];
     }
 
-    const fallbackEventId = narrativeNode.data?.eventId;
-    if (!eventNodeForNarrative && fallbackEventId) {
-      eventNodeForNarrative = eventNodeMap.get(fallbackEventId);
-    }
-
-    const resolvedEventId = eventNodeForNarrative?.id ?? fallbackEventId;
+    const resolvedEventId = eventNodeForNarrative?.id;
     const eventDescription = eventNodeForNarrative?.data?.description ?? "";
     const eventTimeline = eventNodeForNarrative?.data?.timeline ?? "";
 
-    let perspectiveNodesForEvent: PerspectiveNodeType[] = [];
+    const perspectiveNodesForEvent: PerspectiveNodeType[] = [];
     connectedPerspectiveGroupIds.forEach((perspectiveGroupId) => {
       const groupNodes = perspectiveNodesByGroup.get(perspectiveGroupId);
       if (!groupNodes || groupNodes.length === 0) {
@@ -895,12 +890,6 @@ const prepareNarrativeEventsData = (
         perspectiveNodesForEvent.push(candidate);
       }
     });
-
-    if (perspectiveNodesForEvent.length === 0 && resolvedEventId) {
-      perspectiveNodesForEvent = linkedPerspectiveNodes.filter(
-        (pNode) => pNode.data?.eventId === resolvedEventId,
-      );
-    }
 
     const snippetsForEvent: NarrativeEventData["snippets"] = [];
     perspectiveNodesForEvent.forEach((pNode) => {
@@ -1352,19 +1341,10 @@ const preparePerspectiveGenerationPayload = (
   };
 
   relevantPerspectiveNodes.forEach((perspectiveNode) => {
-    const eventId = perspectiveNode.data?.eventId?.trim();
     const connectedEventGroupId = getConnectedEventGroupId(perspectiveNode);
 
     if (connectedEventGroupId) {
       relevantEventGroupIds.add(connectedEventGroupId);
-      return;
-    }
-
-    if (eventId) {
-      const parentEventGroupId = eventNodeMap.get(eventId)?.parentId;
-      if (parentEventGroupId) {
-        relevantEventGroupIds.add(parentEventGroupId);
-      }
     }
   });
 
@@ -1425,11 +1405,6 @@ const preparePerspectiveGenerationPayload = (
             eventNode = groupedEvents[targetIndex] ?? null;
           }
         }
-      }
-
-      if (!eventNode) {
-        const eventId = perspectiveNode.data?.eventId?.trim();
-        eventNode = eventId ? eventNodeMap.get(eventId) ?? null : null;
       }
 
       if (!eventNode) {

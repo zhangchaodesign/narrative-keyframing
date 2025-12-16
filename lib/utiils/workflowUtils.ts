@@ -67,6 +67,26 @@ export const formatEventTimeline = (index: number): string => `Event ${index}`;
 // ============================================================================
 
 /**
+ * Sort nodes by X position (used for consistent ordering within groups)
+ * @param nodes Array of nodes to sort
+ * @returns Sorted array of nodes
+ */
+export const sortNodesByXPosition = <
+  T extends Pick<WorkflowNode, "position" | "id">,
+>(
+  nodes: T[],
+): T[] => {
+  return [...nodes].sort((a, b) => {
+    const ax = a.position?.x ?? 0;
+    const bx = b.position?.x ?? 0;
+    if (ax === bx) {
+      return a.id.localeCompare(b.id);
+    }
+    return ax - bx;
+  });
+};
+
+/**
  * Sort event nodes by timeline index and position
  * @param eventNodes Array of event nodes to sort
  * @returns Sorted array of event nodes
@@ -118,6 +138,34 @@ export const sortNodesByTimeline = (nodes: WorkflowNode[]): WorkflowNode[] => {
     }
     return a.position.x - b.position.x;
   });
+};
+
+// ============================================================================
+// NODE MATCHING UTILITIES
+// ============================================================================
+
+/**
+ * Match nodes by index position within their groups.
+ * This utility provides index-based matching for nodes across event, perspective, and narrative groups.
+ *
+ * @param nodes Sorted array of nodes (must be pre-sorted by x-position)
+ * @param index Target index to retrieve
+ * @returns The node at the specified index, or the last node if index exceeds array length, or undefined if array is empty
+ *
+ * @example
+ * const events = sortNodesByXPosition(eventNodes);
+ * const perspectives = sortNodesByXPosition(perspectiveNodes);
+ * // Match perspective at index 2 with corresponding event
+ * const matchingEvent = getNodeByIndex(events, 2);
+ */
+export const getNodeByIndex = <T>(nodes: T[], index: number): T | undefined => {
+  if (nodes.length === 0) {
+    return undefined;
+  }
+
+  // Clamp index to valid range (matches existing behavior in codebase)
+  const clampedIndex = Math.max(0, Math.min(index, nodes.length - 1));
+  return nodes[clampedIndex];
 };
 
 // ============================================================================
@@ -462,7 +510,6 @@ export function adjustEventCountForAllClusters(
                   (perspectiveGroup.data as GroupNodeData)?.characterName || "",
                 reflection: "",
                 isLoading: false,
-                eventId: newEventNode.id,
               },
               draggable: false,
               parentId: perspectiveGroupId,
@@ -554,7 +601,6 @@ export function adjustEventCountForAllClusters(
               data: {
                 narration: "",
                 isLoading: false,
-                eventId: newEventNode.id,
               },
               draggable: false,
               parentId: narrativeGroupId,
@@ -1012,7 +1058,6 @@ export function createPerspectiveGroup(
         narrator: characterName,
         reflection: "",
         isLoading: false,
-        eventId: eventNode.id,
       },
       draggable: false,
       parentId: newGroupId,
@@ -1268,7 +1313,6 @@ export function createNarrativeGroup(
       data: {
         narration: "",
         isLoading: false,
-        eventId: eventNode.id,
       },
       draggable: false,
       parentId: newGroupId,

@@ -76,16 +76,48 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     return perspectiveGroup?.data?.connectedEventGroup;
   }, [id, nodes]);
 
-  // Find the event node and related metadata for display
+  // Find the event node and related metadata for display using index-based matching
   const eventMetadata = useMemo(() => {
-    if (!data?.eventId) {
+    const perspectiveNode = nodes.find(
+      (node): node is PerspectiveNodeType =>
+        node.id === id && node.type === "perspective",
+    );
+    if (!perspectiveNode) {
       return null;
     }
-    const eventNode = nodes.find(
-      (node): node is EventNodeType =>
-        node.id === data.eventId && node.type === "event",
+
+    const parentGroupId = perspectiveNode.parentId;
+    if (!parentGroupId) {
+      return null;
+    }
+
+    // Get all perspectives in the same group, sorted by position
+    const siblingPerspectives = nodes
+      .filter(
+        (node): node is PerspectiveNodeType =>
+          node.type === "perspective" && node.parentId === parentGroupId,
+      )
+      .sort((a, b) => (a.position.x ?? 0) - (b.position.x ?? 0));
+
+    // Find index of current perspective
+    const perspectiveIndex = siblingPerspectives.findIndex(
+      (node) => node.id === id,
     );
-    const timelineLabel = eventNode?.data?.timeline ?? data.eventId;
+
+    if (perspectiveIndex < 0) {
+      return null;
+    }
+
+    // Get all event nodes sorted by position
+    const eventNodes = nodes
+      .filter((node): node is EventNodeType => node.type === "event")
+      .sort((a, b) => (a.position.x ?? 0) - (b.position.x ?? 0));
+
+    // Get event at the same index
+    const eventNode =
+      eventNodes[Math.min(perspectiveIndex, eventNodes.length - 1)];
+
+    const timelineLabel = eventNode?.data?.timeline ?? `Event ${perspectiveIndex + 1}`;
     const clusterLabel = connectedEventGroup?.label?.trim() ?? "";
     const clusterId = connectedEventGroup?.eventGroupId;
     const assembledDisplay = [clusterLabel, clusterId]
@@ -99,7 +131,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       timelineLabel,
       clusterDisplay,
     };
-  }, [connectedEventGroup, data?.eventId, nodes]);
+  }, [connectedEventGroup, id, nodes]);
 
   // keep character nodes aligned with perspective node
   useEffect(() => {
@@ -310,7 +342,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
               geistMono.className,
               "inline-flex items-center rounded bg-pink-500 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white",
             )}
-            title={`Event: ${data?.eventId}`}
+            title={`Event: ${eventMetadata.timelineLabel}`}
           >
             {eventMetadata.clusterDisplay
               ? `${eventMetadata.clusterDisplay} / ${eventMetadata.timelineLabel}`

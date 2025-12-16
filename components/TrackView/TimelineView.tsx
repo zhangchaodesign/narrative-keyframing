@@ -20,7 +20,6 @@ import {
 } from "@/components/TrackView/constants";
 import { buildTimelineData } from "@/lib/utiils/timelineUtils";
 import type {
-  PerspectiveNodeData,
   CharacterNodeData,
   WorkflowNode,
 } from "@/lib/types/workflow";
@@ -203,10 +202,6 @@ export function TimelineView() {
       selectedNarrativeClusterId,
     );
     const storyTrackItems = selectedStoryCluster?.track.items ?? [];
-    const storyEventIds = new Set(storyTrackItems.map((item) => item.nodeId));
-    const storyEventPositionMap = new Map(
-      storyTrackItems.map((item) => [item.nodeId, item.position]),
-    );
 
     const perspectiveGroupCache = new Map<string, WorkflowNode[]>();
     const getOrderedPerspectivesForGroup = (groupId: string) => {
@@ -233,26 +228,14 @@ export function TimelineView() {
 
       track.items.forEach((item) => {
         const perspectiveNode = nodes.find((n) => n.id === item.nodeId);
-        const perspectiveData = perspectiveNode?.data as
-          | PerspectiveNodeData
-          | undefined;
 
-        // Check if this perspective references an event in the selected story cluster
+        // Check if this perspective is linked to the selected story cluster
         const parentGroupId = perspectiveNode?.parentId || "";
         if (!linkedPerspectiveGroups?.has(parentGroupId)) {
           return;
         }
 
-        const eventIdFromNode = perspectiveData?.eventId;
-        if (eventIdFromNode && storyEventIds.has(eventIdFromNode)) {
-          const overriddenPosition =
-            storyEventPositionMap.get(eventIdFromNode) ?? item.position;
-          validPerspectiveIds.add(item.nodeId);
-          perspectivePositionOverrides.set(item.nodeId, overriddenPosition);
-          return;
-        }
-
-        // Fallback: align by sibling order within the perspective group
+        // Align by sibling order within the perspective group (index-based matching)
         const orderedPerspectives =
           getOrderedPerspectivesForGroup(parentGroupId);
         const siblingIndex = orderedPerspectives.findIndex(
