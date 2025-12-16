@@ -34,12 +34,6 @@ export function WorkflowCanvasMenu({
                 <span>Story Outline Cluster</span>
               </button>
             </li>
-            <li>
-              <button type="button" onClick={onAddFirstPersonCluster}>
-                <TbPlus size={16} className="text-secondary" />
-                <span>First-Person Limited Cluster</span>
-              </button>
-            </li>
           </ul>
         </div>
       </div>
