@@ -79,6 +79,29 @@ export function TimelineView() {
     }
   }, [filteredNarrativeClusters, selectedNarrativeClusterId]);
 
+  // Map narrative groups to their connected perspective group IDs
+  const narrativePerspectiveGroupMap = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    const nodesById = new Map(nodes.map((node) => [node.id, node]));
+
+    edges.forEach((edge) => {
+      const sourceNode = nodesById.get(edge.source);
+      const targetNode = nodesById.get(edge.target);
+
+      if (
+        sourceNode?.type === "perspectiveGroup" &&
+        targetNode?.type === "narrativeGroup"
+      ) {
+        if (!map.has(targetNode.id)) {
+          map.set(targetNode.id, new Set());
+        }
+        map.get(targetNode.id)?.add(sourceNode.id);
+      }
+    });
+
+    return map;
+  }, [nodes, edges]);
+
   // Get selected tracks
   const selectedStoryTrack = useMemo(() => {
     if (!selectedStoryClusterId) return storyTrack;
@@ -175,6 +198,9 @@ export function TimelineView() {
     const selectedStoryCluster = storyOutlineClusters.find(
       (c) => c.id === selectedStoryClusterId,
     );
+    const linkedPerspectiveGroups = narrativePerspectiveGroupMap.get(
+      selectedNarrativeClusterId,
+    );
     const storyEventIds = new Set(
       selectedStoryCluster?.track.items.map((item) => item.nodeId) || [],
     );
@@ -193,7 +219,8 @@ export function TimelineView() {
         // Check if this perspective references an event in the selected story cluster
         if (
           perspectiveData?.eventId &&
-          storyEventIds.has(perspectiveData.eventId)
+          storyEventIds.has(perspectiveData.eventId) &&
+          linkedPerspectiveGroups?.has(perspectiveNode?.parentId || "")
         ) {
           validPerspectiveIds.add(item.nodeId);
         }
@@ -237,6 +264,7 @@ export function TimelineView() {
     narrativeClusters,
     characterTracks,
     nodes,
+    narrativePerspectiveGroupMap,
   ]);
 
   // Group filtered character tracks by character
