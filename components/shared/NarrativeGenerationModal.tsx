@@ -39,7 +39,7 @@ export function NarrativeGenerationModal({
     new Set(),
   );
   const [customPrompt, setCustomPrompt] = useState("");
-  const [activeCharacterId, setActiveCharacterId] = useState<string>("");
+  const [activeCharacterKey, setActiveCharacterKey] = useState<string>("");
   const toggleSnippetInStore = useWorkflowStore((state) => state.toggleSnippet);
   const toggleEvidenceAttribute = useWorkflowStore(
     (state) => state.toggleEvidenceAttribute,
@@ -59,27 +59,42 @@ export function NarrativeGenerationModal({
     return result;
   }, [nodes]);
 
-  // Get unique characters from all events
-  const allCharacters = useMemo(() => {
-    const charactersMap = new Map<string, string>();
-    const seenNames = new Set<string>();
+  // Group characters by normalized name so multiple snapshot IDs share the same tab
+  const characterGroups = useMemo(() => {
+    const groups = new Map<
+      string,
+      { name: string; characterIds: Set<string> }
+    >();
 
     eventsData.forEach((event) => {
       event.snippets.forEach((snippet) => {
-        // Only add if we have valid characterId and name, and haven't seen this name yet
-        if (snippet.characterId && snippet.characterName) {
-          const normalizedName = snippet.characterName.trim().toLowerCase();
-          if (!seenNames.has(normalizedName)) {
-            charactersMap.set(snippet.characterId, snippet.characterName);
-            seenNames.add(normalizedName);
-          }
+        if (!snippet.characterId) {
+          return;
         }
+
+        const latestName =
+          characterNamesById[snippet.characterId]?.trim() ||
+          snippet.characterName?.trim() ||
+          "";
+        if (!latestName) {
+          return;
+        }
+
+        const normalizedName = latestName.toLowerCase();
+        if (!groups.has(normalizedName)) {
+          groups.set(normalizedName, {
+            name: latestName,
+            characterIds: new Set(),
+          });
+        }
+        groups.get(normalizedName)!.characterIds.add(snippet.characterId);
       });
     });
 
-    return Array.from(charactersMap.entries()).map(([id, name]) => ({
-      id,
-      name: characterNamesById[id]?.trim() || name,
+    return Array.from(groups.entries()).map(([key, value]) => ({
+      key,
+      name: value.name,
+      characterIds: Array.from(value.characterIds),
     }));
   }, [eventsData, characterNamesById]);
 
@@ -96,21 +111,21 @@ export function NarrativeGenerationModal({
       return;
     }
 
-    if (allCharacters.length === 0) {
-      if (activeCharacterId !== "") {
-        setActiveCharacterId("");
+    if (characterGroups.length === 0) {
+      if (activeCharacterKey !== "") {
+        setActiveCharacterKey("");
       }
       return;
     }
 
-    const hasActiveCharacter = allCharacters.some(
-      (character) => character.id === activeCharacterId,
+    const hasActiveCharacter = characterGroups.some(
+      (character) => character.key === activeCharacterKey,
     );
 
     if (!hasActiveCharacter) {
-      setActiveCharacterId(allCharacters[0].id);
+      setActiveCharacterKey(characterGroups[0].key);
     }
-  }, [isOpen, allCharacters, activeCharacterId]);
+  }, [isOpen, characterGroups, activeCharacterKey]);
 
   const toggleSnippet = (
     perspectiveNodeId: string,
@@ -219,28 +234,29 @@ export function NarrativeGenerationModal({
 
   // Filter events to show only active character's snippets and perspectives
   const filteredEventsData = useMemo(() => {
-    if (!activeCharacterId) return eventsData;
+    if (!activeCharacterKey) return eventsData;
+
+    const activeGroup = characterGroups.find(
+      (group) => group.key === activeCharacterKey,
+    );
+    if (!activeGroup) {
+      return eventsData;
+    }
+
+    const activeIds = new Set(activeGroup.characterIds);
+    const normalizedName = activeGroup.name.toLowerCase();
 
     return eventsData.map((event) => ({
       ...event,
-      snippets: event.snippets.filter(
-        (snippet) => snippet.characterId === activeCharacterId,
+      snippets: event.snippets.filter((snippet) =>
+        activeIds.has(snippet.characterId),
       ),
-      perspectives: event.perspectives.filter((perspective) => {
-        // Find the active character's name (case-insensitive match)
-        const activeCharacter = allCharacters.find(
-          (c) => c.id === activeCharacterId,
-        );
-        if (!activeCharacter) return false;
-
-        // Match perspective narrator to character name
-        return (
-          perspective.narrator.trim().toLowerCase() ===
-          activeCharacter.name.trim().toLowerCase()
-        );
-      }),
+      perspectives: event.perspectives.filter(
+        (perspective) =>
+          perspective.narrator.trim().toLowerCase() === normalizedName,
+      ),
     }));
-  }, [eventsData, activeCharacterId, allCharacters]);
+  }, [eventsData, activeCharacterKey, characterGroups]);
 
   if (!isOpen) return null;
 
@@ -262,15 +278,15 @@ export function NarrativeGenerationModal({
         </div>
 
         {/* Character Tabs */}
-        {allCharacters.length > 0 && (
+        {characterGroups.length > 0 && (
           <div className="border-b border-zinc-200 bg-zinc-50 px-6">
             <div className="flex gap-2 overflow-x-auto">
-              {allCharacters.map((character) => (
+              {characterGroups.map((character) => (
                 <button
-                  key={character.id}
-                  onClick={() => setActiveCharacterId(character.id)}
+                  key={character.key}
+                  onClick={() => setActiveCharacterKey(character.key)}
                   className={`whitespace-nowrap border-b-2 px-4 py-2 text-xs font-medium transition ${
-                    activeCharacterId === character.id
+                    activeCharacterKey === character.key
                       ? "border-green-600 text-green-600"
                       : "border-transparent text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
                   }`}
