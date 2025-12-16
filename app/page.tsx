@@ -18,9 +18,9 @@ export default function Page() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <div className="shrink-0">
+      {/* <div className="shrink-0">
         <Header />
-      </div>
+      </div> */}
 
       <div className="flex-1 overflow-hidden">
         <div className="h-full">
@@ -48,12 +48,12 @@ export default function Page() {
                 aria-label={
                   isEditorCollapsed ? "Show text editor" : "Hide text editor"
                 }
-                className="absolute top-1/2 right-0 z-10 flex h-9 w-9 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow hover:bg-gray-50"
+                className="absolute top-1/2 left-full z-10 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-l-none rounded-r-full border border-gray-200 border-l-0 bg-white text-gray-600 hover:bg-gray-50"
               >
                 {isEditorCollapsed ? (
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-5 w-5 mr-1" />
                 ) : (
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-5 w-5 mr-1" />
                 )}
               </button>
             </div>
