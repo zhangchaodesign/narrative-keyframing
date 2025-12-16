@@ -3,13 +3,11 @@ import { TbPlus, TbChevronDown } from "react-icons/tb";
 interface WorkflowCanvasMenuProps {
   onAddStoryOutlineCluster: () => void;
   onAddFirstPersonCluster: () => void;
-  onAddThirdPersonCluster: () => void;
 }
 
 export function WorkflowCanvasMenu({
   onAddStoryOutlineCluster,
   onAddFirstPersonCluster,
-  onAddThirdPersonCluster,
 }: WorkflowCanvasMenuProps) {
   return (
     <div className="absolute left-2 top-4 z-20 bg-white/90 p-1 rounded">
@@ -40,12 +38,6 @@ export function WorkflowCanvasMenu({
               <button type="button" onClick={onAddFirstPersonCluster}>
                 <TbPlus size={16} className="text-secondary" />
                 <span>First-Person Limited Cluster</span>
-              </button>
-            </li>
-            <li>
-              <button type="button" onClick={onAddThirdPersonCluster}>
-                <TbPlus size={16} className="text-primary" />
-                <span>Third-Person Omniscient Cluster</span>
               </button>
             </li>
           </ul>

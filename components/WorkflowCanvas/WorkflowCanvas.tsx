@@ -27,7 +27,6 @@ import { WorkflowCanvasMenu } from "@/components/WorkflowCanvas/WorkflowCanvasMe
 import {
   createPerspectiveGroup,
   createStoryOutlineCluster,
-  createNarrativeGroup,
   nodeColor,
 } from "@/lib/utiils/workflowUtils";
 
@@ -91,23 +90,11 @@ export function WorkflowCanvas() {
     setEdges((currentEdges) => [...currentEdges, ...result.edges]);
   }, [nodes, edges, setNodes, setEdges]);
 
-  const handleAddThirdPersonCluster = useCallback(() => {
-    const result = createNarrativeGroup(nodes);
-
-    if (result.nodes.length === 0) {
-      return;
-    }
-
-    setNodes((currentNodes) => [...currentNodes, ...result.nodes]);
-    setEdges((currentEdges) => [...currentEdges, ...result.edges]);
-  }, [nodes, setNodes, setEdges]);
-
   return (
     <div className="h-full min-h-0 w-full relative">
       <WorkflowCanvasMenu
         onAddStoryOutlineCluster={handleAddStoryOutlineCluster}
         onAddFirstPersonCluster={handleAddFirstPersonCluster}
-        onAddThirdPersonCluster={handleAddThirdPersonCluster}
       />
       <ReactFlow
         nodes={nodes}
