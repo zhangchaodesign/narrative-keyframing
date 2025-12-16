@@ -143,6 +143,18 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
             ))}
           </>
         )}
+        <button
+          type="button"
+          onClick={() => handleAddPerspectiveGroup("")}
+          className={cn(
+            geistMono.className,
+            "btn btn-xs btn-secondary gap-1 whitespace-nowrap",
+          )}
+          title="Add a custom perspective group"
+        >
+          <TbPlus size={14} />
+          Customize
+        </button>
       </div>
 
       <CustomHandle
