@@ -83,7 +83,9 @@ export function PerspectiveActionsMenu({
 
     setIsAnalyzing(true);
     const preparedTargets = getPerspectiveEvidenceTargets(uniqueTargetIds);
-    const readyTargetIds = new Set(preparedTargets.map((target) => target.nodeId));
+    const readyTargetIds = new Set(
+      preparedTargets.map((target) => target.nodeId),
+    );
 
     if (preparedTargets.length === 0) {
       setIsAnalyzing(false);
