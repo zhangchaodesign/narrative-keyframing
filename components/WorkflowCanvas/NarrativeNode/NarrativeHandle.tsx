@@ -8,8 +8,10 @@ export const NarrativeHandle: React.FC<HandleProps> = ({ style, ...props }) => {
         width: 10,
         height: 10,
         background: "#67cc8a",
+        transition: "transform 0.2s ease, width 0.2s ease, height 0.2s ease",
         ...style,
       }}
+      className="hover:w-4! hover:h-4!"
       {...props}
     />
   );
