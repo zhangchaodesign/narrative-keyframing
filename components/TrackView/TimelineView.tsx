@@ -23,6 +23,15 @@ import type {
   PerspectiveNodeData,
   CharacterNodeData,
 } from "@/lib/types/workflow";
+import type { TimelineTrack } from "@/lib/types/timeline";
+
+const getTrackUnitCount = (track: TimelineTrack | null) => {
+  if (!track || track.items.length === 0) {
+    return 0;
+  }
+  const maxPosition = Math.max(...track.items.map((item) => item.position));
+  return maxPosition + 1;
+};
 
 export function TimelineView() {
   const nodes = useWorkflowStore((state) => state.nodes);
@@ -90,9 +99,13 @@ export function TimelineView() {
   }, [selectedNarrativeClusterId, narrativeClusters]);
 
   const snapToGrid = true;
-  const totalDuration = selectedStoryTrack
-    ? selectedStoryTrack.items.length
-    : maxPosition;
+  const storyUnits = getTrackUnitCount(selectedStoryTrack);
+  const narrativeUnits = getTrackUnitCount(selectedNarrativeTrack);
+  const filteredTimelineUnits = Math.max(storyUnits, narrativeUnits);
+  const fallbackTimelineUnits = Math.max(maxPosition + 1, 1);
+  const activeTimelineUnits =
+    filteredTimelineUnits > 0 ? filteredTimelineUnits : fallbackTimelineUnits;
+  const totalDuration = activeTimelineUnits;
 
   const timelineRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = React.useState(0);
@@ -112,11 +125,7 @@ export function TimelineView() {
 
   // Calculate timeline width based on fixed spacing
   const timelineScale = TIMELINE_UNIT_WIDTH;
-  const timelineUnits = Math.max(
-    1,
-    Math.ceil(totalDuration),
-    (maxPosition ?? 0) + 1,
-  );
+  const timelineUnits = Math.max(1, Math.ceil(activeTimelineUnits));
   const targetTimelineWidth =
     TIMELINE_LABEL_WIDTH +
     TIMELINE_LEFT_PADDING +
