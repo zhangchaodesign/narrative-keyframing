@@ -161,6 +161,18 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
         type="source"
         position={Position.Bottom}
         id="group-bridge"
+        isValidConnection={(connection) => {
+          const targetNode = getNodes().find(
+            (node) => node.id === connection.target,
+          );
+          const isValid = targetNode?.type === "perspectiveGroup";
+
+          if (!isValid && targetNode) {
+            alert("This connection can only link to Perspective Group nodes!");
+          }
+
+          return isValid;
+        }}
       />
     </div>
   );
