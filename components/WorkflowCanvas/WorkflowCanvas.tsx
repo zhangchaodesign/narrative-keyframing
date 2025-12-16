@@ -79,22 +79,10 @@ export function WorkflowCanvas() {
     setEdges((currentEdges) => [...currentEdges, ...result.edges]);
   }, [nodes, setNodes, setEdges]);
 
-  const handleAddFirstPersonCluster = useCallback(() => {
-    const result = createPerspectiveGroup(nodes, edges);
-
-    if (result.nodes.length === 0) {
-      return;
-    }
-
-    setNodes((currentNodes) => [...currentNodes, ...result.nodes]);
-    setEdges((currentEdges) => [...currentEdges, ...result.edges]);
-  }, [nodes, edges, setNodes, setEdges]);
-
   return (
     <div className="h-full min-h-0 w-full relative">
       <WorkflowCanvasMenu
         onAddStoryOutlineCluster={handleAddStoryOutlineCluster}
-        onAddFirstPersonCluster={handleAddFirstPersonCluster}
       />
       <ReactFlow
         nodes={nodes}

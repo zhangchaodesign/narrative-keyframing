@@ -2,12 +2,10 @@ import { TbPlus, TbChevronDown } from "react-icons/tb";
 
 interface WorkflowCanvasMenuProps {
   onAddStoryOutlineCluster: () => void;
-  onAddFirstPersonCluster: () => void;
 }
 
 export function WorkflowCanvasMenu({
   onAddStoryOutlineCluster,
-  onAddFirstPersonCluster,
 }: WorkflowCanvasMenuProps) {
   return (
     <div className="absolute left-2 top-4 z-20 bg-white/90 p-1 rounded">
