@@ -82,17 +82,18 @@ export function PerspectiveActionsMenu({
     }
 
     setIsAnalyzing(true);
-    const targetIdSet = new Set(uniqueTargetIds);
+    const preparedTargets = getPerspectiveEvidenceTargets(uniqueTargetIds);
+    const readyTargetIds = new Set(preparedTargets.map((target) => target.nodeId));
+
+    if (preparedTargets.length === 0) {
+      setIsAnalyzing(false);
+      return;
+    }
 
     try {
       setNodes((currentNodes) =>
-        setPerspectivesAnalyzing(currentNodes, targetIdSet, true),
+        setPerspectivesAnalyzing(currentNodes, readyTargetIds, true),
       );
-
-      const preparedTargets = getPerspectiveEvidenceTargets(uniqueTargetIds);
-      if (preparedTargets.length === 0) {
-        return;
-      }
 
       const results = await analyzeMultiplePerspectivesEvidence(
         preparedTargets,
@@ -101,6 +102,9 @@ export function PerspectiveActionsMenu({
       setNodes((currentNodes) => applyAnalysisResults(currentNodes, results));
     } catch (error) {
       console.error("Error analyzing evidence for perspectives:", error);
+      setNodes((currentNodes) =>
+        setPerspectivesAnalyzing(currentNodes, readyTargetIds, false),
+      );
     } finally {
       setIsAnalyzing(false);
     }
