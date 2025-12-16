@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { TbX } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
@@ -73,15 +73,33 @@ export function NarrativeGenerationModal({
   }, [eventsData]);
 
   // Initialize only pre-selected snippets as selected when modal opens
-  useMemo(() => {
-    if (isOpen) {
-      setSelectedSnippetKeys(new Set(preSelectedSnippets));
-      // Set first character as active by default
-      if (allCharacters.length > 0 && !activeCharacterId) {
-        setActiveCharacterId(allCharacters[0].id);
-      }
+  useEffect(() => {
+    if (!isOpen) {
+      return;
     }
-  }, [isOpen, preSelectedSnippets, allCharacters, activeCharacterId]);
+    setSelectedSnippetKeys(new Set(preSelectedSnippets));
+  }, [isOpen, preSelectedSnippets]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    if (allCharacters.length === 0) {
+      if (activeCharacterId !== "") {
+        setActiveCharacterId("");
+      }
+      return;
+    }
+
+    const hasActiveCharacter = allCharacters.some(
+      (character) => character.id === activeCharacterId,
+    );
+
+    if (!hasActiveCharacter) {
+      setActiveCharacterId(allCharacters[0].id);
+    }
+  }, [isOpen, allCharacters, activeCharacterId]);
 
   const toggleSnippet = (
     perspectiveNodeId: string,

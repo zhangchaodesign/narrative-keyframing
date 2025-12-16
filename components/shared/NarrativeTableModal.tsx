@@ -6,6 +6,7 @@ import { TbX, TbHighlight, TbRefresh } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { SelectedSnippet } from "@/lib/stores/workflowStore";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
+import { regenerateNarrativesForEvents } from "@/lib/utiils/narrativeUtils";
 
 type EventData = {
   narrativeNodeId: string;
@@ -82,7 +83,6 @@ export function NarrativeTableModal({
     setShowPromptDialog(false);
 
     try {
-      // Filter eventsData to only include selected snippets
       const filteredEventsData = eventsData.map((event) => ({
         ...event,
         snippets: event.snippets.filter((snippet) => {
@@ -91,76 +91,16 @@ export function NarrativeTableModal({
         }),
       }));
 
-      // Set loading state for all narrative nodes
-      setNodes((nodesState) =>
-        nodesState.map((node) => {
-          if (
-            node.type === "narrative" &&
-            eventsData.some((e) => e.narrativeNodeId === node.id)
-          ) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                isLoading: true,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-
-      // Call the API with filtered events and custom prompt
-      const response = await fetch("/api/generate-narrative", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          events: filteredEventsData,
-          customPrompt: customPrompt.trim() || undefined,
-        }),
+      const data = await regenerateNarrativesForEvents({
+        events: filteredEventsData,
+        customPrompt,
+        setNodes,
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to generate narrative");
-      }
-
-      const data = await response.json();
-
-      // Update all narrative nodes with their generated stories
-      setNodes((nodesState) =>
-        nodesState.map((node) => {
-          if (node.type === "narrative") {
-            const narrativeForThisNode = data.narratives?.find(
-              (n: { narrativeNodeId: string }) => n.narrativeNodeId === node.id,
-            );
-
-            if (narrativeForThisNode) {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  narration:
-                    narrativeForThisNode?.narration ??
-                    node.data?.narration ??
-                    "",
-                  snippetUsages: narrativeForThisNode?.snippetUsages ?? [],
-                  isLoading: false,
-                },
-              };
-            }
-          }
-          return node;
-        }),
-      );
-
-      // Update eventsData state with new narratives to refresh the table
       setEventsData((prevEventsData) =>
         prevEventsData.map((event) => {
           const narrativeForThisEvent = data.narratives?.find(
-            (n: { narrativeNodeId: string }) =>
-              n.narrativeNodeId === event.narrativeNodeId,
+            (n) => n.narrativeNodeId === event.narrativeNodeId,
           );
 
           if (narrativeForThisEvent) {
@@ -177,30 +117,10 @@ export function NarrativeTableModal({
         }),
       );
 
-      // Reset custom prompt
       setCustomPrompt("");
     } catch (error) {
       console.error("Error regenerating narrative:", error);
       alert("Failed to regenerate narrative. Please try again.");
-
-      // Clear loading state on error
-      setNodes((nodesState) =>
-        nodesState.map((node) => {
-          if (
-            node.type === "narrative" &&
-            eventsData.some((e) => e.narrativeNodeId === node.id)
-          ) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                isLoading: false,
-              },
-            };
-          }
-          return node;
-        }),
-      );
     } finally {
       setIsRegenerating(false);
     }

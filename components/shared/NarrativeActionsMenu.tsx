@@ -9,7 +9,10 @@ import { SlateUtils } from "@/lib/utiils/slateUtils";
 import { NarrativeGenerationModal } from "@/components/shared/NarrativeGenerationModal";
 import { NarrativeTableModal } from "@/components/shared/NarrativeTableModal";
 import { cn } from "@/lib/utiils/sharedUtils";
-import { combineNarrativeTextsInGroup } from "@/lib/utiils/narrativeUtils";
+import {
+  combineNarrativeTextsInGroup,
+  regenerateNarrativesForEvents,
+} from "@/lib/utiils/narrativeUtils";
 
 type NarrativeActionsMenuProps = {
   nodeId: string;
@@ -78,83 +81,21 @@ export function NarrativeActionsMenu({
           ),
         }));
 
-        setNodes((nodesState) =>
-          nodesState.map((node) => {
-            if (node.type === "narrative" && node.parentId === nodeId) {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  isLoading: true,
-                },
-              };
-            }
-            return node;
-          }),
-        );
+        console.log("Generating narratives for events:", filteredEventsData);
 
-        const response = await fetch("/api/generate-narrative", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            events: filteredEventsData,
-            customPrompt: customPrompt.trim() || undefined,
-          }),
+        await regenerateNarrativesForEvents({
+          events: filteredEventsData,
+          customPrompt,
+          setNodes,
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to generate narrative");
-        }
-
-        const data = await response.json();
-
-        setNodes((nodesState) =>
-          nodesState.map((node) => {
-            if (node.type === "narrative" && node.parentId === nodeId) {
-              const narrativeForNode = data.narratives?.find(
-                (n: { narrativeNodeId: string }) =>
-                  n.narrativeNodeId === node.id,
-              );
-
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  narration:
-                    narrativeForNode?.narration ?? node.data?.narration ?? "",
-                  snippetUsages: narrativeForNode?.snippetUsages ?? [],
-                  isLoading: false,
-                },
-              };
-            }
-            return node;
-          }),
-        );
       } catch (error) {
         console.error("Error generating narrative:", error);
         alert("Failed to generate narrative. Please try again.");
-
-        setNodes((nodesState) =>
-          nodesState.map((node) => {
-            if (node.type === "narrative" && node.parentId === nodeId) {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  isLoading: false,
-                },
-              };
-            }
-            return node;
-          }),
-        );
       } finally {
         setIsGenerating(false);
       }
     },
-    [eventsData, nodeId, setNodes],
+    [eventsData, setNodes],
   );
 
   const handleOpenTableModal = useCallback(() => {
