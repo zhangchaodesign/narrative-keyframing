@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Position, type NodeProps, useStore } from "@xyflow/react";
 import { NarrativeHandle } from "@/components/WorkflowCanvas/NarrativeNode/NarrativeHandle";
 import { NarrativeContent } from "@/components/shared/NarrativeContent";
+import { NarrativeNodeMenu } from "@/components/shared/NarrativeNodeMenu";
 import type {
   EventNodeType,
   NarrativeNodeType,
@@ -11,12 +12,44 @@ import type {
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
+import { useWorkflowStore } from "@/lib/stores/workflowStore";
 
 const DEFAULT_NARRATIVE_GROUP_ID = "narrative-group";
 
 export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
   const nodes = useStore((store) => store.nodes);
+  const setNodes = useWorkflowStore((state) => state.setNodes);
   const isLoading = data?.isLoading ?? false;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedNarration, setEditedNarration] = useState(data?.narration ?? "");
+
+  const handleToggleEdit = useCallback(() => {
+    if (isEditing) {
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
+          if (node.id !== id || node.type !== "narrative") {
+            return node;
+          }
+          const existingData = node.data as NarrativeNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              narration: editedNarration,
+            },
+          };
+        }),
+      );
+      setIsEditing(false);
+    } else {
+      setEditedNarration(data?.narration ?? "");
+      setIsEditing(true);
+    }
+  }, [data?.narration, editedNarration, id, isEditing, setNodes]);
+
+  const handleNarrationChange = useCallback((nextNarration: string) => {
+    setEditedNarration(nextNarration);
+  }, []);
 
   // Calculate narrative sequence number based on position
   const narrativeSequence = useMemo(() => {
@@ -87,7 +120,8 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
     const eventNode =
       eventNodes[Math.min(narrativeIndex, eventNodes.length - 1)];
 
-    const timelineLabel = eventNode?.data?.timeline ?? `Event ${narrativeIndex + 1}`;
+    const timelineLabel =
+      eventNode?.data?.timeline ?? `Event ${narrativeIndex + 1}`;
     const clusterLabel = connectedEventGroup?.label?.trim() ?? "";
     const clusterId = connectedEventGroup?.eventGroupId;
     const assembledDisplay = [clusterLabel, clusterId]
@@ -113,6 +147,11 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
           </span>
         </div>
       )}
+      <NarrativeNodeMenu
+        isEditing={isEditing}
+        onToggleEdit={handleToggleEdit}
+        wrapperClassName="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+      />
       <div
         className={cn(
           geistMono.className,
@@ -127,6 +166,8 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
       <NarrativeContent
         narration={data?.narration ?? ""}
         snippetUsages={data?.snippetUsages}
+        isEditing={isEditing}
+        onNarrationChange={handleNarrationChange}
       />
       {eventMetadata && (
         <div className="mt-1 flex gap-2">

@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
 
 interface NarrativeContentProps {
@@ -7,6 +7,8 @@ interface NarrativeContentProps {
     originalSnippet: string;
     verbatimInNarrative: string;
   }>;
+  isEditing?: boolean;
+  onNarrationChange?: (newNarration: string) => void;
 }
 
 type HighlightRange = {
@@ -92,7 +94,22 @@ function createHighlightedNarrative(
 export function NarrativeContent({
   narration,
   snippetUsages,
+  isEditing = false,
+  onNarrationChange,
 }: NarrativeContentProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [editValue, setEditValue] = useState(narration);
+
+  useEffect(() => {
+    setEditValue(narration);
+  }, [narration]);
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isEditing]);
+
   const highlightedNarration = useMemo<ReactNode>(() => {
     const narrationText = narration ?? "";
     if (!narrationText) {
@@ -101,6 +118,35 @@ export function NarrativeContent({
 
     return createHighlightedNarrative(narrationText, snippetUsages ?? []);
   }, [narration, snippetUsages]);
+
+  if (isEditing) {
+    return (
+      <textarea
+        ref={textareaRef}
+        value={editValue}
+        onChange={(event) => {
+          const nextValue = event.target.value;
+          setEditValue(nextValue);
+          onNarrationChange?.(nextValue);
+        }}
+        className="flex-1 w-full resize-none rounded bg-white border border-zinc-300 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 nodrag nopan"
+        onWheel={(event) => {
+          if (event.ctrlKey || event.metaKey) {
+            return;
+          }
+          event.stopPropagation();
+          event.nativeEvent.stopImmediatePropagation?.();
+        }}
+        onWheelCapture={(event) => {
+          if (event.ctrlKey || event.metaKey) {
+            return;
+          }
+          event.stopPropagation();
+          event.nativeEvent.stopImmediatePropagation?.();
+        }}
+      />
+    );
+  }
 
   return (
     <div
