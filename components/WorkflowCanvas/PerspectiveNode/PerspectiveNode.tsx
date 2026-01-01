@@ -196,21 +196,36 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       // Save the edited reflection
       setNodes((nodesState) =>
         nodesState.map((node) => {
-          if (node.id !== id || node.type !== "perspective") {
-            return node;
+          if (node.id === id && node.type === "perspective") {
+            const existingData = node.data as PerspectiveNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                reflection: editedReflection,
+                // Clear evidence analysis when reflection is edited
+                analysisEvidence: [],
+                analysisStatus: "idle",
+                analysisStatusMessage: undefined,
+              },
+            };
           }
-          const existingData = node.data as PerspectiveNodeType["data"];
-          return {
-            ...node,
-            data: {
-              ...existingData,
-              reflection: editedReflection,
-              // Clear evidence analysis when reflection is edited
-              analysisEvidence: [],
-              analysisStatus: "idle",
-              analysisStatusMessage: undefined,
-            },
-          };
+
+          if (
+            node.type === "character" &&
+            (node.data as CharacterNodeType["data"])?.perspectiveId === id
+          ) {
+            const existingData = node.data as CharacterNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                showUpdatePrompt: true,
+              },
+            };
+          }
+
+          return node;
         }),
       );
       setIsEditing(false);

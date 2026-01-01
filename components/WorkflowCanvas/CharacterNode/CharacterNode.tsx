@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef } from "react";
-import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
+import { Position, type NodeProps } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { CharacterMenu } from "@/components/WorkflowCanvas/CharacterNode/CharacterMenu";
 import { TraitSection } from "@/components/shared/CharacterTraitSection";
@@ -11,10 +11,14 @@ import { geistMono } from "@/app/fonts";
 import {
   CHARACTER_TRAIT_CATEGORIES,
   normalizeCharacterTraits,
+  refreshCharacterSnapshotFromPerspective,
+  type WorkflowNodesSetter,
 } from "@/lib/utiils/characterUtils";
+import { useWorkflowStore } from "@/lib/stores/workflowStore";
 
 export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
-  const { setNodes } = useReactFlow();
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const setNodes = useWorkflowStore((state) => state.setNodes);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -55,12 +59,104 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     [id, setNodes],
   );
 
+  const handleDismissUpdatePrompt = useCallback(() => {
+    setNodes((nodesState) =>
+      nodesState.map((node) => {
+        if (node.id !== id || node.type !== "character") {
+          return node;
+        }
+        const existingData = node.data as CharacterNodeType["data"];
+        return {
+          ...node,
+          data: {
+            ...existingData,
+            showUpdatePrompt: false,
+          },
+        };
+      }),
+    );
+  }, [id, setNodes]);
+
+  const handleConfirmUpdatePrompt = useCallback(async () => {
+    if (data?.isRefreshing) {
+      return;
+    }
+
+    setNodes((nodesState) =>
+      nodesState.map((node) => {
+        if (node.id !== id || node.type !== "character") {
+          return node;
+        }
+        const existingData = node.data as CharacterNodeType["data"];
+        return {
+          ...node,
+          data: {
+            ...existingData,
+            isRefreshing: true,
+            showUpdatePrompt: false,
+          },
+        };
+      }),
+    );
+
+    try {
+      await refreshCharacterSnapshotFromPerspective({
+        nodeId: id,
+        nodes,
+        setNodes: setNodes as WorkflowNodesSetter,
+      });
+    } catch (error) {
+      console.error("Error refreshing character snapshot:", error);
+    } finally {
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
+          if (node.id !== id || node.type !== "character") {
+            return node;
+          }
+          const existingData = node.data as CharacterNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              isRefreshing: false,
+            },
+          };
+        }),
+      );
+    }
+  }, [data?.isRefreshing, id, nodes, setNodes]);
+
   return (
     <div className="group relative w-64">
       <div
         ref={containerRef}
         className="relative flex max-h-88 flex-col rounded-lg border-2 border-warning bg-white text-xs hover:shadow-lg"
       >
+        {data?.showUpdatePrompt && !data?.isRefreshing && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-black/10 p-3 text-center text-white backdrop-blur-xs">
+            <div className="w-full max-w-xs rounded-lg bg-white/90 p-3 text-zinc-900 shadow-lg">
+              <p className="text-xs font-medium">
+                Update the character sheet with the latest perspective?
+              </p>
+              <div className="mt-3 flex justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDismissUpdatePrompt}
+                  className="btn btn-xs"
+                >
+                  Not now
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmUpdatePrompt}
+                  className="btn btn-xs btn-neutral"
+                >
+                  Update
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {data?.isRefreshing && (
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-warning" />
