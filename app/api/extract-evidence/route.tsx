@@ -137,11 +137,10 @@ ${evidenceCategorySection}
 Instructions:
 1. Scan the current snippet for exact short phrases that directly or indirectly demonstrate each listed attribute.
 2. Only report evidence that appears verbatim in the current snippet text.
-3. If an attribute is not supported, do not invent evidence for it.
-4. When one phrase supports multiple attributes from the same category, list all matching attributes together.
-5. Assign each phrase to exactly one evidence category from the list above.
-6. Return characterEvidence entries in the same order as the character list above.
-7. Return JSON that matches the provided schema exactly. Do not include explanations outside the schema.
+3. When one phrase supports multiple attributes from the same category, list all matching attributes together.
+4. Assign each phrase to exactly one evidence category from the list above.
+5. Return characterEvidence entries in the same order as the character list above.
+6. Return JSON that matches the provided schema exactly. Do not include explanations outside the schema.
 `;
 };
 

@@ -242,6 +242,21 @@ export function PerspectiveSingleActionsMenu({
     setNodes,
   ]);
 
+  const handleRegenerateAndAnalyze = useCallback(async () => {
+    if (isRegenerating || isAnalyzingEvidence || isEditing) {
+      return;
+    }
+
+    await handleRegeneratePerspective();
+    await handleAnalyzeEvidence();
+  }, [
+    handleAnalyzeEvidence,
+    handleRegeneratePerspective,
+    isAnalyzingEvidence,
+    isEditing,
+    isRegenerating,
+  ]);
+
   return (
     <div className={cn(wrapperClassName)}>
       <button
@@ -281,7 +296,7 @@ export function PerspectiveSingleActionsMenu({
       </button>
       <button
         type="button"
-        onClick={handleRegeneratePerspective}
+        onClick={handleRegenerateAndAnalyze}
         className={cn(
           "pointer-events-auto rounded-full transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 disabled:cursor-not-allowed disabled:opacity-60",
           buttonPadding,

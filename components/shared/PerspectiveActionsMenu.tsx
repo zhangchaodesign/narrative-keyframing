@@ -112,6 +112,20 @@ export function PerspectiveActionsMenu({
     }
   }, [getPerspectiveEvidenceTargets, isAnalyzing, setNodes, uniqueTargetIds]);
 
+  const handleGenerateAndAnalyze = useCallback(async () => {
+    if (isGenerating || isAnalyzing) {
+      return;
+    }
+
+    await handleGeneratePerspectives();
+    await handleAnalyzeAllEvidence();
+  }, [
+    handleAnalyzeAllEvidence,
+    handleGeneratePerspectives,
+    isAnalyzing,
+    isGenerating,
+  ]);
+
   if (uniqueTargetIds.length === 0) {
     return null;
   }
@@ -123,7 +137,7 @@ export function PerspectiveActionsMenu({
     <div className={cn(wrapperClassName)}>
       <button
         type="button"
-        onClick={handleGeneratePerspectives}
+        onClick={handleGenerateAndAnalyze}
         className={cn(
           "rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-1 hover:bg-green-50 hover:text-green-600 focus-visible:outline-green-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
           buttonPadding,
