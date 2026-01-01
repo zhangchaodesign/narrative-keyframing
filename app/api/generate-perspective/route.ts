@@ -14,12 +14,6 @@ const TraitListSchema = z.object({
 const CharacterSnapshotSchema = z.object({
   name: z.string().min(1),
   traits: TraitListSchema,
-  developmentFocus: z
-    .string()
-    .describe(
-      "Concise note describing the trajectory this snapshot should illuminate (e.g., 'from reckless curiosity to grounded courage').",
-    )
-    .optional(),
 });
 
 const PerspectiveTaskSchema = z
@@ -87,18 +81,11 @@ const buildSnapshotSection = (
     formatTraitCategory("Sociology", traits.sociology),
   ];
 
-  const developmentNote = snapshot.developmentFocus
-    ? `Development focus: ${snapshot.developmentFocus}`
-    : null;
-
-  if (traitsAreEmpty && !developmentNote) {
+  if (traitsAreEmpty) {
     return header;
   }
 
-  const sectionLines = traitsAreEmpty ? [] : traitLines;
-  const trailingNote = developmentNote ? [developmentNote] : [];
-
-  return [header, ...sectionLines, ...trailingNote].join("\n");
+  return [header, ...traitLines].join("\n");
 };
 
 const buildTasksSection = (tasks: z.infer<typeof PerspectiveTaskSchema>[]) => {
@@ -115,11 +102,7 @@ const buildTasksSection = (tasks: z.infer<typeof PerspectiveTaskSchema>[]) => {
       .map((category) => traits[category] ?? [])
       .some((values) => values.some((value) => value.trim().length > 0));
 
-    const hasDevelopmentFocus = Boolean(
-      snapshot.developmentFocus?.trim().length,
-    );
-
-    return hasTraitDetails || hasDevelopmentFocus;
+    return hasTraitDetails;
   };
 
   type TaskMeta = {

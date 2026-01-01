@@ -14,12 +14,6 @@ const TraitListSchema = z.object({
 const CharacterSnapshotSchema = z.object({
   name: z.string().min(1),
   traits: TraitListSchema,
-  developmentFocus: z
-    .string()
-    .describe(
-      "Concise note describing the trajectory this snapshot should illuminate (e.g., 'from reckless curiosity to grounded courage').",
-    )
-    .optional(),
 });
 
 const PerspectiveTaskSchema = z
@@ -82,18 +76,13 @@ const buildSnapshotSection = (
     formatTraitCategory("Sociology", traits.sociology),
   ];
 
-  const developmentNote = snapshot.developmentFocus
-    ? `Development focus: ${snapshot.developmentFocus}`
-    : null;
-
-  if (traitsAreEmpty && !developmentNote) {
+  if (traitsAreEmpty) {
     return header;
   }
 
   const sectionLines = traitsAreEmpty ? [] : traitLines;
-  const trailingNote = developmentNote ? [developmentNote] : [];
 
-  return [header, ...sectionLines, ...trailingNote].join("\n");
+  return [header, ...sectionLines].join("\n");
 };
 
 const buildTaskSection = (task: z.infer<typeof PerspectiveTaskSchema>) => {
@@ -126,19 +115,13 @@ export async function POST(request: Request) {
 
     const adjacentSections: string[] = [];
     if (previousPerspective && previousPerspective.trim().length > 0) {
-      adjacentSections.push(
-        `Previous perspective text:\n${previousPerspective.trim()}`,
-      );
+      adjacentSections.push(`Previous text:\n${previousPerspective.trim()}`);
     }
     if (nextPerspective && nextPerspective.trim().length > 0) {
-      adjacentSections.push(
-        `Next perspective text:\n${nextPerspective.trim()}`,
-      );
+      adjacentSections.push(`Next text:\n${nextPerspective.trim()}`);
     }
     const adjacencyContext = adjacentSections.length
-      ? `Adjacent perspectives for continuity:\n${adjacentSections.join(
-          "\n\n",
-        )}\n\n`
+      ? `Adjacent text for continuity:\n${adjacentSections.join("\n\n")}\n\n`
       : "";
 
     const taskSection = buildTaskSection(perspective);
