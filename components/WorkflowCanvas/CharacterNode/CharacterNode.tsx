@@ -14,11 +14,20 @@ import {
   refreshCharacterSnapshotFromPerspective,
   type WorkflowNodesSetter,
 } from "@/lib/utiils/characterUtils";
-import { useWorkflowStore } from "@/lib/stores/workflowStore";
+import {
+  buildEvidenceAttributeKey,
+  useWorkflowStore,
+} from "@/lib/stores/workflowStore";
 
 export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   const nodes = useWorkflowStore((state) => state.nodes);
   const setNodes = useWorkflowStore((state) => state.setNodes);
+  const selectedEvidenceAttributes = useWorkflowStore(
+    (state) => state.selectedEvidenceAttributes,
+  );
+  const toggleEvidenceAttribute = useWorkflowStore(
+    (state) => state.toggleEvidenceAttribute,
+  );
 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -27,6 +36,24 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     [data?.traits],
   );
   const characterName = data?.name?.trim() ?? "";
+  const allTraits = useMemo(
+    () =>
+      CHARACTER_TRAIT_CATEGORIES.flatMap(
+        ({ key }) =>
+          traits[key]?.filter((trait) => trait.trim().length > 0) ?? [],
+      ),
+    [traits],
+  );
+  const areAllTraitsSelected = useMemo(() => {
+    if (allTraits.length === 0) {
+      return false;
+    }
+    return allTraits.every((trait) =>
+      Boolean(
+        selectedEvidenceAttributes?.[buildEvidenceAttributeKey(id, trait)],
+      ),
+    );
+  }, [allTraits, id, selectedEvidenceAttributes]);
 
   const updateNodeData = useCallback(
     (
@@ -126,6 +153,32 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     }
   }, [data?.isRefreshing, id, nodes, setNodes]);
 
+  const handleSelectAllTraits = useCallback(() => {
+    allTraits.forEach((trait) => {
+      const key = buildEvidenceAttributeKey(id, trait);
+      if (!selectedEvidenceAttributes?.[key]) {
+        toggleEvidenceAttribute(id, trait);
+      }
+    });
+  }, [allTraits, id, selectedEvidenceAttributes, toggleEvidenceAttribute]);
+
+  const handleDeselectAllTraits = useCallback(() => {
+    allTraits.forEach((trait) => {
+      const key = buildEvidenceAttributeKey(id, trait);
+      if (selectedEvidenceAttributes?.[key]) {
+        toggleEvidenceAttribute(id, trait);
+      }
+    });
+  }, [allTraits, id, selectedEvidenceAttributes, toggleEvidenceAttribute]);
+
+  const handleToggleAllTraits = useCallback(() => {
+    if (areAllTraitsSelected) {
+      handleDeselectAllTraits();
+    } else {
+      handleSelectAllTraits();
+    }
+  }, [areAllTraitsSelected, handleDeselectAllTraits, handleSelectAllTraits]);
+
   return (
     <div className="group relative w-64">
       <div
@@ -166,7 +219,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
           </div>
         )}
         <CharacterMenu nodeId={id} />
-        <div className="flex flex-1 flex-col gap-3 p-3 min-h-0">
+        <div className="flex flex-1 flex-col gap-2 p-3 min-h-0">
           <div className="flex items-center justify-between">
             <span
               className={cn(
@@ -176,6 +229,14 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
             >
               🧙 Character Snapshot
             </span>
+            <button
+              type="button"
+              onClick={handleToggleAllTraits}
+              className="btn btn-xs btn-ghost"
+              disabled={allTraits.length === 0}
+            >
+              {areAllTraitsSelected ? "Deselect All" : "Select All"}
+            </button>
           </div>
           <div>
             <p
