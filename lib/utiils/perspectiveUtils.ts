@@ -219,6 +219,7 @@ export async function analyzeMultiplePerspectivesEvidence(
  */
 export async function generateMultiplePerspectives(
   preparation: PerspectivePreparationResult | null,
+  customPrompt?: string,
 ): Promise<Map<string, string>> {
   if (!preparation) {
     throw new Error("Failed to prepare perspective request");
@@ -234,6 +235,7 @@ export async function generateMultiplePerspectives(
     body: JSON.stringify({
       eventSequence,
       perspectives: tasks,
+      customPrompt: customPrompt?.trim() ? customPrompt.trim() : undefined,
     }),
   });
 
@@ -272,10 +274,12 @@ export async function regenerateSinglePerspective({
   preparation,
   previousPerspective,
   nextPerspective,
+  customPrompt,
 }: {
   preparation: PerspectivePreparationResult | null;
   previousPerspective?: string;
   nextPerspective?: string;
+  customPrompt?: string;
 }): Promise<string> {
   if (!preparation || preparation.tasks.length === 0) {
     throw new Error("No perspective task found for node");
@@ -292,6 +296,7 @@ export async function regenerateSinglePerspective({
       perspective: regenerateTask,
       previousPerspective,
       nextPerspective,
+      customPrompt: customPrompt?.trim() ? customPrompt.trim() : undefined,
     }),
   });
 

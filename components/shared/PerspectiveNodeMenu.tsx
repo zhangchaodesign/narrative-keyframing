@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { TbListSearch, TbRefresh } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { PerspectiveNodeType } from "@/lib/types/workflow";
@@ -38,6 +39,8 @@ export function PerspectiveSingleActionsMenu({
   const preparePerspectiveGeneration = useWorkflowStore(
     (state) => state.preparePerspectiveGeneration,
   );
+  const [showPromptDialog, setShowPromptDialog] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState("");
 
   const perspectiveNode = nodes.find(
     (node): node is PerspectiveNodeType =>
@@ -153,7 +156,8 @@ export function PerspectiveSingleActionsMenu({
     return { previousPerspective, nextPerspective };
   }, [nodeId, nodes]);
 
-  const handleRegeneratePerspective = useCallback(async () => {
+  const handleRegeneratePerspective = useCallback(
+    async (prompt?: string) => {
     if (isRegenerating || isEditing || !hasCharacterConnection) {
       return;
     }
@@ -187,6 +191,7 @@ export function PerspectiveSingleActionsMenu({
         preparation,
         previousPerspective,
         nextPerspective,
+        customPrompt: prompt,
       });
       const hasContent = reflection.trim().length > 0;
 
@@ -232,92 +237,149 @@ export function PerspectiveSingleActionsMenu({
         }),
       );
     }
-  }, [
-    computeNeighborReflections,
-    hasCharacterConnection,
-    isEditing,
-    isRegenerating,
-    nodeId,
-    preparePerspectiveGeneration,
-    setNodes,
-  ]);
+    },
+    [
+      computeNeighborReflections,
+      hasCharacterConnection,
+      isEditing,
+      isRegenerating,
+      nodeId,
+      preparePerspectiveGeneration,
+      setNodes,
+    ],
+  );
 
-  const handleRegenerateAndAnalyze = useCallback(async () => {
+  const handleRegenerateAndAnalyze = useCallback(
+    async (prompt?: string) => {
     if (isRegenerating || isAnalyzingEvidence || isEditing) {
       return;
     }
 
-    await handleRegeneratePerspective();
-    await handleAnalyzeEvidence();
-  }, [
-    handleAnalyzeEvidence,
-    handleRegeneratePerspective,
-    isAnalyzingEvidence,
-    isEditing,
-    isRegenerating,
-  ]);
+      await handleRegeneratePerspective(prompt);
+      await handleAnalyzeEvidence();
+    },
+    [
+      handleAnalyzeEvidence,
+      handleRegeneratePerspective,
+      isAnalyzingEvidence,
+      isEditing,
+      isRegenerating,
+    ],
+  );
+
+  const handleClosePromptDialog = useCallback(() => {
+    setShowPromptDialog(false);
+    setCustomPrompt("");
+  }, []);
+
+  const handleConfirmRegenerate = useCallback(async () => {
+    const trimmedPrompt = customPrompt.trim();
+    setShowPromptDialog(false);
+    setCustomPrompt("");
+    await handleRegenerateAndAnalyze(
+      trimmedPrompt.length > 0 ? trimmedPrompt : undefined,
+    );
+  }, [customPrompt, handleRegenerateAndAnalyze]);
+
+  const promptDialogContent = showPromptDialog && (
+    <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/50 p-4">
+      <div className="relative w-full max-w-md rounded bg-white p-4">
+        <fieldset className="fieldset">
+          <legend className="fieldset-legend">Custom Prompt (Optional)</legend>
+          <textarea
+            value={customPrompt}
+            onChange={(event) => setCustomPrompt(event.target.value)}
+            placeholder="E.g., Emphasize tension, keep the tone subdued..."
+            rows={4}
+            className="textarea w-full text-xs rounded"
+          ></textarea>
+        </fieldset>
+        <div className="mt-4 flex justify-end gap-3">
+          <button onClick={handleClosePromptDialog} className="btn btn-sm">
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirmRegenerate}
+            disabled={isRegenerating || isAnalyzingEvidence}
+            className="btn btn-sm btn-neutral"
+          >
+            {isRegenerating ? "Regenerating..." : "Regenerate"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className={cn(wrapperClassName)}>
-      <button
-        type="button"
-        onClick={onToggleEdit}
-        className={cn(
-          "pointer-events-auto rounded-full transition hover:bg-purple-50 hover:text-purple-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-purple-500 disabled:cursor-not-allowed disabled:opacity-60",
-          buttonPadding,
-        )}
-        title={isEditing ? "Save and finish editing" : "Edit perspective text"}
-        aria-label={
-          isEditing ? "Save and finish editing" : "Edit perspective text"
-        }
-        disabled={!hasReflection}
-      >
-        {isEditing ? <TbCheck size={iconSize} /> : <TbPencil size={iconSize} />}
-      </button>
-      <button
-        type="button"
-        onClick={handleAnalyzeEvidence}
-        className={cn(
-          "pointer-events-auto rounded-full transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60",
-          buttonPadding,
-        )}
-        title="Analyze textual evidence that supports character attributes"
-        aria-label="Analyze textual evidence that supports character attributes"
-        disabled={isAnalyzingEvidence || !hasReflection || isEditing}
-      >
-        {isAnalyzingEvidence ? (
-          <span
-            className="block animate-spin rounded-full border-2 border-blue-600 border-t-transparent align-middle"
-            style={{ width: iconSize, height: iconSize }}
+    <>
+      <div className={cn(wrapperClassName)}>
+        <button
+          type="button"
+          onClick={onToggleEdit}
+          className={cn(
+            "pointer-events-auto rounded-full transition hover:bg-purple-50 hover:text-purple-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-purple-500 disabled:cursor-not-allowed disabled:opacity-60",
+            buttonPadding,
+          )}
+          title={
+            isEditing ? "Save and finish editing" : "Edit perspective text"
+          }
+          aria-label={
+            isEditing ? "Save and finish editing" : "Edit perspective text"
+          }
+          disabled={!hasReflection}
+        >
+          {isEditing ? (
+            <TbCheck size={iconSize} />
+          ) : (
+            <TbPencil size={iconSize} />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={handleAnalyzeEvidence}
+          className={cn(
+            "pointer-events-auto rounded-full transition hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:opacity-60",
+            buttonPadding,
+          )}
+          title="Analyze textual evidence that supports character attributes"
+          aria-label="Analyze textual evidence that supports character attributes"
+          disabled={isAnalyzingEvidence || !hasReflection || isEditing}
+        >
+          {isAnalyzingEvidence ? (
+            <span
+              className="block animate-spin rounded-full border-2 border-blue-600 border-t-transparent align-middle"
+              style={{ width: iconSize, height: iconSize }}
+            />
+          ) : (
+            <TbListSearch size={iconSize} />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowPromptDialog(true)}
+          className={cn(
+            "pointer-events-auto rounded-full transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 disabled:cursor-not-allowed disabled:opacity-60",
+            buttonPadding,
+          )}
+          title={
+            hasCharacterConnection
+              ? "Regenerate this perspective from its character snapshot"
+              : "Connect a character to regenerate this perspective"
+          }
+          aria-label={
+            hasCharacterConnection
+              ? "Regenerate this perspective from its character snapshot"
+              : "Connect a character to regenerate this perspective"
+          }
+          disabled={isRegenerating || isEditing || !hasCharacterConnection}
+        >
+          <TbRefresh
+            size={iconSize}
+            className={isRegenerating ? "animate-spin" : undefined}
           />
-        ) : (
-          <TbListSearch size={iconSize} />
-        )}
-      </button>
-      <button
-        type="button"
-        onClick={handleRegenerateAndAnalyze}
-        className={cn(
-          "pointer-events-auto rounded-full transition hover:bg-green-50 hover:text-green-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-green-500 disabled:cursor-not-allowed disabled:opacity-60",
-          buttonPadding,
-        )}
-        title={
-          hasCharacterConnection
-            ? "Regenerate this perspective from its character snapshot"
-            : "Connect a character to regenerate this perspective"
-        }
-        aria-label={
-          hasCharacterConnection
-            ? "Regenerate this perspective from its character snapshot"
-            : "Connect a character to regenerate this perspective"
-        }
-        disabled={isRegenerating || isEditing || !hasCharacterConnection}
-      >
-        <TbRefresh
-          size={iconSize}
-          className={isRegenerating ? "animate-spin" : undefined}
-        />
-      </button>
-    </div>
+        </button>
+      </div>
+      {promptDialogContent && createPortal(promptDialogContent, document.body)}
+    </>
   );
 }

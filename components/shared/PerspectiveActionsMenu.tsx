@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { TbListSearch, TbPlayerPlay } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import {
@@ -37,13 +38,15 @@ export function PerspectiveActionsMenu({
   );
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showPromptDialog, setShowPromptDialog] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState("");
 
   const uniqueTargetIds = useMemo(
     () => Array.from(new Set(targetNodeIds)),
     [targetNodeIds],
   );
 
-  const handleGeneratePerspectives = useCallback(async () => {
+  const handleGeneratePerspectives = useCallback(async (prompt?: string) => {
     if (isGenerating || uniqueTargetIds.length === 0) {
       return;
     }
@@ -61,7 +64,10 @@ export function PerspectiveActionsMenu({
         throw new Error("Unable to prepare generation payload");
       }
 
-      const updateMap = await generateMultiplePerspectives(preparation);
+      const updateMap = await generateMultiplePerspectives(
+        preparation,
+        prompt,
+      );
 
       setNodes((currentNodes) =>
         applyGeneratedPerspectives(currentNodes, updateMap),
@@ -112,19 +118,65 @@ export function PerspectiveActionsMenu({
     }
   }, [getPerspectiveEvidenceTargets, isAnalyzing, setNodes, uniqueTargetIds]);
 
-  const handleGenerateAndAnalyze = useCallback(async () => {
-    if (isGenerating || isAnalyzing) {
-      return;
-    }
+  const handleGenerateAndAnalyze = useCallback(
+    async (prompt?: string) => {
+      if (isGenerating || isAnalyzing) {
+        return;
+      }
 
-    await handleGeneratePerspectives();
-    await handleAnalyzeAllEvidence();
-  }, [
-    handleAnalyzeAllEvidence,
-    handleGeneratePerspectives,
-    isAnalyzing,
-    isGenerating,
-  ]);
+      await handleGeneratePerspectives(prompt);
+      await handleAnalyzeAllEvidence();
+    },
+    [
+      handleAnalyzeAllEvidence,
+      handleGeneratePerspectives,
+      isAnalyzing,
+      isGenerating,
+    ],
+  );
+
+  const handleClosePromptDialog = useCallback(() => {
+    setShowPromptDialog(false);
+    setCustomPrompt("");
+  }, []);
+
+  const handleConfirmGenerate = useCallback(async () => {
+    const trimmedPrompt = customPrompt.trim();
+    setShowPromptDialog(false);
+    setCustomPrompt("");
+    await handleGenerateAndAnalyze(
+      trimmedPrompt.length > 0 ? trimmedPrompt : undefined,
+    );
+  }, [customPrompt, handleGenerateAndAnalyze]);
+
+  const promptDialogContent = showPromptDialog && (
+    <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/50 p-4">
+      <div className="relative w-full max-w-md rounded bg-white p-4">
+        <fieldset className="fieldset">
+          <legend className="fieldset-legend">Custom Prompt (Optional)</legend>
+          <textarea
+            value={customPrompt}
+            onChange={(event) => setCustomPrompt(event.target.value)}
+            placeholder="E.g., Focus on emotional depth, use vivid imagery..."
+            rows={4}
+            className="textarea w-full text-xs rounded"
+          ></textarea>
+        </fieldset>
+        <div className="mt-4 flex justify-end gap-3">
+          <button onClick={handleClosePromptDialog} className="btn btn-sm">
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirmGenerate}
+            disabled={isGenerating || isAnalyzing}
+            className="btn btn-sm btn-neutral"
+          >
+            {isGenerating ? "Generating..." : "Generate"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   if (uniqueTargetIds.length === 0) {
     return null;
@@ -134,43 +186,46 @@ export function PerspectiveActionsMenu({
   const analyzeTitle = `Analyze textual evidence for ${label}`;
 
   return (
-    <div className={cn(wrapperClassName)}>
-      <button
-        type="button"
-        onClick={handleGenerateAndAnalyze}
-        className={cn(
-          "rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-1 hover:bg-green-50 hover:text-green-600 focus-visible:outline-green-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
-          buttonPadding,
-        )}
-        title={generateTitle}
-        aria-label={generateTitle}
-        disabled={isGenerating}
-      >
-        <TbPlayerPlay size={iconSize} />
-      </button>
-      <button
-        type="button"
-        onClick={handleAnalyzeAllEvidence}
-        className={cn(
-          "rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-1 hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-blue-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
-          buttonPadding,
-        )}
-        title={analyzeTitle}
-        aria-label={analyzeTitle}
-        disabled={isAnalyzing}
-      >
-        {isAnalyzing ? (
-          <span
-            className="block animate-spin rounded-full border-2 border-blue-600 border-t-transparent align-middle"
-            style={{
-              width: iconSize,
-              height: iconSize,
-            }}
-          />
-        ) : (
-          <TbListSearch size={iconSize} />
-        )}
-      </button>
-    </div>
+    <>
+      <div className={cn(wrapperClassName)}>
+        <button
+          type="button"
+          onClick={() => setShowPromptDialog(true)}
+          className={cn(
+            "rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-1 hover:bg-green-50 hover:text-green-600 focus-visible:outline-green-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
+            buttonPadding,
+          )}
+          title={generateTitle}
+          aria-label={generateTitle}
+          disabled={isGenerating}
+        >
+          <TbPlayerPlay size={iconSize} />
+        </button>
+        <button
+          type="button"
+          onClick={handleAnalyzeAllEvidence}
+          className={cn(
+            "rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-1 hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-blue-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
+            buttonPadding,
+          )}
+          title={analyzeTitle}
+          aria-label={analyzeTitle}
+          disabled={isAnalyzing}
+        >
+          {isAnalyzing ? (
+            <span
+              className="block animate-spin rounded-full border-2 border-blue-600 border-t-transparent align-middle"
+              style={{
+                width: iconSize,
+                height: iconSize,
+              }}
+            />
+          ) : (
+            <TbListSearch size={iconSize} />
+          )}
+        </button>
+      </div>
+      {promptDialogContent && createPortal(promptDialogContent, document.body)}
+    </>
   );
 }

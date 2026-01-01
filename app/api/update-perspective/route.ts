@@ -36,6 +36,7 @@ const RequestSchema = z.object({
     .string()
     .describe("Full text of the following perspective reflection, if any.")
     .optional(),
+  customPrompt: z.string().optional(),
 });
 
 const ResponseSchema = z.object({
@@ -111,7 +112,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { perspective, previousPerspective, nextPerspective } = payload.data;
+    const { perspective, previousPerspective, nextPerspective, customPrompt } =
+      payload.data;
 
     const adjacentSections: string[] = [];
     if (previousPerspective && previousPerspective.trim().length > 0) {
@@ -126,7 +128,7 @@ export async function POST(request: Request) {
 
     const taskSection = buildTaskSection(perspective);
 
-    const prompt = `You are a narrative writer crafting a first-person story beat.
+    const basePrompt = `You are a narrative writer crafting a first-person story beat.
 
 ${adjacencyContext}Write a vivid first-person perspective of the assigned event from the perspective of the specified narrator:
 - Anchor the scene in the objective event description.
@@ -139,6 +141,14 @@ Task details:
 ${taskSection}
 
 Return the result as a JSON object that satisfies the provided schema.`;
+
+    const trimmedPrompt = customPrompt?.trim();
+    const prompt = trimmedPrompt
+      ? `${basePrompt}
+
+ADDITIONAL INSTRUCTIONS FROM USER:
+${trimmedPrompt}`
+      : basePrompt;
 
     console.log("Single perspective generation prompt:", prompt);
 
