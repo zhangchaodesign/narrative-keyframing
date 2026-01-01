@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -11,10 +11,38 @@ import {
   ViewSwitcher,
   type ViewMode,
 } from "@/components/ViewSwitcher/ViewSwitcher";
+import { useWorkflowStore } from "@/lib/stores/workflowStore";
+import { adjustEventCountForAllClusters } from "@/lib/utiils/workflowUtils";
 
 export default function Page() {
   const [viewMode, setViewMode] = useState<ViewMode>("workflow");
   const [isEditorCollapsed, setIsEditorCollapsed] = useState(false);
+  const [eventCount, setEventCount] = useState(4);
+  const isInitialMount = useRef(true);
+
+  const setNodes = useWorkflowStore((state) => state.setNodes);
+  const setEdges = useWorkflowStore((state) => state.setEdges);
+
+  useEffect(() => {
+    // Skip the initial mount to avoid triggering adjustment on page load
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Get current state directly from the store to avoid stale closures
+    const currentNodes = useWorkflowStore.getState().nodes;
+    const currentEdges = useWorkflowStore.getState().edges;
+
+    const result = adjustEventCountForAllClusters(
+      currentNodes,
+      currentEdges,
+      eventCount,
+    );
+
+    setNodes(result.nodes);
+    setEdges(result.edges);
+  }, [eventCount, setNodes, setEdges]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -61,16 +89,31 @@ export default function Page() {
             <div className="flex-1 min-w-0 overflow-hidden h-full flex flex-col">
               {/* View Switcher */}
               <div className="shrink-0 bg-gray-50 border-b border-gray-200 px-2 py-2 flex items-center justify-between">
-                <ViewSwitcher
-                  currentView={viewMode}
-                  onViewChange={setViewMode}
-                />
+                <div className="flex items-center gap-3">
+                  <ViewSwitcher
+                    currentView={viewMode}
+                    onViewChange={setViewMode}
+                  />
+                  <div className="form-control">
+                    <label className="label py-0 px-1 mr-1">
+                      <span className="label-text text-xs">Events</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={eventCount}
+                      onChange={(e) => setEventCount(Number(e.target.value))}
+                      className="input input-sm input-bordered w-16 rounded"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* View Content */}
               <div className="flex-1 overflow-hidden">
                 {viewMode === "workflow" ? (
-                  <WorkflowCanvas />
+                  <WorkflowCanvas eventCount={eventCount} />
                 ) : (
                   <TimelineView />
                 )}

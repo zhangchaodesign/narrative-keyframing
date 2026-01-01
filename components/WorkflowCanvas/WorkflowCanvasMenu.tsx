@@ -1,27 +1,14 @@
-import { useState, useEffect, useRef } from "react";
 import { TbPlus, TbChevronDown } from "react-icons/tb";
 
 interface WorkflowCanvasMenuProps {
+  eventCount: number;
   onAddStoryOutlineCluster: (eventCount: number) => void;
-  onEventCountChange: (newCount: number) => void;
 }
 
 export function WorkflowCanvasMenu({
+  eventCount,
   onAddStoryOutlineCluster,
-  onEventCountChange,
 }: WorkflowCanvasMenuProps) {
-  const [eventCount, setEventCount] = useState(4);
-  const isInitialMount = useRef(true);
-
-  useEffect(() => {
-    // Skip the initial mount to avoid triggering adjustment on page load
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    onEventCountChange(eventCount);
-  }, [eventCount]);
-
   const handleAddCluster = () => {
     onAddStoryOutlineCluster(eventCount);
   };
@@ -53,19 +40,6 @@ export function WorkflowCanvasMenu({
             </li>
           </ul>
         </div>
-      </div>
-      <div className="form-control">
-        <label className="label py-0 px-1 mr-1">
-          <span className="label-text text-xs">Events</span>
-        </label>
-        <input
-          type="number"
-          min="1"
-          max="20"
-          value={eventCount}
-          onChange={(e) => setEventCount(Number(e.target.value))}
-          className="input input-sm input-bordered w-16 rounded"
-        />
       </div>
     </div>
   );

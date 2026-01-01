@@ -26,7 +26,6 @@ import { NarrativeGroupNode } from "@/components/WorkflowCanvas/NarrativeNode/Na
 import { WorkflowCanvasMenu } from "@/components/WorkflowCanvas/WorkflowCanvasMenu";
 import {
   createStoryOutlineCluster,
-  adjustEventCountForAllClusters,
   nodeColor,
 } from "@/lib/utiils/workflowUtils";
 
@@ -45,7 +44,11 @@ const edgeTypes: EdgeTypes = {
   eventEdge: EventEdge,
 };
 
-export function WorkflowCanvas() {
+interface WorkflowCanvasProps {
+  eventCount: number;
+}
+
+export function WorkflowCanvas({ eventCount }: WorkflowCanvasProps) {
   const proOptions = { hideAttribution: true };
 
   const nodes = useWorkflowStore((state) => state.nodes);
@@ -82,29 +85,11 @@ export function WorkflowCanvas() {
     [nodes, setNodes, setEdges],
   );
 
-  const handleEventCountChange = useCallback(
-    (newEventCount: number) => {
-      // Get current state directly from the store to avoid stale closures
-      const currentNodes = useWorkflowStore.getState().nodes;
-      const currentEdges = useWorkflowStore.getState().edges;
-
-      const result = adjustEventCountForAllClusters(
-        currentNodes,
-        currentEdges,
-        newEventCount,
-      );
-
-      setNodes(result.nodes);
-      setEdges(result.edges);
-    },
-    [setNodes, setEdges],
-  );
-
   return (
     <div className="h-full min-h-0 w-full relative">
       <WorkflowCanvasMenu
+        eventCount={eventCount}
         onAddStoryOutlineCluster={handleAddStoryOutlineCluster}
-        onEventCountChange={handleEventCountChange}
       />
       <ReactFlow
         nodes={nodes}
