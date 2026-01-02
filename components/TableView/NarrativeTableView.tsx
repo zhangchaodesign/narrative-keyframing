@@ -136,6 +136,21 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
     return Array.from(perspectivesMap.values());
   }, [eventsData]);
 
+  const snippetCounts = useMemo(() => {
+    let total = 0;
+    let selected = 0;
+    eventsData.forEach((event) => {
+      event.snippets.forEach((snippet) => {
+        total += 1;
+        const key = `${snippet.perspectiveNodeId}::${snippet.text}`;
+        if (selectedSnippets[key]) {
+          selected += 1;
+        }
+      });
+    });
+    return { total, selected };
+  }, [eventsData, selectedSnippets]);
+
   const handleRegenerateNarrative = async () => {
     if (isRegenerating) return;
 
@@ -576,6 +591,21 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
             No narrative groups available yet.
           </div>
         )}
+      </div>
+
+      <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-2 text-xs text-zinc-600">
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{resolvedGroupLabel}</span>
+          <span>•</span>
+          <span>{eventsData.length} events</span>
+          <span>•</span>
+          <span>{uniquePerspectives.length} perspectives</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span>
+            {snippetCounts.selected}/{snippetCounts.total} snippets selected
+          </span>
+        </div>
       </div>
 
       {promptDialogContent}
