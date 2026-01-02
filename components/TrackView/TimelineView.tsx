@@ -19,10 +19,7 @@ import {
   TIMELINE_NARRATIVE_TRACK_HEIGHT,
 } from "@/components/TrackView/constants";
 import { buildTimelineData } from "@/lib/utiils/timelineUtils";
-import type {
-  CharacterNodeData,
-  WorkflowNode,
-} from "@/lib/types/workflow";
+import type { CharacterNodeData, WorkflowNode } from "@/lib/types/workflow";
 import type { TimelineTrack } from "@/lib/types/timeline";
 
 const getTrackUnitCount = (track: TimelineTrack | null) => {
@@ -44,6 +41,32 @@ export function TimelineView() {
     storyOutlineClusters,
     narrativeClusters,
   } = useMemo(() => buildTimelineData(nodes, edges), [nodes, edges]);
+
+  const formatStoryClusterLabel = useCallback(
+    (cluster: (typeof storyOutlineClusters)[number]) => {
+      if (typeof cluster.eventGroupNumber === "number") {
+        return `${cluster.label} ${cluster.eventGroupNumber}`;
+      }
+      if (cluster.eventGroupId) {
+        return `${cluster.label} (${cluster.eventGroupId})`;
+      }
+      return cluster.label;
+    },
+    [],
+  );
+
+  const formatNarrativeClusterLabel = useCallback(
+    (cluster: (typeof narrativeClusters)[number]) => {
+      if (typeof cluster.narrativeGroupNumber === "number") {
+        return `${cluster.label} ${cluster.narrativeGroupNumber}`;
+      }
+      if (cluster.narrativeGroupId) {
+        return `${cluster.label} (${cluster.narrativeGroupId})`;
+      }
+      return cluster.label;
+    },
+    [],
+  );
 
   // Cluster selection state
   const [selectedStoryClusterId, setSelectedStoryClusterId] = React.useState<
@@ -348,6 +371,34 @@ export function TimelineView() {
     return height;
   }, [selectedStoryTrack, groupedCharacterTracks, selectedNarrativeTrack]);
 
+  const footerStoryLabel = useMemo(() => {
+    if (!selectedStoryClusterId) {
+      return "All story clusters";
+    }
+    const cluster = storyOutlineClusters.find(
+      (item) => item.id === selectedStoryClusterId,
+    );
+    return cluster ? formatStoryClusterLabel(cluster) : "Story cluster";
+  }, [
+    formatStoryClusterLabel,
+    selectedStoryClusterId,
+    storyOutlineClusters,
+  ]);
+
+  const footerNarrativeLabel = useMemo(() => {
+    if (!selectedNarrativeClusterId) {
+      return "No narrative cluster";
+    }
+    const cluster = narrativeClusters.find(
+      (item) => item.id === selectedNarrativeClusterId,
+    );
+    return cluster ? formatNarrativeClusterLabel(cluster) : "Narrative cluster";
+  }, [
+    formatNarrativeClusterLabel,
+    narrativeClusters,
+    selectedNarrativeClusterId,
+  ]);
+
   return (
     <div className="h-full bg-white flex flex-col overflow-hidden">
       <TimelineHeader
@@ -446,15 +497,22 @@ export function TimelineView() {
         </div>
       </div>
 
-      {/* Footer Info */}
-      <div className="shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-2">
-        <div className="flex items-center justify-between text-xs text-gray-600">
-          <div className="flex items-center gap-4">
-            <span>
-              💡 Timeline view with vertical alignment based on workflow
-              connections
-            </span>
-          </div>
+      <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2 text-xs text-gray-600">
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{footerStoryLabel}</span>
+          <span>•</span>
+          <span>{footerNarrativeLabel}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span>
+            {selectedStoryTrack?.items.length ?? 0} events
+          </span>
+          <span>•</span>
+          <span>{Object.keys(groupedCharacterTracks).length} characters</span>
+          <span>•</span>
+          <span>
+            {selectedNarrativeTrack?.items.length ?? 0} narratives
+          </span>
         </div>
       </div>
     </div>
