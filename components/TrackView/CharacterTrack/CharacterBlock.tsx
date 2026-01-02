@@ -11,7 +11,10 @@ import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 import type { TimelineItem } from "@/lib/types/timeline";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TrackView/constants";
-import { useWorkflowStore } from "@/lib/stores/workflowStore";
+import {
+  buildEvidenceAttributeKey,
+  useWorkflowStore,
+} from "@/lib/stores/workflowStore";
 import { TraitSection } from "@/components/shared/CharacterTraitSection";
 import { CharacterRefreshMenu } from "@/components/shared/CharacterActionsMenu";
 import type { CharacterNodeData, CharacterTraits } from "@/lib/types/workflow";
@@ -32,6 +35,12 @@ export function CharacterBlock({
   timelineScale,
 }: CharacterBlockProps) {
   const setNodes = useWorkflowStore((state) => state.setNodes);
+  const selectedEvidenceAttributes = useWorkflowStore(
+    (state) => state.selectedEvidenceAttributes,
+  );
+  const toggleEvidenceAttribute = useWorkflowStore(
+    (state) => state.toggleEvidenceAttribute,
+  );
   const characterNode = useWorkflowStore(
     useCallback(
       (state) =>
@@ -55,6 +64,26 @@ export function CharacterBlock({
   const characterName = characterData?.name?.trim() ?? "";
   const isRefreshing = Boolean(characterData?.isRefreshing);
   const [nameValue, setNameValue] = useState(characterName);
+  const allTraits = useMemo(
+    () =>
+      CHARACTER_TRAIT_CATEGORIES.flatMap(
+        ({ key }) =>
+          traits[key]?.filter((trait) => trait.trim().length > 0) ?? [],
+      ),
+    [traits],
+  );
+  const areAllTraitsSelected = useMemo(() => {
+    if (allTraits.length === 0) {
+      return false;
+    }
+    return allTraits.every((trait) =>
+      Boolean(
+        selectedEvidenceAttributes?.[
+          buildEvidenceAttributeKey(item.nodeId, trait)
+        ],
+      ),
+    );
+  }, [allTraits, item.nodeId, selectedEvidenceAttributes]);
 
   useEffect(() => {
     setNameValue(characterName);
@@ -113,6 +142,42 @@ export function CharacterBlock({
     [updateCharacterNode],
   );
 
+  const handleSelectAllTraits = useCallback(() => {
+    allTraits.forEach((trait) => {
+      const key = buildEvidenceAttributeKey(item.nodeId, trait);
+      if (!selectedEvidenceAttributes?.[key]) {
+        toggleEvidenceAttribute(item.nodeId, trait);
+      }
+    });
+  }, [
+    allTraits,
+    item.nodeId,
+    selectedEvidenceAttributes,
+    toggleEvidenceAttribute,
+  ]);
+
+  const handleDeselectAllTraits = useCallback(() => {
+    allTraits.forEach((trait) => {
+      const key = buildEvidenceAttributeKey(item.nodeId, trait);
+      if (selectedEvidenceAttributes?.[key]) {
+        toggleEvidenceAttribute(item.nodeId, trait);
+      }
+    });
+  }, [
+    allTraits,
+    item.nodeId,
+    selectedEvidenceAttributes,
+    toggleEvidenceAttribute,
+  ]);
+
+  const handleToggleAllTraits = useCallback(() => {
+    if (areAllTraitsSelected) {
+      handleDeselectAllTraits();
+    } else {
+      handleSelectAllTraits();
+    }
+  }, [areAllTraitsSelected, handleDeselectAllTraits, handleSelectAllTraits]);
+
   const nameInputPlaceholder = characterName ? characterName : "Unknown";
 
   return (
@@ -142,13 +207,23 @@ export function CharacterBlock({
           } from perspective`}
         />
         <div className="flex flex-1 flex-col gap-3 p-3 min-h-0">
-          <div
-            className={cn(
-              geistMono.className,
-              "text-[10px] font-semibold uppercase tracking-wide text-zinc-800",
-            )}
-          >
-            🧙 Character Snapshot
+          <div className="flex items-center justify-between">
+            <div
+              className={cn(
+                geistMono.className,
+                "text-[10px] font-semibold uppercase tracking-wide text-zinc-800",
+              )}
+            >
+              🧙 Character Snapshot
+            </div>
+            <button
+              type="button"
+              onClick={handleToggleAllTraits}
+              className="btn btn-xs btn-ghost"
+              disabled={allTraits.length === 0}
+            >
+              {areAllTraitsSelected ? "Deselect All" : "Select All"}
+            </button>
           </div>
           <div
             className="flex-1 min-h-0 space-y-3 overflow-y-auto"
