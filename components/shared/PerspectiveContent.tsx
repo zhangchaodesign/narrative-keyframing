@@ -77,7 +77,7 @@ function createHighlightedSegments(
         className={`cursor-pointer rounded px-0.5 py-0.5 transition-colors ${
           isSelected
             ? "bg-blue-400 text-white ring-2 ring-blue-600"
-            : "bg-yellow-200 text-zinc-900 hover:bg-yellow-300"
+            : "bg-yellow-200 text-gray-900 hover:bg-yellow-300"
         }`}
         title={`Click to ${
           isSelected ? "deselect" : "select"
@@ -253,7 +253,7 @@ export function PerspectiveContent({
         ref={textareaRef}
         value={editValue}
         onChange={handleTextChange}
-        className="flex-1 w-full resize-none rounded bg-white border border-zinc-300 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 nodrag nopan"
+        className="flex-1 w-full resize-none rounded bg-white border border-gray-300 px-2 py-1 text-[10px] leading-snug text-gray-800 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-400 nodrag nopan"
         onWheel={(event) => {
           if (event.ctrlKey || event.metaKey) {
             return;
@@ -274,7 +274,7 @@ export function PerspectiveContent({
 
   return (
     <div
-      className="flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800"
+      className="flex-1 overflow-y-auto w-full resize-none rounded bg-gray-50 px-2 py-1 text-[10px] leading-snug text-gray-800"
       onWheel={(event) => {
         if (event.ctrlKey || event.metaKey) {
           return;

@@ -99,7 +99,7 @@ export default function TextEditor({ conflictHighlight }: TextEditorProps) {
   );
 
   return (
-    <div className="h-full overflow-y-auto bg-white border-r border-zinc-100">
+    <div className="h-full overflow-y-auto bg-white border-r border-gray-100">
       <div className="px-12 py-8">
         <Slate
           editor={editor}

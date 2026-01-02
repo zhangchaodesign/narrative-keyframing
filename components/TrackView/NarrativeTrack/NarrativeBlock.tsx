@@ -67,7 +67,7 @@ export function NarrativeBlock({
         width: `${itemWidth}px`,
       }}
     >
-      <div className="group relative flex h-full flex-col rounded-lg border-2 border-primary bg-white text-xs text-zinc-800 transition-shadow hover:shadow-lg">
+      <div className="group relative flex h-full flex-col rounded-lg border-2 border-primary bg-white text-xs text-gray-800 transition-shadow hover:shadow-lg">
         {isLoading && (
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-green-600"></span>
@@ -80,7 +80,7 @@ export function NarrativeBlock({
           <div
             className={cn(
               geistMono.className,
-              "flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-800",
+              "flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wide text-gray-800",
             )}
           >
             <span className="flex items-center gap-1" aria-hidden="true">

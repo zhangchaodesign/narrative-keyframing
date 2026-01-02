@@ -264,13 +264,13 @@ export function NarrativeGenerationModal({
     <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 p-4">
       <div className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded bg-white shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-3">
-          <h2 className="text font-semibold text-zinc-900">
+        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-3">
+          <h2 className="text font-semibold text-gray-900">
             Generate Third-Person Omniscient Narrative
           </h2>
           <button
             onClick={onClose}
-            className="rounded-full p-1 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-700"
+            className="rounded-full p-1 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
             aria-label="Close modal"
           >
             <TbX size={20} />
@@ -279,7 +279,7 @@ export function NarrativeGenerationModal({
 
         {/* Character Tabs */}
         {characterGroups.length > 0 && (
-          <div className="border-b border-zinc-200 bg-zinc-50 px-6">
+          <div className="border-b border-gray-200 bg-gray-50 px-6">
             <div className="flex gap-2 overflow-x-auto">
               {characterGroups.map((character) => (
                 <button
@@ -288,7 +288,7 @@ export function NarrativeGenerationModal({
                   className={`whitespace-nowrap border-b-2 px-4 py-2 text-xs font-medium transition ${
                     activeCharacterKey === character.key
                       ? "border-green-600 text-green-600"
-                      : "border-transparent text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
+                      : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900"
                   }`}
                 >
                   {character.name}
@@ -305,15 +305,15 @@ export function NarrativeGenerationModal({
             {filteredEventsData.map((event, eventIndex) => (
               <div
                 key={event.narrativeNodeId}
-                className="rounded border border-zinc-200 p-4"
+                className="rounded border border-gray-200 p-4"
               >
                 {/* Event Header */}
                 <div className="mb-3">
-                  <h3 className="font-semibold text-zinc-900">
+                  <h3 className="font-semibold text-gray-900">
                     Event {eventIndex + 1}
                   </h3>
                   {event.eventDescription && (
-                    <p className="mt-1 text-xs text-zinc-600">
+                    <p className="mt-1 text-xs text-gray-600">
                       {event.eventDescription}
                     </p>
                   )}
@@ -346,7 +346,7 @@ export function NarrativeGenerationModal({
                 {/* Evidence/Snippets */}
                 {event.snippets.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-zinc-700">
+                    <h4 className="text-xs font-medium text-gray-700">
                       Evidence ({event.snippets.length})
                     </h4>
                     {event.snippets.map((snippet, snippetIndex) => {
@@ -359,7 +359,7 @@ export function NarrativeGenerationModal({
                           className={`flex cursor-pointer items-center gap-3 rounded border p-3 transition ${
                             isSelected
                               ? "border-green-300 bg-green-50"
-                              : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100"
+                              : "border-gray-200 bg-gray-50 hover:bg-gray-100"
                           }`}
                         >
                           <input
@@ -372,10 +372,10 @@ export function NarrativeGenerationModal({
                                 snippet,
                               )
                             }
-                            className="h-4 w-4 rounded border-zinc-300 text-green-600"
+                            className="h-4 w-4 rounded border-gray-300 text-green-600"
                           />
                           <div className="flex-1">
-                            <p className="text-xs text-zinc-900">
+                            <p className="text-xs text-gray-900">
                               "{snippet.text}"
                             </p>
                             <div className="mt-1 flex flex-wrap gap-2">
@@ -385,7 +385,7 @@ export function NarrativeGenerationModal({
                                   className={`rounded px-2 py-0.5 text-[10px] ${
                                     isSelected
                                       ? "bg-amber-200 text-amber-900"
-                                      : "bg-zinc-200 text-zinc-700"
+                                      : "bg-gray-200 text-gray-700"
                                   }`}
                                 >
                                   {attr}
@@ -400,7 +400,7 @@ export function NarrativeGenerationModal({
                 )}
 
                 {event.snippets.length === 0 && (
-                  <p className="text-xs text-zinc-400">
+                  <p className="text-xs text-gray-400">
                     No evidence identified for this event
                   </p>
                 )}
@@ -425,7 +425,7 @@ export function NarrativeGenerationModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-4">
+        <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
           <div className="flex gap-2">
             <button onClick={handleSelectAll} className="btn btn-sm btn-ghost">
               Select All

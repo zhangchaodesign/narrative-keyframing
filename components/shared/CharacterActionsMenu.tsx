@@ -118,7 +118,7 @@ export function CharacterRefreshMenu({
   }, [edges, nodeId, nodes, setEdges, setNodes]);
 
   return (
-    <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+    <div className="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 text-gray-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
       <button
         type="button"
         onClick={handleRefresh}

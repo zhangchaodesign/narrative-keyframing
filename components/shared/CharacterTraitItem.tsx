@@ -196,7 +196,7 @@ export function TraitItem({
           onChange={handleEditChange}
           onKeyDown={onKeyDown}
           onPointerDown={(event) => event.stopPropagation()}
-          className="flex-1 rounded border border-zinc-300 bg-white/80 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400 nodrag nopan"
+          className="flex-1 rounded border border-gray-300 bg-white/80 px-2 py-1 text-[10px] leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-1 focus:ring-gray-400 nodrag nopan"
           aria-label={`Edit ${label} trait`}
         />
       ) : (
@@ -219,7 +219,7 @@ export function TraitItem({
                   "inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[8px] font-bold",
                   isSelected
                     ? "bg-white/20 text-white"
-                    : "bg-zinc-800/10 text-zinc-700",
+                    : "bg-gray-800/10 text-gray-700",
                 )}
                 title={`${evidenceCount} evidence item${
                   evidenceCount !== 1 ? "s" : ""

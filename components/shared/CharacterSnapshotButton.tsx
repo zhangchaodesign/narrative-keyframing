@@ -25,9 +25,9 @@ export function AddCharacterButton({
 
   const variantClasses = {
     default:
-      "absolute left-1/2 top-full z-10 mt-10 h-48 w-64 -translate-x-1/2 border-zinc-300 bg-zinc-100/70 text-zinc-400 focus-visible:outline-indigo-500",
+      "absolute left-1/2 top-full z-10 mt-10 h-48 w-64 -translate-x-1/2 border-gray-300 bg-gray-100/70 text-gray-400 focus-visible:outline-indigo-500",
     timeline:
-      "absolute inset-0 border-zinc-300 bg-zinc-100/70 text-zinc-400 focus-visible:outline-indigo-500",
+      "absolute inset-0 border-gray-300 bg-gray-100/70 text-gray-400 focus-visible:outline-indigo-500",
   };
 
   const iconSize = variant === "timeline" ? 20 : 24;

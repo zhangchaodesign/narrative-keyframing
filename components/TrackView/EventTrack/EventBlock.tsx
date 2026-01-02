@@ -77,12 +77,12 @@ export function EventBlock({
         width: `${itemWidth}px`,
       }}
     >
-      <div className="group relative flex h-full rounded-lg border-2 border-pink-500 bg-white/95 px-3 py-2 text-xs text-zinc-800 transition-shadow hover:shadow-lg">
+      <div className="group relative flex h-full rounded-lg border-2 border-pink-500 bg-white/95 px-3 py-2 text-xs text-gray-800 transition-shadow hover:shadow-lg">
         <div className="flex w-full flex-col">
           <div
             className={cn(
               geistMono.className,
-              "flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-800",
+              "flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-gray-800",
             )}
           >
             <span aria-hidden="true">📜</span>
@@ -110,7 +110,7 @@ export function EventBlock({
               event.stopPropagation();
               event.nativeEvent.stopImmediatePropagation?.();
             }}
-            className="mt-2 w-full flex-1 resize-none rounded border border-zinc-300 bg-white/80 px-2 py-1 text-[11px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400 nodrag nopan"
+            className="mt-2 w-full flex-1 resize-none rounded border border-gray-300 bg-white/80 px-2 py-1 text-[11px] leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-1 focus:ring-gray-400 nodrag nopan"
           />
         </div>
       </div>

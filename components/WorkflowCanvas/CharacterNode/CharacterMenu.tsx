@@ -32,7 +32,7 @@ export function CharacterMenu({ nodeId }: { nodeId: string }) {
           <button
             type="button"
             onClick={handleDuplicate}
-            className="pointer-events-auto rounded-full p-1 transition hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500 cursor-pointer"
+            className="pointer-events-auto rounded-full p-1 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500 cursor-pointer"
             title="Duplicate node"
             aria-label="Duplicate node"
           >

@@ -200,7 +200,7 @@ export function NarrativeActionsMenu({
           className={cn(
             baseButtonClass,
             buttonPadding,
-            "hover:bg-zinc-100 hover:text-zinc-700 focus-visible:outline-indigo-500 cursor-pointer",
+            "hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-indigo-500 cursor-pointer",
           )}
           title="Populate text editor with narratives"
           aria-label="Populate text editor with narratives"

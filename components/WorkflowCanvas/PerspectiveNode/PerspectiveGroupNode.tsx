@@ -181,7 +181,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       >
         {data?.label}
       </div>
-      <div className="absolute right-1 bottom-1 flex items-center gap-2 rounded bg-white border border-zinc-300 px-2 py-1 text-xs font-semibold tracking-wide text-zinc-800">
+      <div className="absolute right-1 bottom-1 flex items-center gap-2 rounded bg-white border border-gray-300 px-2 py-1 text-xs font-semibold tracking-wide text-gray-800">
         <label className="flex items-center gap-2">
           <span>Narrator</span>
           <input
@@ -189,7 +189,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
             onChange={handleCharacterNameChange}
             onPointerDown={(event) => event.stopPropagation()}
             placeholder="Name..."
-            className="w-28 rounded border border-transparent bg-zinc-50 px-2 py-0.5 font-medium normal-case text-zinc-700 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 nodrag nopan"
+            className="w-28 rounded border border-transparent bg-gray-50 px-2 py-0.5 font-medium normal-case text-gray-700 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-400 nodrag nopan"
           />
         </label>
       </div>

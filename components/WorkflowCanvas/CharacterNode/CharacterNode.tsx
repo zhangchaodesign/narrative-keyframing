@@ -187,7 +187,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
       >
         {data?.showUpdatePrompt && !data?.isRefreshing && (
           <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-black/10 p-3 text-center text-white backdrop-blur-xs">
-            <div className="w-full max-w-xs rounded-lg bg-white/90 p-3 text-zinc-900 shadow-lg">
+            <div className="w-full max-w-xs rounded-lg bg-white/90 p-3 text-gray-900 shadow-lg">
               <p className="text-xs font-medium">
                 Update the character sheet with the latest perspective?
               </p>
@@ -224,7 +224,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
             <span
               className={cn(
                 geistMono.className,
-                "text-[10px] font-semibold uppercase tracking-wide text-zinc-800",
+                "text-[10px] font-semibold uppercase tracking-wide text-gray-800",
               )}
             >
               🧙 Character Snapshot
@@ -242,16 +242,16 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
             <p
               className={cn(
                 geistMono.className,
-                "text-base font-semibold tracking-wide text-zinc-800",
+                "text-base font-semibold tracking-wide text-gray-800",
               )}
             >
               {characterName ? characterName : "Unknown"}
             </p>
-            {/* <div className="mt-2 w-full rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800">
+            {/* <div className="mt-2 w-full rounded bg-gray-50 px-2 py-1 text-[10px] leading-snug text-gray-800">
               {characterName ? (
                 characterName
               ) : (
-                <span className="italic text-zinc-500">
+                <span className="italic text-gray-500">
                   Set in the perspective cluster
                 </span>
               )}

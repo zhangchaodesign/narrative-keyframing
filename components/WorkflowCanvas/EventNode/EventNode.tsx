@@ -40,7 +40,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
       <div
         className={cn(
           geistMono.className,
-          "text-[10px] font-semibold uppercase tracking-wide text-zinc-800",
+          "text-[10px] font-semibold uppercase tracking-wide text-gray-800",
         )}
       >
         📜 {data.timeline}
@@ -67,7 +67,7 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
           event.stopPropagation();
           event.nativeEvent.stopImmediatePropagation?.();
         }}
-        className="mt-2 w-full resize-none rounded border border-zinc-300 bg-white/70 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400 nodrag nopan"
+        className="mt-2 w-full resize-none rounded border border-gray-300 bg-white/70 px-2 py-1 text-[10px] leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-1 focus:ring-gray-400 nodrag nopan"
       />
       <EventHandle type="target" position={Position.Left} id="event-prev" />
       <EventHandle type="source" position={Position.Right} id="event-next" />

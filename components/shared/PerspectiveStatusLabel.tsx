@@ -20,7 +20,7 @@ export function PerspectiveStatusLabel({
   variant = "div",
 }: PerspectiveStatusLabelProps) {
   let labelText: string;
-  let labelClass = "text-zinc-400";
+  let labelClass = "text-gray-400";
 
   if (isAnalyzingEvidence) {
     labelText = PERSPECTIVE_MESSAGES.ANALYZING;

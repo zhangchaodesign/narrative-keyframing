@@ -19,7 +19,7 @@ export function Header() {
   };
 
   return (
-    <div className="flex flex-row w-full justify-between items-center px-3 py-2 bg-zinc-50 border-b border-zinc-100">
+    <div className="flex flex-row w-full justify-between items-center px-3 py-2 bg-gray-50 border-b border-gray-100">
       <h1 className={cn(geistMono.className, "font-bold")}>
         <Link href="/">Conceptual Keyframing</Link>
       </h1>
@@ -45,7 +45,7 @@ export function Header() {
 
                 <button
                   onClick={handleClose}
-                  className="p-1 rounded-full hover:bg-zinc-100 transition-colors cursor-pointer"
+                  className="p-1 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   <TbX size={20} />
                 </button>

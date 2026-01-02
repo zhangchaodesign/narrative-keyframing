@@ -75,7 +75,7 @@ function createHighlightedNarrative(
     segments.push(
       <mark
         key={`segment-${index}-highlight`}
-        className="rounded bg-green-200 px-0.5 py-0.5 text-zinc-900"
+        className="rounded bg-green-200 px-0.5 py-0.5 text-gray-900"
         title={`Based on: "${range.originalSnippet}"`}
       >
         {text.slice(range.start, range.end)}
@@ -129,7 +129,7 @@ export function NarrativeContent({
           setEditValue(nextValue);
           onNarrationChange?.(nextValue);
         }}
-        className="flex-1 w-full resize-none rounded bg-white border border-zinc-300 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-400 nodrag nopan"
+        className="flex-1 w-full resize-none rounded bg-white border border-gray-300 px-2 py-1 text-[10px] leading-snug text-gray-800 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-400 nodrag nopan"
         onWheel={(event) => {
           if (event.ctrlKey || event.metaKey) {
             return;
@@ -150,7 +150,7 @@ export function NarrativeContent({
 
   return (
     <div
-      className="flex-1 overflow-y-auto w-full resize-none rounded bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800"
+      className="flex-1 overflow-y-auto w-full resize-none rounded bg-gray-50 px-2 py-1 text-[10px] leading-snug text-gray-800"
       onWheel={(event) => {
         if (event.ctrlKey || event.metaKey) {
           return;

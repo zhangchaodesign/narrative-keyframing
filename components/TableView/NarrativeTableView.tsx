@@ -270,7 +270,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
       segments.push(
         <mark
           key={`segment-${index}-highlight`}
-          className="rounded bg-green-200 px-0.5 py-0.5 text-zinc-900"
+          className="rounded bg-green-200 px-0.5 py-0.5 text-gray-900"
           title={`Based on: "${range.originalSnippet}"`}
         >
           {text.slice(range.start, range.end)}
@@ -365,7 +365,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                 className={`cursor-pointer rounded px-0.5 py-0.5 transition-colors ${
                   isSelected
                     ? "bg-blue-400 text-white ring-2 ring-blue-600"
-                    : "bg-yellow-200 text-zinc-900 hover:bg-yellow-300"
+                    : "bg-yellow-200 text-gray-900 hover:bg-yellow-300"
                 }`}
                 title={`Click to ${
                   isSelected ? "deselect" : "select"
@@ -418,15 +418,15 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-white">
-      <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-3">
+      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-3">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-900">
+          <h2 className="text-lg font-semibold text-gray-900">
             Narrative Overview Table
           </h2>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-zinc-600 whitespace-nowrap">
+            <span className="text-xs font-medium text-gray-600 whitespace-nowrap">
               Narrative
             </span>
             <select
@@ -457,7 +457,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
             className={`flex items-center gap-2 rounded px-3 py-1.5 text-sm font-medium transition ${
               highlightEnabled
                 ? "bg-yellow-100 text-yellow-900 hover:bg-yellow-200"
-                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
             title={
               highlightEnabled
@@ -481,23 +481,23 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
       <div className="flex-1 overflow-auto">
         {resolvedGroupId ? (
           <table className="w-full border-collapse text-sm">
-            <thead className="sticky top-0 bg-zinc-50">
+            <thead className="sticky top-0 bg-gray-50">
               <tr>
-                <th className="border border-zinc-300 bg-zinc-100 px-3 py-2 text-left font-semibold text-zinc-700">
+                <th className="border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">
                   Event
                 </th>
-                <th className="border border-zinc-300 bg-zinc-100 px-3 py-2 text-left font-semibold text-zinc-700">
+                <th className="border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">
                   Story Outline
                 </th>
                 {uniquePerspectives.map((narrator, index) => (
                   <th
                     key={`narrator-${index}`}
-                    className="border border-zinc-300 bg-blue-50 px-3 py-2 text-left font-semibold text-blue-900"
+                    className="border border-gray-300 bg-blue-50 px-3 py-2 text-left font-semibold text-blue-900"
                   >
                     {narrator}
                   </th>
                 ))}
-                <th className="border border-zinc-300 bg-green-50 px-3 py-2 text-left font-semibold text-green-900">
+                <th className="border border-gray-300 bg-green-50 px-3 py-2 text-left font-semibold text-green-900">
                   <div className="flex items-center gap-1">
                     <span>Narrative</span>
                     <button
@@ -530,13 +530,13 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                 });
 
                 return (
-                  <tr key={event.narrativeNodeId} className="hover:bg-zinc-50">
-                    <td className="border border-zinc-300 px-3 py-2 align-top font-medium text-zinc-900 text-xs">
+                  <tr key={event.narrativeNodeId} className="hover:bg-gray-50">
+                    <td className="border border-gray-300 px-3 py-2 align-top font-medium text-gray-900 text-xs">
                       Event_{eventIndex + 1}
                     </td>
-                    <td className="border border-zinc-300 px-3 py-2 align-top text-zinc-700 text-xs">
+                    <td className="border border-gray-300 px-3 py-2 align-top text-gray-700 text-xs">
                       {event.eventDescription || (
-                        <span className="text-zinc-400 italic">
+                        <span className="text-gray-400 italic">
                           No description
                         </span>
                       )}
@@ -548,21 +548,21 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                       return (
                         <td
                           key={`${event.narrativeNodeId}-persp-${index}`}
-                          className="border border-zinc-300 px-3 py-2 align-top bg-blue-50/30"
+                          className="border border-gray-300 px-3 py-2 align-top bg-blue-50/30"
                         >
                           {reflection ? (
                             <div className="text-xs">
                               {highlightText(reflection, event.snippets)}
                             </div>
                           ) : (
-                            <span className="text-zinc-400 italic text-xs">
+                            <span className="text-gray-400 italic text-xs">
                               No perspective
                             </span>
                           )}
                         </td>
                       );
                     })}
-                    <td className="border border-zinc-300 px-3 py-2 align-top bg-green-50/30">
+                    <td className="border border-gray-300 px-3 py-2 align-top bg-green-50/30">
                       {isRegenerating ? (
                         <div className="flex items-center gap-2 text-xs text-green-700">
                           <TbRefresh size={14} className="animate-spin" />
@@ -576,7 +576,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                           )}
                         </div>
                       ) : (
-                        <span className="text-zinc-400 italic text-xs">
+                        <span className="text-gray-400 italic text-xs">
                           No narrative
                         </span>
                       )}
@@ -587,13 +587,13 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
             </tbody>
           </table>
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-zinc-500">
+          <div className="flex h-full items-center justify-center text-sm text-gray-500">
             No narrative groups available yet.
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-2 text-xs text-zinc-600">
+      <div className="flex items-center justify-between border-t border-gray-200 px-6 py-2 text-xs text-gray-600">
         <div className="flex items-center gap-2">
           <span className="font-medium">{resolvedGroupLabel}</span>
           <span>•</span>

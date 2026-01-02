@@ -158,7 +158,7 @@ export function TraitSection({
           className={`flex cursor-pointer items-center justify-center rounded-full bg-white transition ${
             isAddingNew
               ? "text-red-500 hover:text-red-700"
-              : "text-zinc-500 hover:text-zinc-700"
+              : "text-gray-500 hover:text-gray-700"
           }`}
           aria-label={
             isAddingNew ? `Hide ${label} trait input` : `Add ${label} trait`
@@ -196,7 +196,7 @@ export function TraitSection({
             onChange={handleDraftChange}
             onKeyDown={onTraitInputKeyDown}
             placeholder={`Add ${label.toLowerCase()} trait`}
-            className="flex-1 rounded border border-zinc-300 bg-zinc-50 px-2 py-1 text-[10px] leading-snug text-zinc-800 outline-none focus:border-zinc-500 focus:bg-white focus:ring-1 focus:ring-zinc-400"
+            className="flex-1 rounded border border-gray-300 bg-gray-50 px-2 py-1 text-[10px] leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-1 focus:ring-gray-400"
           />
           <button
             type="button"

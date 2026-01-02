@@ -379,11 +379,7 @@ export function TimelineView() {
       (item) => item.id === selectedStoryClusterId,
     );
     return cluster ? formatStoryClusterLabel(cluster) : "Story cluster";
-  }, [
-    formatStoryClusterLabel,
-    selectedStoryClusterId,
-    storyOutlineClusters,
-  ]);
+  }, [formatStoryClusterLabel, selectedStoryClusterId, storyOutlineClusters]);
 
   const footerNarrativeLabel = useMemo(() => {
     if (!selectedNarrativeClusterId) {
@@ -504,15 +500,11 @@ export function TimelineView() {
           <span>{footerNarrativeLabel}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span>
-            {selectedStoryTrack?.items.length ?? 0} events
-          </span>
+          <span>{selectedStoryTrack?.items.length ?? 0} events</span>
           <span>•</span>
           <span>{Object.keys(groupedCharacterTracks).length} characters</span>
           <span>•</span>
-          <span>
-            {selectedNarrativeTrack?.items.length ?? 0} narratives
-          </span>
+          <span>{selectedNarrativeTrack?.items.length ?? 0} narratives</span>
         </div>
       </div>
     </div>

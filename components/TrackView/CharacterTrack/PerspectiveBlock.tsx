@@ -96,7 +96,7 @@ export function PerspectiveBlock({
         width: `${itemWidth}px`,
       }}
     >
-      <div className="group relative flex h-full flex-col rounded-lg border-2 border-secondary bg-white/95 px-3 py-2 text-xs text-zinc-800 transition-shadow hover:shadow-lg">
+      <div className="group relative flex h-full flex-col rounded-lg border-2 border-secondary bg-white/95 px-3 py-2 text-xs text-gray-800 transition-shadow hover:shadow-lg">
         {isLoading && (
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-secondary"></span>
@@ -109,12 +109,12 @@ export function PerspectiveBlock({
           nodeId={item.nodeId}
           isEditing={isEditing}
           onToggleEdit={handleToggleEdit}
-          wrapperClassName="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 text-zinc-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+          wrapperClassName="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 text-gray-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
         />
         <div
           className={cn(
             geistMono.className,
-            "flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-800",
+            "flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wide text-gray-800",
           )}
         >
           <span className="flex items-center gap-1" aria-hidden="true">
