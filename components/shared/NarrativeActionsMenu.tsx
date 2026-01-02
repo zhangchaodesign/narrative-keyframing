@@ -5,9 +5,9 @@ import { TbFileText, TbPlayerPlay, TbTable } from "react-icons/tb";
 import type { NarrativeEventData } from "@/lib/types/narrative";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { useEditorStore } from "@/lib/stores/editorStore";
+import { useUiStore } from "@/lib/stores/uiStore";
 import { SlateUtils } from "@/lib/utiils/slateUtils";
 import { NarrativeGenerationModal } from "@/components/shared/NarrativeGenerationModal";
-import { NarrativeTableModal } from "@/components/shared/NarrativeTableModal";
 import { cn } from "@/lib/utiils/sharedUtils";
 import {
   combineNarrativeTextsInGroup,
@@ -36,10 +36,13 @@ export function NarrativeActionsMenu({
     (state) => state.getNarrativeEventsData,
   );
   const { setValue } = useEditorStore();
+  const setViewMode = useUiStore((state) => state.setViewMode);
+  const setNarrativeTableGroupId = useUiStore(
+    (state) => state.setNarrativeTableGroupId,
+  );
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [eventsData, setEventsData] = useState<NarrativeEventData[]>([]);
   const [preSelectedSnippets, setPreSelectedSnippets] = useState<Set<string>>(
     new Set(),
@@ -98,20 +101,6 @@ export function NarrativeActionsMenu({
     [eventsData, setNodes],
   );
 
-  const handleOpenTableModal = useCallback(() => {
-    const preparedEventsData = getNarrativeEventsData(nodeId);
-    if (preparedEventsData.length === 0) {
-      alert("No narrative nodes found in this group");
-      return;
-    }
-    setEventsData(preparedEventsData);
-    setIsTableModalOpen(true);
-  }, [getNarrativeEventsData, nodeId]);
-
-  const handleCloseTableModal = useCallback(() => {
-    setIsTableModalOpen(false);
-  }, []);
-
   const handlePopulateEditor = useCallback(() => {
     const combinedText = combineNarrativeTextsInGroup(nodeId, nodes);
 
@@ -138,6 +127,16 @@ export function NarrativeActionsMenu({
     );
   }, [nodeId, nodes, setNodes, setValue]);
 
+  const handleOpenTableView = useCallback(() => {
+    const preparedEventsData = getNarrativeEventsData(nodeId);
+    if (preparedEventsData.length === 0) {
+      alert("No narrative nodes found in this group");
+      return;
+    }
+    setNarrativeTableGroupId(nodeId);
+    setViewMode("narrative-table");
+  }, [getNarrativeEventsData, nodeId, setNarrativeTableGroupId, setViewMode]);
+
   const Modals = useMemo(
     () => (
       <>
@@ -149,21 +148,14 @@ export function NarrativeActionsMenu({
           eventsData={eventsData}
           preSelectedSnippets={preSelectedSnippets}
         />
-        <NarrativeTableModal
-          isOpen={isTableModalOpen}
-          onClose={handleCloseTableModal}
-          eventsData={eventsData}
-        />
       </>
     ),
     [
       eventsData,
       handleCloseModal,
-      handleCloseTableModal,
       handleGenerateNarratives,
       isGenerating,
       isModalOpen,
-      isTableModalOpen,
       preSelectedSnippets,
     ],
   );
@@ -191,7 +183,7 @@ export function NarrativeActionsMenu({
         </button>
         <button
           type="button"
-          onClick={handleOpenTableModal}
+          onClick={handleOpenTableView}
           className={cn(
             baseButtonClass,
             buttonPadding,

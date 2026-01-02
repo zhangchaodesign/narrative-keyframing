@@ -66,24 +66,24 @@ export function TimelineHeader({
 
   return (
     <div className="bg-gray-50 border-b border-gray-200">
-      <div className="px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+      <div className="px-6 py-3 flex items-center justify-between bg-white">
+        <h2 className="text-lg font-semibold text-zinc-900">
           Timeline Overview
-        </div>
+        </h2>
         <div className="flex items-center gap-3">
           {hasStoryClusters && (
             <div className="flex items-center gap-2">
               <label
                 htmlFor="story-cluster-select"
-                className="text-xs text-gray-600"
+                className="text-xs text-gray-600 whitespace-nowrap"
               >
-                Story Outline:
+                Story Outline
               </label>
               <select
                 id="story-cluster-select"
                 value={selectedStoryClusterId || ""}
                 onChange={handleStoryClusterChange}
-                className="text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="select select-sm select-bordered"
               >
                 {storyOutlineClusters.map((cluster) => (
                   <option key={cluster.id} value={cluster.id}>
@@ -100,13 +100,13 @@ export function TimelineHeader({
                 htmlFor="narrative-cluster-select"
                 className="text-xs text-gray-600"
               >
-                Narrative:
+                Narrative
               </label>
               <select
                 id="narrative-cluster-select"
                 value={selectedNarrativeClusterId || ""}
                 onChange={handleNarrativeClusterChange}
-                className="text-xs border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="select select-sm select-bordered"
               >
                 <option value="">None</option>
                 {narrativeOptions.map((cluster) => (

@@ -1,12 +1,19 @@
 "use client";
 
-import { useMemo, useState, useEffect, type ReactNode } from "react";
-import { createPortal } from "react-dom";
-import { TbX, TbHighlight, TbRefresh } from "react-icons/tb";
+import {
+  useCallback,
+  useMemo,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
+import { TbHighlight, TbRefresh } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { SelectedSnippet } from "@/lib/stores/workflowStore";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
 import { generateNarratives } from "@/lib/utiils/narrativeUtils";
+import type { ThirdPersonGroupNodeType } from "@/lib/types/workflow";
+import { useUiStore } from "@/lib/stores/uiStore";
 
 type EventData = {
   narrativeNodeId: string;
@@ -31,23 +38,28 @@ type EventData = {
   }>;
 };
 
-type NarrativeTableModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  eventsData: EventData[];
+type NarrativeTableViewProps = {
+  groupId?: string;
 };
 
-export function NarrativeTableModal({
-  isOpen,
-  onClose,
-  eventsData: initialEventsData,
-}: NarrativeTableModalProps) {
+export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
   const [highlightEnabled, setHighlightEnabled] = useState(true);
   const [showPromptDialog, setShowPromptDialog] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [eventsData, setEventsData] = useState<EventData[]>(initialEventsData);
+  const [eventsData, setEventsData] = useState<EventData[]>([]);
   const setNodes = useWorkflowStore((state) => state.setNodes);
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
+  const getNarrativeEventsData = useWorkflowStore(
+    (state) => state.getNarrativeEventsData,
+  );
+  const narrativeTableGroupId = useUiStore(
+    (state) => state.narrativeTableGroupId,
+  );
+  const setNarrativeTableGroupId = useUiStore(
+    (state) => state.setNarrativeTableGroupId,
+  );
   const selectedSnippets = useWorkflowStore((state) => state.selectedSnippets);
   const toggleSnippet = useWorkflowStore((state) => state.toggleSnippet);
   const toggleEvidenceAttribute = useWorkflowStore(
@@ -57,10 +69,58 @@ export function NarrativeTableModal({
     (state) => state.selectedEvidenceAttributes,
   );
 
-  // Sync local eventsData with prop changes
+  const narrativeGroups = useMemo(
+    () =>
+      nodes.filter(
+        (node): node is ThirdPersonGroupNodeType =>
+          node.type === "narrativeGroup",
+      ),
+    [nodes],
+  );
+
+  const formatNarrativeClusterLabel = useCallback(
+    (group: ThirdPersonGroupNodeType) => {
+      const label = group.data?.label?.trim() || "Narrative";
+      if (typeof group.data?.narrativeGroupId === "number") {
+        return `${label} ${group.data.narrativeGroupId}`;
+      }
+      return group.id ? `${label} (${group.id})` : label;
+    },
+    [],
+  );
+
+  const resolvedGroupId = useMemo(() => {
+    if (groupId) {
+      return groupId;
+    }
+    if (
+      narrativeTableGroupId &&
+      narrativeGroups.some((group) => group.id === narrativeTableGroupId)
+    ) {
+      return narrativeTableGroupId;
+    }
+    const activeGroup = narrativeGroups.find(
+      (group) => group.data?.isActiveInEditor,
+    );
+    return activeGroup?.id ?? narrativeGroups[0]?.id;
+  }, [groupId, narrativeGroups, narrativeTableGroupId]);
+
+  const resolvedGroupLabel = useMemo(() => {
+    const group = narrativeGroups.find((item) => item.id === resolvedGroupId);
+    return group ? formatNarrativeClusterLabel(group) : "Narrative Overview";
+  }, [formatNarrativeClusterLabel, narrativeGroups, resolvedGroupId]);
+
+  const preparedEventsData = useMemo(() => {
+    if (!resolvedGroupId) {
+      return [];
+    }
+    return getNarrativeEventsData(resolvedGroupId);
+  }, [getNarrativeEventsData, resolvedGroupId, nodes, edges]);
+
+  // Sync local eventsData with store changes
   useEffect(() => {
-    setEventsData(initialEventsData);
-  }, [initialEventsData]);
+    setEventsData(preparedEventsData);
+  }, [preparedEventsData]);
 
   // Get unique perspectives across all events
   const uniquePerspectives = useMemo(() => {
@@ -306,8 +366,6 @@ export function NarrativeTableModal({
     );
   };
 
-  if (!isOpen) return null;
-
   const promptDialogContent = showPromptDialog && (
     <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/50 p-4">
       <div className="relative w-full max-w-md rounded bg-white p-4">
@@ -343,50 +401,70 @@ export function NarrativeTableModal({
     </div>
   );
 
-  const modalContent = (
-    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative max-h-[90vh] w-full max-w-7xl overflow-hidden rounded bg-white shadow-xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-3">
+  return (
+    <div className="flex h-full w-full flex-col overflow-hidden bg-white">
+      <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-3">
+        <div>
           <h2 className="text-lg font-semibold text-zinc-900">
             Narrative Overview Table
           </h2>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setHighlightEnabled(!highlightEnabled)}
-              className={`flex items-center gap-2 rounded px-3 py-1.5 text-sm font-medium transition ${
-                highlightEnabled
-                  ? "bg-yellow-100 text-yellow-900 hover:bg-yellow-200"
-                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
-              }`}
-              title={
-                highlightEnabled
-                  ? "Disable evidence highlighting"
-                  : "Enable evidence highlighting"
-              }
-              aria-label={
-                highlightEnabled
-                  ? "Disable evidence highlighting"
-                  : "Enable evidence highlighting"
-              }
-            >
-              <TbHighlight size={16} />
-              <span>
-                {highlightEnabled ? "Highlighting On" : "Highlighting Off"}
-              </span>
-            </button>
-            <button
-              onClick={onClose}
-              className="rounded-full p-1 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-700"
-              aria-label="Close modal"
-            >
-              <TbX size={20} />
-            </button>
-          </div>
         </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-zinc-600 whitespace-nowrap">
+              Narrative
+            </span>
+            <select
+              value={resolvedGroupId ?? ""}
+              onChange={(event) =>
+                setNarrativeTableGroupId(
+                  event.target.value ? event.target.value : undefined,
+                )
+              }
+              className="select select-sm select-bordered"
+              disabled={narrativeGroups.length === 0}
+            >
+              {narrativeGroups.length === 0 ? (
+                <option value="">No groups</option>
+              ) : (
+                narrativeGroups.map((group) => {
+                  return (
+                    <option key={group.id} value={group.id}>
+                      {formatNarrativeClusterLabel(group)}
+                    </option>
+                  );
+                })
+              )}
+            </select>
+          </div>
+          <button
+            onClick={() => setHighlightEnabled(!highlightEnabled)}
+            className={`flex items-center gap-2 rounded px-3 py-1.5 text-sm font-medium transition ${
+              highlightEnabled
+                ? "bg-yellow-100 text-yellow-900 hover:bg-yellow-200"
+                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+            }`}
+            title={
+              highlightEnabled
+                ? "Disable evidence highlighting"
+                : "Enable evidence highlighting"
+            }
+            aria-label={
+              highlightEnabled
+                ? "Disable evidence highlighting"
+                : "Enable evidence highlighting"
+            }
+          >
+            <TbHighlight size={16} />
+            <span>
+              {highlightEnabled ? "Highlighting On" : "Highlighting Off"}
+            </span>
+          </button>
+        </div>
+      </div>
 
-        {/* Table Content */}
-        <div className="max-h-[calc(90vh-5rem)] overflow-auto">
+      <div className="flex-1 overflow-auto">
+        {resolvedGroupId ? (
           <table className="w-full border-collapse text-sm">
             <thead className="sticky top-0 bg-zinc-50">
               <tr>
@@ -425,7 +503,6 @@ export function NarrativeTableModal({
             </thead>
             <tbody>
               {eventsData.map((event, eventIndex) => {
-                // Create a map of narrator -> reflection for this event
                 const perspectiveMap = new Map<string, string>();
                 event.perspectives.forEach((perspective) => {
                   const normalizedNarrator = perspective.narrator
@@ -494,15 +571,14 @@ export function NarrativeTableModal({
               })}
             </tbody>
           </table>
-        </div>
+        ) : (
+          <div className="flex h-full items-center justify-center text-sm text-zinc-500">
+            No narrative groups available yet.
+          </div>
+        )}
       </div>
-    </div>
-  );
 
-  return (
-    <>
-      {createPortal(modalContent, document.body)}
-      {promptDialogContent && createPortal(promptDialogContent, document.body)}
-    </>
+      {promptDialogContent}
+    </div>
   );
 }

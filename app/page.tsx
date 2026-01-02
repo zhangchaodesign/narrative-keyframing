@@ -7,15 +7,15 @@ import { Header } from "@/components/Header";
 import { DynamicTextEditor } from "@/components/TextEditor/DynamicTextEditor";
 import { WorkflowCanvas } from "@/components/WorkflowCanvas/WorkflowCanvas";
 import { TimelineView } from "@/components/TrackView/TimelineView";
-import {
-  ViewSwitcher,
-  type ViewMode,
-} from "@/components/ViewSwitcher/ViewSwitcher";
+import { ViewSwitcher } from "@/components/ViewSwitcher/ViewSwitcher";
+import { NarrativeTableView } from "@/components/TableView/NarrativeTableView";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { adjustEventCountForAllClusters } from "@/lib/utiils/workflowUtils";
+import { useUiStore } from "@/lib/stores/uiStore";
 
 export default function Page() {
-  const [viewMode, setViewMode] = useState<ViewMode>("workflow");
+  const viewMode = useUiStore((state) => state.viewMode);
+  const setViewMode = useUiStore((state) => state.setViewMode);
   const [isEditorCollapsed, setIsEditorCollapsed] = useState(false);
   const [eventCount, setEventCount] = useState(4);
   const isInitialMount = useRef(true);
@@ -114,8 +114,10 @@ export default function Page() {
               <div className="flex-1 overflow-hidden">
                 {viewMode === "workflow" ? (
                   <WorkflowCanvas eventCount={eventCount} />
-                ) : (
+                ) : viewMode === "timeline" ? (
                   <TimelineView />
+                ) : (
+                  <NarrativeTableView />
                 )}
               </div>
             </div>
