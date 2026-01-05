@@ -421,7 +421,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
       <div className="flex items-center justify-between border-b border-gray-200 px-6 py-3">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
-            Narrative Overview Table
+            Narrative Overview - Table
           </h2>
         </div>
         <div className="flex items-center gap-3">
