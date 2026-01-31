@@ -20,6 +20,7 @@ import { CharacterRefreshMenu } from "@/components/shared/CharacterActionsMenu";
 import type { CharacterNodeData, CharacterTraits } from "@/lib/types/workflow";
 import {
   CHARACTER_TRAIT_CATEGORIES,
+  buildCharacterBrainstormContext,
   normalizeCharacterTraits,
 } from "@/lib/utiils/characterUtils";
 
@@ -35,6 +36,8 @@ export function CharacterBlock({
   timelineScale,
 }: CharacterBlockProps) {
   const setNodes = useWorkflowStore((state) => state.setNodes);
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
   const selectedEvidenceAttributes = useWorkflowStore(
     (state) => state.selectedEvidenceAttributes,
   );
@@ -63,6 +66,16 @@ export function CharacterBlock({
 
   const characterName = characterData?.name?.trim() ?? "";
   const isRefreshing = Boolean(characterData?.isRefreshing);
+  const brainstormContext = useMemo(() => {
+    if (!characterNode) {
+      return null;
+    }
+    return buildCharacterBrainstormContext({
+      nodes,
+      edges,
+      characterNodeId: characterNode.id,
+    });
+  }, [characterNode, edges, nodes]);
   const [nameValue, setNameValue] = useState(characterName);
   const allTraits = useMemo(
     () =>
@@ -261,6 +274,7 @@ export function CharacterBlock({
                   emptyClass={emptyClass}
                   selectedClass={selectedClass}
                   traits={traits[key] ?? []}
+                  brainstormContext={brainstormContext}
                   onUpdateNodeData={updateCharacterNode}
                 />
               ),

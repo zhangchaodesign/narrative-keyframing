@@ -2,8 +2,10 @@ import type {
   CharacterNodeType,
   CharacterTraits,
   EventNodeType,
+  PerspectiveGroupNodeType,
   PerspectiveEvidenceItem,
   PerspectiveNodeType,
+  WorkflowEdge,
   WorkflowNode,
 } from "@/lib/types/workflow";
 import { getNodeByIndex } from "@/lib/utiils/workflowUtils";
@@ -60,6 +62,17 @@ export const normalizeCharacterTraits = (
 export type WorkflowNodesSetter = (
   updater: (nodes: WorkflowNode[]) => WorkflowNode[],
 ) => void;
+
+export type StoryOutlineEvent = {
+  label: string;
+  description: string;
+};
+
+export type CharacterBrainstormContext = {
+  storyOutline: StoryOutlineEvent[];
+  currentEvent: StoryOutlineEvent;
+  characterName: string;
+};
 
 type NearbySnapshot = {
   name: string;
@@ -241,6 +254,233 @@ export type InterpolateCharacterSnapshotParams = {
   perspectiveNode: PerspectiveNodeType;
   fallbackNarratorName?: string;
 };
+
+const sortByNodePosition = (
+  a: Pick<WorkflowNode, "position" | "id">,
+  b: Pick<WorkflowNode, "position" | "id">,
+) => {
+  const ax = a.position?.x ?? 0;
+  const bx = b.position?.x ?? 0;
+  if (ax === bx) {
+    const ay = a.position?.y ?? 0;
+    const by = b.position?.y ?? 0;
+    if (ay === by) {
+      return a.id.localeCompare(b.id);
+    }
+    return ay - by;
+  }
+  return ax - bx;
+};
+
+const buildStoryOutlineEvent = (eventNode: EventNodeType): StoryOutlineEvent => {
+  const timeline = eventNode.data?.timeline?.trim();
+  const description = eventNode.data?.description?.trim();
+  const resolvedDescription =
+    description && description.length > 0
+      ? description
+      : timeline && timeline.length > 0
+      ? timeline
+      : "No description provided.";
+
+  const label =
+    timeline && timeline.length > 0
+      ? timeline
+      : description && description.length > 0
+      ? description
+      : eventNode.id;
+
+  return {
+    label,
+    description: resolvedDescription,
+  };
+};
+
+const resolveConnectedEventGroupId = ({
+  nodes,
+  edges,
+  perspectiveGroupId,
+}: {
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  perspectiveGroupId: string;
+}): string | undefined => {
+  const perspectiveGroup = nodes.find(
+    (node): node is PerspectiveGroupNodeType =>
+      node.id === perspectiveGroupId && node.type === "perspectiveGroup",
+  );
+
+  const dataConnected = perspectiveGroup?.data?.connectedEventGroup?.id;
+  if (dataConnected) {
+    return dataConnected;
+  }
+
+  const nodeLookup = new Map(nodes.map((node) => [node.id, node]));
+
+  for (const edge of edges) {
+    if (
+      edge.sourceHandle !== "group-bridge" ||
+      edge.targetHandle !== "group-bridge"
+    ) {
+      continue;
+    }
+    const sourceNode = nodeLookup.get(edge.source);
+    const targetNode = nodeLookup.get(edge.target);
+
+    if (
+      sourceNode?.type === "perspectiveGroup" &&
+      targetNode?.type === "eventGroup" &&
+      sourceNode.id === perspectiveGroupId
+    ) {
+      return targetNode.id;
+    }
+
+    if (
+      targetNode?.type === "perspectiveGroup" &&
+      sourceNode?.type === "eventGroup" &&
+      targetNode.id === perspectiveGroupId
+    ) {
+      return sourceNode.id;
+    }
+  }
+
+  return undefined;
+};
+
+export const buildCharacterBrainstormContext = ({
+  nodes,
+  edges,
+  characterNodeId,
+}: {
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  characterNodeId: string;
+}): CharacterBrainstormContext | null => {
+  const characterNode = nodes.find(
+    (node): node is CharacterNodeType =>
+      node.id === characterNodeId && node.type === "character",
+  );
+  if (!characterNode) {
+    return null;
+  }
+
+  const perspectiveId = characterNode.data?.perspectiveId?.trim();
+  if (!perspectiveId) {
+    return null;
+  }
+
+  const perspectiveNode = nodes.find(
+    (node): node is PerspectiveNodeType =>
+      node.id === perspectiveId && node.type === "perspective",
+  );
+  if (!perspectiveNode) {
+    return null;
+  }
+
+  const perspectiveGroupId = perspectiveNode.parentId;
+  if (!perspectiveGroupId) {
+    return null;
+  }
+
+  const connectedEventGroupId = resolveConnectedEventGroupId({
+    nodes,
+    edges,
+    perspectiveGroupId,
+  });
+
+  if (!connectedEventGroupId) {
+    return null;
+  }
+
+  const eventNodesInGroup = nodes
+    .filter(
+      (node): node is EventNodeType =>
+        node.type === "event" && node.parentId === connectedEventGroupId,
+    )
+    .sort(sortByNodePosition);
+
+  if (eventNodesInGroup.length === 0) {
+    return null;
+  }
+
+  const storyOutline = eventNodesInGroup.map(buildStoryOutlineEvent);
+
+  const siblingPerspectives = nodes
+    .filter(
+      (node): node is PerspectiveNodeType =>
+        node.type === "perspective" && node.parentId === perspectiveGroupId,
+    )
+    .sort(sortByNodePosition);
+
+  const perspectiveIndex = siblingPerspectives.findIndex(
+    (node) => node.id === perspectiveNode.id,
+  );
+
+  if (perspectiveIndex < 0) {
+    return null;
+  }
+
+  const currentEventNode =
+    eventNodesInGroup[
+      Math.min(perspectiveIndex, eventNodesInGroup.length - 1)
+    ];
+
+  if (!currentEventNode) {
+    return null;
+  }
+
+  const characterName =
+    characterNode.data?.name?.trim() ||
+    perspectiveNode.data?.narrator?.trim() ||
+    "Character";
+
+  return {
+    storyOutline,
+    currentEvent: buildStoryOutlineEvent(currentEventNode),
+    characterName,
+  };
+};
+
+type BrainstormTraitsResponse = {
+  traits: string[];
+};
+
+export async function brainstormCharacterTraits({
+  category,
+  context,
+  existingTraits = [],
+}: {
+  category: TraitCategory;
+  context: CharacterBrainstormContext;
+  existingTraits?: string[];
+}): Promise<string[]> {
+  const endpointMap: Record<TraitCategory, string> = {
+    physiology: "/api/generate-traits/physiology",
+    psychology: "/api/generate-traits/psychology",
+    sociology: "/api/generate-traits/sociology",
+  };
+
+  const response = await fetch(endpointMap[category], {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      storyOutline: context.storyOutline,
+      currentEvent: context.currentEvent,
+      characterName: context.characterName,
+      existingTraits,
+    }),
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(
+      `Failed to brainstorm traits (${response.status}): ${message}`,
+    );
+  }
+
+  const result = (await response.json()) as BrainstormTraitsResponse | null;
+  const rawTraits = result?.traits ?? [];
+  return rawTraits.map((trait) => trait.trim()).filter((trait) => trait.length);
+}
 
 /**
  * Call the /api/interpolate-character endpoint and return structured results

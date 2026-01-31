@@ -2,14 +2,19 @@
 
 import {
   useCallback,
+  useMemo,
   useState,
   type ChangeEvent,
   type KeyboardEvent,
 } from "react";
-import { TbCheck, TbPlus, TbX } from "react-icons/tb";
+import { TbCheck, TbPlus, TbSparkles, TbX } from "react-icons/tb";
 import type { CharacterTraits } from "@/lib/types/workflow";
 import { TraitItem } from "@/components/shared/CharacterTraitItem";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
+import {
+  brainstormCharacterTraits,
+  type CharacterBrainstormContext,
+} from "@/lib/utiils/characterUtils";
 
 type TraitCategory = keyof CharacterTraits;
 
@@ -22,6 +27,7 @@ interface TraitSectionProps {
   emptyClass: string;
   selectedClass: string;
   traits: string[];
+  brainstormContext?: CharacterBrainstormContext | null;
   onUpdateNodeData: (
     updater: (
       currentTraits: CharacterTraits,
@@ -40,14 +46,29 @@ export function TraitSection({
   emptyClass,
   selectedClass,
   traits,
+  brainstormContext,
   onUpdateNodeData,
 }: TraitSectionProps) {
   const [draftValue, setDraftValue] = useState("");
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [isBrainstorming, setIsBrainstorming] = useState(false);
 
   const clearEvidenceAttribute = useWorkflowStore(
     (state) => state.clearEvidenceAttribute,
   );
+
+  const canBrainstorm = useMemo(
+    () =>
+      Boolean(
+        brainstormContext?.storyOutline?.length &&
+        brainstormContext?.currentEvent,
+      ),
+    [brainstormContext],
+  );
+
+  const brainstormTooltip = canBrainstorm
+    ? `Brainstorm ${label.toLowerCase()} traits`
+    : `Connect this character to a story outline event to brainstorm ${label.toLowerCase()} traits`;
 
   const handleDraftChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
@@ -134,6 +155,66 @@ export function TraitSection({
     [clearEvidenceAttribute, nodeId, onUpdateNodeData, category],
   );
 
+  const handleBrainstormTraits = useCallback(async () => {
+    if (!canBrainstorm || isBrainstorming || !brainstormContext) {
+      return;
+    }
+
+    const normalizeTrait = (value: string) => value.trim().toLowerCase();
+
+    setIsBrainstorming(true);
+    try {
+      const suggestions = await brainstormCharacterTraits({
+        category,
+        context: brainstormContext,
+        existingTraits: traits,
+      });
+
+      if (suggestions.length === 0) {
+        return;
+      }
+
+      onUpdateNodeData((currentTraits, currentName, currentPerspectiveId) => {
+        const existing = currentTraits[category] ?? [];
+        const normalized = new Set(existing.map(normalizeTrait));
+        const nextTraits = [...existing];
+
+        suggestions.forEach((suggestion) => {
+          const cleaned = suggestion.trim();
+          if (!cleaned) {
+            return;
+          }
+          const key = normalizeTrait(cleaned);
+          if (normalized.has(key)) {
+            return;
+          }
+          normalized.add(key);
+          nextTraits.push(cleaned);
+        });
+
+        return {
+          name: currentName,
+          traits: {
+            ...currentTraits,
+            [category]: nextTraits,
+          },
+          perspectiveId: currentPerspectiveId,
+        };
+      });
+    } catch (error) {
+      console.error("Error brainstorming traits:", error);
+    } finally {
+      setIsBrainstorming(false);
+    }
+  }, [
+    brainstormContext,
+    canBrainstorm,
+    category,
+    isBrainstorming,
+    onUpdateNodeData,
+    traits,
+  ]);
+
   const onTraitInputKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === "Enter") {
@@ -152,20 +233,40 @@ export function TraitSection({
         >
           {label}
         </h4>
-        <button
-          type="button"
-          onClick={toggleAddInput}
-          className={`flex cursor-pointer items-center justify-center rounded-full bg-white transition ${
-            isAddingNew
-              ? "text-red-500 hover:text-red-700"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-          aria-label={
-            isAddingNew ? `Hide ${label} trait input` : `Add ${label} trait`
-          }
-        >
-          {isAddingNew ? <TbX size={12} /> : <TbPlus size={12} />}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={handleBrainstormTraits}
+            className={`flex items-center justify-center rounded-full bg-white transition ${
+              isBrainstorming
+                ? "text-amber-500"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            aria-label={brainstormTooltip}
+            title={brainstormTooltip}
+            disabled={!canBrainstorm || isBrainstorming}
+          >
+            {isBrainstorming ? (
+              <span className="loading loading-spinner h-3 w-3 text-amber-500" />
+            ) : (
+              <TbSparkles size={12} />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={toggleAddInput}
+            className={`flex cursor-pointer items-center justify-center rounded-full bg-white transition ${
+              isAddingNew
+                ? "text-red-500 hover:text-red-700"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            aria-label={
+              isAddingNew ? `Hide ${label} trait input` : `Add ${label} trait`
+            }
+          >
+            {isAddingNew ? <TbX size={12} /> : <TbPlus size={12} />}
+          </button>
+        </div>
       </div>
       <div className="mt-2 flex flex-col gap-2">
         {traits.map((trait, index) => (

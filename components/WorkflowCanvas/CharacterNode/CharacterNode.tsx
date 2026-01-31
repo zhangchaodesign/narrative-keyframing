@@ -10,6 +10,7 @@ import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 import {
   CHARACTER_TRAIT_CATEGORIES,
+  buildCharacterBrainstormContext,
   normalizeCharacterTraits,
   refreshCharacterSnapshotFromPerspective,
   type WorkflowNodesSetter,
@@ -21,6 +22,7 @@ import {
 
 export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const selectedEvidenceAttributes = useWorkflowStore(
     (state) => state.selectedEvidenceAttributes,
@@ -36,6 +38,15 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     [data?.traits],
   );
   const characterName = data?.name?.trim() ?? "";
+  const brainstormContext = useMemo(
+    () =>
+      buildCharacterBrainstormContext({
+        nodes,
+        edges,
+        characterNodeId: id,
+      }),
+    [edges, id, nodes],
+  );
   const allTraits = useMemo(
     () =>
       CHARACTER_TRAIT_CATEGORIES.flatMap(
@@ -294,6 +305,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                   emptyClass={emptyClass}
                   selectedClass={selectedClass}
                   traits={traits[key] ?? []}
+                  brainstormContext={brainstormContext}
                   onUpdateNodeData={updateNodeData}
                 />
               ),
