@@ -985,7 +985,7 @@ export function createPerspectiveGroup(
 
   const DEFAULT_GROUP_STYLE = {
     width: 900,
-    height: 640,
+    height: 680,
     backgroundColor: "transparent",
     border: "none",
     padding: 0,
