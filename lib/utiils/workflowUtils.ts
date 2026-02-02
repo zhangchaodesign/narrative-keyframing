@@ -10,6 +10,68 @@ import type {
 } from "@/lib/types/workflow";
 
 // ============================================================================
+// STYLE AND LAYOUT CONSTANTS
+// ============================================================================
+
+const NODE_COLORS: Record<string, string> = {
+  eventGroup: "oklch(97.1% 0.014 343.198)",
+  perspectiveGroup: "oklch(97% 0.014 254.604)",
+  narrativeGroup: "oklch(97.9% 0.021 166.113)",
+  event: "oklch(89.9% 0.061 343.231)",
+  perspective: "oklch(88.2% 0.059 254.128)",
+  narrative: "oklch(95% 0.052 163.051)",
+  character: "oklch(95.4% 0.038 75.164)",
+};
+
+const EVENT_HORIZONTAL_SPACING = 300;
+const EVENT_ROW_START_X = 20;
+const EVENT_NODE_WIDTH = 256;
+const EVENT_GROUP_RIGHT_PADDING = 24;
+const DEFAULT_EVENT_GROUP_WIDTH = 900;
+const DEFAULT_NARRATION_GROUP_WIDTH = 900;
+const EVENT_START_X = 20;
+const EVENT_START_Y = 60;
+
+const STORY_OUTLINE_GROUP_STYLE = {
+  width: 900,
+  height: 220,
+  backgroundColor: "transparent",
+  border: "none",
+  padding: 0,
+  boxShadow: "none",
+} as const;
+
+const STORY_OUTLINE_VERTICAL_GAP = 80;
+
+const PERSPECTIVE_GROUP_STYLE = {
+  width: 900,
+  height: 680,
+  backgroundColor: "transparent",
+  border: "none",
+  padding: 0,
+  boxShadow: "none",
+} as const;
+
+const PERSPECTIVE_HORIZONTAL_GAP = 80;
+const PERSPECTIVE_VERTICAL_GAP = 80;
+const DEFAULT_EVENT_GROUP_HEIGHT = 220;
+const DEFAULT_PERSPECTIVE_ROW_Y = 50;
+const DEFAULT_CHARACTER_ROW_Y = 280;
+
+const NARRATIVE_GROUP_STYLE = {
+  width: 1200,
+  height: 420,
+  backgroundColor: "transparent",
+  border: "none",
+  padding: 0,
+  boxShadow: "none",
+} as const;
+
+const NARRATIVE_HORIZONTAL_GAP = 80;
+const DEFAULT_NARRATIVE_BASE_Y = 1020;
+const DEFAULT_NARRATIVE_ROW_Y = 50;
+
+// ============================================================================
 // DATA UTILITIES
 // ============================================================================
 
@@ -314,22 +376,6 @@ export const deleteNodeCluster = (
 // STYLE UTILITIES
 // ============================================================================
 
-/**
- * Get color for a workflow node based on its type
- * Optimized with constant lookup for better performance during rendering
- * @param node Workflow node
- * @returns Color string for the node
- */
-const NODE_COLORS: Record<string, string> = {
-  eventGroup: "oklch(97.1% 0.014 343.198)",
-  perspectiveGroup: "oklch(97% 0.014 254.604)",
-  narrativeGroup: "oklch(97.9% 0.021 166.113)",
-  event: "oklch(89.9% 0.061 343.231)",
-  perspective: "oklch(88.2% 0.059 254.128)",
-  narrative: "oklch(95% 0.052 163.051)",
-  character: "oklch(95.4% 0.038 75.164)",
-};
-
 export function nodeColor(node: WorkflowNode): string {
   return NODE_COLORS[node.type] ?? "#67cc8a";
 }
@@ -364,13 +410,6 @@ export function adjustEventCountForAllClusters(
   if (newEventCount < 1 || newEventCount > 20) {
     return { nodes: currentNodes, edges: currentEdges };
   }
-
-  const EVENT_HORIZONTAL_SPACING = 300;
-  const EVENT_ROW_START_X = 20;
-  const EVENT_NODE_WIDTH = 256;
-  const EVENT_GROUP_RIGHT_PADDING = 24;
-  const DEFAULT_EVENT_GROUP_WIDTH = 900;
-  const DEFAULT_NARRATION_GROUP_WIDTH = 900;
 
   let updatedNodes = [...currentNodes];
   let updatedEdges = [...currentEdges];
@@ -834,26 +873,15 @@ export function createStoryOutlineCluster(
   }, 0);
   const nextEventGroupId = highestEventGroupId + 1;
 
-  const DEFAULT_GROUP_STYLE = {
-    width: 900,
-    height: 220,
-    backgroundColor: "transparent",
-    border: "none",
-    padding: 0,
-    boxShadow: "none",
-  } as const;
-
-  const baselineGroupStyle = eventGroups[0]?.style ?? DEFAULT_GROUP_STYLE;
+  const baselineGroupStyle = eventGroups[0]?.style ?? STORY_OUTLINE_GROUP_STYLE;
   const baselineWidth =
     typeof baselineGroupStyle?.width === "number"
       ? baselineGroupStyle.width
-      : DEFAULT_GROUP_STYLE.width;
+      : STORY_OUTLINE_GROUP_STYLE.width;
   const baselineHeight =
     typeof baselineGroupStyle?.height === "number"
       ? baselineGroupStyle.height
-      : DEFAULT_GROUP_STYLE.height;
-
-  const VERTICAL_GAP = 80;
+      : STORY_OUTLINE_GROUP_STYLE.height;
   const bottomMostEdge = eventGroups.reduce((accumulator, group) => {
     const groupHeight =
       typeof group.style?.height === "number"
@@ -868,7 +896,7 @@ export function createStoryOutlineCluster(
       ? 20
       : (bottomMostEdge === Number.NEGATIVE_INFINITY
           ? eventGroups[0]!.position.y + baselineHeight
-          : bottomMostEdge) + VERTICAL_GAP;
+          : bottomMostEdge) + STORY_OUTLINE_VERTICAL_GAP;
 
   const clusterSuffix = randomSuffix();
   const newGroupId = `event-group-${clusterSuffix}`;
@@ -885,7 +913,7 @@ export function createStoryOutlineCluster(
       eventGroupId: nextEventGroupId,
     },
     style: {
-      ...DEFAULT_GROUP_STYLE,
+      ...STORY_OUTLINE_GROUP_STYLE,
       ...(baselineGroupStyle ?? {}),
       width: baselineWidth,
       height: baselineHeight,
@@ -893,10 +921,6 @@ export function createStoryOutlineCluster(
   };
 
   // Create event nodes
-  const EVENT_HORIZONTAL_SPACING = 300;
-  const EVENT_START_X = 20;
-  const EVENT_START_Y = 60;
-
   const newEventNodes: WorkflowNode[] = Array.from(
     { length: eventCount },
     (_, index) => ({
@@ -983,43 +1007,34 @@ export function createPerspectiveGroup(
         (node): node is EventGroupNodeType => node.type === "eventGroup",
       );
 
-  const DEFAULT_GROUP_STYLE = {
-    width: 900,
-    height: 680,
-    backgroundColor: "transparent",
-    border: "none",
-    padding: 0,
-    boxShadow: "none",
-  } as const;
-
-  const baselineGroupStyle = perspectiveGroups[0]?.style ?? DEFAULT_GROUP_STYLE;
+  const baselineGroupStyle =
+    perspectiveGroups[0]?.style ?? PERSPECTIVE_GROUP_STYLE;
   const baselineWidth =
     typeof baselineGroupStyle?.width === "number"
       ? baselineGroupStyle.width
-      : DEFAULT_GROUP_STYLE.width;
+      : PERSPECTIVE_GROUP_STYLE.width;
   const baselineHeight =
     typeof baselineGroupStyle?.height === "number"
       ? baselineGroupStyle.height
-      : DEFAULT_GROUP_STYLE.height;
+      : PERSPECTIVE_GROUP_STYLE.height;
   const eventGroupWidth =
     typeof eventGroup?.style?.width === "number"
       ? eventGroup.style.width
       : baselineWidth;
   const clusterWidth = Math.max(baselineWidth, eventGroupWidth);
 
-  const HORIZONTAL_GAP = 80;
-  const VERTICAL_GAP = 80;
-
   // Calculate Y position: below event group or aligned with existing perspective groups
   const eventGroupHeight =
     typeof eventGroup?.style?.height === "number"
       ? eventGroup.style.height
-      : 220; // Default event group height
+      : DEFAULT_EVENT_GROUP_HEIGHT; // Default event group height
 
   const baseGroupY =
     perspectiveGroups.length > 0
       ? perspectiveGroups[0]!.position.y
-      : (eventGroup?.position.y ?? 20) + eventGroupHeight + VERTICAL_GAP;
+      : (eventGroup?.position.y ?? 20) +
+        eventGroupHeight +
+        PERSPECTIVE_VERTICAL_GAP;
   const rightmostEdge = perspectiveGroups.reduce((accumulator, group) => {
     const groupWidth =
       typeof group.style?.width === "number"
@@ -1032,7 +1047,7 @@ export function createPerspectiveGroup(
       ? (eventGroup?.position.x ?? 100)
       : (rightmostEdge === Number.NEGATIVE_INFINITY
           ? perspectiveGroups[0]!.position.x + baselineWidth
-          : rightmostEdge) + HORIZONTAL_GAP;
+          : rightmostEdge) + PERSPECTIVE_HORIZONTAL_GAP;
   const newGroupY = baseGroupY;
 
   const clusterSuffix = randomSuffix();
@@ -1043,8 +1058,8 @@ export function createPerspectiveGroup(
           (node): node is PerspectiveNodeType =>
             node.type === "perspective" &&
             node.parentId === perspectiveGroups[0]?.id,
-        )?.position.y ?? 50)
-      : 50;
+        )?.position.y ?? DEFAULT_PERSPECTIVE_ROW_Y)
+      : DEFAULT_PERSPECTIVE_ROW_Y;
 
   const newPerspectiveNodes: WorkflowNode[] = sortedEvents.map(
     (eventNode, indexPosition) => ({
@@ -1081,7 +1096,7 @@ export function createPerspectiveGroup(
       characterName,
     },
     style: {
-      ...DEFAULT_GROUP_STYLE,
+      ...PERSPECTIVE_GROUP_STYLE,
       ...(baselineGroupStyle ?? {}),
       width: clusterWidth,
       height: baselineHeight,
@@ -1101,7 +1116,7 @@ export function createPerspectiveGroup(
       type: "character",
       position: {
         x: firstPerspective.position.x,
-        y: 280,
+        y: DEFAULT_CHARACTER_ROW_Y,
       },
       draggable: false,
       data: {
@@ -1135,7 +1150,7 @@ export function createPerspectiveGroup(
       type: "character",
       position: {
         x: lastPerspective.position.x,
-        y: 280,
+        y: DEFAULT_CHARACTER_ROW_Y,
       },
       draggable: false,
       data: {
@@ -1247,35 +1262,26 @@ export function createNarrativeGroup(
         (node): node is EventGroupNodeType => node.type === "eventGroup",
       );
 
-  const DEFAULT_GROUP_STYLE = {
-    width: 1200,
-    height: 420,
-    backgroundColor: "transparent",
-    border: "none",
-    padding: 0,
-    boxShadow: "none",
-  } as const;
-
-  const baselineGroupStyle = narrativeGroups[0]?.style ?? DEFAULT_GROUP_STYLE;
+  const baselineGroupStyle =
+    narrativeGroups[0]?.style ?? NARRATIVE_GROUP_STYLE;
   const baselineWidth =
     typeof baselineGroupStyle?.width === "number"
       ? baselineGroupStyle.width
-      : DEFAULT_GROUP_STYLE.width;
+      : NARRATIVE_GROUP_STYLE.width;
   const baselineHeight =
     typeof baselineGroupStyle?.height === "number"
       ? baselineGroupStyle.height
-      : DEFAULT_GROUP_STYLE.height;
+      : NARRATIVE_GROUP_STYLE.height;
   const eventGroupWidth =
     typeof eventGroup?.style?.width === "number"
       ? eventGroup.style.width
       : baselineWidth;
   const clusterWidth = Math.max(baselineWidth, eventGroupWidth);
 
-  const HORIZONTAL_GAP = 80;
   const baseGroupY =
     narrativeGroups.length > 0
       ? narrativeGroups[0]!.position.y
-      : (eventGroup?.position.y ?? 1020);
+      : (eventGroup?.position.y ?? DEFAULT_NARRATIVE_BASE_Y);
   const rightmostEdge = narrativeGroups.reduce((accumulator, group) => {
     const groupWidth =
       typeof group.style?.width === "number"
@@ -1288,7 +1294,7 @@ export function createNarrativeGroup(
       ? (eventGroup?.position.x ?? 100)
       : (rightmostEdge === Number.NEGATIVE_INFINITY
           ? narrativeGroups[0]!.position.x + baselineWidth
-          : rightmostEdge) + HORIZONTAL_GAP;
+          : rightmostEdge) + NARRATIVE_HORIZONTAL_GAP;
   const newGroupY = baseGroupY;
 
   const clusterSuffix = randomSuffix();
@@ -1299,8 +1305,8 @@ export function createNarrativeGroup(
           (node): node is NarrativeNodeType =>
             node.type === "narrative" &&
             node.parentId === narrativeGroups[0]?.id,
-        )?.position.y ?? 50)
-      : 50;
+        )?.position.y ?? DEFAULT_NARRATIVE_ROW_Y)
+      : DEFAULT_NARRATIVE_ROW_Y;
 
   const newNarrativeNodes: WorkflowNode[] = sortedEvents.map(
     (eventNode, indexPosition) => ({
@@ -1332,7 +1338,7 @@ export function createNarrativeGroup(
       narrativeGroupId: nextNarrativeGroupId,
     },
     style: {
-      ...DEFAULT_GROUP_STYLE,
+      ...NARRATIVE_GROUP_STYLE,
       ...(baselineGroupStyle ?? {}),
       width: clusterWidth,
       height: baselineHeight,
