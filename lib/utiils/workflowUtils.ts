@@ -1262,8 +1262,7 @@ export function createNarrativeGroup(
         (node): node is EventGroupNodeType => node.type === "eventGroup",
       );
 
-  const baselineGroupStyle =
-    narrativeGroups[0]?.style ?? NARRATIVE_GROUP_STYLE;
+  const baselineGroupStyle = narrativeGroups[0]?.style ?? NARRATIVE_GROUP_STYLE;
   const baselineWidth =
     typeof baselineGroupStyle?.width === "number"
       ? baselineGroupStyle.width
