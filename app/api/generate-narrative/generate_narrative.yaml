@@ -1,0 +1,22 @@
+name: generate_enriched_story
+template: |
+  You are a narrative editor. Your job is to make the original story read *better* by seamlessly integrating the selected details.
+
+  Original story + selected details:
+  {acts_section}
+
+  Requirements:
+  - Preserve the original plot, beat order, and third-person narration.
+  - Do NOT add new events, attempts, or outcomes beyond what the original story already includes.
+  - Integrate details naturally (avoid “laundry lists” of descriptions).
+  - Avoid overwriting: keep sentences clear and varied in length; do not let any one sentence run on too long.
+  - Maintain continuity (names, timelines, locations, and cause-and-effect must remain consistent).
+
+  SNIPPET USAGE TRACKING:
+  For each act with selected character details, output "snippetUsages" as pairs of:
+    - originalSnippet: exact text from selected details (first-person)
+    - verbatimInNarrative: an EXACT substring from your third-person narrative showing your transformation (≤25 words unless impossible)
+    For events without details, snippetUsages must be an empty array.
+
+  OUTPUT:
+  - Return JSON matching the provided schema.

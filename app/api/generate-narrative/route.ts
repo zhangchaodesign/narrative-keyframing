@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
+import fs from "fs/promises";
+import path from "path";
 
 const SnippetSchema = z.object({
   perspectiveNodeId: z.string().min(1),
@@ -35,38 +37,130 @@ const RequestSchema = z.object({
 });
 
 const SnippetUsageSchema = z.object({
-  originalSnippet: z
-    .string()
-    .describe("The original character detail/snippet text"),
-  verbatimInNarrative: z
-    .string()
-    .describe(
-      "The exact verbatim text in the narrative that incorporates this snippet (word-for-word match)",
-    ),
+  originalSnippet: z.string(),
+  verbatimInNarrative: z.string(),
 });
 
 const EventNarrationSchema = z.object({
-  eventNumber: z
-    .number()
-    .describe("The sequential number of the event (1, 2, 3, etc.)"),
-  narration: z
-    .string()
-    .min(1)
-    .describe(
-      "Third-person omniscient narrative for this event (2-4 paragraphs) that incorporates all selected character details and shows their perspectives, thoughts, and interactions during this specific event.",
-    ),
-  snippetUsages: z
-    .array(SnippetUsageSchema)
-    .describe(
-      "Array of snippet usages showing exactly which parts of the narrative text incorporate which original character details. Each verbatimInNarrative must be an exact substring that appears in the narration.",
-    ),
+  eventNumber: z.number(),
+  narration: z.string().min(1),
+  snippetUsages: z.array(SnippetUsageSchema),
 });
 
 const ResponseSchema = z.object({
-  narratives: z
-    .array(EventNarrationSchema)
-    .describe("Array of narratives, one for each event in chronological order"),
+  narratives: z.array(EventNarrationSchema),
 });
+
+const TEMPLATE_PATH = path.join(
+  process.cwd(),
+  "app/api/generate-narrative/generate_narrative.yaml",
+);
+
+const stripTemplateIndent = (text: string) => {
+  const lines = text.split("\n");
+  const hasIndent = lines.every(
+    (line) => line.trim().length === 0 || line.startsWith("  "),
+  );
+  if (!hasIndent) {
+    return text;
+  }
+  return lines
+    .map((line) => (line.startsWith("  ") ? line.slice(2) : line))
+    .join("\n");
+};
+
+const loadPromptTemplate = async (filePath: string) => {
+  const raw = await fs.readFile(filePath, "utf8");
+  const match = raw.match(/template:\s*\|\n([\s\S]*)/);
+  if (!match) {
+    throw new Error(`Prompt template missing in ${filePath}`);
+  }
+  const template = stripTemplateIndent(match[1]);
+  return template.trimEnd();
+};
+
+const renderPromptTemplate = (
+  template: string,
+  data: { actsSection: string },
+) =>
+  template.replace(/{([a-zA-Z0-9_]+)}/g, (match, key) => {
+    switch (key) {
+      case "acts_section":
+        return data.actsSection;
+      default:
+        return match;
+    }
+  });
+
+const buildActsSection = (acts: z.infer<typeof EventDataSchema>[]) => {
+  return acts
+    .map((act, index) => {
+      const actNumber = index + 1;
+      const actSummary = act.eventDescription?.trim() ?? "";
+      const snippets = act.snippets ?? [];
+
+      const lines: string[] = [`Act ${actNumber}`, "<<<", actSummary, ">>>"];
+
+      if (!snippets.length) {
+        lines.push("Selected details: (none)");
+      } else {
+        lines.push("Selected details:");
+        const snippetsByCharacter = new Map<
+          string,
+          {
+            characterName: string;
+            snippets: string[];
+            attributes: string[];
+            attributesSeen: Set<string>;
+          }
+        >();
+
+        snippets.forEach((snippet) => {
+          const key = snippet.characterName;
+          if (!snippetsByCharacter.has(key)) {
+            snippetsByCharacter.set(key, {
+              characterName: snippet.characterName,
+              snippets: [],
+              attributes: [],
+              attributesSeen: new Set(),
+            });
+          }
+
+          const data = snippetsByCharacter.get(key)!;
+          if (snippet.text) {
+            data.snippets.push(snippet.text);
+          }
+          (snippet.attributes ?? []).forEach((attr) => {
+            const cleaned = attr?.trim();
+            if (!cleaned) {
+              return;
+            }
+            if (!data.attributesSeen.has(cleaned)) {
+              data.attributesSeen.add(cleaned);
+              data.attributes.push(cleaned);
+            }
+          });
+        });
+
+        for (const data of snippetsByCharacter.values()) {
+          const attributeList = data.attributes.filter(Boolean).join(", ");
+          lines.push(`- Character: ${data.characterName}`);
+          if (attributeList) {
+            lines.push(`  Attributes: ${attributeList}`);
+          }
+          data.snippets.forEach((snippetText, snippetIndex) => {
+            if (!snippetText) {
+              return;
+            }
+            lines.push(`  ${snippetIndex + 1}. "${snippetText}"`);
+          });
+        }
+      }
+
+      return lines.join("\n");
+    })
+    .join("\n\n");
+};
 
 export async function POST(request: Request) {
   try {
@@ -80,115 +174,16 @@ export async function POST(request: Request) {
     }
 
     const { events, customPrompt } = payload.data;
+    const actsSection = buildActsSection(events);
+    const template = await loadPromptTemplate(TEMPLATE_PATH);
+    const basePrompt = renderPromptTemplate(template, { actsSection });
 
-    // Build comprehensive prompt with all events
-    const eventsSection = events
-      .map((eventData, eventIndex) => {
-        const { eventTimeline, eventDescription, snippets, perspectives } =
-          eventData;
-
-        const eventHeader = eventTimeline
-          ? `${eventTimeline}${eventDescription ? `: ${eventDescription}` : ""}`
-          : eventDescription
-          ? `Event ${eventIndex + 1}: ${eventDescription}`
-          : `Event ${eventIndex + 1}`;
-
-        // If no snippets, just return the event header
-        if (!snippets || snippets.length === 0) {
-          return `${eventHeader}
-  (No specific character details selected for this event - infer from overall story context)`;
-        }
-
-        // Group snippets by character name for this event
-        const characterSnippets = new Map<
-          string,
-          { characterName: string; snippets: string[]; attributes: Set<string> }
-        >();
-
-        snippets.forEach((snippet) => {
-          const key = snippet.characterName;
-          if (!characterSnippets.has(key)) {
-            characterSnippets.set(key, {
-              characterName: snippet.characterName,
-              snippets: [],
-              attributes: new Set(),
-            });
-          }
-
-          const charData = characterSnippets.get(key)!;
-          charData.snippets.push(snippet.text);
-          snippet.attributes.forEach((attr: string) =>
-            charData.attributes.add(attr),
-          );
-        });
-
-        const characterDetails = Array.from(characterSnippets.entries())
-          .map(([_, data]) => {
-            const attributeList = Array.from(data.attributes).join(", ");
-            const snippetList = data.snippets
-              .map((s, i) => `    ${i + 1}. "${s}"`)
-              .join("\n");
-            // Find perspective of this character for this event
-            const perspective = perspectives.find(
-              (p) => p.narrator === data.characterName,
-            );
-
-            return `  Character: ${data.characterName}
-  First-person perspective: ${perspective ? perspective.reflection : "N/A"}
-  Attributes: ${attributeList}
-  Selected details:
-${snippetList}`;
-          })
-          .join("\n\n");
-
-        return `${eventHeader}
-${characterDetails}`;
-      })
-      .join("\n\n");
-
-    const basePrompt = `You are a skilled narrative writer crafting a third-person omniscient story across multiple events.
-
-EVENTS AND CHARACTER PERSPECTIVES:
-
-${eventsSection}
-
-INSTRUCTIONS:
-Write a comprehensive third-person omniscient narrative that weaves together ALL the events above. For each event, create a rich story that:
-
-1. **Third-Person Omniscient Point of View**: Reveal the inner thoughts, feelings, and perspectives of multiple characters using third-person pronouns (he, she, they) and character names
-2. **Transform First-Person Details**: The selected character details come from first-person limited narrations. When incorporating them into your third-person omniscient narrative:
-   - CONVERT first-person pronouns (I, me, my, we, our) to third-person (he, she, they, [character name], his, her, their)
-   - REPHRASE first-person observations as third-person narration while preserving the meaning and details
-   - DO NOT copy first-person text verbatim - transform it into proper third-person omniscient narration
-   - Example: "I felt nervous" → "Sarah felt nervous" or "Nervousness crept over him"
-3. **Incorporate Selected Details**: For events with character details, seamlessly integrate ALL the provided snippets into the narrative after transforming them to third-person perspective
-4. **Bridge Events Without Details**: For events without specific character details, create narrative continuity by inferring character states from surrounding events and the overall story arc
-5. **Character Development**: Show how characters evolve, interact, and influence each other across the entire sequence
-6. **Event-Specific Focus**: Each narrative should be 2-4 paragraphs capturing that specific event moment
-7. **Chronological Continuity**: Maintain story flow and character consistency across ALL events, even those without specific details
-
-SNIPPET USAGE TRACKING:
-For each event with selected character details, you must identify exactly which parts of your narrative text incorporate which original snippets:
-- In the "snippetUsages" array, provide pairs of (originalSnippet, verbatimInNarrative)
-- "originalSnippet" should be the exact text from the selected details above (as originally provided in first-person)
-- "verbatimInNarrative" must be an EXACT substring from your generated third-person narrative that shows how you transformed and used that snippet
-- Each verbatimInNarrative should be a phrase or short sentence (not a single word) that clearly demonstrates the snippet's influence in third-person form
-- Try to capture all significant uses of the provided character details
-
-IMPORTANT:
-- You must return a narrative for EVERY event, even if no specific character details are provided.
-- For events without details, use your understanding of the characters from other events to create a coherent continuation of the story.
-- For events without character details, snippetUsages should be an empty array.
-- Remember: The input snippets are in first-person, but your output narrative must be in third-person omniscient throughout.`;
-
-    // Add custom prompt if provided
-    const prompt = customPrompt
+    const trimmedPrompt = customPrompt?.trim();
+    const prompt = trimmedPrompt
       ? `${basePrompt}
 
 ADDITIONAL INSTRUCTIONS FROM USER:
-${customPrompt}
-
-Return one narrative for each event in the provided order.`
+${trimmedPrompt}`
       : basePrompt;
 
     console.log("Multi-event narrative generation prompt:", prompt);

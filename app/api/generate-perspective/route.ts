@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
+import fs from "fs/promises";
+import path from "path";
 
 const TraitListSchema = z.object({
   physiology: z.array(z.string().min(1)).default([]),
@@ -40,17 +42,61 @@ const RequestSchema = z.object({
 });
 
 const PerspectiveResultSchema = z.object({
-  reflection: z
-    .string()
-    .min(1)
-    .describe(
-      "First-person perspective written by the specified narrator, rooted in the event objective and illustrating the highlighted character development.",
-    ),
+  reflection: z.string().min(1),
 });
 
 const ResponseSchema = z.object({
   perspectives: z.array(PerspectiveResultSchema),
 });
+
+const TEMPLATE_PATH = path.join(
+  process.cwd(),
+  "app/api/generate-perspective/generate_perspective.yaml",
+);
+
+const stripTemplateIndent = (text: string) => {
+  const lines = text.split("\n");
+  const hasIndent = lines.every(
+    (line) => line.trim().length === 0 || line.startsWith("  "),
+  );
+  if (!hasIndent) {
+    return text;
+  }
+  return lines
+    .map((line) => (line.startsWith("  ") ? line.slice(2) : line))
+    .join("\n");
+};
+
+const loadPromptTemplate = async (filePath: string) => {
+  const raw = await fs.readFile(filePath, "utf8");
+  const match = raw.match(/template:\s*\|\n([\s\S]*)/);
+  if (!match) {
+    throw new Error(`Prompt template missing in ${filePath}`);
+  }
+  const template = stripTemplateIndent(match[1]);
+  return template.trimEnd();
+};
+
+const renderPromptTemplate = (
+  template: string,
+  data: {
+    baselineStoryText: string;
+    baselineActText: string;
+    tasksSection: string;
+  },
+) =>
+  template.replace(/{([a-zA-Z0-9_]+)}/g, (match, key) => {
+    switch (key) {
+      case "baseline_story_text":
+        return data.baselineStoryText;
+      case "baseline_act_text":
+        return data.baselineActText;
+      case "tasks_section":
+        return data.tasksSection;
+      default:
+        return match;
+    }
+  });
 
 const formatTraitCategory = (label: string, traits: string[]) => {
   if (!traits || traits.length === 0) {
@@ -63,8 +109,6 @@ const buildSnapshotSection = (
   snapshot: z.infer<typeof CharacterSnapshotSchema>,
   index: number,
 ) => {
-  const header = `Snapshot of ${snapshot.name}`;
-
   const traits = snapshot.traits ?? {
     physiology: [],
     psychology: [],
@@ -83,10 +127,10 @@ const buildSnapshotSection = (
   ];
 
   if (traitsAreEmpty) {
-    return header;
+    return "(no specific traits provided)";
   }
 
-  return [header, ...traitLines].join("\n");
+  return traitLines.join("\n");
 };
 
 const buildTasksSection = (tasks: z.infer<typeof PerspectiveTaskSchema>[]) => {
@@ -125,20 +169,46 @@ const buildTasksSection = (tasks: z.infer<typeof PerspectiveTaskSchema>[]) => {
       const snapshotsForDisplay = meta.snapshots;
 
       const snapshotSection = snapshotsForDisplay.length
-        ? `Character snapshots to embody:
+        ? `Character traits:
 ${snapshotsForDisplay
   .map((snapshot, snapshotIndex) =>
     buildSnapshotSection(snapshot, snapshotIndex),
   )
   .join("\n\n")}`
-        : "Character snapshots to embody: (none provided)";
+        : "Character traits: (none provided)";
 
-      return `Task ${taskIndex + 1}
-${task.eventLabel}: ${task.eventObjective}
-Narrator: ${task.narrator}
+      return `Narrator: ${task.narrator}
 ${snapshotSection}`.trim();
     })
     .join("\n\n");
+};
+
+const buildStoryOutlineText = (
+  eventSequence: z.infer<typeof RequestSchema>["eventSequence"],
+) => {
+  if (!eventSequence || eventSequence.length === 0) {
+    return "No story outline provided.";
+  }
+  return eventSequence
+    .map((event, index) => `${event.description.trim()}`)
+    .join("\n\n");
+};
+
+const buildActText = (tasks: z.infer<typeof PerspectiveTaskSchema>[]) => {
+  if (tasks.length === 1) {
+    const task = tasks[0];
+    if (!task) {
+      return "No act provided.";
+    }
+    return `${task.eventObjective}`;
+  }
+
+  return tasks
+    .map(
+      (task, index) =>
+        `${index + 1}. ${task.eventLabel}: ${task.eventObjective}`,
+    )
+    .join("\n");
 };
 
 export async function POST(request: Request) {
@@ -154,36 +224,16 @@ export async function POST(request: Request) {
 
     const { eventSequence = [], perspectives, customPrompt } = payload.data;
 
-    const timelineSection =
-      eventSequence.length > 0
-        ? `Overall event sequence:
-${eventSequence
-  .map(
-    (event, index) =>
-      `${index + 1}. ${event.label}: ${event.description.trim()}`,
-  )
-  .join("\n")}
-
-`
-        : "";
-
-    // console.log("Generating perspectives for tasks:", perspectives);
-
     const tasksSection = buildTasksSection(perspectives);
+    const baselineStoryText = buildStoryOutlineText(eventSequence);
+    const baselineActText = buildActText(perspectives);
 
-    const basePrompt = `You are a narrative writer crafting first-person story beats.
-
-${timelineSection}For each task that follows, write a vivid first-person perspective of the assigned event from the perspective of the specified narrator:
-- Anchor the scene in the objective event description.
-- Use 2-4 sentences rich with sensory or emotional detail.
-- If character snapshots are supplied, embody the narrator exactly as those checkpoints describe.
-- If no snapshots are supplied for a task, narrate how the narrator moves from the prior snapshot state to the next.
-- Keep the progression consistent with previously established facts.
-- Make sure to cover all character attributes provided in the snapshots throughout the narration.
-
-Return each result as a JSON object that satisfies the provided schema.
-
-${tasksSection}`;
+    const template = await loadPromptTemplate(TEMPLATE_PATH);
+    const basePrompt = renderPromptTemplate(template, {
+      baselineStoryText,
+      baselineActText,
+      tasksSection,
+    });
 
     const trimmedPrompt = customPrompt?.trim();
     const prompt = trimmedPrompt

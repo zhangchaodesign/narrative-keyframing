@@ -3,79 +3,33 @@
 import { NextResponse } from "next/server";
 import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
-import { z } from "zod";
+import path from "path";
 
-const EventSchema = z.object({
-  label: z.string().min(1),
-  description: z.string().min(1),
-});
+import {
+  ResponseSchema,
+  loadPromptTemplate,
+  parseTraitsRequest,
+  renderPromptTemplate,
+} from "../shared";
 
-const RequestSchema = z.object({
-  storyOutline: z.array(EventSchema).min(1),
-  currentEvent: EventSchema,
-  characterName: z.string().optional(),
-  existingTraits: z.array(z.string().min(1)).optional(),
-});
-
-const ResponseSchema = z.object({
-  traits: z.array(z.string().min(1)).length(3),
-});
-
-const CATEGORY_LABEL = "Physiology";
-const CATEGORY_GUIDANCE =
-  "Physical appearance, clothing, body language, visible characteristics.";
+const TEMPLATE_PATH = path.join(
+  process.cwd(),
+  "app/api/generate-traits/physiology/generate_traits_physiology.yaml",
+);
 
 export async function POST(request: Request) {
   try {
-    const payload = RequestSchema.safeParse(await request.json());
+    const parsed = parseTraitsRequest(await request.json());
 
-    if (!payload.success) {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Invalid request payload", details: payload.error.issues },
+        { error: "Invalid request payload", details: parsed.error.issues },
         { status: 400 },
       );
     }
 
-    const { storyOutline, currentEvent, characterName, existingTraits } =
-      payload.data;
-
-    const outlineText = storyOutline
-      .map(
-        (event, index) => `${index + 1}. ${event.label}: ${event.description}`,
-      )
-      .join("\n");
-
-    const existingText = (existingTraits ?? [])
-      .map((trait) => trait.trim())
-      .filter((trait) => trait.length > 0)
-      .join(", ");
-
-    const resolvedCharacterName = characterName?.trim().length
-      ? characterName.trim()
-      : "the character";
-
-    const prompt = `You are a story development assistant.
-
-Story outline:
-${outlineText}
-
-Current event:
-${currentEvent.label}: ${currentEvent.description}
-
-Character: ${resolvedCharacterName}
-Existing ${CATEGORY_LABEL.toLowerCase()} traits: ${
-      existingText.length > 0 ? existingText : "(none)"
-    }
-
-Brainstorm three concise ${CATEGORY_LABEL.toLowerCase()} traits for this moment.
-
-Guidelines:
-- Focus on ${CATEGORY_GUIDANCE}
-- Keep each trait 3-8 words
-- Avoid repeating existing traits or near-duplicates
-- Return exactly three traits
-
-Return JSON that matches the provided schema.`;
+    const template = await loadPromptTemplate(TEMPLATE_PATH);
+    const prompt = renderPromptTemplate(template, parsed.data);
 
     const { object } = await generateObject({
       model: openai("gpt-4.1"),
@@ -90,9 +44,6 @@ Return JSON that matches the provided schema.`;
         { status: 500 },
       );
     }
-
-    console.log("Character brainstorming prompt:", prompt);
-    console.log("Brainstormed physiology traits:", object.traits);
 
     return NextResponse.json(object);
   } catch (error) {

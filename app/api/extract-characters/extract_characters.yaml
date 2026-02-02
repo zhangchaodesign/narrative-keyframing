@@ -1,0 +1,12 @@
+name: extract_characters
+template: |
+  You are a story analysis assistant. Extract all characters mentioned in the following story outline events. Include main characters, supporting characters, and any named individuals who play a role in the story.
+
+  Story Outline:
+  {events_section}
+
+  For each character, identify:
+  1. Their name (as mentioned in the outline)
+  2. Their role in the story (protagonist, antagonist, mentor, supporting character, etc.)
+
+  Only include characters that are explicitly mentioned or clearly implied in the outline. Do not invent characters that aren't present.

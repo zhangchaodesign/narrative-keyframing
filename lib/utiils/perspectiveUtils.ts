@@ -3,7 +3,6 @@ import {
   type CharacterEvidenceResult,
   type EvidenceAnalysisResponse,
   type GeneratePerspectiveResponse,
-  type GenerateSinglePerspectiveResponse,
   type PerspectiveEvidenceTarget,
   type PerspectivePreparationResult,
 } from "@/lib/types/perspective";
@@ -225,42 +224,41 @@ export async function generateMultiplePerspectives(
     throw new Error("Failed to prepare perspective request");
   }
 
+  console.log("Generating perspectives for tasks:", preparation.tasks);
+
   const { eventSequence, tasks } = preparation;
 
-  const response = await fetch("/api/generate-perspective", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      eventSequence,
-      perspectives: tasks,
-      customPrompt: customPrompt?.trim() ? customPrompt.trim() : undefined,
-    }),
-  });
+  const trimmedPrompt = customPrompt?.trim();
 
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => null);
-    const errorMessage =
-      (errorBody && errorBody.error) ||
-      `Failed to generate perspectives (${response.status}).`;
-    throw new Error(errorMessage);
-  }
+  const results = await Promise.all(
+    tasks.map(async (task) => {
+      const response = await fetch("/api/generate-perspective", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventSequence,
+          perspectives: [task],
+          customPrompt: trimmedPrompt ? trimmedPrompt : undefined,
+        }),
+      });
 
-  const data = (await response.json()) as GeneratePerspectiveResponse;
-  const perspectives = data?.perspectives ?? [];
-
-  const orderedUpdates = perspectives
-    .map((item, index) => {
-      const task = tasks[index];
-      if (!task) {
-        return null;
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null);
+        const errorMessage =
+          (errorBody && errorBody.error) ||
+          `Failed to generate perspectives (${response.status}).`;
+        throw new Error(errorMessage);
       }
-      return [task.id, item.reflection] as const;
-    })
-    .filter((entry): entry is readonly [string, string] => entry != null);
 
-  return new Map<string, string>(orderedUpdates);
+      const data = (await response.json()) as GeneratePerspectiveResponse;
+      const reflection = data?.perspectives?.[0]?.reflection ?? "";
+      return [task.id, reflection] as const;
+    }),
+  );
+
+  return new Map<string, string>(results);
 }
 
 /**
@@ -286,17 +284,29 @@ export async function regenerateSinglePerspective({
   }
 
   const regenerateTask = preparation.tasks[0];
+  const trimmedPrompt = customPrompt?.trim();
+  const contextualNotes = [
+    previousPerspective?.trim()
+      ? `Previous sibling perspective (context only):\n${previousPerspective.trim()}`
+      : null,
+    nextPerspective?.trim()
+      ? `Next sibling perspective (context only):\n${nextPerspective.trim()}`
+      : null,
+  ].filter((note): note is string => Boolean(note));
 
-  const response = await fetch("/api/update-perspective", {
+  const combinedPrompt = [trimmedPrompt, ...contextualNotes]
+    .filter((note): note is string => Boolean(note && note.length > 0))
+    .join("\n\n");
+
+  const response = await fetch("/api/generate-perspective", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      perspective: regenerateTask,
-      previousPerspective,
-      nextPerspective,
-      customPrompt: customPrompt?.trim() ? customPrompt.trim() : undefined,
+      eventSequence: preparation.eventSequence,
+      perspectives: [regenerateTask],
+      customPrompt: combinedPrompt.length > 0 ? combinedPrompt : undefined,
     }),
   });
 
@@ -308,8 +318,8 @@ export async function regenerateSinglePerspective({
     throw new Error(errorMessage);
   }
 
-  const data = (await response.json()) as GenerateSinglePerspectiveResponse;
-  return data?.reflection ?? "";
+  const data = (await response.json()) as GeneratePerspectiveResponse;
+  return data?.perspectives?.[0]?.reflection ?? "";
 }
 
 /**

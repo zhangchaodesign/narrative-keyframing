@@ -17,7 +17,7 @@ export default function Page() {
   const viewMode = useUiStore((state) => state.viewMode);
   const setViewMode = useUiStore((state) => state.setViewMode);
   const [isEditorCollapsed, setIsEditorCollapsed] = useState(false);
-  const [eventCount, setEventCount] = useState(4);
+  const [eventCount, setEventCount] = useState(3);
   const isInitialMount = useRef(true);
 
   const setNodes = useWorkflowStore((state) => state.setNodes);

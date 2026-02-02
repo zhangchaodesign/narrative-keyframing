@@ -60,8 +60,8 @@ export function TraitSection({
   const canBrainstorm = useMemo(
     () =>
       Boolean(
-        brainstormContext?.storyOutline?.length &&
-        brainstormContext?.currentEvent,
+        brainstormContext?.baselineStoryText?.length &&
+        brainstormContext?.baselineActText?.length,
       ),
     [brainstormContext],
   );

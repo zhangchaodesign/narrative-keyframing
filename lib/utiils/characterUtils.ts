@@ -69,10 +69,15 @@ export type StoryOutlineEvent = {
 };
 
 export type CharacterBrainstormContext = {
-  storyOutline: StoryOutlineEvent[];
-  currentEvent: StoryOutlineEvent;
+  baselineStoryText: string;
+  baselineActText: string;
   characterName: string;
 };
+
+const formatStoryOutlineText = (events: StoryOutlineEvent[]) =>
+  events.map((event, index) => `${event.description}`).join("\n");
+
+const formatActText = (event: StoryOutlineEvent) => `${event.description}`;
 
 type NearbySnapshot = {
   name: string;
@@ -272,22 +277,24 @@ const sortByNodePosition = (
   return ax - bx;
 };
 
-const buildStoryOutlineEvent = (eventNode: EventNodeType): StoryOutlineEvent => {
+const buildStoryOutlineEvent = (
+  eventNode: EventNodeType,
+): StoryOutlineEvent => {
   const timeline = eventNode.data?.timeline?.trim();
   const description = eventNode.data?.description?.trim();
   const resolvedDescription =
     description && description.length > 0
       ? description
       : timeline && timeline.length > 0
-      ? timeline
-      : "No description provided.";
+        ? timeline
+        : "No description provided.";
 
   const label =
     timeline && timeline.length > 0
       ? timeline
       : description && description.length > 0
-      ? description
-      : eventNode.id;
+        ? description
+        : eventNode.id;
 
   return {
     label,
@@ -420,9 +427,7 @@ export const buildCharacterBrainstormContext = ({
   }
 
   const currentEventNode =
-    eventNodesInGroup[
-      Math.min(perspectiveIndex, eventNodesInGroup.length - 1)
-    ];
+    eventNodesInGroup[Math.min(perspectiveIndex, eventNodesInGroup.length - 1)];
 
   if (!currentEventNode) {
     return null;
@@ -434,8 +439,8 @@ export const buildCharacterBrainstormContext = ({
     "Character";
 
   return {
-    storyOutline,
-    currentEvent: buildStoryOutlineEvent(currentEventNode),
+    baselineStoryText: formatStoryOutlineText(storyOutline),
+    baselineActText: formatActText(buildStoryOutlineEvent(currentEventNode)),
     characterName,
   };
 };
@@ -463,10 +468,10 @@ export async function brainstormCharacterTraits({
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      storyOutline: context.storyOutline,
-      currentEvent: context.currentEvent,
-      characterName: context.characterName,
-      existingTraits,
+      baseline_story_text: context.baselineStoryText,
+      baseline_act_text: context.baselineActText,
+      character_name: context.characterName,
+      existing_traits: existingTraits,
     }),
   });
 
@@ -693,13 +698,8 @@ export type CreateCharacterSnapshotParams = {
 export async function createCharacterSnapshotFromPerspective(
   params: CreateCharacterSnapshotParams,
 ): Promise<void> {
-  const {
-    perspectiveNodeId,
-    nodes,
-    fallbackNarratorName,
-    setNodes,
-    setEdges,
-  } = params;
+  const { perspectiveNodeId, nodes, fallbackNarratorName, setNodes, setEdges } =
+    params;
 
   const perspectiveNode = nodes.find(
     (node): node is PerspectiveNodeType =>
@@ -782,7 +782,10 @@ export async function createCharacterSnapshotFromPerspective(
 
     // Add evidence to perspective node
     return nodesWithCharacter.map((nodeState) => {
-      if (nodeState.id !== perspectiveNodeId || nodeState.type !== "perspective") {
+      if (
+        nodeState.id !== perspectiveNodeId ||
+        nodeState.type !== "perspective"
+      ) {
         return nodeState;
       }
 

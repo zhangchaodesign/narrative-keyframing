@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
+import fs from "fs/promises";
+import path from "path";
 
 const TraitCategoryEnum = z.enum(["physiology", "psychology", "sociology"]);
 
@@ -45,6 +47,64 @@ const ResponseSchema = z.object({
   characterSnapshot: CharacterSnapshotSchema,
   traitEvidence: z.array(TraitEvidenceSchema).default([]),
 });
+
+const TEMPLATE_PATH = path.join(
+  process.cwd(),
+  "app/api/interpolate-character/interpolate_character.yaml",
+);
+
+const stripTemplateIndent = (text: string) => {
+  const lines = text.split("\n");
+  const hasIndent = lines.every(
+    (line) => line.trim().length === 0 || line.startsWith("  "),
+  );
+  if (!hasIndent) {
+    return text;
+  }
+  return lines
+    .map((line) => (line.startsWith("  ") ? line.slice(2) : line))
+    .join("\n");
+};
+
+const loadPromptTemplate = async (filePath: string) => {
+  const raw = await fs.readFile(filePath, "utf8");
+  const match = raw.match(/template:\s*\|\n([\s\S]*)/);
+  if (!match) {
+    throw new Error(`Prompt template missing in ${filePath}`);
+  }
+  const template = stripTemplateIndent(match[1]);
+  return template.trimEnd();
+};
+
+const renderPromptTemplate = (
+  template: string,
+  data: {
+    narratorName: string;
+    perspectiveText: string;
+    snapshotsSection: string;
+    contextSection: string;
+    nearbySnapshotsNote: string;
+    nearbySnapshotsGuidance: string;
+  },
+) =>
+  template.replace(/{([a-zA-Z0-9_]+)}/g, (match, key) => {
+    switch (key) {
+      case "narrator_name":
+        return data.narratorName;
+      case "perspective_text":
+        return data.perspectiveText;
+      case "snapshots_section":
+        return data.snapshotsSection;
+      case "context_section":
+        return data.contextSection;
+      case "nearby_snapshots_note":
+        return data.nearbySnapshotsNote;
+      case "nearby_snapshots_guidance":
+        return data.nearbySnapshotsGuidance;
+      default:
+        return match;
+    }
+  });
 
 const formatTraits = (traits: z.infer<typeof TraitListSchema>) => {
   const lines = [];
@@ -102,37 +162,18 @@ ${formatTraits(snapshot.traits)}`;
         ? `\nFull narration (context only — do NOT quote from this section):\n<<<\n${fullPerspectiveText}\n>>>`
         : "";
 
-    const prompt = `You are analyzing a character's narration to extract their traits at this specific moment in the story.
-
-Narration of this moment by ${narratorName}:
-"${perspectiveText}"
-${snapshotsContext}
-
-${perspectiveContext}
-
-Based on the narration text${
-      nearbySnapshots.length > 0 ? " and nearby snapshots" : ""
-    }, extract the character traits for ${narratorName} at this moment.
-
-Guidelines:
-- Physiology: Physical appearance, clothing, body language, visible characteristics
-- Psychology: Emotions, motivations, thoughts, beliefs, mental state
-- Sociology: Social roles, relationships, status, interactions with others
-${
-  nearbySnapshots.length > 0
-    ? "- Consider the character's development trajectory from nearby snapshots"
-    : ""
-}
-- Only include traits that are evident or strongly implied in the text
-- Keep trait descriptions concise (3-8 words each)
-- Return 2-5 traits per category when evident
-
-Evidence requirements:
-- For every trait you include, add one entry to traitEvidence with the traitCategory, the exact trait wording, and an evidenceText.
-- Each evidenceText must be a verbatim quote from the narration above (do NOT pull from the context section).
-- If you cannot find a direct quote, omit the trait entirely.
-
-Return JSON that matches the provided schema, including both the characterSnapshot and traitEvidence arrays.`;
+    const template = await loadPromptTemplate(TEMPLATE_PATH);
+    const prompt = renderPromptTemplate(template, {
+      narratorName,
+      perspectiveText,
+      snapshotsSection: snapshotsContext,
+      contextSection: perspectiveContext,
+      nearbySnapshotsNote: nearbySnapshots.length > 0 ? " and nearby snapshots" : "",
+      nearbySnapshotsGuidance:
+        nearbySnapshots.length > 0
+          ? "- Consider the character's development trajectory from nearby snapshots"
+          : "",
+    });
 
     console.log("Character interpolation prompt:", prompt);
 

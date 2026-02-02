@@ -1,0 +1,27 @@
+name: interpolate_character
+template: |
+  You are analyzing a character's narration to extract their traits at this specific moment in the story.
+
+  Narration of this moment by {narrator_name}:
+  "{perspective_text}"
+  {snapshots_section}
+
+  {context_section}
+
+  Based on the narration text{nearby_snapshots_note}, extract the character traits for {narrator_name} at this moment.
+
+  Guidelines:
+  - Physiology: Physical appearance, clothing, body language, visible characteristics
+  - Psychology: Emotions, motivations, thoughts, beliefs, mental state
+  - Sociology: Social roles, relationships, status, interactions with others
+  {nearby_snapshots_guidance}
+  - Only include traits that are evident or strongly implied in the text
+  - Keep trait descriptions concise (3-8 words each)
+  - Return 2-5 traits per category when evident
+
+  Evidence requirements:
+  - For every trait you include, add one entry to traitEvidence with the traitCategory, the exact trait wording, and an evidenceText.
+  - Each evidenceText must be a verbatim quote from the narration above (do NOT pull from the context section).
+  - If you cannot find a direct quote, omit the trait entirely.
+
+  Return JSON that matches the provided schema, including both the characterSnapshot and traitEvidence arrays.

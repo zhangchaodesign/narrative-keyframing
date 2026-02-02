@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
 import { z } from "zod";
+import fs from "fs/promises";
+import path from "path";
 
 import {
   EVIDENCE_CATEGORIES,
@@ -66,13 +68,65 @@ const TRAIT_CATEGORY_LABELS: Record<(typeof TRAIT_CATEGORIES)[number], string> =
     sociology: "Sociology",
   };
 
+const TEMPLATE_PATH = path.join(
+  process.cwd(),
+  "app/api/extract-evidence/extract_evidence.yaml",
+);
+
+const stripTemplateIndent = (text: string) => {
+  const lines = text.split("\n");
+  const hasIndent = lines.every(
+    (line) => line.trim().length === 0 || line.startsWith("  "),
+  );
+  if (!hasIndent) {
+    return text;
+  }
+  return lines
+    .map((line) => (line.startsWith("  ") ? line.slice(2) : line))
+    .join("\n");
+};
+
+const loadPromptTemplate = async (filePath: string) => {
+  const raw = await fs.readFile(filePath, "utf8");
+  const match = raw.match(/template:\s*\|\n([\s\S]*)/);
+  if (!match) {
+    throw new Error(`Prompt template missing in ${filePath}`);
+  }
+  const template = stripTemplateIndent(match[1]);
+  return template.trimEnd();
+};
+
+const renderPromptTemplate = (
+  template: string,
+  data: {
+    contextSection: string;
+    reflection: string;
+    characterSection: string;
+    evidenceCategorySection: string;
+  },
+) =>
+  template.replace(/{([a-zA-Z0-9_]+)}/g, (match, key) => {
+    switch (key) {
+      case "context_section":
+        return data.contextSection;
+      case "reflection":
+        return data.reflection;
+      case "character_section":
+        return data.characterSection;
+      case "evidence_category_section":
+        return data.evidenceCategorySection;
+      default:
+        return match;
+    }
+  });
+
 const buildCharacterSection = (
   characters: PerspectiveEvidenceTarget["characters"],
 ): string => {
   return characters
     .map((character, index) => {
       const lines: string[] = [];
-      lines.push(`${index + 1}. ${character.characterName}`);
+      lines.push(`${character.characterName}`);
 
       let hasAttributes = false;
       for (const category of TRAIT_CATEGORIES) {
@@ -104,7 +158,7 @@ const buildEvidenceCategorySection = (): string => {
     .join("\n");
 };
 
-const buildPrompt = ({
+const buildPrompt = async ({
   characters,
   reflection,
   groupContext,
@@ -112,7 +166,7 @@ const buildPrompt = ({
   characters: PerspectiveEvidenceTarget["characters"];
   reflection: string;
   groupContext?: string;
-}): string => {
+}): Promise<string> => {
   const characterSection = buildCharacterSection(characters);
   const evidenceCategorySection = buildEvidenceCategorySection();
   const trimmedContext = groupContext?.trim() ?? "";
@@ -121,27 +175,13 @@ const buildPrompt = ({
       ? `Full story (background only—do NOT quote from this section):\n<<<\n${trimmedContext}\n>>>\n\n`
       : "";
 
-  return `You are an expert literary analyst. Identify direct textual evidence (i.e., verbatim phrases) that confirms the given character attributes.
-
-${contextSection}Current snippet (ONLY source for evidence):
-<<<
-${reflection}
->>>
-
-Characters and attributes to verify:
-${characterSection}
-
-Evidence categories to classify each phrase:
-${evidenceCategorySection}
-
-Instructions:
-1. Scan the current snippet for exact short phrases that directly or indirectly demonstrate each listed attribute.
-2. Only report evidence that appears verbatim in the current snippet text.
-3. When one phrase supports multiple attributes from the same category, list all matching attributes together.
-4. Assign each phrase to exactly one evidence category from the list above.
-5. Return characterEvidence entries in the same order as the character list above.
-6. Return JSON that matches the provided schema exactly. Do not include explanations outside the schema.
-`;
+  const template = await loadPromptTemplate(TEMPLATE_PATH);
+  return renderPromptTemplate(template, {
+    contextSection,
+    reflection,
+    characterSection,
+    evidenceCategorySection,
+  });
 };
 
 const normalizeEvidence = ({
@@ -274,7 +314,7 @@ export async function POST(request: Request) {
         );
       } else {
         try {
-          const prompt = buildPrompt({
+          const prompt = await buildPrompt({
             characters: charactersWithAttributes,
             reflection: trimmedReflection,
             groupContext,
