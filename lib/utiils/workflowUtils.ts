@@ -369,8 +369,8 @@ export function adjustEventCountForAllClusters(
   const EVENT_ROW_START_X = 20;
   const EVENT_NODE_WIDTH = 256;
   const EVENT_GROUP_RIGHT_PADDING = 24;
-  const DEFAULT_EVENT_GROUP_WIDTH = 1200;
-  const DEFAULT_NARRATION_GROUP_WIDTH = 1200;
+  const DEFAULT_EVENT_GROUP_WIDTH = 900;
+  const DEFAULT_NARRATION_GROUP_WIDTH = 900;
 
   let updatedNodes = [...currentNodes];
   let updatedEdges = [...currentEdges];
@@ -835,7 +835,7 @@ export function createStoryOutlineCluster(
   const nextEventGroupId = highestEventGroupId + 1;
 
   const DEFAULT_GROUP_STYLE = {
-    width: 1200,
+    width: 900,
     height: 220,
     backgroundColor: "transparent",
     border: "none",
@@ -984,7 +984,7 @@ export function createPerspectiveGroup(
       );
 
   const DEFAULT_GROUP_STYLE = {
-    width: 1200,
+    width: 900,
     height: 640,
     backgroundColor: "transparent",
     border: "none",
@@ -1029,7 +1029,7 @@ export function createPerspectiveGroup(
   }, Number.NEGATIVE_INFINITY);
   const newGroupX =
     perspectiveGroups.length === 0
-      ? eventGroup?.position.x ?? 100
+      ? (eventGroup?.position.x ?? 100)
       : (rightmostEdge === Number.NEGATIVE_INFINITY
           ? perspectiveGroups[0]!.position.x + baselineWidth
           : rightmostEdge) + HORIZONTAL_GAP;
@@ -1039,11 +1039,11 @@ export function createPerspectiveGroup(
   const newGroupId = `perspective-group-${clusterSuffix}`;
   const perspectiveRowY =
     perspectiveGroups.length > 0
-      ? currentNodes.find(
+      ? (currentNodes.find(
           (node): node is PerspectiveNodeType =>
             node.type === "perspective" &&
             node.parentId === perspectiveGroups[0]?.id,
-        )?.position.y ?? 50
+        )?.position.y ?? 50)
       : 50;
 
   const newPerspectiveNodes: WorkflowNode[] = sortedEvents.map(
@@ -1275,7 +1275,7 @@ export function createNarrativeGroup(
   const baseGroupY =
     narrativeGroups.length > 0
       ? narrativeGroups[0]!.position.y
-      : eventGroup?.position.y ?? 1020;
+      : (eventGroup?.position.y ?? 1020);
   const rightmostEdge = narrativeGroups.reduce((accumulator, group) => {
     const groupWidth =
       typeof group.style?.width === "number"
@@ -1285,7 +1285,7 @@ export function createNarrativeGroup(
   }, Number.NEGATIVE_INFINITY);
   const newGroupX =
     narrativeGroups.length === 0
-      ? eventGroup?.position.x ?? 100
+      ? (eventGroup?.position.x ?? 100)
       : (rightmostEdge === Number.NEGATIVE_INFINITY
           ? narrativeGroups[0]!.position.x + baselineWidth
           : rightmostEdge) + HORIZONTAL_GAP;
@@ -1295,11 +1295,11 @@ export function createNarrativeGroup(
   const newGroupId = `narrative-group-${clusterSuffix}`;
   const narrativeRowY =
     narrativeGroups.length > 0
-      ? currentNodes.find(
+      ? (currentNodes.find(
           (node): node is NarrativeNodeType =>
             node.type === "narrative" &&
             node.parentId === narrativeGroups[0]?.id,
-        )?.position.y ?? 50
+        )?.position.y ?? 50)
       : 50;
 
   const newNarrativeNodes: WorkflowNode[] = sortedEvents.map(
