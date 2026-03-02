@@ -274,7 +274,7 @@ const synchronizeCharacterPerspectiveLinks = (
     const targetParentId =
       targetPerspectiveId === ""
         ? node.parentId
-        : perspectiveParentLookup.get(targetPerspectiveId) ?? node.parentId;
+        : (perspectiveParentLookup.get(targetPerspectiveId) ?? node.parentId);
     const targetExtent: CharacterNodeType["extent"] =
       targetPerspectiveId === "" ? undefined : "parent";
 
@@ -527,10 +527,10 @@ const synchronizeNarrativeGroupEventLinks = (
       const narrativeGroupNode = nodeLookup.get(narrativeGroupId);
       const groupLabel =
         narrativeGroupNode?.type === "narrativeGroup"
-          ? (
+          ? ((
               (narrativeGroupNode.data ??
                 {}) as ThirdPersonGroupNodeType["data"]
-            ).label ?? narrativeGroupNode.id
+            ).label ?? narrativeGroupNode.id)
           : narrativeGroupId;
 
       window.alert(
@@ -737,7 +737,7 @@ const duplicateNarrativeGroupCluster = (
 
   const newChildNodes: WorkflowNode[] = childNodes.map((original) => {
     const prefix =
-      original.type === "narrative" ? "narrative" : original.type ?? "node";
+      original.type === "narrative" ? "narrative" : (original.type ?? "node");
     const newId = generateUniqueUuidId(prefix, existingNodeIds);
     existingNodeIds.add(newId);
     idMap.set(original.id, newId);
@@ -1369,8 +1369,8 @@ const preparePerspectiveGenerationPayload = (
       timeline && timeline.length > 0
         ? timeline
         : description && description.length > 0
-        ? description
-        : eventNode.id;
+          ? description
+          : eventNode.id;
 
     return {
       label,
@@ -1522,242 +1522,246 @@ const preparePerspectiveGenerationPayload = (
   };
 };
 
-export const useWorkflowStore = create<WorkflowState>()(
-  persist(
-    (set, get) => ({
-      ...getInitialState(),
-      setNodes: (updater) =>
-        set((state) => {
-          const nextNodes =
-            typeof updater === "function"
-              ? (updater as (nodes: WorkflowNode[]) => WorkflowNode[])(
-                  state.nodes,
-                )
-              : updater;
+const ENABLE_PERSIST =
+  process.env.NEXT_PUBLIC_ENABLE_PERSIST === "true";
 
-          return {
-            nodes: applyDerivedNodeState(nextNodes, state.edges),
-          };
-        }),
-      setEdges: (updater) =>
-        set((state) => {
-          const nextEdges = sanitizeEdges(
-            typeof updater === "function"
-              ? (updater as (edges: WorkflowEdge[]) => WorkflowEdge[])(
-                  state.edges,
-                )
-              : updater,
-          );
+const workflowStoreCreator: import("zustand").StateCreator<WorkflowState> = (set, get) => ({
+  ...getInitialState(),
+  setNodes: (updater) =>
+    set((state) => {
+      const nextNodes =
+        typeof updater === "function"
+          ? (updater as (nodes: WorkflowNode[]) => WorkflowNode[])(
+              state.nodes,
+            )
+          : updater;
 
-          const nextNodes = applyDerivedNodeState(state.nodes, nextEdges);
-
-          return {
-            edges: nextEdges,
-            nodes: nextNodes,
-          };
-        }),
-      onNodesChange: (changes) =>
-        set((state) => {
-          // Performance optimization: Skip expensive synchronization during drag operations
-          // If ANY change is a position update with dragging=true, we're in the middle of a drag
-          const isDragging = changes.some(
-            (change) =>
-              change.type === "position" &&
-              "dragging" in change &&
-              change.dragging === true,
-          );
-
-          const updatedNodes = applyNodeChanges(changes, state.nodes);
-
-          // Skip synchronization during drag, run it when drag ends or for other changes
-          if (isDragging) {
-            return { nodes: updatedNodes };
-          }
-
-          return {
-            nodes: applyDerivedNodeState(updatedNodes, state.edges),
-          };
-        }),
-      onEdgesChange: (changes) =>
-        set((state) => {
-          const nextEdges = sanitizeEdges(
-            applyEdgeChanges(changes, state.edges),
-          );
-          const nextNodes = applyDerivedNodeState(state.nodes, nextEdges);
-
-          return {
-            edges: nextEdges,
-            nodes: nextNodes,
-          };
-        }),
-      toggleEvidenceAttribute: (characterId, attribute) =>
-        set((state) => {
-          const key = buildEvidenceAttributeKey(characterId, attribute);
-          const current = state.selectedEvidenceAttributes ?? {};
-          const next = { ...current };
-          const isDeselecting = Boolean(next[key]);
-
-          if (isDeselecting) {
-            delete next[key];
-
-            // When deselecting a trait, also deselect all snippets associated with this trait
-            const normalizedAttribute = attribute.trim().toLowerCase();
-            const nextSnippets = { ...state.selectedSnippets };
-            let snippetsChanged = false;
-
-            Object.keys(nextSnippets).forEach((snippetKey) => {
-              const snippet = nextSnippets[snippetKey];
-              if (
-                snippet.characterId === characterId &&
-                snippet.attributes.some(
-                  (attr) => attr.trim().toLowerCase() === normalizedAttribute,
-                )
-              ) {
-                delete nextSnippets[snippetKey];
-                snippetsChanged = true;
-              }
-            });
-
-            if (snippetsChanged) {
-              return {
-                selectedEvidenceAttributes: next,
-                selectedSnippets: nextSnippets,
-              };
-            }
-
-            return { selectedEvidenceAttributes: next };
-          } else {
-            next[key] = true;
-            return { selectedEvidenceAttributes: next };
-          }
-        }),
-      clearEvidenceAttribute: (characterId, attribute) =>
-        set((state) => {
-          const key = buildEvidenceAttributeKey(characterId, attribute);
-          if (!state.selectedEvidenceAttributes?.[key]) {
-            return {};
-          }
-          const next = { ...state.selectedEvidenceAttributes };
-          delete next[key];
-          return { selectedEvidenceAttributes: next };
-        }),
-      clearAllEvidenceAttributes: () => set({ selectedEvidenceAttributes: {} }),
-      toggleSnippet: (snippet) =>
-        set((state) => {
-          const key = buildSnippetKey(snippet.perspectiveNodeId, snippet.text);
-          const current = state.selectedSnippets ?? {};
-          const next = { ...current };
-          if (next[key]) {
-            delete next[key];
-          } else {
-            next[key] = snippet;
-          }
-          return { selectedSnippets: next };
-        }),
-      clearSnippet: (perspectiveNodeId, snippetText) =>
-        set((state) => {
-          const key = buildSnippetKey(perspectiveNodeId, snippetText);
-          if (!state.selectedSnippets?.[key]) {
-            return {};
-          }
-          const next = { ...state.selectedSnippets };
-          delete next[key];
-          return { selectedSnippets: next };
-        }),
-      clearAllSnippets: () => set({ selectedSnippets: {} }),
-      setExtractedCharacters: (eventGroupId, characters) =>
-        set((state) => ({
-          extractedCharacters: {
-            ...state.extractedCharacters,
-            [eventGroupId]: characters,
-          },
-        })),
-      getPerspectiveEvidenceTarget: (perspectiveId) => {
-        const state = get();
-        return prepareEvidenceAnalysisPayload(
-          perspectiveId,
-          state.nodes,
-          state.edges,
-        );
-      },
-      getPerspectiveEvidenceTargets: (perspectiveIds) => {
-        const state = get();
-        return buildBatchEvidenceTargets(
-          perspectiveIds,
-          state.nodes,
-          state.edges,
-        );
-      },
-      preparePerspectiveGeneration: (targetNodeIds) => {
-        const state = get();
-        return preparePerspectiveGenerationPayload(
-          state.nodes,
-          state.edges,
-          targetNodeIds,
-        );
-      },
-      duplicateNarrativeGroup: (groupId) =>
-        set((state) => {
-          const result = duplicateNarrativeGroupCluster(
-            groupId,
-            state.nodes,
-            state.edges,
-          );
-
-          if (!result) {
-            return {};
-          }
-
-          const nextEdges = sanitizeEdges([...state.edges, ...result.newEdges]);
-          const nextNodes = applyDerivedNodeState(
-            [...state.nodes, ...result.newNodes],
-            nextEdges,
-          );
-
-          return {
-            nodes: nextNodes,
-            edges: nextEdges,
-          };
-        }),
-      getNarrativeEventsData: (groupId) => {
-        const state = get();
-        return prepareNarrativeEventsData(groupId, state.nodes, state.edges);
-      },
-      reset: () => set(getInitialState()),
+      return {
+        nodes: applyDerivedNodeState(nextNodes, state.edges),
+      };
     }),
-    {
-      name: "workflow-canvas-storage",
-      version: STORAGE_VERSION,
-      storage: createJSONStorage(() => createThrottledStorage()),
-      migrate: (persistedState, version) => {
-        if (!persistedState) {
-          return getInitialState();
+  setEdges: (updater) =>
+    set((state) => {
+      const nextEdges = sanitizeEdges(
+        typeof updater === "function"
+          ? (updater as (edges: WorkflowEdge[]) => WorkflowEdge[])(
+              state.edges,
+            )
+          : updater,
+      );
+
+      const nextNodes = applyDerivedNodeState(state.nodes, nextEdges);
+
+      return {
+        edges: nextEdges,
+        nodes: nextNodes,
+      };
+    }),
+  onNodesChange: (changes) =>
+    set((state) => {
+      // Performance optimization: Skip expensive synchronization during drag operations
+      // If ANY change is a position update with dragging=true, we're in the middle of a drag
+      const isDragging = changes.some(
+        (change) =>
+          change.type === "position" &&
+          "dragging" in change &&
+          change.dragging === true,
+      );
+
+      const updatedNodes = applyNodeChanges(changes, state.nodes);
+
+      // Skip synchronization during drag, run it when drag ends or for other changes
+      if (isDragging) {
+        return { nodes: updatedNodes };
+      }
+
+      return {
+        nodes: applyDerivedNodeState(updatedNodes, state.edges),
+      };
+    }),
+  onEdgesChange: (changes) =>
+    set((state) => {
+      const nextEdges = sanitizeEdges(
+        applyEdgeChanges(changes, state.edges),
+      );
+      const nextNodes = applyDerivedNodeState(state.nodes, nextEdges);
+
+      return {
+        edges: nextEdges,
+        nodes: nextNodes,
+      };
+    }),
+  toggleEvidenceAttribute: (characterId, attribute) =>
+    set((state) => {
+      const key = buildEvidenceAttributeKey(characterId, attribute);
+      const current = state.selectedEvidenceAttributes ?? {};
+      const next = { ...current };
+      const isDeselecting = Boolean(next[key]);
+
+      if (isDeselecting) {
+        delete next[key];
+
+        // When deselecting a trait, also deselect all snippets associated with this trait
+        const normalizedAttribute = attribute.trim().toLowerCase();
+        const nextSnippets = { ...state.selectedSnippets };
+        let snippetsChanged = false;
+
+        Object.keys(nextSnippets).forEach((snippetKey) => {
+          const snippet = nextSnippets[snippetKey];
+          if (
+            snippet.characterId === characterId &&
+            snippet.attributes.some(
+              (attr) => attr.trim().toLowerCase() === normalizedAttribute,
+            )
+          ) {
+            delete nextSnippets[snippetKey];
+            snippetsChanged = true;
+          }
+        });
+
+        if (snippetsChanged) {
+          return {
+            selectedEvidenceAttributes: next,
+            selectedSnippets: nextSnippets,
+          };
         }
 
-        const state = persistedState as Partial<WorkflowState>;
-        const shouldEnsureNames = version < STORAGE_VERSION;
-        const edges = sanitizeEdges(state.edges ?? []);
-        const nodesWithNames = shouldEnsureNames
-          ? ensureNarrationGroupCharacterNames(state.nodes)
-          : state.nodes ?? [];
-        const normalizedNodes = applyDerivedNodeState(nodesWithNames, edges);
-
-        return {
-          ...state,
-          nodes: normalizedNodes,
-          edges,
-          selectedEvidenceAttributes: state.selectedEvidenceAttributes ?? {},
-          selectedSnippets: state.selectedSnippets ?? {},
-          extractedCharacters: state.extractedCharacters ?? {},
-        };
+        return { selectedEvidenceAttributes: next };
+      } else {
+        next[key] = true;
+        return { selectedEvidenceAttributes: next };
+      }
+    }),
+  clearEvidenceAttribute: (characterId, attribute) =>
+    set((state) => {
+      const key = buildEvidenceAttributeKey(characterId, attribute);
+      if (!state.selectedEvidenceAttributes?.[key]) {
+        return {};
+      }
+      const next = { ...state.selectedEvidenceAttributes };
+      delete next[key];
+      return { selectedEvidenceAttributes: next };
+    }),
+  clearAllEvidenceAttributes: () => set({ selectedEvidenceAttributes: {} }),
+  toggleSnippet: (snippet) =>
+    set((state) => {
+      const key = buildSnippetKey(snippet.perspectiveNodeId, snippet.text);
+      const current = state.selectedSnippets ?? {};
+      const next = { ...current };
+      if (next[key]) {
+        delete next[key];
+      } else {
+        next[key] = snippet;
+      }
+      return { selectedSnippets: next };
+    }),
+  clearSnippet: (perspectiveNodeId, snippetText) =>
+    set((state) => {
+      const key = buildSnippetKey(perspectiveNodeId, snippetText);
+      if (!state.selectedSnippets?.[key]) {
+        return {};
+      }
+      const next = { ...state.selectedSnippets };
+      delete next[key];
+      return { selectedSnippets: next };
+    }),
+  clearAllSnippets: () => set({ selectedSnippets: {} }),
+  setExtractedCharacters: (eventGroupId, characters) =>
+    set((state) => ({
+      extractedCharacters: {
+        ...state.extractedCharacters,
+        [eventGroupId]: characters,
       },
-      partialize: (state) => ({
-        nodes: state.nodes,
-        edges: state.edges,
-        selectedEvidenceAttributes: state.selectedEvidenceAttributes,
-        selectedSnippets: state.selectedSnippets,
-        extractedCharacters: state.extractedCharacters,
+    })),
+  getPerspectiveEvidenceTarget: (perspectiveId) => {
+    const state = get();
+    return prepareEvidenceAnalysisPayload(
+      perspectiveId,
+      state.nodes,
+      state.edges,
+    );
+  },
+  getPerspectiveEvidenceTargets: (perspectiveIds) => {
+    const state = get();
+    return buildBatchEvidenceTargets(
+      perspectiveIds,
+      state.nodes,
+      state.edges,
+    );
+  },
+  preparePerspectiveGeneration: (targetNodeIds) => {
+    const state = get();
+    return preparePerspectiveGenerationPayload(
+      state.nodes,
+      state.edges,
+      targetNodeIds,
+    );
+  },
+  duplicateNarrativeGroup: (groupId) =>
+    set((state) => {
+      const result = duplicateNarrativeGroupCluster(
+        groupId,
+        state.nodes,
+        state.edges,
+      );
+
+      if (!result) {
+        return {};
+      }
+
+      const nextEdges = sanitizeEdges([...state.edges, ...result.newEdges]);
+      const nextNodes = applyDerivedNodeState(
+        [...state.nodes, ...result.newNodes],
+        nextEdges,
+      );
+
+      return {
+        nodes: nextNodes,
+        edges: nextEdges,
+      };
+    }),
+  getNarrativeEventsData: (groupId) => {
+    const state = get();
+    return prepareNarrativeEventsData(groupId, state.nodes, state.edges);
+  },
+  reset: () => set(getInitialState()),
+});
+
+export const useWorkflowStore = ENABLE_PERSIST
+  ? create<WorkflowState>()(
+      persist(workflowStoreCreator, {
+        name: "workflow-canvas-storage",
+        version: STORAGE_VERSION,
+        storage: createJSONStorage(() => createThrottledStorage()),
+        migrate: (persistedState, version) => {
+          if (!persistedState) {
+            return getInitialState();
+          }
+
+          const state = persistedState as Partial<WorkflowState>;
+          const shouldEnsureNames = version < STORAGE_VERSION;
+          const edges = sanitizeEdges(state.edges ?? []);
+          const nodesWithNames = shouldEnsureNames
+            ? ensureNarrationGroupCharacterNames(state.nodes)
+            : (state.nodes ?? []);
+          const normalizedNodes = applyDerivedNodeState(nodesWithNames, edges);
+
+          return {
+            ...state,
+            nodes: normalizedNodes,
+            edges,
+            selectedEvidenceAttributes: state.selectedEvidenceAttributes ?? {},
+            selectedSnippets: state.selectedSnippets ?? {},
+            extractedCharacters: state.extractedCharacters ?? {},
+          };
+        },
+        partialize: (state) => ({
+          nodes: state.nodes,
+          edges: state.edges,
+          selectedEvidenceAttributes: state.selectedEvidenceAttributes,
+          selectedSnippets: state.selectedSnippets,
+          extractedCharacters: state.extractedCharacters,
+        }),
       }),
-    },
-  ),
-);
+    )
+  : create<WorkflowState>()(workflowStoreCreator);

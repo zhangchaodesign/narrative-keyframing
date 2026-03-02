@@ -50,73 +50,75 @@ type EditorState = {
 const cloneValue = (value: Descendant[]): Descendant[] =>
   JSON.parse(JSON.stringify(value));
 
-export const useEditorStore = create<EditorState>()(
-  persist(
-    (set) => ({
-      value: [{ type: "paragraph", children: [{ text: "Type here..." }] }],
-      setValue: (v) => set({ value: v }),
-      isReadOnly: false,
-      setReadOnly: (b) => set({ isReadOnly: b }),
-      matches: [],
-      setMatches: (m) => set({ matches: m }),
-      filter: null,
-      setFilter: (f) => set({ filter: f }),
-      suggestion: null,
-      beginSuggestion: (payload) =>
-        set((state) => {
-          const baseValue = state.suggestion
-            ? cloneValue(state.suggestion.originalValue)
-            : cloneValue(state.value);
-          const baseText = state.suggestion
-            ? state.suggestion.originalText
-            : SlateUtils.stateToText(baseValue as any);
+const ENABLE_PERSIST =
+  process.env.NEXT_PUBLIC_ENABLE_PERSIST === "true";
 
-          const prefix = baseText.slice(0, payload.sentenceStart);
-          const suffix = baseText.slice(
-            payload.sentenceStart + payload.originalSentence.length,
-          );
+const editorStoreCreator: import("zustand").StateCreator<EditorState> = (set) => ({
+  value: [{ type: "paragraph", children: [{ text: "Type here..." }] }],
+  setValue: (v: Descendant[]) => set({ value: v }),
+  isReadOnly: false,
+  setReadOnly: (b: boolean) => set({ isReadOnly: b }),
+  matches: [] as Match[],
+  setMatches: (m: Match[]) => set({ matches: m }),
+  filter: null as [number, number] | null,
+  setFilter: (f: [number, number] | null) => set({ filter: f }),
+  suggestion: null as PendingSuggestion | null,
+  beginSuggestion: (payload: SuggestionPayload) =>
+    set((state: EditorState) => {
+      const baseValue = state.suggestion
+        ? cloneValue(state.suggestion.originalValue)
+        : cloneValue(state.value);
+      const baseText = state.suggestion
+        ? state.suggestion.originalText
+        : SlateUtils.stateToText(baseValue as any);
 
-          const segments: SlateTextSegment[] = [
-            { text: prefix },
-            ...payload.diffSegments,
-            { text: suffix },
-          ];
+      const prefix = baseText.slice(0, payload.sentenceStart);
+      const suffix = baseText.slice(
+        payload.sentenceStart + payload.originalSentence.length,
+      );
 
-          const previewValue = SlateUtils.segmentsToSlateState(segments);
+      const segments: SlateTextSegment[] = [
+        { text: prefix },
+        ...payload.diffSegments,
+        { text: suffix },
+      ];
 
-          return {
-            value: previewValue,
-            suggestion: {
-              conflictId: payload.conflictId,
-              originalValue: baseValue,
-              originalText: baseText,
-              resolvedText: prefix + payload.revisedSentence + suffix,
-              sentenceStart: payload.sentenceStart,
-              originalSentence: payload.originalSentence,
-              revisedSentence: payload.revisedSentence,
-              sentenceIndex: payload.sentenceIndex,
-            },
-          };
-        }),
-      applySuggestion: () =>
-        set((state) => {
-          if (!state.suggestion) return state;
-          return {
-            value: SlateUtils.textToSlateState(state.suggestion.resolvedText),
-            suggestion: null,
-          };
-        }),
-      clearSuggestion: () =>
-        set((state) => {
-          if (!state.suggestion) return state;
-          return {
-            value: cloneValue(state.suggestion.originalValue),
-            suggestion: null,
-          };
-        }),
+      const previewValue = SlateUtils.segmentsToSlateState(segments);
+
+      return {
+        value: previewValue,
+        suggestion: {
+          conflictId: payload.conflictId,
+          originalValue: baseValue,
+          originalText: baseText,
+          resolvedText: prefix + payload.revisedSentence + suffix,
+          sentenceStart: payload.sentenceStart,
+          originalSentence: payload.originalSentence,
+          revisedSentence: payload.revisedSentence,
+          sentenceIndex: payload.sentenceIndex,
+        },
+      };
     }),
-    {
-      name: "editor-storage",
-    },
-  ),
-);
+  applySuggestion: () =>
+    set((state: EditorState) => {
+      if (!state.suggestion) return state;
+      return {
+        value: SlateUtils.textToSlateState(state.suggestion.resolvedText),
+        suggestion: null,
+      };
+    }),
+  clearSuggestion: () =>
+    set((state: EditorState) => {
+      if (!state.suggestion) return state;
+      return {
+        value: cloneValue(state.suggestion.originalValue),
+        suggestion: null,
+      };
+    }),
+});
+
+export const useEditorStore = ENABLE_PERSIST
+  ? create<EditorState>()(
+      persist(editorStoreCreator, { name: "editor-storage" }),
+    )
+  : create<EditorState>()(editorStoreCreator);
