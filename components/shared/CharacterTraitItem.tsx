@@ -209,7 +209,7 @@ export function TraitItem({
               ? "Hide supporting evidence highlight"
               : "Highlight supporting evidence in perspectives"
           }
-          className="flex-1 px-2 py-1 pr-10 text-left font-medium leading-snug overflow-x-auto overflow-y-hidden max-h-8"
+          className="flex-1 px-2 py-1 pr-10 text-left font-medium leading-snug overflow-x-auto overflow-y-hidden max-h-8 hide-scrollbar"
         >
           <span className="inline-flex items-center gap-1 whitespace-nowrap">
             <span>{trait}</span>
