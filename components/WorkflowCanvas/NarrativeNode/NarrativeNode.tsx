@@ -170,11 +170,10 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
         onNarrationChange={handleNarrationChange}
       />
       {eventMetadata && (
-        <div className="mt-1 flex gap-2">
+        <div className="mt-1 flex justify-end gap-2">
           <span
             className={cn(
-              geistMono.className,
-              "inline-flex items-center rounded bg-pink-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-pink-500",
+              "inline-flex items-center rounded text-[9px] font-semibold tracking-wide text-gray-500",
             )}
             title={`Event: ${eventMetadata.timelineLabel}`}
           >

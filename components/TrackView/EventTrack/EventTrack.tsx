@@ -30,14 +30,14 @@ export function EventTrack({
     >
       {/* Track Label */}
       <div
-        className="absolute left-0 top-0 h-full bg-pink-50 border-r border-gray-200 flex items-center justify-center z-10"
+        className="absolute left-0 top-0 h-full bg-gray-50 border-r border-gray-200 flex items-center justify-center z-10"
         style={{ width: TIMELINE_LABEL_WIDTH }}
       >
         <div className="flex flex-col items-center gap-1 px-2">
           <span
             className={cn(
               geistMono.className,
-              "text-xs font-semibold text-pink-600 text-center",
+              "text-xs font-semibold text-gray-600 text-center",
             )}
           >
             Story Outline
@@ -47,7 +47,7 @@ export function EventTrack({
 
       {/* Track Content */}
       <div
-        className="absolute top-0 right-0 h-full bg-pink-50/50"
+        className="absolute top-0 right-0 h-full bg-gray-50/50"
         style={{ left: TIMELINE_LABEL_WIDTH }}
       >
         {track.items.map((item) => (

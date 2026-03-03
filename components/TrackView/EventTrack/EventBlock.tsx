@@ -77,7 +77,7 @@ export function EventBlock({
         width: `${itemWidth}px`,
       }}
     >
-      <div className="group relative flex h-full rounded-lg border-2 border-pink-500 bg-white/95 px-3 py-2 text-xs text-gray-800 transition-shadow hover:shadow-lg">
+      <div className="group relative flex h-full rounded-lg border-2 border-gray-500 bg-white/95 px-3 py-2 text-xs text-gray-800 transition-shadow hover:shadow-lg">
         <div className="flex w-full flex-col">
           <div
             className={cn(

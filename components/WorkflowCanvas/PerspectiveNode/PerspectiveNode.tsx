@@ -16,11 +16,13 @@ import type {
   WorkflowNode,
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
+import { getCharacterColors } from "@/lib/constants";
 import { createCharacterSnapshotFromPerspective } from "@/lib/utiils/characterUtils";
 import { geistMono } from "@/app/fonts";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 
 export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
+  const colors = getCharacterColors(data?.narrator ?? id);
   const nodes = useWorkflowStore((state) => state.nodes);
   const edges = useWorkflowStore((state) => state.edges);
   const setNodes = useWorkflowStore((state) => state.setNodes);
@@ -312,7 +314,12 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   }, [edges, id, isInterpolatingCharacter, nodes, setEdges, setNodes]);
 
   return (
-    <div className="group relative flex gap-2 h-48 w-64 flex-col rounded-lg border-2 border-secondary bg-white p-3 text-xs hover:shadow-lg">
+    <div
+      className={cn(
+        "group relative flex gap-2 h-48 w-64 flex-col rounded-lg border-2 bg-white p-3 text-xs hover:shadow-lg",
+        colors.border,
+      )}
+    >
       {isLoading && (
         <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
           <span className="loading loading-spinner text-secondary"></span>
@@ -352,11 +359,10 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         onReflectionChange={handleReflectionChange}
       />
       {eventMetadata && (
-        <div className="mt-1 flex gap-2">
+        <div className="mt-1 flex justify-end gap-2">
           <span
             className={cn(
-              geistMono.className,
-              "inline-flex items-center rounded bg-pink-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-pink-500",
+              "inline-flex items-center rounded text-[9px] font-semibold tracking-wide text-gray-500",
             )}
             title={`Event: ${eventMetadata.timelineLabel}`}
           >

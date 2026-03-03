@@ -100,12 +100,12 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   );
 
   return (
-    <div className="group relative h-full w-full rounded-lg border-4 border-pink-100 bg-pink-50/50 shadow">
+    <div className="group relative h-full w-full rounded-lg border-4 border-gray-100 bg-gray-50/50 shadow">
       <EventGroupMenu nodeId={id} />
       <div
         className={cn(
           geistMono.className,
-          "absolute left-1 top-1 rounded bg-pink-500 px-2 py-1 text-xs font-bold text-white",
+          "absolute left-1 top-1 rounded bg-gray-500 px-2 py-1 text-xs font-bold text-white",
         )}
       >
         {labelWithSequence}
@@ -115,13 +115,13 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           type="button"
           onClick={handleExtractCharacters}
           disabled={isExtracting}
-          className="rounded-full p-2 transition hover:bg-pink-50 hover:text-pink-600"
+          className="rounded-full p-2 transition hover:bg-gray-50 hover:text-gray-600"
           title="Extract characters from story outline"
         >
           {isExtracting ? (
-            <span className="block h-[18px] w-[18px] animate-spin rounded-full border-2 border-pink-600 border-t-transparent" />
+            <span className="block h-[18px] w-[18px] animate-spin rounded-full border-2 border-gray-600 border-t-transparent" />
           ) : (
-            <TbRefresh size={18} className="text-pink-600" />
+            <TbRefresh size={18} className="text-gray-600" />
           )}
         </button>
         {characters.length > 0 && (
@@ -148,7 +148,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           onClick={() => handleAddPerspectiveGroup("")}
           className={cn(
             geistMono.className,
-            "btn btn-xs btn-soft btn-secondary gap-1 whitespace-nowrap",
+            "btn btn-xs btn-soft btn-neutral gap-1 whitespace-nowrap",
           )}
           title="Add a custom perspective group"
         >

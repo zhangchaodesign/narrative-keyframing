@@ -146,7 +146,7 @@ export function CharacterTrack({
               <span
                 className={cn(
                   geistMono.className,
-                  "text-xs font-semibold text-secondary text-center",
+                  "text-xs font-semibold text-center",
                 )}
               >
                 Perspective
@@ -167,6 +167,7 @@ export function CharacterTrack({
                 item={item}
                 timeToPixel={timeToPixel}
                 timelineScale={timelineScale}
+                characterName={characterName}
               />
             ))}
           </div>
@@ -188,7 +189,7 @@ export function CharacterTrack({
             <span
               className={cn(
                 geistMono.className,
-                "text-xs font-semibold text-amber-600 text-center",
+                "text-xs font-semibold text-center",
               )}
             >
               Snapshot
@@ -204,6 +205,7 @@ export function CharacterTrack({
                 item={item}
                 timeToPixel={timeToPixel}
                 timelineScale={timelineScale}
+                narratorName={characterName}
               />
             ))}
             {/* Add Character Buttons for perspectives without character snapshots */}

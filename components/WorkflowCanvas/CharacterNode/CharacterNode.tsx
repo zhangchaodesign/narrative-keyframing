@@ -7,6 +7,7 @@ import { CharacterMenu } from "@/components/WorkflowCanvas/CharacterNode/Charact
 import { TraitSection } from "@/components/shared/CharacterTraitSection";
 import type { CharacterNodeType, CharacterTraits } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
+import { getCharacterColors } from "@/lib/constants";
 import { geistMono } from "@/app/fonts";
 import {
   CHARACTER_TRAIT_CATEGORIES,
@@ -21,6 +22,7 @@ import {
 } from "@/lib/stores/workflowStore";
 
 export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
+  const colors = getCharacterColors(data?.name ?? id);
   const nodes = useWorkflowStore((state) => state.nodes);
   const edges = useWorkflowStore((state) => state.edges);
   const setNodes = useWorkflowStore((state) => state.setNodes);
@@ -194,7 +196,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     <div className="group relative w-64">
       <div
         ref={containerRef}
-        className="relative flex max-h-88 flex-col rounded-lg border-2 border-warning bg-white text-xs hover:shadow-lg"
+        className={cn("relative flex max-h-88 flex-col rounded-lg border-2 bg-white text-xs hover:shadow-lg", colors.border)}
       >
         {data?.showUpdatePrompt && !data?.isRefreshing && (
           <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-black/10 p-3 text-center text-white backdrop-blur-xs">

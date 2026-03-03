@@ -8,6 +8,7 @@ import {
   type ChangeEvent,
 } from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
+import { getCharacterColors } from "@/lib/constants";
 import { geistMono } from "@/app/fonts";
 import type { TimelineItem } from "@/lib/types/timeline";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TrackView/constants";
@@ -28,13 +29,16 @@ interface CharacterBlockProps {
   item: TimelineItem;
   timeToPixel: (position: number) => number;
   timelineScale: number;
+  narratorName?: string;
 }
 
 export function CharacterBlock({
   item,
   timeToPixel,
   timelineScale,
+  narratorName,
 }: CharacterBlockProps) {
+  const colors = getCharacterColors(narratorName ?? item.nodeId);
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const nodes = useWorkflowStore((state) => state.nodes);
   const edges = useWorkflowStore((state) => state.edges);
@@ -201,7 +205,7 @@ export function CharacterBlock({
         width: `${itemWidth}px`,
       }}
     >
-      <div className="group relative flex h-full flex-col rounded-lg border-2 border-warning bg-white text-xs text-gray-800 transition-shadow hover:shadow-lg">
+      <div className={cn("group relative flex h-full flex-col rounded-lg border-2 bg-white text-xs text-gray-800 transition-shadow hover:shadow-lg", colors.border)}>
         {isRefreshing && (
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-warning"></span>

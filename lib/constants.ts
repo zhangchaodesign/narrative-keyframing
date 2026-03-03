@@ -1,11 +1,53 @@
 export const CHARACTER_COLORS = [
-  { label: "bg-blue-500", watermark: "text-blue-200/75", bg: "bg-blue-50/75" },
-  { label: "bg-violet-500", watermark: "text-violet-200/75", bg: "bg-violet-50/75" },
-  { label: "bg-amber-500", watermark: "text-amber-200/75", bg: "bg-amber-50/75" },
-  { label: "bg-indigo-500", watermark: "text-indigo-200/75", bg: "bg-indigo-50/75" },
-  { label: "bg-orange-500", watermark: "text-orange-200/75", bg: "bg-orange-50/75" },
-  { label: "bg-cyan-500", watermark: "text-cyan-200/75", bg: "bg-cyan-50/75" },
-  { label: "bg-slate-500", watermark: "text-slate-200/75", bg: "bg-slate-50/75" },
+  {
+    label: "bg-blue-500",
+    watermark: "text-blue-200/75",
+    bg: "bg-blue-50/75",
+    border: "border-blue-400",
+    text: "text-blue-600",
+  },
+  {
+    label: "bg-violet-500",
+    watermark: "text-violet-200/75",
+    bg: "bg-violet-50/75",
+    border: "border-violet-400",
+    text: "text-violet-600",
+  },
+  {
+    label: "bg-amber-500",
+    watermark: "text-amber-200/75",
+    bg: "bg-amber-50/75",
+    border: "border-amber-400",
+    text: "text-amber-600",
+  },
+  {
+    label: "bg-indigo-500",
+    watermark: "text-indigo-200/75",
+    bg: "bg-indigo-50/75",
+    border: "border-indigo-400",
+    text: "text-indigo-600",
+  },
+  {
+    label: "bg-orange-500",
+    watermark: "text-orange-200/75",
+    bg: "bg-orange-50/75",
+    border: "border-orange-400",
+    text: "text-orange-600",
+  },
+  {
+    label: "bg-cyan-500",
+    watermark: "text-cyan-200/75",
+    bg: "bg-cyan-50/75",
+    border: "border-cyan-400",
+    text: "text-cyan-600",
+  },
+  {
+    label: "bg-pink-500",
+    watermark: "text-pink-200/75",
+    bg: "bg-pink-50/75",
+    border: "border-pink-400",
+    text: "text-pink-600",
+  },
 ];
 
 export function getCharacterColorIndex(key: string): number {
