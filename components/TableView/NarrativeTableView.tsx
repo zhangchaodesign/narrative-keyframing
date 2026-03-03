@@ -10,11 +10,12 @@ import {
 import { TbHighlight, TbRefresh } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { SelectedSnippet } from "@/lib/stores/workflowStore";
-import { findTextMatches } from "@/lib/utiils/sharedUtils";
+import { cn, findTextMatches } from "@/lib/utiils/sharedUtils";
 import { generateNarratives } from "@/lib/utiils/narrativeUtils";
 import type { ThirdPersonGroupNodeType } from "@/lib/types/workflow";
 import { useUiStore } from "@/lib/stores/uiStore";
 import { getCharacterColors } from "@/lib/constants";
+import { geistMono } from "@/app/fonts";
 
 type EventData = {
   narrativeNodeId: string;
@@ -509,13 +510,21 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                   return (
                     <th
                       key={`narrator-${index}`}
-                      className={`border border-gray-300 px-3 py-2 text-left font-semibold text-white ${charColors.label}`}
+                      className={`border border-gray-300 px-3 py-2 text-left font-semibold text-white ${charColors.bg}`}
                     >
-                      {narrator}
+                      <span
+                        className={cn(
+                          geistMono.className,
+                          "rounded px-2 py-0.5 text-xs font-bold text-white text-center",
+                          charColors.label,
+                        )}
+                      >
+                        {narrator}
+                      </span>
                     </th>
                   );
                 })}
-                <th className="border border-gray-300 bg-green-50 px-3 py-2 text-left font-semibold text-green-900">
+                <th className="border border-gray-300 bg-green-50 px-3 py-2 text-left font-semibold text-green-900 min-w-72 w-72">
                   <div className="flex items-center gap-1">
                     <span>Narrative</span>
                     <button
@@ -581,7 +590,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                         </td>
                       );
                     })}
-                    <td className="border border-gray-300 px-3 py-2 align-top bg-green-50/30">
+                    <td className="border border-gray-300 px-3 py-2 align-top bg-green-50/30 min-w-72 w-72">
                       {isRegenerating ? (
                         <div className="flex items-center gap-2 text-xs text-green-700">
                           <TbRefresh size={14} className="animate-spin" />
