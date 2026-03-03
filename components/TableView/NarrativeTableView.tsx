@@ -606,7 +606,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                         </div>
                       ) : (
                         <span className="text-gray-400 italic text-xs">
-                          No narrative
+                          No enriched story content
                         </span>
                       )}
                     </td>
