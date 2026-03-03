@@ -218,7 +218,7 @@ export function TraitItem({
                 className={cn(
                   "inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[8px] font-bold",
                   isSelected
-                    ? "bg-blue-300 text-white"
+                    ? "bg-white/20 text-white"
                     : "bg-gray-800/10 text-gray-700",
                 )}
                 title={`${evidenceCount} evidence item${
@@ -262,7 +262,7 @@ export function TraitItem({
             <button
               onClick={handleStartEdit}
               className={cn(
-                "pointer-events-auto rounded p-0.5 text-green-600 hover:text-green-700 cursor-pointer",
+                "pointer-events-auto rounded p-0.5 text-white hover:text-gray-200 cursor-pointer",
               )}
               title="Edit attribute"
               aria-label={`Edit ${label} trait`}
@@ -271,7 +271,7 @@ export function TraitItem({
             </button>
             <button
               onClick={handleRemove}
-              className="pointer-events-auto rounded p-0.5 text-red-600  hover:text-red-700 cursor-pointer"
+              className="pointer-events-auto rounded p-0.5 text-white hover:text-gray-200 cursor-pointer"
               title="Remove attribute"
               aria-label={`Remove ${label} trait`}
             >

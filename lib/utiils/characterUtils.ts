@@ -27,27 +27,27 @@ export const CHARACTER_TRAIT_CATEGORIES: TraitCategoryDefinition[] = [
     label: "Physiology",
     titleClass: "text-gray-700",
     chipClass:
-      "border-transparent bg-gray-100 text-gray-900 hover:bg-blue-100 focus-visible:ring focus-visible:ring-gray-200",
+      "border-transparent bg-gray-100 text-gray-900 hover:bg-blue-500 hover:text-white focus-visible:ring focus-visible:ring-gray-200",
     emptyClass: "border-transparent text-gray-700",
-    selectedClass: "border-blue-300 bg-blue-100",
+    selectedClass: "border-transparent bg-blue-500 text-white",
   },
   {
     key: "psychology",
     label: "Psychology",
     titleClass: "text-gray-700",
     chipClass:
-      "border-transparent bg-gray-100 text-gray-900 hover:bg-blue-100 focus-visible:ring focus-visible:ring-gray-200",
+      "border-transparent bg-gray-100 text-gray-900 hover:bg-blue-500 hover:text-white focus-visible:ring focus-visible:ring-gray-200",
     emptyClass: "border-transparent text-gray-700",
-    selectedClass: "border-blue-300 bg-blue-100",
+    selectedClass: "border-transparent bg-blue-500 text-white",
   },
   {
     key: "sociology",
     label: "Sociology",
     titleClass: "text-gray-700",
     chipClass:
-      "border-transparent bg-gray-100 text-gray-900 hover:bg-blue-100 focus-visible:ring focus-visible:ring-gray-200",
+      "border-transparent bg-gray-100 text-gray-900 hover:bg-blue-500 hover:text-white focus-visible:ring focus-visible:ring-gray-200",
     emptyClass: "border-transparent text-gray-700",
-    selectedClass: "border-blue-300 bg-blue-100",
+    selectedClass: "border-transparent bg-blue-500 text-white",
   },
 ];
 
