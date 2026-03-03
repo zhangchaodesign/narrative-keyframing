@@ -499,10 +499,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
           <table className="w-full border-collapse text-sm">
             <thead className="sticky top-0 bg-gray-50">
               <tr>
-                <th className="border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">
-                  Event
-                </th>
-                <th className="border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">
+                <th className="border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700 min-w-[16rem] w-[16rem]">
                   Story Outline
                 </th>
                 {uniquePerspectives.map((narrator, index) => {
@@ -524,7 +521,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                     </th>
                   );
                 })}
-                <th className="border border-gray-300 bg-green-50 px-3 py-2 text-left font-semibold text-green-900 min-w-72 w-72">
+                <th className="border border-gray-300 bg-green-50 px-3 py-2 text-left font-semibold text-green-900 min-w-80 w-80">
                   <div className="flex items-center gap-1">
                     <span>Narrative</span>
                     <button
@@ -558,15 +555,19 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
 
                 return (
                   <tr key={event.narrativeNodeId} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-3 py-2 align-top font-medium text-gray-900 text-xs">
-                      Event_{eventIndex + 1}
-                    </td>
                     <td className="border border-gray-300 px-3 py-2 align-top text-gray-700 text-xs">
-                      {event.eventDescription || (
-                        <span className="text-gray-400 italic">
-                          No description
-                        </span>
-                      )}
+                      <div className="space-y-1">
+                        <div className="font-medium text-gray-900">
+                          Event_{eventIndex + 1}
+                        </div>
+                        <div>
+                          {event.eventDescription || (
+                            <span className="text-gray-400 italic">
+                              No description
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     {uniquePerspectives.map((narrator, index) => {
                       const normalizedNarrator = narrator.trim().toLowerCase();
@@ -590,7 +591,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                         </td>
                       );
                     })}
-                    <td className="border border-gray-300 px-3 py-2 align-top bg-green-50/30 min-w-72 w-72">
+                    <td className="border border-gray-300 px-3 py-2 align-top bg-green-50/30 min-w-80 w-80">
                       {isRegenerating ? (
                         <div className="flex items-center gap-2 text-xs text-green-700">
                           <TbRefresh size={14} className="animate-spin" />
