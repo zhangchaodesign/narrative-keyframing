@@ -850,7 +850,7 @@ export function adjustEventCountForAllClusters(
 }
 
 /**
- * Create a story outline cluster (event group with event nodes)
+ * Create a story draft cluster (event group with event nodes)
  * @param currentNodes Array of existing workflow nodes
  * @param options Configuration options for the cluster
  * @returns Object with new nodes and edges to add
@@ -909,7 +909,7 @@ export function createStoryOutlineCluster(
       y: newGroupY,
     },
     data: {
-      label: "Story Outline",
+      label: "Story Draft",
       eventGroupId: nextEventGroupId,
     },
     style: {

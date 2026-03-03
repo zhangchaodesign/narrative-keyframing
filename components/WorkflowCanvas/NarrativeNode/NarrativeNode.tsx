@@ -64,7 +64,7 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
     return index >= 0 ? index + 1 : 1;
   }, [id, nodes]);
 
-  // Determine which event group (story outline) this narrative cluster is linked to
+  // Determine which event group (story draft) this narrative cluster is linked to
   const connectedEventGroup = useMemo(() => {
     const narrativeNode = nodes.find(
       (node): node is NarrativeNodeType =>
@@ -158,9 +158,7 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
           "flex flex-col w-full gap-1 text-[10px] font-semibold tracking-wide text-gray-800 uppercase",
         )}
       >
-        <span className="flex items-center">
-          📖 Narration {narrativeSequence}
-        </span>
+        <span className="flex items-center">📖 Event {narrativeSequence}</span>
       </div>
 
       <NarrativeContent

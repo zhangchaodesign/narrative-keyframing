@@ -187,7 +187,7 @@ const buildStoryOutlineText = (
   eventSequence: z.infer<typeof RequestSchema>["eventSequence"],
 ) => {
   if (!eventSequence || eventSequence.length === 0) {
-    return "No story outline provided.";
+    return "No story draft provided.";
   }
   return eventSequence
     .map((event, index) => `${event.description.trim()}`)

@@ -162,6 +162,9 @@ export function NarrativeActionsMenu({
 
   const baseButtonClass =
     "pointer-events-auto rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-1";
+  const hasSelectedSnippets = Object.keys(selectedSnippets).length > 0;
+  const hasNarrativeText =
+    combineNarrativeTextsInGroup(nodeId, nodes).trim().length > 0;
 
   return (
     <>
@@ -170,7 +173,7 @@ export function NarrativeActionsMenu({
         <button
           type="button"
           onClick={handleOpenModal}
-          disabled={isGenerating}
+          disabled={isGenerating || !hasSelectedSnippets}
           className={cn(
             baseButtonClass,
             buttonPadding,
@@ -197,10 +200,11 @@ export function NarrativeActionsMenu({
         <button
           type="button"
           onClick={handlePopulateEditor}
+          disabled={!hasNarrativeText}
           className={cn(
             baseButtonClass,
             buttonPadding,
-            "hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-indigo-500 cursor-pointer",
+            "hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-indigo-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
           )}
           title="Populate text editor with narratives"
           aria-label="Populate text editor with narratives"

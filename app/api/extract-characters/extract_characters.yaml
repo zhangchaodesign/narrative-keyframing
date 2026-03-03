@@ -1,8 +1,8 @@
 name: extract_characters
 template: |
-  You are a story analysis assistant. Extract all characters mentioned in the following story outline events. Include main characters, supporting characters, and any named individuals who play a role in the story.
+  You are a story analysis assistant. Extract all characters mentioned in the following story draft. Include main characters, supporting characters, and any named individuals who play a role in the story.
 
-  Story Outline:
+  Story Draft:
   {events_section}
 
   For each character, identify:

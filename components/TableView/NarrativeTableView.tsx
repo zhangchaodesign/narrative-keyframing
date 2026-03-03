@@ -500,7 +500,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
             <thead className="sticky top-0 bg-gray-50">
               <tr>
                 <th className="border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700 min-w-[16rem] w-[16rem]">
-                  Story Outline
+                  Story Draft
                 </th>
                 {uniquePerspectives.map((narrator, index) => {
                   const charColors = getCharacterColors(narrator);
@@ -523,7 +523,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                 })}
                 <th className="border border-gray-300 bg-green-50 px-3 py-2 text-left font-semibold text-green-900 min-w-80 w-80">
                   <div className="flex items-center gap-1">
-                    <span>Narrative</span>
+                    <span>Enriched Story</span>
                     <button
                       onClick={() => setShowPromptDialog(true)}
                       disabled={isRegenerating}

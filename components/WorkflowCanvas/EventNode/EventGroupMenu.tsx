@@ -77,7 +77,7 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
     const clonedGroupData = cloneData(groupNode.data) as GroupNodeData;
     const nextGroupData: GroupNodeData = {
       ...clonedGroupData,
-      label: clonedGroupData?.label || "Story Outline",
+      label: clonedGroupData?.label || "Story Draft",
       eventGroupId: nextEventGroupId,
     };
 
@@ -96,7 +96,7 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
     // Generate new IDs for all child nodes and build the complete ID map
     const childNodesWithNewIds = childNodes.map((original) => {
       const prefix =
-        original.type === "event" ? "event" : original.type ?? "node";
+        original.type === "event" ? "event" : (original.type ?? "node");
       const newId = generateUniqueUuidId(prefix, existingNodeIds);
       existingNodeIds.add(newId);
       idMap.set(original.id, newId);

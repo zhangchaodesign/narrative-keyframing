@@ -41,7 +41,7 @@ export function NarrativeTrack({
               "text-xs font-semibold text-green-600 text-center",
             )}
           >
-            Narrative
+            Enriched Story
           </span>
           <NarrativeTrackMenu track={track} />
         </div>

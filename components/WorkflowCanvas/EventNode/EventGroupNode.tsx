@@ -28,7 +28,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   const [isExtracting, setIsExtracting] = useState(false);
 
   const characters = extractedCharacters[id] || [];
-  const baseLabel = data?.label ?? "Story Outline";
+  const baseLabel = data?.label ?? "Story Draft";
   const labelWithSequence =
     typeof data?.eventGroupId === "number"
       ? `${baseLabel} ${data.eventGroupId}`
@@ -116,7 +116,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           onClick={handleExtractCharacters}
           disabled={isExtracting}
           className="rounded-full p-2 transition hover:bg-gray-50 hover:text-gray-600"
-          title="Extract characters from story outline"
+          title="Extract characters from story draft"
         >
           {isExtracting ? (
             <span className="block h-[18px] w-[18px] animate-spin rounded-full border-2 border-gray-600 border-t-transparent" />

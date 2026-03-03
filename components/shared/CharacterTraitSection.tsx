@@ -68,7 +68,7 @@ export function TraitSection({
 
   const brainstormTooltip = canBrainstorm
     ? `Brainstorm ${label.toLowerCase()} traits`
-    : `Connect this character to a story outline event to brainstorm ${label.toLowerCase()} traits`;
+    : "";
 
   const handleDraftChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {

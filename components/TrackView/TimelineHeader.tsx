@@ -77,7 +77,7 @@ export function TimelineHeader({
                 htmlFor="story-cluster-select"
                 className="text-xs text-gray-600 whitespace-nowrap"
               >
-                Story Outline
+                Story Draft
               </label>
               <select
                 id="story-cluster-select"

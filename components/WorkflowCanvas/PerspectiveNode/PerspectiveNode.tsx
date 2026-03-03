@@ -61,7 +61,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     return index >= 0 ? index + 1 : 1;
   }, [id, nodes]);
 
-  // Determine which event group (story outline) this perspective group is linked to
+  // Determine which event group (story draft) this perspective group is linked to
   const connectedEventGroup = useMemo(() => {
     const perspectiveNode = nodes.find(
       (node): node is PerspectiveNodeType =>
