@@ -367,18 +367,24 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
             };
 
             // Following PerspectiveContent.tsx styling pattern
+            const charColors = snippet.characterName
+              ? getCharacterColors(snippet.characterName)
+              : null;
+            const selectedHighlight = charColors?.highlight ?? "bg-blue-400";
+            const selectedBorder = charColors?.border ?? "border-blue-400";
+
             return (
               <mark
                 key={index}
                 onClick={handleClick}
                 className={`cursor-pointer rounded px-0.5 py-0.5 transition-colors ${
                   isSelected
-                    ? "bg-blue-400 text-white ring-2 ring-blue-600"
+                    ? `${selectedHighlight} text-gray-900 border ${selectedBorder}`
                     : "bg-yellow-200 text-gray-900 hover:bg-yellow-300"
                 }`}
                 title={`Click to ${
                   isSelected ? "deselect" : "select"
-                } snippet for story generation`}
+                } snippet for story generation${snippet.characterName ? ` (${snippet.characterName})` : ""}`}
               >
                 {part}
               </mark>

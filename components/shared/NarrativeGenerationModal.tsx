@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { TbX } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { SelectedSnippet } from "@/lib/stores/workflowStore";
+import { getCharacterColors } from "@/lib/constants";
 
 type EventData = {
   narrativeNodeId: string;
@@ -53,7 +54,8 @@ export function NarrativeGenerationModal({
     nodes.forEach((node) => {
       if (node.type === "character") {
         const trimmed = node.data?.name?.trim() ?? "";
-        result[node.id] = trimmed.length > 0 ? trimmed : node.data?.name ?? "";
+        result[node.id] =
+          trimmed.length > 0 ? trimmed : (node.data?.name ?? "");
       }
     });
     return result;
@@ -184,28 +186,36 @@ export function NarrativeGenerationModal({
   // Helper function to highlight selected evidence within reflection text
   const highlightReflection = (
     reflectionText: string,
-    snippets: Array<{ perspectiveNodeId: string; text: string }>,
+    snippets: SelectedSnippet[],
   ) => {
     if (!reflectionText || snippets.length === 0) {
       return <>{reflectionText}</>;
     }
 
     // Get selected snippets for this event
-    const selectedTexts = snippets
+    const selectedItems = snippets
       .filter((snippet) => {
         const key = `${snippet.perspectiveNodeId}::${snippet.text}`;
         return selectedSnippetKeys.has(key);
       })
-      .map((snippet) => snippet.text)
-      .sort((a, b) => b.length - a.length); // Sort by length descending to match longer phrases first
+      .sort((a, b) => b.text.length - a.text.length); // Sort by length descending to match longer phrases first
 
-    if (selectedTexts.length === 0) {
+    if (selectedItems.length === 0) {
       return <>{reflectionText}</>;
     }
 
+    // Build a map from lowercase text to character highlight color
+    const textToHighlight = new Map<string, string>();
+    selectedItems.forEach((snippet) => {
+      const highlightClass = snippet.characterName
+        ? getCharacterColors(snippet.characterName).highlight
+        : "bg-yellow-200";
+      textToHighlight.set(snippet.text.toLowerCase(), highlightClass);
+    });
+
     // Create a regex pattern to find all selected texts
-    const pattern = selectedTexts
-      .map((text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    const pattern = selectedItems
+      .map((s) => s.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
       .join("|");
     const regex = new RegExp(`(${pattern})`, "gi");
 
@@ -214,13 +224,11 @@ export function NarrativeGenerationModal({
     return (
       <>
         {parts.map((part, index) => {
-          const isHighlighted = selectedTexts.some(
-            (text) => text.toLowerCase() === part.toLowerCase(),
-          );
-          return isHighlighted ? (
+          const highlightClass = textToHighlight.get(part.toLowerCase());
+          return highlightClass ? (
             <mark
               key={index}
-              className="bg-yellow-200 text-blue-900 font-medium"
+              className={`${highlightClass} text-gray-900 font-medium rounded px-0.5`}
             >
               {part}
             </mark>
@@ -281,19 +289,22 @@ export function NarrativeGenerationModal({
         {characterGroups.length > 0 && (
           <div className="border-b border-gray-200 bg-gray-50 px-6">
             <div className="flex gap-2 overflow-x-auto">
-              {characterGroups.map((character) => (
-                <button
-                  key={character.key}
-                  onClick={() => setActiveCharacterKey(character.key)}
-                  className={`whitespace-nowrap border-b-2 px-4 py-2 text-xs font-medium transition ${
-                    activeCharacterKey === character.key
-                      ? "border-green-600 text-green-600"
-                      : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900"
-                  }`}
-                >
-                  {character.name}
-                </button>
-              ))}
+              {characterGroups.map((character) => {
+                const tabColors = getCharacterColors(character.name);
+                return (
+                  <button
+                    key={character.key}
+                    onClick={() => setActiveCharacterKey(character.key)}
+                    className={`whitespace-nowrap border-b-2 px-4 py-2 text-xs font-medium transition ${
+                      activeCharacterKey === character.key
+                        ? `${tabColors.border} ${tabColors.text}`
+                        : "border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900"
+                    }`}
+                  >
+                    {character.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -325,13 +336,13 @@ export function NarrativeGenerationModal({
                     {event.perspectives.map((perspective, perspIndex) => (
                       <div
                         key={`${event.narrativeNodeId}-persp-${perspIndex}`}
-                        className="rounded bg-blue-50 p-3"
+                        className="rounded bg-gray-50 p-3"
                       >
-                        <p className="text-xs font-medium text-blue-900">
+                        <p className="text-xs font-medium text-gray-900">
                           {perspective.narrator}
                         </p>
                         {perspective.reflection && (
-                          <p className="mt-1 text-xs text-blue-700">
+                          <p className="mt-1 text-xs text-gray-700">
                             {highlightReflection(
                               perspective.reflection,
                               event.snippets,
@@ -353,12 +364,19 @@ export function NarrativeGenerationModal({
                       const snippetKey = `${snippet.perspectiveNodeId}::${snippet.text}`;
                       const isSelected = selectedSnippetKeys.has(snippetKey);
 
+                      const snippetColors = snippet.characterName
+                        ? getCharacterColors(snippet.characterName)
+                        : null;
+                      const selectedBg = snippetColors?.bg ?? "bg-green-50";
+                      const selectedBorderClass =
+                        snippetColors?.border ?? "border-green-300";
+
                       return (
                         <label
                           key={`${event.narrativeNodeId}-snippet-${snippetIndex}`}
                           className={`flex cursor-pointer items-center gap-3 rounded border p-3 transition ${
                             isSelected
-                              ? "border-green-300 bg-green-50"
+                              ? `${selectedBorderClass} ${selectedBg}`
                               : "border-gray-200 bg-gray-50 hover:bg-gray-100"
                           }`}
                         >
