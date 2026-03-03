@@ -55,7 +55,7 @@ export default function Page() {
           <div className="flex h-full items-stretch overflow-hidden">
             <div
               className={clsx(
-                "relative h-full transition-all duration-300 ease-in-out shrink-0",
+                "relative z-30 h-full transition-all duration-300 ease-in-out shrink-0",
                 isEditorCollapsed ? "w-0" : "w-[600px]",
               )}
             >
@@ -76,7 +76,7 @@ export default function Page() {
                 aria-label={
                   isEditorCollapsed ? "Show text editor" : "Hide text editor"
                 }
-                className="absolute top-1/2 left-full z-10 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-l-none rounded-r-full border border-gray-200 border-l-0 bg-white text-gray-600 hover:bg-gray-50"
+                className="absolute top-1/2 left-full z-50 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-l-none rounded-r-full border border-gray-200 border-l-0 bg-white text-gray-600 hover:bg-gray-50"
               >
                 {isEditorCollapsed ? (
                   <ChevronRight className="h-5 w-5 mr-1" />
