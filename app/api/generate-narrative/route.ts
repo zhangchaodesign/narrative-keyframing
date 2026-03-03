@@ -56,6 +56,57 @@ const TEMPLATE_PATH = path.join(
   "app/api/generate-narrative/generate_narrative.yaml",
 );
 
+const normalizeText = (text: string) =>
+  text.toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+
+const wordOverlapScore = (a: string, b: string): number => {
+  const wordsA = new Set(normalizeText(a).split(" "));
+  const wordsB = new Set(normalizeText(b).split(" "));
+  if (wordsA.size === 0 || wordsB.size === 0) return 0;
+  let overlap = 0;
+  for (const word of wordsA) {
+    if (wordsB.has(word)) overlap++;
+  }
+  return overlap / Math.max(wordsA.size, wordsB.size);
+};
+
+const fuzzyMatchNarrator = (
+  originalSnippet: string,
+  snippets: Array<{ text: string; characterName: string }>,
+): string | undefined => {
+  if (!originalSnippet || snippets.length === 0) return undefined;
+
+  // Try exact or substring match first
+  const exactMatch = snippets.find(
+    (s) =>
+      s.text === originalSnippet ||
+      originalSnippet.includes(s.text) ||
+      s.text.includes(originalSnippet),
+  );
+  if (exactMatch) return exactMatch.characterName;
+
+  // Try normalized exact match
+  const normalizedSnippet = normalizeText(originalSnippet);
+  const normalizedMatch = snippets.find(
+    (s) => normalizeText(s.text) === normalizedSnippet,
+  );
+  if (normalizedMatch) return normalizedMatch.characterName;
+
+  // Fall back to word overlap scoring
+  let bestScore = 0;
+  let bestMatch: string | undefined;
+  for (const s of snippets) {
+    const score = wordOverlapScore(originalSnippet, s.text);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = s.characterName;
+    }
+  }
+
+  // Require at least 40% word overlap to consider it a match
+  return bestScore >= 0.4 ? bestMatch : undefined;
+};
+
 const stripTemplateIndent = (text: string) => {
   const lines = text.split("\n");
   const hasIndent = lines.every(
@@ -207,10 +258,24 @@ ${trimmedPrompt}`
         (n) => n.eventNumber === index + 1,
       );
 
+      // Enrich snippetUsages with narrator by fuzzy-matching originalSnippet to input snippets
+      const enrichedSnippetUsages = (
+        generatedNarrative?.snippetUsages ?? []
+      ).map((usage) => {
+        const narrator = fuzzyMatchNarrator(
+          usage.originalSnippet,
+          eventData.snippets,
+        );
+        return {
+          ...usage,
+          narrator,
+        };
+      });
+
       return {
         narrativeNodeId: eventData.narrativeNodeId,
         narration: generatedNarrative?.narration ?? "",
-        snippetUsages: generatedNarrative?.snippetUsages ?? [],
+        snippetUsages: enrichedSnippetUsages,
       };
     });
 

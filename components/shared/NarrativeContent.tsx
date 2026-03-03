@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
+import { getCharacterColors } from "@/lib/constants";
+
+interface SnippetUsage {
+  originalSnippet: string;
+  verbatimInNarrative: string;
+  narrator?: string;
+}
 
 interface NarrativeContentProps {
   narration: string;
-  snippetUsages?: Array<{
-    originalSnippet: string;
-    verbatimInNarrative: string;
-  }>;
+  snippetUsages?: SnippetUsage[];
   isEditing?: boolean;
   onNarrationChange?: (newNarration: string) => void;
 }
@@ -15,14 +19,12 @@ type HighlightRange = {
   start: number;
   end: number;
   originalSnippet: string;
+  narrator?: string;
 };
 
 function createHighlightedNarrative(
   text: string,
-  snippetUsages: Array<{
-    originalSnippet: string;
-    verbatimInNarrative: string;
-  }>,
+  snippetUsages: SnippetUsage[],
 ): ReactNode[] {
   if (!snippetUsages || snippetUsages.length === 0) {
     return [text];
@@ -37,6 +39,7 @@ function createHighlightedNarrative(
       ...matches.map((match) => ({
         ...match,
         originalSnippet: usage.originalSnippet,
+        narrator: usage.narrator,
       })),
     );
   });
@@ -56,6 +59,7 @@ function createHighlightedNarrative(
       last.end = range.end;
       // Keep the original snippet from the longer range
       last.originalSnippet = range.originalSnippet;
+      last.narrator = range.narrator;
     }
   });
 
@@ -72,11 +76,15 @@ function createHighlightedNarrative(
       );
     }
 
+    const highlightClass = range.narrator
+      ? getCharacterColors(range.narrator).highlight
+      : "bg-green-200";
+
     segments.push(
       <mark
         key={`segment-${index}-highlight`}
-        className="rounded bg-green-200 px-0.5 py-0.5 text-gray-900"
-        title={`Based on: "${range.originalSnippet}"`}
+        className={`rounded ${highlightClass} px-0.5 py-0.5 text-gray-900`}
+        title={`Based on: "${range.originalSnippet}"${range.narrator ? ` (${range.narrator})` : ""}`}
       >
         {text.slice(range.start, range.end)}
       </mark>,

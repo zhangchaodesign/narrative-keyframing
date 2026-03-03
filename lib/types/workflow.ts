@@ -24,6 +24,7 @@ export type NarrativeNodeData = {
   snippetUsages?: Array<{
     originalSnippet: string;
     verbatimInNarrative: string;
+    narrator?: string;
   }>;
 };
 

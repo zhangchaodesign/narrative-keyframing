@@ -208,6 +208,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
     snippetUsages?: Array<{
       originalSnippet: string;
       verbatimInNarrative: string;
+      narrator?: string;
     }>,
   ): ReactNode => {
     if (
@@ -224,6 +225,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
       start: number;
       end: number;
       originalSnippet: string;
+      narrator?: string;
     };
 
     const ranges: HighlightRange[] = [];
@@ -234,6 +236,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
         ...matches.map((match) => ({
           ...match,
           originalSnippet: usage.originalSnippet,
+          narrator: usage.narrator,
         })),
       );
     });
@@ -252,6 +255,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
       } else if (range.end > last.end) {
         last.end = range.end;
         last.originalSnippet = range.originalSnippet;
+        last.narrator = range.narrator;
       }
     });
 
@@ -268,11 +272,15 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
         );
       }
 
+      const highlightClass = range.narrator
+        ? getCharacterColors(range.narrator).highlight
+        : "bg-green-200";
+
       segments.push(
         <mark
           key={`segment-${index}-highlight`}
-          className="rounded bg-green-200 px-0.5 py-0.5 text-gray-900"
-          title={`Based on: "${range.originalSnippet}"`}
+          className={`rounded ${highlightClass} px-0.5 py-0.5 text-gray-900`}
+          title={`Based on: "${range.originalSnippet}"${range.narrator ? ` (${range.narrator})` : ""}`}
         >
           {text.slice(range.start, range.end)}
         </mark>,

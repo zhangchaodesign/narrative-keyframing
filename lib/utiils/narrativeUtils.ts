@@ -52,6 +52,7 @@ type NarrativeGenerationResponse = {
     snippetUsages?: Array<{
       originalSnippet: string;
       verbatimInNarrative: string;
+      narrator?: string;
     }>;
   }>;
 };

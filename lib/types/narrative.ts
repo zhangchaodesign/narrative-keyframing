@@ -18,5 +18,6 @@ export type NarrativeEventData = {
   snippetUsages?: Array<{
     originalSnippet: string;
     verbatimInNarrative: string;
+    narrator?: string;
   }>;
 };

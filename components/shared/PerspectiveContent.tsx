@@ -14,6 +14,7 @@ import {
 } from "@/lib/stores/workflowStore";
 import type { PerspectiveEvidenceItem } from "@/lib/types/workflow";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
+import { getCharacterColors } from "@/lib/constants";
 
 interface PerspectiveContentProps {
   perspectiveNodeId: string;
@@ -69,6 +70,11 @@ function createHighlightedSegments(
 
     const snippetKey = buildSnippetKey(perspectiveNodeId, range.snippet.text);
     const isSelected = Boolean(selectedSnippets[snippetKey]);
+    const charColors = range.snippet.characterName
+      ? getCharacterColors(range.snippet.characterName)
+      : null;
+    const selectedHighlight = charColors?.highlight ?? "bg-blue-400";
+    const selectedBorder = charColors?.border ?? "border-blue-400";
 
     segments.push(
       <mark
@@ -76,12 +82,12 @@ function createHighlightedSegments(
         onClick={() => onToggleSnippet(range.snippet)}
         className={`cursor-pointer rounded px-0.5 py-0.5 transition-colors ${
           isSelected
-            ? "bg-blue-400 text-white ring-2 ring-blue-600"
+            ? `${selectedHighlight} text-gray-900 border ${selectedBorder}`
             : "bg-yellow-200 text-gray-900 hover:bg-yellow-300"
         }`}
         title={`Click to ${
           isSelected ? "deselect" : "select"
-        } snippet for story generation`}
+        } snippet for story generation${range.snippet.characterName ? ` (${range.snippet.characterName})` : ""}`}
       >
         {text.slice(range.start, range.end)}
       </mark>,
