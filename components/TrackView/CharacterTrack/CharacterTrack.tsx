@@ -2,7 +2,7 @@
 
 import React, { useCallback } from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
-import { getCharacterColors } from "@/lib/constants";
+import { getCharacterColors } from "@/components/shared/colors.constants";
 import { geistMono } from "@/app/fonts";
 import { PerspectiveBlock } from "@/components/TrackView/CharacterTrack/PerspectiveBlock";
 import { CharacterBlock } from "@/components/TrackView/CharacterTrack/CharacterBlock";

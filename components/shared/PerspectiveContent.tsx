@@ -14,7 +14,7 @@ import {
 } from "@/lib/stores/workflowStore";
 import type { PerspectiveEvidenceItem } from "@/lib/types/workflow";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
-import { getCharacterColors } from "@/lib/constants";
+import { getCharacterColors } from "@/components/shared/colors.constants";
 
 interface PerspectiveContentProps {
   perspectiveNodeId: string;
@@ -83,7 +83,7 @@ function createHighlightedSegments(
         className={`cursor-pointer rounded px-0.5 py-0.5 transition-colors ${
           isSelected
             ? `${selectedHighlight} text-gray-900 border ${selectedBorder}`
-            : "bg-yellow-200 text-gray-900 hover:bg-yellow-300"
+            : "bg-blue-100 text-gray-900 hover:bg-blue-300"
         }`}
         title={`Click to ${
           isSelected ? "deselect" : "select"

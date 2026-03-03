@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
-import { getCharacterColors } from "@/lib/constants";
+import { getCharacterColors } from "@/components/shared/colors.constants";
 
 interface SnippetUsage {
   originalSnippet: string;

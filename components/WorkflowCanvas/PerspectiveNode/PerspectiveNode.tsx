@@ -16,7 +16,7 @@ import type {
   WorkflowNode,
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
-import { getCharacterColors } from "@/lib/constants";
+import { getCharacterColors } from "@/components/shared/colors.constants";
 import { createCharacterSnapshotFromPerspective } from "@/lib/utiils/characterUtils";
 import { geistMono } from "@/app/fonts";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";

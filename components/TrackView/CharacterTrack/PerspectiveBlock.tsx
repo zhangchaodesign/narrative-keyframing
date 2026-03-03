@@ -2,7 +2,7 @@
 
 import React, { useCallback, useMemo, useState } from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
-import { getCharacterColors } from "@/lib/constants";
+import { getCharacterColors } from "@/components/shared/colors.constants";
 import { geistMono } from "@/app/fonts";
 import type { TimelineItem } from "@/lib/types/timeline";
 import type { PerspectiveNodeType } from "@/lib/types/workflow";
@@ -100,7 +100,12 @@ export function PerspectiveBlock({
         width: `${itemWidth}px`,
       }}
     >
-      <div className={cn("group relative flex h-full flex-col rounded-lg border-2 bg-white/95 px-3 py-2 text-xs text-gray-800 transition-shadow hover:shadow-lg", colors.border)}>
+      <div
+        className={cn(
+          "group relative flex h-full flex-col rounded-lg border-2 bg-white/95 px-3 py-2 text-xs text-gray-800 transition-shadow hover:shadow-lg",
+          colors.border,
+        )}
+      >
         {isLoading && (
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-secondary"></span>

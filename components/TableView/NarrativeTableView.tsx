@@ -14,7 +14,7 @@ import { cn, findTextMatches } from "@/lib/utiils/sharedUtils";
 import { generateNarratives } from "@/lib/utiils/narrativeUtils";
 import type { ThirdPersonGroupNodeType } from "@/lib/types/workflow";
 import { useUiStore } from "@/lib/stores/uiStore";
-import { getCharacterColors } from "@/lib/constants";
+import { getCharacterColors } from "@/components/shared/colors.constants";
 import { geistMono } from "@/app/fonts";
 
 type EventData = {

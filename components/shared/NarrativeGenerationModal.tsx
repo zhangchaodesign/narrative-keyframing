@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { TbX } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { SelectedSnippet } from "@/lib/stores/workflowStore";
-import { getCharacterColors } from "@/lib/constants";
+import { getCharacterColors } from "@/components/shared/colors.constants";
 
 type EventData = {
   narrativeNodeId: string;
