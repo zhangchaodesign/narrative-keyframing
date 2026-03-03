@@ -7,7 +7,7 @@ import {
   type PerspectivePreparationResult,
 } from "@/lib/types/perspective";
 
-const NEED_REFLECTION_MESSAGE = "Add a reflection to analyze evidence.";
+const NEED_REFLECTION_MESSAGE = "Add a perspective to analyze evidence.";
 const ANALYZING_EVIDENCE_MESSAGE = "Analyzing evidence...";
 const ANALYSIS_FAILED_MESSAGE = "Evidence analysis failed. Try again.";
 const NO_CHARACTERS_MESSAGE = "No characters available to analyze.";

@@ -2,6 +2,7 @@
 
 import React, { useCallback } from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
+import { getCharacterColors } from "@/lib/constants";
 import { geistMono } from "@/app/fonts";
 import { PerspectiveBlock } from "@/components/TrackView/CharacterTrack/PerspectiveBlock";
 import { CharacterBlock } from "@/components/TrackView/CharacterTrack/CharacterBlock";
@@ -35,6 +36,7 @@ export function CharacterTrack({
   timeToPixel,
   timelineScale,
 }: CharacterTrackProps) {
+  const colors = getCharacterColors(characterName);
   const perspectiveTrack = tracks.find((t) => t.type === "perspective");
   const characterTrack = tracks.find((t) => t.type === "character");
 
@@ -105,14 +107,17 @@ export function CharacterTrack({
         style={{ height: TIMELINE_CHARACTER_HEADER_HEIGHT }}
       >
         <div
-          className="absolute left-0 top-0 h-full bg-gray-50 border-r border-gray-200 flex items-center justify-center z-10"
+          className={cn(
+            "absolute left-0 top-0 h-full border-r border-gray-200 flex items-center justify-center z-10 bg-gray-50/50",
+          )}
           style={{ width: TIMELINE_LABEL_WIDTH }}
         >
           <div className="flex flex-col items-center gap-1 px-2">
             <span
               className={cn(
                 geistMono.className,
-                "text-xs font-semibold text-gray-800 text-center",
+                "rounded px-2 py-0.5 text-xs font-bold text-white text-center",
+                colors.label,
               )}
             >
               {characterName}
@@ -120,7 +125,7 @@ export function CharacterTrack({
           </div>
         </div>
         <div
-          className="absolute top-0 right-0 h-full bg-gray-50"
+          className={cn("absolute top-0 right-0 h-full bg-gray-50/50")}
           style={{ left: TIMELINE_LABEL_WIDTH }}
         ></div>
       </div>
@@ -128,18 +133,20 @@ export function CharacterTrack({
       {/* Perspective Subtrack */}
       {perspectiveTrack && (
         <div
-          className="relative border-t border-gray-200 bg-blue-50/50"
+          className="relative border-t border-gray-200"
           style={{ height: TIMELINE_CHARACTER_SUBTRACK_HEIGHT }}
         >
           <div
-            className="absolute left-0 top-0 h-full bg-blue-50 border-r border-gray-200 flex items-center justify-center z-10"
+            className={cn(
+              "absolute left-0 top-0 h-full border-r border-gray-200 flex items-center justify-center z-10 bg-gray-50/50",
+            )}
             style={{ width: TIMELINE_LABEL_WIDTH }}
           >
             <div className="flex flex-col gap-2 items-center">
               <span
                 className={cn(
                   geistMono.className,
-                  "text-xs font-semibold text-blue-600 text-center",
+                  "text-xs font-semibold text-secondary text-center",
                 )}
               >
                 Perspective
@@ -151,7 +158,7 @@ export function CharacterTrack({
             </div>
           </div>
           <div
-            className="absolute top-0 right-0 h-full bg-blue-50/50"
+            className={cn("absolute top-0 right-0 h-full bg-gray-50/50")}
             style={{ left: TIMELINE_LABEL_WIDTH }}
           >
             {perspectiveTrack.items.map((item) => (
@@ -173,7 +180,9 @@ export function CharacterTrack({
           style={{ height: TIMELINE_CHARACTER_SUBTRACK_HEIGHT }}
         >
           <div
-            className="absolute left-0 top-0 h-full bg-amber-50 border-r border-gray-200 flex items-center justify-center z-10"
+            className={cn(
+              "absolute left-0 top-0 h-full border-r border-gray-200 flex items-center justify-center z-10 bg-gray-50/50",
+            )}
             style={{ width: TIMELINE_LABEL_WIDTH }}
           >
             <span
@@ -186,7 +195,7 @@ export function CharacterTrack({
             </span>
           </div>
           <div
-            className="absolute top-0 right-0 h-full bg-amber-50/50"
+            className={cn("absolute top-0 right-0 h-full bg-gray-50/50")}
             style={{ left: TIMELINE_LABEL_WIDTH }}
           >
             {characterTrack.items.map((item) => (

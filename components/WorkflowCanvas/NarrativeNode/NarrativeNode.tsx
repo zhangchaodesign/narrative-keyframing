@@ -174,7 +174,7 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
           <span
             className={cn(
               geistMono.className,
-              "inline-flex items-center rounded bg-pink-500 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white",
+              "inline-flex items-center rounded bg-pink-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-pink-500",
             )}
             title={`Event: ${eventMetadata.timelineLabel}`}
           >

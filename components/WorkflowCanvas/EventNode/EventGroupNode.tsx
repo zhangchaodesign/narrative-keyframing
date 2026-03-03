@@ -148,7 +148,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           onClick={() => handleAddPerspectiveGroup("")}
           className={cn(
             geistMono.className,
-            "btn btn-xs btn-secondary gap-1 whitespace-nowrap",
+            "btn btn-xs btn-soft btn-secondary gap-1 whitespace-nowrap",
           )}
           title="Add a custom perspective group"
         >

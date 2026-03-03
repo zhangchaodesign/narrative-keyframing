@@ -19,11 +19,13 @@ import type {
   WorkflowNode,
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
+import { getCharacterColors } from "@/lib/constants";
 import { geistMono } from "@/app/fonts";
 
 const zoomSelector = (s: any) => s.transform[2] >= 0.9;
 
 export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
+  const colors = getCharacterColors(data?.characterName ?? id);
   const showContent = useStore(zoomSelector);
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow<
     WorkflowNode,
@@ -171,12 +173,13 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   }, [getEdges, getNodes, id, setEdges, setNodes]);
 
   return (
-    <div className="group relative h-full w-full rounded-lg border-4 border-blue-100 bg-blue-50/50 shadow">
+    <div className="group relative h-full w-full rounded-lg border-4 border-gray-200 shadow">
       <PerspectiveGroupMenu nodeId={id} />
       <div
         className={cn(
           geistMono.className,
-          "absolute left-1 top-1 rounded bg-secondary px-2 py-1 text-xs font-bold text-white",
+          "absolute left-1 top-1 rounded px-2 py-1 text-xs font-bold text-white",
+          colors.label,
         )}
       >
         {data?.label}
@@ -193,20 +196,11 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           />
         </label>
       </div>
-      {/* {!showContent && (
-        <div
-          className={cn(
-            geistMono.className,
-            "absolute left-4 bottom-1 text-blue-200/75 text-9xl font-semibold",
-          )}
-        >
-          {data?.characterName}
-        </div>
-      )} */}
       <div
         className={cn(
           geistMono.className,
-          "absolute left-4 bottom-1 text-blue-200/75 text-9xl font-semibold",
+          "absolute left-4 bottom-1 text-9xl font-semibold",
+          colors.watermark,
         )}
       >
         {data?.characterName}
@@ -218,7 +212,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           onPointerDown={(event) => event.stopPropagation()}
           className={cn(
             geistMono.className,
-            "btn btn-xs btn-primary gap-1 whitespace-nowrap nodrag nopan text-white",
+            "btn btn-xs btn-primary btn-soft gap-1 whitespace-nowrap nodrag nopan",
           )}
         >
           <TbPlus size={14} />

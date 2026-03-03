@@ -14,6 +14,7 @@ import { findTextMatches } from "@/lib/utiils/sharedUtils";
 import { generateNarratives } from "@/lib/utiils/narrativeUtils";
 import type { ThirdPersonGroupNodeType } from "@/lib/types/workflow";
 import { useUiStore } from "@/lib/stores/uiStore";
+import { getCharacterColors } from "@/lib/constants";
 
 type EventData = {
   narrativeNodeId: string;
@@ -489,14 +490,17 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                 <th className="border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">
                   Story Outline
                 </th>
-                {uniquePerspectives.map((narrator, index) => (
-                  <th
-                    key={`narrator-${index}`}
-                    className="border border-gray-300 bg-blue-50 px-3 py-2 text-left font-semibold text-blue-900"
-                  >
-                    {narrator}
-                  </th>
-                ))}
+                {uniquePerspectives.map((narrator, index) => {
+                  const charColors = getCharacterColors(narrator);
+                  return (
+                    <th
+                      key={`narrator-${index}`}
+                      className={`border border-gray-300 px-3 py-2 text-left font-semibold text-white ${charColors.label}`}
+                    >
+                      {narrator}
+                    </th>
+                  );
+                })}
                 <th className="border border-gray-300 bg-green-50 px-3 py-2 text-left font-semibold text-green-900">
                   <div className="flex items-center gap-1">
                     <span>Narrative</span>
@@ -544,11 +548,12 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                     {uniquePerspectives.map((narrator, index) => {
                       const normalizedNarrator = narrator.trim().toLowerCase();
                       const reflection = perspectiveMap.get(normalizedNarrator);
+                      const charColors = getCharacterColors(narrator);
 
                       return (
                         <td
                           key={`${event.narrativeNodeId}-persp-${index}`}
-                          className="border border-gray-300 px-3 py-2 align-top bg-blue-50/30"
+                          className={`border border-gray-300 px-3 py-2 align-top ${charColors.bg}`}
                         >
                           {reflection ? (
                             <div className="text-xs">

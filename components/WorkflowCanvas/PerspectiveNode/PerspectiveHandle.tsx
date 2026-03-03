@@ -10,7 +10,7 @@ export const PerspectiveHandle: React.FC<HandleProps> = ({
       style={{
         width: 10,
         height: 10,
-        background: "#377CFB",
+        background: "lightgray",
         transition: "transform 0.2s ease, width 0.2s ease, height 0.2s ease",
         ...style,
       }}
