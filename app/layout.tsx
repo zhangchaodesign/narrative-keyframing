@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { geistSans, geistMono, notoSerif, notoSans } from "./fonts";
 
 export const metadata: Metadata = {
-  title: "Character Keyframing",
+  title: "Characify",
   description: "",
 };
 

@@ -21,7 +21,7 @@ export function Header() {
   return (
     <div className="flex flex-row w-full justify-between items-center px-3 py-2 bg-gray-50 border-b border-gray-100">
       <h1 className={cn(geistMono.className, "font-bold")}>
-        <Link href="/">Concept Keyframing</Link>
+        <Link href="/">Characify</Link>
       </h1>
       <div className="flex flex-row gap-4 justify-center items-center">
         <button onClick={handleInfoClick}>
