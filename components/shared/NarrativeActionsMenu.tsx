@@ -85,6 +85,23 @@ export function NarrativeActionsMenu({
           ),
         }));
 
+        eventTracker({
+          action: "generate_narratives",
+          data: {
+            narrativeGroupId: nodeId,
+            snippetCount: selectedSnippetKeys.size,
+            eventCount: filteredEventsData.length,
+            customPrompt: customPrompt,
+            events: filteredEventsData.map((event) => ({
+              eventId: event.eventId,
+              eventTimeline: event.eventTimeline,
+              eventDescription: event.eventDescription,
+              snippetCount: event.snippets.length,
+              perspectiveCount: event.perspectives.length,
+            })),
+          },
+        });
+
         console.log("Generating narratives for events:", filteredEventsData);
 
         await generateNarratives({
@@ -99,7 +116,7 @@ export function NarrativeActionsMenu({
         setIsGenerating(false);
       }
     },
-    [eventsData, setNodes],
+    [eventsData, nodeId, setNodes],
   );
 
   const handlePopulateEditor = useCallback(() => {
@@ -113,7 +130,7 @@ export function NarrativeActionsMenu({
       action: "populate_editor_from_narrative",
       data: {
         narrativeGroupId: nodeId,
-        textLength: combinedText.length,
+        combinedText: combinedText,
       },
     });
 
@@ -142,6 +159,24 @@ export function NarrativeActionsMenu({
       alert("No narrative nodes found in this group");
       return;
     }
+
+    eventTracker({
+      action: "open_narrative_table_view",
+      data: {
+        narrativeGroupId: nodeId,
+        events: preparedEventsData.map((event) => ({
+          narrativeNodeId: event.narrativeNodeId,
+          eventId: event.eventId,
+          eventTimeline: event.eventTimeline,
+          eventDescription: event.eventDescription,
+          narration: event.narration,
+          perspectives: event.perspectives,
+          snippets: event.snippets,
+          snippetUsages: event.snippetUsages,
+        })),
+      },
+    });
+
     setNarrativeTableGroupId(nodeId);
     setViewMode("narrative-table");
   }, [getNarrativeEventsData, nodeId, setNarrativeTableGroupId, setViewMode]);

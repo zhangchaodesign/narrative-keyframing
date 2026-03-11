@@ -20,6 +20,7 @@ import {
   buildEvidenceAttributeKey,
   useWorkflowStore,
 } from "@/lib/stores/workflowStore";
+import { eventTracker } from "@/lib/utils";
 
 export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   const colors = getCharacterColors(data?.name ?? id);
@@ -100,6 +101,15 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
   );
 
   const handleDismissUpdatePrompt = useCallback(() => {
+    eventTracker({
+      action: "dismiss_character_update_prompt",
+      data: {
+        characterId: id,
+        characterName: data?.name,
+        characterTraits: data?.traits,
+      },
+    });
+
     setNodes((nodesState) =>
       nodesState.map((node) => {
         if (node.id !== id || node.type !== "character") {
@@ -115,12 +125,22 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         };
       }),
     );
-  }, [id, setNodes]);
+  }, [id, setNodes, data]);
 
   const handleConfirmUpdatePrompt = useCallback(async () => {
     if (data?.isRefreshing) {
       return;
     }
+
+    eventTracker({
+      action: "confirm_character_update_prompt",
+      data: {
+        characterId: id,
+        characterName: data?.name,
+        characterTraits: data?.traits,
+        perspectiveId: data?.perspectiveId,
+      },
+    });
 
     setNodes((nodesState) =>
       nodesState.map((node) => {
@@ -145,8 +165,31 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         nodes,
         setNodes: setNodes as WorkflowNodesSetter,
       });
+
+      const updatedNode = nodes.find(
+        (node): node is CharacterNodeType =>
+          node.id === id && node.type === "character",
+      );
+
+      eventTracker({
+        action: "confirm_character_update_prompt_success",
+        data: {
+          characterId: id,
+          characterName: updatedNode?.data?.name,
+          updatedCharacterTraits: updatedNode?.data?.traits,
+          perspectiveId: updatedNode?.data?.perspectiveId,
+        },
+      });
     } catch (error) {
       console.error("Error refreshing character snapshot:", error);
+      eventTracker({
+        action: "confirm_character_update_prompt_error",
+        data: {
+          characterId: id,
+          characterName: data?.name,
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+      });
     } finally {
       setNodes((nodesState) =>
         nodesState.map((node) => {
@@ -164,25 +207,55 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         }),
       );
     }
-  }, [data?.isRefreshing, id, nodes, setNodes]);
+  }, [data?.isRefreshing, data?.name, data?.perspectiveId, data?.traits, id, nodes, setNodes]);
 
   const handleSelectAllTraits = useCallback(() => {
+    const traitsToSelect = allTraits.filter((trait) => {
+      const key = buildEvidenceAttributeKey(id, trait);
+      return !selectedEvidenceAttributes?.[key];
+    });
+
+    eventTracker({
+      action: "select_all_character_traits",
+      data: {
+        characterId: id,
+        characterName: data?.name,
+        totalTraits: allTraits.length,
+        traitsToSelect: traitsToSelect,
+      },
+    });
+
     allTraits.forEach((trait) => {
       const key = buildEvidenceAttributeKey(id, trait);
       if (!selectedEvidenceAttributes?.[key]) {
         toggleEvidenceAttribute(id, trait);
       }
     });
-  }, [allTraits, id, selectedEvidenceAttributes, toggleEvidenceAttribute]);
+  }, [allTraits, id, selectedEvidenceAttributes, toggleEvidenceAttribute, data?.name]);
 
   const handleDeselectAllTraits = useCallback(() => {
+    const traitsToDeselect = allTraits.filter((trait) => {
+      const key = buildEvidenceAttributeKey(id, trait);
+      return selectedEvidenceAttributes?.[key];
+    });
+
+    eventTracker({
+      action: "deselect_all_character_traits",
+      data: {
+        characterId: id,
+        characterName: data?.name,
+        totalTraits: allTraits.length,
+        traitsToDeselect: traitsToDeselect,
+      },
+    });
+
     allTraits.forEach((trait) => {
       const key = buildEvidenceAttributeKey(id, trait);
       if (selectedEvidenceAttributes?.[key]) {
         toggleEvidenceAttribute(id, trait);
       }
     });
-  }, [allTraits, id, selectedEvidenceAttributes, toggleEvidenceAttribute]);
+  }, [allTraits, id, selectedEvidenceAttributes, toggleEvidenceAttribute, data?.name]);
 
   const handleToggleAllTraits = useCallback(() => {
     if (areAllTraitsSelected) {

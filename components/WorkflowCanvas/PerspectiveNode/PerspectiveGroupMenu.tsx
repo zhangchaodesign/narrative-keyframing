@@ -16,6 +16,8 @@ import {
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { PerspectiveActionsMenu } from "@/components/shared/PerspectiveActionsMenu";
 import { ZoomInvariantWrapper } from "@/components/WorkflowCanvas/ZoomInvariantWrapper";
+import { eventTracker } from "@/lib/utils";
+import type { PerspectiveGroupNodeType } from "@/lib/types/workflow";
 
 type PerspectiveGroupMenuProps = {
   nodeId: string;
@@ -33,6 +35,44 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     .map((node) => node.id);
 
   const handleDelete = useCallback(() => {
+    const groupNode = nodes.find(
+      (node): node is PerspectiveGroupNodeType =>
+        node.id === nodeId && node.type === "perspectiveGroup",
+    );
+
+    const childNodes = nodes.filter((node) => node.parentId === nodeId);
+    const perspectiveNodes = childNodes.filter(
+      (node) => node.type === "perspective",
+    );
+    const characterNodes = childNodes.filter(
+      (node) => node.type === "character",
+    );
+
+    eventTracker({
+      action: "delete_perspective_cluster",
+      data: {
+        clusterLabel: groupNode?.data?.label || "Untitled",
+        characterName: groupNode?.data?.characterName || "",
+        totalNodes: childNodes.length,
+        perspectiveCount: perspectiveNodes.length,
+        characterCount: characterNodes.length,
+        nodeTypes: childNodes.reduce(
+          (acc, node) => {
+            const type = node.type || "unknown";
+            acc[type] = (acc[type] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
+        childrenData: childNodes.map((node) => ({
+          id: node.id,
+          type: node.type,
+          data: node.data,
+          position: node.position,
+        })),
+      },
+    });
+
     const result = deleteNodeCluster(nodeId, nodes, edges);
 
     setNodes(result.nodes);
@@ -44,7 +84,8 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     const currentEdges = edges;
 
     const groupNode = currentNodes.find(
-      (node) => node.id === nodeId && node.type === "perspectiveGroup",
+      (node): node is PerspectiveGroupNodeType =>
+        node.id === nodeId && node.type === "perspectiveGroup",
     );
 
     if (!groupNode) {
@@ -52,6 +93,37 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
     }
 
     const childNodes = currentNodes.filter((node) => node.parentId === nodeId);
+    const perspectiveNodes = childNodes.filter(
+      (node) => node.type === "perspective",
+    );
+    const characterNodes = childNodes.filter(
+      (node) => node.type === "character",
+    );
+
+    eventTracker({
+      action: "duplicate_perspective_cluster",
+      data: {
+        clusterLabel: groupNode.data?.label || "Untitled",
+        characterName: groupNode.data?.characterName || "",
+        totalNodes: childNodes.length,
+        perspectiveCount: perspectiveNodes.length,
+        characterCount: characterNodes.length,
+        nodeTypes: childNodes.reduce(
+          (acc, node) => {
+            const type = node.type || "unknown";
+            acc[type] = (acc[type] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
+        childrenData: childNodes.map((node) => ({
+          id: node.id,
+          type: node.type,
+          data: node.data,
+          position: node.position,
+        })),
+      },
+    });
     const clusterNodeIds = new Set<string>([
       nodeId,
       ...childNodes.map((n) => n.id),

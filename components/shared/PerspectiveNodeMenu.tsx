@@ -12,6 +12,7 @@ import {
 } from "@/lib/utiils/perspectiveUtils";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { TbPencil, TbCheck } from "react-icons/tb";
+import { eventTracker } from "@/lib/utils";
 
 type PerspectiveSingleActionsMenuProps = {
   nodeId: string;
@@ -47,6 +48,17 @@ export function PerspectiveSingleActionsMenu({
       node.id === nodeId && node.type === "perspective",
   );
   const perspectiveData = perspectiveNode?.data;
+
+  const handleToggleEdit = useCallback(() => {
+    eventTracker({
+      action: isEditing ? "save_perspective_edit" : "start_perspective_edit",
+      data: {
+        narrator: perspectiveData?.narrator,
+        reflection: perspectiveData?.reflection,
+      },
+    });
+    onToggleEdit?.();
+  }, [isEditing, onToggleEdit, perspectiveData]);
 
   const hasCharacterConnection = useMemo(
     () =>
@@ -89,6 +101,15 @@ export function PerspectiveSingleActionsMenu({
       return;
     }
 
+    eventTracker({
+      action: "analyze_single_perspective_evidence",
+      data: {
+        narrator: perspectiveData?.narrator,
+        reflection: perspectiveData?.reflection,
+        analysisStatus: perspectiveData?.analysisStatus,
+      },
+    });
+
     updateAnalysisState({
       isAnalyzingEvidence: true,
       analysisStatus: "running",
@@ -109,6 +130,7 @@ export function PerspectiveSingleActionsMenu({
     getPerspectiveEvidenceTarget,
     isAnalyzingEvidence,
     nodeId,
+    perspectiveData,
     updateAnalysisState,
   ]);
 
@@ -161,6 +183,16 @@ export function PerspectiveSingleActionsMenu({
     if (isRegenerating || isEditing || !hasCharacterConnection) {
       return;
     }
+
+    eventTracker({
+      action: "regenerate_single_perspective",
+      data: {
+        perspectiveId: nodeId,
+        narrator: perspectiveData?.narrator,
+        reflection: perspectiveData?.reflection,
+        customPrompt: prompt || "",
+      },
+    });
 
     setNodes((currentNodes) =>
       currentNodes.map((node) => {
@@ -244,6 +276,7 @@ export function PerspectiveSingleActionsMenu({
       isEditing,
       isRegenerating,
       nodeId,
+      perspectiveData,
       preparePerspectiveGeneration,
       setNodes,
     ],
@@ -315,7 +348,7 @@ export function PerspectiveSingleActionsMenu({
       <div className={cn(wrapperClassName)}>
         <button
           type="button"
-          onClick={onToggleEdit}
+          onClick={handleToggleEdit}
           className={cn(
             "pointer-events-auto rounded-full transition hover:bg-purple-50 hover:text-purple-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-purple-500 disabled:cursor-not-allowed disabled:opacity-60",
             buttonPadding,

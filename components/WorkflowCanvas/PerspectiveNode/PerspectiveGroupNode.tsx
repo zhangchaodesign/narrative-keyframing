@@ -21,6 +21,7 @@ import type {
 import { cn } from "@/lib/utiils/sharedUtils";
 import { getCharacterColors } from "@/components/shared/colors.constants";
 import { geistMono } from "@/app/fonts";
+import { eventTracker } from "@/lib/utils";
 
 const zoomSelector = (s: any) => s.transform[2] >= 0.9;
 
@@ -35,6 +36,19 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   const handleCharacterNameChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const nextName = event.target.value;
+      const previousName = data?.characterName ?? "";
+
+      if (previousName !== nextName) {
+        eventTracker({
+          action: "change_narrator_name",
+          data: {
+            clusterLabel: data?.label || "First-Person Limited Cluster",
+            previousName,
+            newName: nextName,
+          },
+        });
+      }
+
       setNodes((currentNodes) =>
         currentNodes.map((node) => {
           if (node.id === id && node.type === "perspectiveGroup") {
@@ -89,7 +103,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
         }),
       );
     },
-    [id, setNodes],
+    [id, data, setNodes],
   );
 
   const handleAddNarrativeGroup = useCallback(() => {
@@ -123,6 +137,29 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
     if (!createdGroupNode) {
       return;
     }
+
+    eventTracker({
+      action: "add_narrative_group",
+      data: {
+        perspectiveClusterLabel: data?.label || "First-Person Limited Cluster",
+        characterName: data?.characterName || "",
+        eventGroupId: eventGroupId || null,
+        nodesCreated: result.nodes.length,
+        edgesCreated: result.edges.length,
+        createdNodes: result.nodes.map((node) => ({
+          id: node.id,
+          type: node.type,
+          data: node.data,
+          position: node.position,
+        })),
+        createdEdges: result.edges.map((edge) => ({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          data: edge.data,
+        })),
+      },
+    });
 
     const perspectiveGroup = currentNodes.find(
       (node) => node.id === id && node.type === "perspectiveGroup",
@@ -170,7 +207,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
 
     setNodes((nodes) => [...nodes, ...repositionedNodes]);
     setEdges((edges) => [...edges, ...result.edges, bridgingEdge]);
-  }, [getEdges, getNodes, id, setEdges, setNodes]);
+  }, [getEdges, getNodes, id, data, setEdges, setNodes]);
 
   return (
     <div className="group relative h-full w-full rounded-lg border-4 border-gray-200 shadow">

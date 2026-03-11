@@ -19,6 +19,7 @@ import type {
   CharacterNodeType,
   PerspectiveNodeType,
 } from "@/lib/types/workflow";
+import { eventTracker } from "@/lib/utils";
 
 interface TraitItemProps {
   nodeId: string;
@@ -110,18 +111,39 @@ export function TraitItem({
   const handleToggleHighlight = useCallback(
     (event: React.MouseEvent) => {
       event.stopPropagation();
+      const willBeSelected = !isSelected;
+
+      eventTracker({
+        action: willBeSelected ? "highlight_trait_evidence" : "unhighlight_trait_evidence",
+        data: {
+          nodeId: nodeId,
+          traitValue: trait,
+          evidenceCount: evidenceCount,
+        },
+      });
+
       toggleEvidenceAttribute(nodeId, trait);
     },
-    [nodeId, trait, toggleEvidenceAttribute],
+    [nodeId, trait, toggleEvidenceAttribute, isSelected, evidenceCount],
   );
 
   const handleStartEdit = useCallback(
     (event: React.MouseEvent) => {
       event.stopPropagation();
+
+      eventTracker({
+        action: "start_edit_trait",
+        data: {
+          nodeId: nodeId,
+          traitValue: trait,
+          evidenceCount: evidenceCount,
+        },
+      });
+
       setIsEditing(true);
       setEditValue(trait);
     },
-    [trait],
+    [trait, nodeId, evidenceCount],
   );
 
   const handleEditChange = useCallback(
@@ -147,10 +169,20 @@ export function TraitItem({
   const handleEditCancel = useCallback(
     (event?: React.MouseEvent) => {
       event?.stopPropagation();
+
+      eventTracker({
+        action: "cancel_edit_trait",
+        data: {
+          nodeId: nodeId,
+          traitValue: trait,
+          editedValue: editValue,
+        },
+      });
+
       setIsEditing(false);
       setEditValue(trait);
     },
-    [trait],
+    [trait, nodeId, editValue],
   );
 
   const handleRemove = useCallback(

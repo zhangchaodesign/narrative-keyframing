@@ -13,6 +13,7 @@ import {
   applyAnalysisResults,
 } from "@/lib/utiils/perspectiveUtils";
 import { cn } from "@/lib/utiils/sharedUtils";
+import { eventTracker } from "@/lib/utils";
 
 type PerspectiveActionsMenuProps = {
   targetNodeIds: string[];
@@ -29,6 +30,7 @@ export function PerspectiveActionsMenu({
   buttonPadding = "p-1",
   iconSize = 14,
 }: PerspectiveActionsMenuProps) {
+  const nodes = useWorkflowStore((state) => state.nodes);
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const preparePerspectiveGeneration = useWorkflowStore(
     (state) => state.preparePerspectiveGeneration,
@@ -53,6 +55,24 @@ export function PerspectiveActionsMenu({
 
     setIsGenerating(true);
     const targetIdSet = new Set(uniqueTargetIds);
+
+    const perspectives = nodes
+      .filter((node): node is import("@/lib/types/workflow").PerspectiveNodeType =>
+        uniqueTargetIds.includes(node.id) && node.type === "perspective")
+      .map((node) => ({
+        id: node.id,
+        narrator: node.data?.narrator,
+        reflection: node.data?.reflection,
+      }));
+
+    eventTracker({
+      action: "generate_perspectives",
+      data: {
+        perspectiveCount: uniqueTargetIds.length,
+        perspectives: perspectives,
+        customPrompt: prompt || "",
+      },
+    });
 
     try {
       setNodes((currentNodes) =>
@@ -97,6 +117,18 @@ export function PerspectiveActionsMenu({
       setIsAnalyzing(false);
       return;
     }
+
+    eventTracker({
+      action: "analyze_multiple_perspectives_evidence",
+      data: {
+        perspectiveCount: preparedTargets.length,
+        perspectives: preparedTargets.map((target) => ({
+          nodeId: target.nodeId,
+          characters: target.target.characters,
+          reflection: target.target.reflection,
+        })),
+      },
+    });
 
     try {
       setNodes((currentNodes) =>

@@ -92,7 +92,11 @@ export function CharacterRefreshMenu({
       action: "refresh_character_snapshot",
       data: {
         characterId: nodeId,
+        characterName: characterNode?.data?.name,
+        characterTraits: characterNode?.data?.traits,
         perspectiveId: characterNode?.data?.perspectiveId,
+        perspectiveNarrator: perspectiveNode?.data?.narrator,
+        perspectiveReflection: perspectiveNode?.data?.reflection,
       },
     });
 
@@ -103,8 +107,32 @@ export function CharacterRefreshMenu({
         nodes,
         setNodes: setNodes as WorkflowNodesSetter,
       });
+
+      // Get updated character data after refresh
+      const updatedCharacter = nodes.find(
+        (node): node is CharacterNodeType =>
+          node.id === nodeId && node.type === "character",
+      );
+
+      eventTracker({
+        action: "refresh_character_snapshot_success",
+        data: {
+          characterId: nodeId,
+          characterName: updatedCharacter?.data?.name,
+          updatedCharacterTraits: updatedCharacter?.data?.traits,
+          perspectiveId: updatedCharacter?.data?.perspectiveId,
+        },
+      });
     } catch (error) {
       console.error("Error refreshing character snapshot:", error);
+      eventTracker({
+        action: "refresh_character_snapshot_error",
+        data: {
+          characterId: nodeId,
+          characterName: characterNode?.data?.name,
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+      });
     } finally {
       updateRefreshingState(false);
     }
@@ -116,6 +144,7 @@ export function CharacterRefreshMenu({
     setNodes,
     updateRefreshingState,
     characterNode,
+    perspectiveNode,
   ]);
 
   const tooltipText = hasPerspectiveLink ? linkedTooltip : unlinkedTooltip;
@@ -127,12 +156,16 @@ export function CharacterRefreshMenu({
       data: {
         characterId: nodeId,
         characterName: characterNode?.data?.name,
+        characterTraits: characterNode?.data?.traits,
+        perspectiveId: characterNode?.data?.perspectiveId,
+        perspectiveNarrator: perspectiveNode?.data?.narrator,
+        perspectiveReflection: perspectiveNode?.data?.reflection,
       },
     });
     const result = deleteNodeWithEdges(nodeId, nodes, edges);
     setNodes(result.nodes);
     setEdges(result.edges);
-  }, [edges, nodeId, nodes, setEdges, setNodes, characterNode]);
+  }, [edges, nodeId, nodes, setEdges, setNodes, characterNode, perspectiveNode]);
 
   return (
     <div className="pointer-events-none absolute -top-9 right-0 z-50 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 text-gray-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
