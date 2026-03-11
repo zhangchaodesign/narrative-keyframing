@@ -36,11 +36,16 @@ export function TimelineHeader({
     event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     const nextClusterId = event.target.value;
+    const fromCluster =
+      storyOutlineClusters.find((cluster) => cluster.id === selectedStoryClusterId) ??
+      null;
+    const toCluster =
+      storyOutlineClusters.find((cluster) => cluster.id === nextClusterId) ?? null;
     eventTracker({
       action: "change_timeline_story_dropdown",
       data: {
-        from: selectedStoryClusterId,
-        to: nextClusterId,
+        from: fromCluster,
+        to: toCluster,
         optionCount: storyOutlineClusters.length,
       },
     });
@@ -51,15 +56,21 @@ export function TimelineHeader({
     event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     const value = event.target.value;
+    const nextClusterId = value || null;
+    const fromCluster =
+      narrativeOptions.find((cluster) => cluster.id === selectedNarrativeClusterId) ??
+      null;
+    const toCluster =
+      narrativeOptions.find((cluster) => cluster.id === nextClusterId) ?? null;
     eventTracker({
       action: "change_timeline_narrative_dropdown",
       data: {
-        from: selectedNarrativeClusterId,
-        to: value || null,
+        from: fromCluster,
+        to: toCluster,
         optionCount: narrativeOptions.length + 1, // Includes "None" option
       },
     });
-    onNarrativeClusterChange(value || null);
+    onNarrativeClusterChange(nextClusterId);
   };
 
   const formatStoryClusterLabel = (cluster: StoryOutlineCluster) => {

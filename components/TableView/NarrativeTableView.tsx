@@ -16,6 +16,7 @@ import type { ThirdPersonGroupNodeType } from "@/lib/types/workflow";
 import { useUiStore } from "@/lib/stores/uiStore";
 import { getCharacterColors } from "@/components/shared/colors.constants";
 import { geistMono } from "@/app/fonts";
+import { eventTracker } from "@/lib/utils";
 
 type EventData = {
   narrativeNodeId: string;
@@ -156,6 +157,16 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
   const handleRegenerateNarrative = async () => {
     if (isRegenerating) return;
 
+    eventTracker({
+      action: "regenerate_narrative_table_start",
+      data: {
+        narrativeGroupId: resolvedGroupId ?? null,
+        eventCount: eventsData.length,
+        selectedSnippetCount: snippetCounts.selected,
+        customPrompt: customPrompt,
+      },
+    });
+
     setIsRegenerating(true);
     setShowPromptDialog(false);
 
@@ -172,6 +183,14 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
         events: filteredEventsData,
         customPrompt,
         setNodes,
+      });
+
+      eventTracker({
+        action: "regenerate_narrative_table_success",
+        data: {
+          narrativeGroupId: resolvedGroupId ?? null,
+          eventCount: filteredEventsData.length,
+        },
       });
 
       setEventsData((prevEventsData) =>
@@ -197,6 +216,13 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
       setCustomPrompt("");
     } catch (error) {
       console.error("Error regenerating narrative:", error);
+      eventTracker({
+        action: "regenerate_narrative_table_error",
+        data: {
+          narrativeGroupId: resolvedGroupId ?? null,
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+      });
       alert("Failed to regenerate narrative. Please try again.");
     } finally {
       setIsRegenerating(false);
@@ -351,6 +377,19 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                 attributes: snippet.attributes,
               };
 
+              eventTracker({
+                action: isSelected
+                  ? "deselect_narrative_table_snippet"
+                  : "select_narrative_table_snippet",
+                data: {
+                  perspectiveNodeId: snippet.perspectiveNodeId,
+                  characterId: snippet.characterId,
+                  characterName: snippet.characterName ?? null,
+                  snippetText: snippet.text,
+                  attributes: snippet.attributes,
+                },
+              });
+
               // Toggle the snippet
               toggleSnippet(snippetData);
 
@@ -404,7 +443,10 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
           <legend className="fieldset-legend">Custom Prompt (Optional)</legend>
           <textarea
             value={customPrompt}
-            onChange={(e) => setCustomPrompt(e.target.value)}
+            onChange={(e) => {
+              const nextPrompt = e.target.value;
+              setCustomPrompt(nextPrompt);
+            }}
             placeholder="E.g., Focus on emotional depth, use vivid imagery..."
             rows={4}
             className="textarea w-full text-xs rounded"
@@ -413,6 +455,12 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
         <div className="mt-4 flex justify-end gap-3">
           <button
             onClick={() => {
+              eventTracker({
+                action: "cancel_narrative_table_regenerate_dialog",
+                data: {
+                  promptLength: customPrompt.length,
+                },
+              });
               setShowPromptDialog(false);
               setCustomPrompt("");
             }}
@@ -447,11 +495,26 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
             </span>
             <select
               value={resolvedGroupId ?? ""}
-              onChange={(event) =>
-                setNarrativeTableGroupId(
-                  event.target.value ? event.target.value : undefined,
-                )
-              }
+              onChange={(event) => {
+                const nextGroupId = event.target.value
+                  ? event.target.value
+                  : undefined;
+                const fromGroup =
+                  narrativeGroups.find((group) => group.id === resolvedGroupId) ??
+                  null;
+                const toGroup =
+                  narrativeGroups.find((group) => group.id === nextGroupId) ??
+                  null;
+                eventTracker({
+                  action: "change_narrative_table_group",
+                  data: {
+                    from: fromGroup,
+                    to: toGroup,
+                    groupCount: narrativeGroups.length,
+                  },
+                });
+                setNarrativeTableGroupId(nextGroupId);
+              }}
               className="select select-sm select-bordered"
               disabled={narrativeGroups.length === 0}
             >
@@ -469,7 +532,17 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
             </select>
           </div>
           <button
-            onClick={() => setHighlightEnabled(!highlightEnabled)}
+            onClick={() => {
+              eventTracker({
+                action: highlightEnabled
+                  ? "disable_narrative_table_highlighting"
+                  : "enable_narrative_table_highlighting",
+                data: {
+                  narrativeGroupId: resolvedGroupId ?? null,
+                },
+              });
+              setHighlightEnabled(!highlightEnabled);
+            }}
             className={`flex items-center gap-2 rounded px-3 py-1.5 text-sm font-medium transition ${
               highlightEnabled
                 ? "bg-yellow-100 text-yellow-900 hover:bg-yellow-200"
@@ -525,7 +598,17 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
                   <div className="flex items-center gap-1">
                     <span>Enriched Story</span>
                     <button
-                      onClick={() => setShowPromptDialog(true)}
+                      onClick={() => {
+                        eventTracker({
+                          action: "open_narrative_table_regenerate_dialog",
+                          data: {
+                            narrativeGroupId: resolvedGroupId ?? null,
+                            selectedSnippetCount: snippetCounts.selected,
+                            totalSnippetCount: snippetCounts.total,
+                          },
+                        });
+                        setShowPromptDialog(true);
+                      }}
                       disabled={isRegenerating}
                       className="rounded p-1 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-50"
                       title="Regenerate narratives"

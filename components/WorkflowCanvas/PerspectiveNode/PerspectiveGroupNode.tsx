@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, type ChangeEvent } from "react";
+import { useCallback, type ChangeEvent, type FocusEvent } from "react";
 import {
   Position,
   type NodeProps,
@@ -36,18 +36,6 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   const handleCharacterNameChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const nextName = event.target.value;
-      const previousName = data?.characterName ?? "";
-
-      if (previousName !== nextName) {
-        eventTracker({
-          action: "change_narrator_name",
-          data: {
-            clusterLabel: data?.label || "First-Person Limited Cluster",
-            previousName,
-            newName: nextName,
-          },
-        });
-      }
 
       setNodes((currentNodes) =>
         currentNodes.map((node) => {
@@ -104,6 +92,34 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       );
     },
     [id, data, setNodes],
+  );
+
+  const handleNarratorInputFocus = useCallback(
+    (_event: FocusEvent<HTMLInputElement>) => {
+      eventTracker({
+        action: "narrator_input_active",
+        data: {
+          clusterLabel: data?.label || "First-Person Limited Cluster",
+          narratorName: data?.characterName ?? "",
+          perspectiveGroupId: id,
+        },
+      });
+    },
+    [data?.characterName, data?.label, id],
+  );
+
+  const handleNarratorInputBlur = useCallback(
+    (event: FocusEvent<HTMLInputElement>) => {
+      eventTracker({
+        action: "narrator_input_not_active",
+        data: {
+          clusterLabel: data?.label || "First-Person Limited Cluster",
+          narratorName: event.target.value ?? "",
+          perspectiveGroupId: id,
+        },
+      });
+    },
+    [data?.label, id],
   );
 
   const handleAddNarrativeGroup = useCallback(() => {
@@ -227,6 +243,8 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           <input
             value={data?.characterName ?? ""}
             onChange={handleCharacterNameChange}
+            onFocus={handleNarratorInputFocus}
+            onBlur={handleNarratorInputBlur}
             onPointerDown={(event) => event.stopPropagation()}
             placeholder="Name..."
             className="w-28 rounded border border-transparent bg-gray-50 px-2 py-0.5 font-medium normal-case text-gray-700 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-400 nodrag nopan"
