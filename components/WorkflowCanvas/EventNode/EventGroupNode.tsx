@@ -16,6 +16,7 @@ import type {
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
+import { eventTracker } from "@/lib/utils";
 
 export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
@@ -41,21 +42,32 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
 
     setIsExtracting(true);
 
+    const nodes = getNodes();
+    const eventNodes = nodes.filter(
+      (node): node is EventNodeType =>
+        node.type === "event" && node.parentId === id,
+    );
+
+    if (eventNodes.length === 0) {
+      setIsExtracting(false);
+      return;
+    }
+
+    const events = eventNodes.map((node) => ({
+      label: node.data.timeline || "Event",
+      description: node.data.description || "",
+    }));
+
     try {
-      const nodes = getNodes();
-      const eventNodes = nodes.filter(
-        (node): node is EventNodeType =>
-          node.type === "event" && node.parentId === id,
-      );
-
-      if (eventNodes.length === 0) {
-        return;
-      }
-
-      const events = eventNodes.map((node) => ({
-        label: node.data.timeline || "Event",
-        description: node.data.description || "",
-      }));
+      eventTracker({
+        action: "extract_characters",
+        data: {
+          eventGroupLabel: data?.label ?? "Story Draft",
+          eventGroupNumber: data?.eventGroupId ?? 0,
+          eventCount: eventNodes.length,
+          events: events,
+        },
+      });
 
       const response = await fetch("/api/extract-characters", {
         method: "POST",
@@ -72,17 +84,41 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       const result = await response.json();
       // console.log("Character extraction result:", result);
       setExtractedCharacters(id, result.characters);
+
+      eventTracker({
+        action: "extract_characters_success",
+        data: {
+          characterCount: result.characters.length,
+          characters: result.characters,
+        },
+      });
     } catch (error) {
       console.error("Character extraction error:", error);
+      eventTracker({
+        action: "extract_characters_error",
+        data: {
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+      });
     } finally {
       setIsExtracting(false);
     }
-  }, [id, getNodes, setExtractedCharacters, isExtracting]);
+  }, [id, data, getNodes, setExtractedCharacters, isExtracting]);
 
   const handleAddPerspectiveGroup = useCallback(
     (characterName: string) => {
       const currentNodes = getNodes() as WorkflowNode[];
       const currentEdges = getEdges() as WorkflowEdge[];
+
+      const eventNodes = currentNodes.filter(
+        (node): node is EventNodeType =>
+          node.type === "event" && node.parentId === id,
+      );
+
+      const events = eventNodes.map((node) => ({
+        label: node.data.timeline || "Event",
+        description: node.data.description || "",
+      }));
 
       const result = createPerspectiveGroup(currentNodes, currentEdges, {
         characterName,
@@ -93,10 +129,36 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
         return;
       }
 
+      eventTracker({
+        action: "add_perspective_group",
+        data: {
+          eventGroupLabel: data?.label ?? "Story Draft",
+          eventGroupNumber: data?.eventGroupId ?? 0,
+          characterName: characterName || "Custom",
+          isCustom: characterName === "",
+          eventCount: eventNodes.length,
+          events: events,
+          nodesCreated: result.nodes.length,
+          edgesCreated: result.edges.length,
+          createdNodes: result.nodes.map((node) => ({
+            id: node.id,
+            type: node.type,
+            data: node.data,
+            position: node.position,
+          })),
+          createdEdges: result.edges.map((edge) => ({
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            data: edge.data,
+          })),
+        },
+      });
+
       setNodes((nodes) => [...nodes, ...result.nodes]);
       setEdges((edges) => [...edges, ...result.edges]);
     },
-    [id, getNodes, getEdges, setNodes, setEdges],
+    [id, data, getNodes, getEdges, setNodes, setEdges],
   );
 
   return (

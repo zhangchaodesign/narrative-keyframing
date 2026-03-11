@@ -13,6 +13,7 @@ import {
 } from "@/lib/utiils/characterUtils";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { deleteNodeWithEdges } from "@/lib/utiils/workflowUtils";
+import { eventTracker } from "@/lib/utils";
 
 type CharacterRefreshMenuProps = {
   nodeId: string;
@@ -87,6 +88,14 @@ export function CharacterRefreshMenu({
       return;
     }
 
+    eventTracker({
+      action: "refresh_character_snapshot",
+      data: {
+        characterId: nodeId,
+        perspectiveId: characterNode?.data?.perspectiveId,
+      },
+    });
+
     updateRefreshingState(true);
     try {
       await refreshCharacterSnapshotFromPerspective({
@@ -106,16 +115,24 @@ export function CharacterRefreshMenu({
     nodes,
     setNodes,
     updateRefreshingState,
+    characterNode,
   ]);
 
   const tooltipText = hasPerspectiveLink ? linkedTooltip : unlinkedTooltip;
   const ariaLabel = hasPerspectiveLink ? ariaLabelLinked : ariaLabelUnlinked;
 
   const handleDelete = useCallback(() => {
+    eventTracker({
+      action: "delete_character",
+      data: {
+        characterId: nodeId,
+        characterName: characterNode?.data?.name,
+      },
+    });
     const result = deleteNodeWithEdges(nodeId, nodes, edges);
     setNodes(result.nodes);
     setEdges(result.edges);
-  }, [edges, nodeId, nodes, setEdges, setNodes]);
+  }, [edges, nodeId, nodes, setEdges, setNodes, characterNode]);
 
   return (
     <div className="pointer-events-none absolute -top-9 right-0 z-50 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 text-gray-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">

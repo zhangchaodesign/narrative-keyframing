@@ -13,16 +13,26 @@ import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { adjustEventCountForAllClusters } from "@/lib/utiils/workflowUtils";
 import { useUiStore } from "@/lib/stores/uiStore";
 import { StudyManager } from "@/components/StudyManager";
+import { eventTracker } from "@/lib/utils";
 
 export default function Page() {
   const viewMode = useUiStore((state) => state.viewMode);
   const setViewMode = useUiStore((state) => state.setViewMode);
+  const eventCount = useUiStore((state) => state.eventCount);
+  const setEventCountStore = useUiStore((state) => state.setEventCount);
   const [isEditorCollapsed, setIsEditorCollapsed] = useState(false);
-  const [eventCount, setEventCount] = useState(4);
   const isInitialMount = useRef(true);
 
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const setEdges = useWorkflowStore((state) => state.setEdges);
+
+  const handleEventCountChange = (newCount: number) => {
+    eventTracker({
+      action: "change_event_count",
+      data: { from: eventCount, to: newCount },
+    });
+    setEventCountStore(newCount);
+  };
 
   useEffect(() => {
     // Skip the initial mount to avoid triggering adjustment on page load
@@ -105,7 +115,7 @@ export default function Page() {
                       min="1"
                       max="20"
                       value={eventCount}
-                      onChange={(e) => setEventCount(Number(e.target.value))}
+                      onChange={(e) => handleEventCountChange(Number(e.target.value))}
                       className="input input-sm input-bordered w-16 rounded"
                     />
                   </div>

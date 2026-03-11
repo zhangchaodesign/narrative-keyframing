@@ -13,6 +13,7 @@ import {
   combineNarrativeTextsInGroup,
   generateNarratives,
 } from "@/lib/utiils/narrativeUtils";
+import { eventTracker } from "@/lib/utils";
 
 type NarrativeActionsMenuProps = {
   nodeId: string;
@@ -107,6 +108,14 @@ export function NarrativeActionsMenu({
     if (combinedText.trim().length === 0) {
       return;
     }
+
+    eventTracker({
+      action: "populate_editor_from_narrative",
+      data: {
+        narrativeGroupId: nodeId,
+        textLength: combinedText.length,
+      },
+    });
 
     const slateValue = SlateUtils.textToSlateState(combinedText);
     setValue(slateValue);

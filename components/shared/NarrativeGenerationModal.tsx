@@ -6,6 +6,7 @@ import { TbX } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { SelectedSnippet } from "@/lib/stores/workflowStore";
 import { getCharacterColors } from "@/components/shared/colors.constants";
+import { eventTracker } from "@/lib/utils";
 
 type EventData = {
   narrativeNodeId: string;
@@ -166,6 +167,15 @@ export function NarrativeGenerationModal({
   };
 
   const handleConfirm = () => {
+    eventTracker({
+      action: "generate_narrative",
+      data: {
+        snippetCount: selectedSnippetKeys.size,
+        eventCount: eventsData.length,
+        hasCustomPrompt: customPrompt.trim().length > 0,
+        activeCharacter: activeCharacterKey,
+      },
+    });
     onConfirm(selectedSnippetKeys, customPrompt);
   };
 
@@ -176,10 +186,18 @@ export function NarrativeGenerationModal({
         allSnippetKeys.add(`${snippet.perspectiveNodeId}::${snippet.text}`);
       });
     });
+    eventTracker({
+      action: "select_all_snippets",
+      data: { count: allSnippetKeys.size },
+    });
     setSelectedSnippetKeys(allSnippetKeys);
   };
 
   const handleDeselectAll = () => {
+    eventTracker({
+      action: "deselect_all_snippets",
+      data: null,
+    });
     setSelectedSnippetKeys(new Set());
   };
 
