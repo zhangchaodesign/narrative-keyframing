@@ -64,11 +64,23 @@ export function NarrativeActionsMenu({
     Object.values(selectedSnippets).forEach((snippet) => {
       preSelected.add(`${snippet.perspectiveNodeId}::${snippet.text}`);
     });
+    const narrativeGroupNode = nodes.find(
+      (node) => node.type === "narrativeGroup" && node.id === nodeId,
+    );
+
+    eventTracker({
+      action: "open_narrative_generation_modal",
+      data: {
+        narrativeGroup: narrativeGroupNode ?? null,
+        event: preparedEventsData,
+        preSelectedSnippet: Array.from(preSelected),
+      },
+    });
 
     setEventsData(preparedEventsData);
     setPreSelectedSnippets(preSelected);
     setIsModalOpen(true);
-  }, [getNarrativeEventsData, nodeId, selectedSnippets]);
+  }, [getNarrativeEventsData, nodeId, nodes, selectedSnippets]);
 
   const handleGenerateNarratives = useCallback(
     async (selectedSnippetKeys: Set<string>, customPrompt: string) => {
@@ -121,6 +133,9 @@ export function NarrativeActionsMenu({
 
   const handlePopulateEditor = useCallback(() => {
     const combinedText = combineNarrativeTextsInGroup(nodeId, nodes);
+    const narrativeGroupNode = nodes.find(
+      (node) => node.type === "narrativeGroup" && node.id === nodeId,
+    );
 
     if (combinedText.trim().length === 0) {
       return;
@@ -129,7 +144,7 @@ export function NarrativeActionsMenu({
     eventTracker({
       action: "populate_editor_from_narrative",
       data: {
-        narrativeGroupId: nodeId,
+        narrativeGroup: narrativeGroupNode ?? null,
         combinedText: combinedText,
       },
     });

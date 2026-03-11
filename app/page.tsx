@@ -34,6 +34,16 @@ export default function Page() {
     setEventCountStore(newCount);
   };
 
+  const handleEditorToggle = () => {
+    eventTracker({
+      action: isEditorCollapsed ? "click_chevron_right" : "click_chevron_left",
+      data: {
+        isEditorCollapsedBeforeClick: isEditorCollapsed,
+      },
+    });
+    setIsEditorCollapsed((prev) => !prev);
+  };
+
   useEffect(() => {
     // Skip the initial mount to avoid triggering adjustment on page load
     if (isInitialMount.current) {
@@ -84,7 +94,7 @@ export default function Page() {
 
               <button
                 type="button"
-                onClick={() => setIsEditorCollapsed((prev) => !prev)}
+                onClick={handleEditorToggle}
                 aria-label={
                   isEditorCollapsed ? "Show text editor" : "Hide text editor"
                 }

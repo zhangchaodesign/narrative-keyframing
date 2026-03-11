@@ -358,6 +358,7 @@ export function TraitSection({
         {traits.map((trait, index) => (
           <TraitItem
             key={`${category}-${trait}-${index}`}
+            category={category}
             nodeId={nodeId}
             trait={trait}
             index={index}

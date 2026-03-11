@@ -15,6 +15,7 @@ import {
 import type { PerspectiveEvidenceItem } from "@/lib/types/workflow";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
 import { getCharacterColors } from "@/components/shared/colors.constants";
+import { eventTracker } from "@/lib/utils";
 
 interface PerspectiveContentProps {
   perspectiveNodeId: string;
@@ -159,9 +160,29 @@ export function PerspectiveContent({
 
   const handleToggleSnippet = useCallback(
     (snippet: SelectedSnippet) => {
+      const snippetKey = buildSnippetKey(
+        snippet.perspectiveNodeId,
+        snippet.text,
+      );
+      const isCurrentlySelected = Boolean(selectedSnippets[snippetKey]);
+
+      eventTracker({
+        action: isCurrentlySelected
+          ? "deselect_perspective_text"
+          : "select_perspective_text",
+        data: {
+          perspectiveNodeId: snippet.perspectiveNodeId,
+          perspectiveContent: reflection,
+          characterId: snippet.characterId,
+          characterName: snippet.characterName ?? null,
+          snippetText: snippet.text,
+          attributes: snippet.attributes ?? [],
+        },
+      });
+
       toggleSnippet(snippet);
     },
-    [toggleSnippet],
+    [perspectiveNodeId, selectedSnippets, toggleSnippet],
   );
 
   const handleTextChange = useCallback(

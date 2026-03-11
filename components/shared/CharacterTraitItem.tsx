@@ -16,13 +16,17 @@ import {
   useWorkflowStore,
 } from "@/lib/stores/workflowStore";
 import type {
+  CharacterTraits,
   CharacterNodeType,
   PerspectiveNodeType,
 } from "@/lib/types/workflow";
 import { eventTracker } from "@/lib/utils";
 
+type TraitCategory = keyof CharacterTraits;
+
 interface TraitItemProps {
   nodeId: string;
+  category: TraitCategory;
   trait: string;
   index: number;
   label: string;
@@ -34,6 +38,7 @@ interface TraitItemProps {
 
 export function TraitItem({
   nodeId,
+  category,
   trait,
   index,
   label,
@@ -117,6 +122,7 @@ export function TraitItem({
         action: willBeSelected ? "highlight_trait_evidence" : "unhighlight_trait_evidence",
         data: {
           nodeId: nodeId,
+          category: category,
           traitValue: trait,
           evidenceCount: evidenceCount,
         },
@@ -124,7 +130,7 @@ export function TraitItem({
 
       toggleEvidenceAttribute(nodeId, trait);
     },
-    [nodeId, trait, toggleEvidenceAttribute, isSelected, evidenceCount],
+    [category, nodeId, trait, toggleEvidenceAttribute, isSelected, evidenceCount],
   );
 
   const handleStartEdit = useCallback(
@@ -135,6 +141,7 @@ export function TraitItem({
         action: "start_edit_trait",
         data: {
           nodeId: nodeId,
+          category: category,
           traitValue: trait,
           evidenceCount: evidenceCount,
         },
@@ -143,7 +150,7 @@ export function TraitItem({
       setIsEditing(true);
       setEditValue(trait);
     },
-    [trait, nodeId, evidenceCount],
+    [category, trait, nodeId, evidenceCount],
   );
 
   const handleEditChange = useCallback(
@@ -174,6 +181,7 @@ export function TraitItem({
         action: "cancel_edit_trait",
         data: {
           nodeId: nodeId,
+          category: category,
           traitValue: trait,
           editedValue: editValue,
         },
@@ -182,7 +190,7 @@ export function TraitItem({
       setIsEditing(false);
       setEditValue(trait);
     },
-    [trait, nodeId, editValue],
+    [category, trait, nodeId, editValue],
   );
 
   const handleRemove = useCallback(

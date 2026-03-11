@@ -5,6 +5,7 @@ import type {
   NarrativeCluster,
   StoryOutlineCluster,
 } from "@/lib/types/timeline";
+import { eventTracker } from "@/lib/utils";
 
 interface TimelineHeaderProps {
   storyOutlineClusters: StoryOutlineCluster[];
@@ -34,13 +35,30 @@ export function TimelineHeader({
   const handleStoryClusterChange = (
     event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
-    onStoryClusterChange(event.target.value);
+    const nextClusterId = event.target.value;
+    eventTracker({
+      action: "change_timeline_story_dropdown",
+      data: {
+        from: selectedStoryClusterId,
+        to: nextClusterId,
+        optionCount: storyOutlineClusters.length,
+      },
+    });
+    onStoryClusterChange(nextClusterId);
   };
 
   const handleNarrativeClusterChange = (
     event: React.ChangeEvent<HTMLSelectElement>,
   ) => {
     const value = event.target.value;
+    eventTracker({
+      action: "change_timeline_narrative_dropdown",
+      data: {
+        from: selectedNarrativeClusterId,
+        to: value || null,
+        optionCount: narrativeOptions.length + 1, // Includes "None" option
+      },
+    });
     onNarrativeClusterChange(value || null);
   };
 

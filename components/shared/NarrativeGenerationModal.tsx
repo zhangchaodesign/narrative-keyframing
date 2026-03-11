@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { createPortal } from "react-dom";
 import { TbX } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
@@ -138,6 +138,19 @@ export function NarrativeGenerationModal({
     const key = `${perspectiveNodeId}::${snippetText}`;
     const isCurrentlySelected = selectedSnippetKeys.has(key);
 
+    eventTracker({
+      action: isCurrentlySelected
+        ? "deselect_narrative_generation_snippet"
+        : "select_narrative_generation_snippet",
+      data: {
+        perspectiveNodeId: snippet.perspectiveNodeId,
+        characterId: snippet.characterId,
+        characterName: snippet.characterName ?? null,
+        snippetText: snippet.text,
+        attributes: snippet.attributes ?? [],
+      },
+    });
+
     // Update local state
     setSelectedSnippetKeys((prev) => {
       const next = new Set(prev);
@@ -167,15 +180,6 @@ export function NarrativeGenerationModal({
   };
 
   const handleConfirm = () => {
-    eventTracker({
-      action: "generate_narrative",
-      data: {
-        snippetCount: selectedSnippetKeys.size,
-        eventCount: eventsData.length,
-        hasCustomPrompt: customPrompt.trim().length > 0,
-        activeCharacter: activeCharacterKey,
-      },
-    });
     onConfirm(selectedSnippetKeys, customPrompt);
   };
 
@@ -188,7 +192,11 @@ export function NarrativeGenerationModal({
     });
     eventTracker({
       action: "select_all_snippets",
-      data: { count: allSnippetKeys.size },
+      data: {
+        count: allSnippetKeys.size,
+        eventCount: eventsData.length,
+        allSnippet: Array.from(allSnippetKeys),
+      },
     });
     setSelectedSnippetKeys(allSnippetKeys);
   };
@@ -196,9 +204,43 @@ export function NarrativeGenerationModal({
   const handleDeselectAll = () => {
     eventTracker({
       action: "deselect_all_snippets",
-      data: null,
+      data: {
+        previouslySelectedCount: selectedSnippetKeys.size,
+      },
     });
     setSelectedSnippetKeys(new Set());
+  };
+
+  const handleTabChange = (characterKey: string) => {
+    eventTracker({
+      action: "switch_narrative_generation_character_tab",
+      data: {
+        fromCharacter: activeCharacterKey || null,
+        toCharacter: characterKey,
+      },
+    });
+    setActiveCharacterKey(characterKey);
+  };
+
+  const handleCustomPromptChange = (
+    event: ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    const nextPrompt = event.target.value;
+    setCustomPrompt(nextPrompt);
+  };
+
+  const handleCloseWithTracking = (
+    source: "close_button" | "cancel_button",
+  ) => {
+    eventTracker({
+      action: "close_narrative_generation_modal",
+      data: {
+        source: source,
+        selectedSnippetCount: selectedSnippetKeys.size,
+        customPromptLength: customPrompt.length,
+      },
+    });
+    onClose();
   };
 
   // Helper function to highlight selected evidence within reflection text
@@ -295,7 +337,7 @@ export function NarrativeGenerationModal({
             Generate Third-Person Omniscient Narrative
           </h2>
           <button
-            onClick={onClose}
+            onClick={() => handleCloseWithTracking("close_button")}
             className="rounded-full p-1 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
             aria-label="Close modal"
           >
@@ -312,7 +354,7 @@ export function NarrativeGenerationModal({
                 return (
                   <button
                     key={character.key}
-                    onClick={() => setActiveCharacterKey(character.key)}
+                    onClick={() => handleTabChange(character.key)}
                     className={`whitespace-nowrap border-b-2 px-4 py-2 text-xs font-medium transition ${
                       activeCharacterKey === character.key
                         ? `${tabColors.border} ${tabColors.text}`
@@ -452,7 +494,7 @@ export function NarrativeGenerationModal({
             <textarea
               id="custom-prompt"
               value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value)}
+              onChange={handleCustomPromptChange}
               placeholder="Enter any additional instructions for narrative generation..."
               rows={4}
               className="textarea w-full text-xs rounded"
@@ -475,7 +517,7 @@ export function NarrativeGenerationModal({
           </div>
           <div className="flex gap-3">
             <button
-              onClick={onClose}
+              onClick={() => handleCloseWithTracking("cancel_button")}
               disabled={isGenerating}
               className="btn btn-sm"
             >
