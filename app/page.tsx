@@ -12,6 +12,7 @@ import { NarrativeTableView } from "@/components/TableView/NarrativeTableView";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { adjustEventCountForAllClusters } from "@/lib/utiils/workflowUtils";
 import { useUiStore } from "@/lib/stores/uiStore";
+import { StudyManager } from "@/components/StudyManager";
 
 export default function Page() {
   const viewMode = useUiStore((state) => state.viewMode);
@@ -49,6 +50,7 @@ export default function Page() {
       {/* <div className="shrink-0">
         <Header />
       </div> */}
+      <StudyManager />
 
       <div className="flex-1 overflow-hidden">
         <div className="h-full">
