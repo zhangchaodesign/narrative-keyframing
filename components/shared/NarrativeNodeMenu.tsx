@@ -44,6 +44,7 @@ export function NarrativeNodeMenu({
           "pointer-events-auto rounded-full transition hover:bg-purple-50 hover:text-purple-600 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-purple-500 disabled:cursor-not-allowed disabled:opacity-60",
           buttonPadding,
         )}
+        disabled={!isEditing && !narrativeText?.trim()}
         title={isEditing ? "Save narration" : "Edit narration text"}
         aria-label={isEditing ? "Save narration" : "Edit narration text"}
       >

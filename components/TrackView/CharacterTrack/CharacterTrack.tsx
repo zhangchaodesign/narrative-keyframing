@@ -172,50 +172,6 @@ export function CharacterTrack({
         ></div>
       </div>
 
-      {/* Perspective Subtrack */}
-      {perspectiveTrack && (
-        <div
-          className="relative border-t border-gray-200"
-          style={{ height: TIMELINE_CHARACTER_SUBTRACK_HEIGHT }}
-        >
-          <div
-            className={cn(
-              "absolute left-0 top-0 h-full border-r border-gray-200 flex items-center justify-center z-10 bg-gray-50/50",
-            )}
-            style={{ width: TIMELINE_LABEL_WIDTH }}
-          >
-            <div className="flex flex-col gap-2 items-center">
-              <span
-                className={cn(
-                  geistMono.className,
-                  "text-xs font-semibold text-center",
-                )}
-              >
-                Perspective
-              </span>
-              <PerspectiveTrackMenu
-                characterName={characterName}
-                perspectiveItems={perspectiveTrack.items}
-              />
-            </div>
-          </div>
-          <div
-            className={cn("absolute top-0 right-0 h-full bg-gray-50/50")}
-            style={{ left: TIMELINE_LABEL_WIDTH }}
-          >
-            {perspectiveTrack.items.map((item) => (
-              <PerspectiveBlock
-                key={item.id}
-                item={item}
-                timeToPixel={timeToPixel}
-                timelineScale={timelineScale}
-                characterName={characterName}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Character Subtrack */}
       {characterTrack && (
         <div
@@ -286,6 +242,50 @@ export function CharacterTrack({
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Perspective Subtrack */}
+      {perspectiveTrack && (
+        <div
+          className="relative border-t border-gray-200"
+          style={{ height: TIMELINE_CHARACTER_SUBTRACK_HEIGHT }}
+        >
+          <div
+            className={cn(
+              "absolute left-0 top-0 h-full border-r border-gray-200 flex items-center justify-center z-10 bg-gray-50/50",
+            )}
+            style={{ width: TIMELINE_LABEL_WIDTH }}
+          >
+            <div className="flex flex-col gap-2 items-center">
+              <span
+                className={cn(
+                  geistMono.className,
+                  "text-xs font-semibold text-center",
+                )}
+              >
+                Perspective
+              </span>
+              <PerspectiveTrackMenu
+                characterName={characterName}
+                perspectiveItems={perspectiveTrack.items}
+              />
+            </div>
+          </div>
+          <div
+            className={cn("absolute top-0 right-0 h-full bg-gray-50/50")}
+            style={{ left: TIMELINE_LABEL_WIDTH }}
+          >
+            {perspectiveTrack.items.map((item) => (
+              <PerspectiveBlock
+                key={item.id}
+                item={item}
+                timeToPixel={timeToPixel}
+                timelineScale={timelineScale}
+                characterName={characterName}
+              />
+            ))}
           </div>
         </div>
       )}
