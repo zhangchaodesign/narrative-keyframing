@@ -121,7 +121,7 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
       eventNodes[Math.min(narrativeIndex, eventNodes.length - 1)];
 
     const timelineLabel =
-      eventNode?.data?.timeline ?? `Event ${narrativeIndex + 1}`;
+      eventNode?.data?.timeline ?? `Act ${narrativeIndex + 1}`;
     const clusterLabel = connectedEventGroup?.label?.trim() ?? "";
     const clusterId = connectedEventGroup?.eventGroupId;
     const assembledDisplay = [clusterLabel, clusterId]
@@ -160,7 +160,7 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
           "flex flex-col w-full gap-1 text-[10px] font-semibold tracking-wide text-gray-800 uppercase",
         )}
       >
-        <span className="flex items-center">📖 Event {narrativeSequence}</span>
+        <span className="flex items-center">📖 Act {narrativeSequence}</span>
       </div>
 
       <NarrativeContent
@@ -175,7 +175,7 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
             className={cn(
               "inline-flex items-center rounded text-[9px] font-semibold tracking-wide text-gray-500",
             )}
-            title={`Event: ${eventMetadata.timelineLabel}`}
+            title={`Act: ${eventMetadata.timelineLabel}`}
           >
             {eventMetadata.clusterDisplay
               ? `${eventMetadata.clusterDisplay} / ${eventMetadata.timelineLabel}`

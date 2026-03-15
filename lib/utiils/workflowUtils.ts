@@ -1271,11 +1271,13 @@ export function createNarrativeGroup(
     typeof baselineGroupStyle?.height === "number"
       ? baselineGroupStyle.height
       : NARRATIVE_GROUP_STYLE.height;
-  const eventGroupWidth =
-    typeof eventGroup?.style?.width === "number"
-      ? eventGroup.style.width
-      : baselineWidth;
-  const clusterWidth = Math.max(baselineWidth, eventGroupWidth);
+  const rightmostEventX = sortedEvents.reduce(
+    (max, event) => Math.max(max, event.position.x),
+    0,
+  );
+  const contentWidth =
+    rightmostEventX + EVENT_NODE_WIDTH + EVENT_GROUP_RIGHT_PADDING;
+  const clusterWidth = Math.max(DEFAULT_NARRATION_GROUP_WIDTH, contentWidth);
 
   const baseGroupY =
     narrativeGroups.length > 0

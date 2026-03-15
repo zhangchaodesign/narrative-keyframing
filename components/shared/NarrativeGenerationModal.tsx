@@ -381,7 +381,7 @@ export function NarrativeGenerationModal({
                 {/* Event Header */}
                 <div className="mb-3">
                   <h3 className="font-semibold text-gray-900">
-                    Event {eventIndex + 1}
+                    Act {eventIndex + 1}
                   </h3>
                   {event.eventDescription && (
                     <p className="mt-1 text-xs text-gray-600">

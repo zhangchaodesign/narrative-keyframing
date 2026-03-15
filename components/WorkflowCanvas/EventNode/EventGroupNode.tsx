@@ -54,7 +54,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
     }
 
     const events = eventNodes.map((node) => ({
-      label: node.data.timeline || "Event",
+      label: node.data.timeline || "Act",
       description: node.data.description || "",
     }));
 
@@ -116,7 +116,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       );
 
       const events = eventNodes.map((node) => ({
-        label: node.data.timeline || "Event",
+        label: node.data.timeline || "Act",
         description: node.data.description || "",
       }));
 

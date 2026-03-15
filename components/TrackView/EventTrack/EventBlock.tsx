@@ -65,7 +65,7 @@ export function EventBlock({
   );
 
   const headerLabel = useMemo(
-    () => `Event ${item.position + 1}`,
+    () => `Act ${item.position + 1}`,
     [item.position],
   );
 

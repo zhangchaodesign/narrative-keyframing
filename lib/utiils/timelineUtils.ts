@@ -47,7 +47,7 @@ const buildEventTrack = (
       storyItems.push({
         id: `story-${event.id}`,
         content:
-          eventData?.description || eventData?.timeline || `Event ${index + 1}`,
+          eventData?.description || eventData?.timeline || `Act ${index + 1}`,
         position,
         nodeId: event.id,
         nodeType: "event",
@@ -236,7 +236,7 @@ const buildStoryOutlineClusters = (
       storyItems.push({
         id: `story-${event.id}`,
         content:
-          eventData?.description || eventData?.timeline || `Event ${index + 1}`,
+          eventData?.description || eventData?.timeline || `Act ${index + 1}`,
         position,
         nodeId: event.id,
         nodeType: "event",
