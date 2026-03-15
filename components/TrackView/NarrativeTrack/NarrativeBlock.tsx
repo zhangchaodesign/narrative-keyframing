@@ -107,7 +107,7 @@ export function NarrativeBlock({
         {isLoading && (
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-green-600"></span>
-            <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-green-600">
+            <span className="mt-2 text-xs font-semibold uppercase tracking-wide text-green-600">
               Preparing enriched story content...
             </span>
           </div>
@@ -116,7 +116,7 @@ export function NarrativeBlock({
           <div
             className={cn(
               geistMono.className,
-              "flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wide text-gray-800",
+              "flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-gray-800",
             )}
           >
             <span className="flex items-center gap-1" aria-hidden="true">

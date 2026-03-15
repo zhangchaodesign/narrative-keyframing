@@ -109,7 +109,7 @@ export function PerspectiveBlock({
         {isLoading && (
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-secondary"></span>
-            <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-secondary">
+            <span className="mt-2 text-xs font-semibold uppercase tracking-wide text-secondary">
               Preparing perspective...
             </span>
           </div>
@@ -125,7 +125,7 @@ export function PerspectiveBlock({
         <div
           className={cn(
             geistMono.className,
-            "flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wide text-gray-800",
+            "flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-gray-800",
           )}
         >
           <span className="flex items-center gap-1" aria-hidden="true">

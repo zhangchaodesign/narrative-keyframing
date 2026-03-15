@@ -315,7 +315,7 @@ export function TraitSection({
     <section className="">
       <div className="flex items-center justify-between gap-2">
         <h4
-          className={`text-[10px] font-semibold uppercase tracking-wide ${titleClass}`}
+          className={`text-xs font-semibold uppercase tracking-wide ${titleClass}`}
         >
           {label}
         </h4>
@@ -371,7 +371,7 @@ export function TraitSection({
         ))}
         {traits.length === 0 && (
           <span
-            className={`rounded border border-dashed bg-white/70 px-2 py-1 text-[10px] ${emptyClass}`}
+            className={`rounded border border-dashed bg-white/70 px-2 py-1 text-xs ${emptyClass}`}
           >
             No {label.toLowerCase()} traits yet.
           </span>
@@ -384,7 +384,7 @@ export function TraitSection({
             onChange={handleDraftChange}
             onKeyDown={onTraitInputKeyDown}
             placeholder={`Add ${label.toLowerCase()} trait`}
-            className="flex-1 rounded border border-gray-300 bg-gray-50 px-2 py-1 text-[10px] leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-1 focus:ring-gray-400"
+            className="flex-1 rounded border border-gray-300 bg-gray-50 px-2 py-1 text-xs leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-1 focus:ring-gray-400"
           />
           <button
             type="button"

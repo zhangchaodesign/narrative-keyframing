@@ -280,7 +280,7 @@ export function PerspectiveContent({
         ref={textareaRef}
         value={editValue}
         onChange={handleTextChange}
-        className="flex-1 w-full resize-none rounded bg-white border border-gray-300 px-2 py-1 text-[10px] leading-snug text-gray-800 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-400 nodrag nopan"
+        className="flex-1 w-full resize-none rounded bg-white border border-gray-300 px-2 py-1 text-xs leading-snug text-gray-800 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-400 nodrag nopan"
         onWheel={(event) => {
           if (event.ctrlKey || event.metaKey) {
             return;
@@ -301,7 +301,7 @@ export function PerspectiveContent({
 
   return (
     <div
-      className="flex-1 overflow-y-auto w-full resize-none rounded bg-gray-50 px-2 py-1 text-[10px] leading-snug text-gray-800"
+      className="flex-1 overflow-y-auto w-full resize-none rounded bg-gray-50 px-2 py-1 text-xs leading-snug text-gray-800"
       onWheel={(event) => {
         if (event.ctrlKey || event.metaKey) {
           return;

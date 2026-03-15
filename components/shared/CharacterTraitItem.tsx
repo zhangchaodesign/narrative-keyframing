@@ -224,7 +224,7 @@ export function TraitItem({
   return (
     <div
       className={cn(
-        "group/trait relative flex items-center rounded border text-[10px] transition",
+        "group/trait relative flex items-center rounded border text-xs transition",
         chipClass,
         isSelected && selectedClass,
       )}
@@ -236,7 +236,7 @@ export function TraitItem({
           onChange={handleEditChange}
           onKeyDown={onKeyDown}
           onPointerDown={(event) => event.stopPropagation()}
-          className="flex-1 rounded border border-gray-300 bg-white/80 px-2 py-1 text-[10px] leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-1 focus:ring-gray-400 nodrag nopan"
+          className="flex-1 rounded border border-gray-300 bg-white/80 px-2 py-1 text-xs leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-1 focus:ring-gray-400 nodrag nopan"
           aria-label={`Edit ${label} trait`}
         />
       ) : (

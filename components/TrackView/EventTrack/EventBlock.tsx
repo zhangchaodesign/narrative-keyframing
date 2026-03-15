@@ -82,7 +82,7 @@ export function EventBlock({
           <div
             className={cn(
               geistMono.className,
-              "flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-gray-800",
+              "flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-800",
             )}
           >
             <span aria-hidden="true">📜</span>
@@ -110,7 +110,7 @@ export function EventBlock({
               event.stopPropagation();
               event.nativeEvent.stopImmediatePropagation?.();
             }}
-            className="mt-2 w-full flex-1 resize-none rounded border border-gray-300 bg-white/80 px-2 py-1 text-[11px] leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-1 focus:ring-gray-400 nodrag nopan"
+            className="mt-2 w-full flex-1 resize-none rounded border border-gray-300 bg-white/80 px-2 py-1 text-xs leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-1 focus:ring-gray-400 nodrag nopan"
           />
         </div>
       </div>
