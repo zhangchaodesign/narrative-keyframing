@@ -46,13 +46,13 @@ export function TimelineRuler({
           return (
             <div key={`major-${tick}`} className="absolute top-0 bottom-0">
               <div
-                className="absolute w-px bg-gray-400 h-3 z-50"
+                className="absolute w-px bg-gray-400 h-2 z-50"
                 style={{ left: `${tickPosition}px` }}
               />
               <div
                 className={cn(
                   geistMono.className,
-                  "absolute text-xs text-gray-700 mt-3.5",
+                  "absolute text-[10px] leading-none text-gray-700 mt-2.5",
                 )}
                 style={{
                   left: `${tickPosition}px`,
@@ -72,7 +72,7 @@ export function TimelineRuler({
           return (
             <div
               key={`half-${tick + 0.5}`}
-              className="absolute top-0 w-px bg-gray-300 h-2"
+              className="absolute top-0 w-px bg-gray-300 h-1.5"
               style={{ left: `${halfTickPosition}px` }}
             />
           );
