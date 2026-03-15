@@ -29,7 +29,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   const [isExtracting, setIsExtracting] = useState(false);
 
   const characters = extractedCharacters[id] || [];
-  const baseLabel = data?.label ?? "Story Draft";
+  const baseLabel = data?.label ?? "Story Outline";
   const labelWithSequence =
     typeof data?.eventGroupId === "number"
       ? `${baseLabel} ${data.eventGroupId}`
@@ -62,7 +62,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       eventTracker({
         action: "extract_characters",
         data: {
-          eventGroupLabel: data?.label ?? "Story Draft",
+          eventGroupLabel: data?.label ?? "Story Outline",
           eventGroupNumber: data?.eventGroupId ?? 0,
           eventCount: eventNodes.length,
           events: events,
@@ -132,7 +132,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       eventTracker({
         action: "add_perspective_group",
         data: {
-          eventGroupLabel: data?.label ?? "Story Draft",
+          eventGroupLabel: data?.label ?? "Story Outline",
           eventGroupNumber: data?.eventGroupId ?? 0,
           characterName: characterName || "Custom",
           isCustom: characterName === "",

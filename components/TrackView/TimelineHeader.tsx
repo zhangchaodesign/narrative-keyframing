@@ -37,10 +37,12 @@ export function TimelineHeader({
   ) => {
     const nextClusterId = event.target.value;
     const fromCluster =
-      storyOutlineClusters.find((cluster) => cluster.id === selectedStoryClusterId) ??
-      null;
+      storyOutlineClusters.find(
+        (cluster) => cluster.id === selectedStoryClusterId,
+      ) ?? null;
     const toCluster =
-      storyOutlineClusters.find((cluster) => cluster.id === nextClusterId) ?? null;
+      storyOutlineClusters.find((cluster) => cluster.id === nextClusterId) ??
+      null;
     eventTracker({
       action: "change_timeline_story_dropdown",
       data: {
@@ -58,8 +60,9 @@ export function TimelineHeader({
     const value = event.target.value;
     const nextClusterId = value || null;
     const fromCluster =
-      narrativeOptions.find((cluster) => cluster.id === selectedNarrativeClusterId) ??
-      null;
+      narrativeOptions.find(
+        (cluster) => cluster.id === selectedNarrativeClusterId,
+      ) ?? null;
     const toCluster =
       narrativeOptions.find((cluster) => cluster.id === nextClusterId) ?? null;
     eventTracker({
@@ -106,7 +109,7 @@ export function TimelineHeader({
                 htmlFor="story-cluster-select"
                 className="text-xs text-gray-600 whitespace-nowrap"
               >
-                Story Draft
+                Story Outline
               </label>
               <select
                 id="story-cluster-select"

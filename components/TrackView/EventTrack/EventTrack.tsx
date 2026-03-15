@@ -40,7 +40,7 @@ export function EventTrack({
               "text-xs font-semibold text-gray-600 text-center",
             )}
           >
-            Story Draft
+            Story Outline
           </span>
         </div>
       </div>

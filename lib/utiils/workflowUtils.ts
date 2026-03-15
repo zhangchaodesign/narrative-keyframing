@@ -909,7 +909,7 @@ export function createStoryOutlineCluster(
       y: newGroupY,
     },
     data: {
-      label: "Story Draft",
+      label: "Story Outline",
       eventGroupId: nextEventGroupId,
     },
     style: {

@@ -90,7 +90,7 @@ export function TimelineView() {
     );
   }, [narrativeClusters, selectedStoryClusterId]);
 
-  // Reset narrative cluster selection if current selection is no longer in filtered list
+  // Auto-select first narrative cluster, or reset if current selection is no longer in filtered list
   useEffect(() => {
     if (
       selectedNarrativeClusterId &&
@@ -98,7 +98,15 @@ export function TimelineView() {
         (c) => c.id === selectedNarrativeClusterId,
       )
     ) {
-      setSelectedNarrativeClusterId(null);
+      // Current selection invalid — fall back to first available
+      setSelectedNarrativeClusterId(
+        filteredNarrativeClusters.length > 0
+          ? filteredNarrativeClusters[0].id
+          : null,
+      );
+    } else if (!selectedNarrativeClusterId && filteredNarrativeClusters.length > 0) {
+      // No selection yet — auto-select first
+      setSelectedNarrativeClusterId(filteredNarrativeClusters[0].id);
     }
   }, [filteredNarrativeClusters, selectedNarrativeClusterId]);
 

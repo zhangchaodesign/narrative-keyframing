@@ -20,7 +20,7 @@ export const initialNodes: WorkflowNode[] = [
     id: "event-group",
     type: "eventGroup",
     position: { x: 200, y: 20 },
-    data: { label: "Story Draft", eventGroupId: 1 },
+    data: { label: "Story Outline", eventGroupId: 1 },
     style: {
       width: 920,
       height: 220,
@@ -36,7 +36,7 @@ export const initialNodes: WorkflowNode[] = [
     position: { x: 0, y: 360 },
     data: {
       label: "First-Person Limited Cluster",
-      characterName: "",
+      characterName: "Character 1",
     },
     style: {
       width: 920,
@@ -53,7 +53,7 @@ export const initialNodes: WorkflowNode[] = [
     position: { x: 1020, y: 360 },
     data: {
       label: "First-Person Limited Cluster",
-      characterName: "",
+      characterName: "Character 2",
     },
     style: {
       width: 920,

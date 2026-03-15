@@ -16,7 +16,7 @@ const ENABLE_PERSIST =
   process.env.NEXT_PUBLIC_ENABLE_PERSIST === "true";
 
 const uiStoreCreator: import("zustand").StateCreator<UiState> = (set) => ({
-  viewMode: "workflow",
+  viewMode: "timeline",
   narrativeTableGroupId: undefined,
   eventCount: 3,
   setViewMode: (viewMode) => set({ viewMode }),

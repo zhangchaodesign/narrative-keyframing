@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { getCharacterColors } from "@/components/shared/colors.constants";
 import { geistMono } from "@/app/fonts";
@@ -99,6 +99,42 @@ export function CharacterTrack({
 
   const perspectivesWithoutChars = perspectivesWithoutCharacters();
 
+  // Editable character name
+  const [nameValue, setNameValue] = useState(characterName);
+  const perspectiveGroupId = tracks[0]?.parentTrackId;
+
+  const handleNameBlur = useCallback(() => {
+    const trimmed = nameValue.trim();
+    if (!trimmed || trimmed === characterName || !perspectiveGroupId) {
+      setNameValue(characterName);
+      return;
+    }
+    setNodes((prev) =>
+      prev.map((node) => {
+        if (node.id !== perspectiveGroupId) return node;
+        return {
+          ...node,
+          data: {
+            ...(node.data as Record<string, unknown>),
+            characterName: trimmed,
+          },
+        } as typeof node;
+      }),
+    );
+  }, [nameValue, characterName, perspectiveGroupId, setNodes]);
+
+  const handleNameKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.currentTarget.blur();
+      } else if (e.key === "Escape") {
+        setNameValue(characterName);
+        e.currentTarget.blur();
+      }
+    },
+    [characterName],
+  );
+
   return (
     <div className="relative border-b border-gray-200">
       {/* Main Track Header */}
@@ -113,15 +149,21 @@ export function CharacterTrack({
           style={{ width: TIMELINE_LABEL_WIDTH }}
         >
           <div className="flex flex-col items-center gap-1 px-2">
-            <span
+            <input
+              type="text"
+              value={nameValue}
+              onChange={(e) => setNameValue(e.target.value)}
+              onBlur={handleNameBlur}
+              onKeyDown={handleNameKeyDown}
               className={cn(
                 geistMono.className,
-                "rounded px-2 py-0.5 text-xs font-bold text-white text-center",
+                "rounded px-2 py-0.5 text-xs font-bold text-white text-center w-full",
+                "border border-white/30 outline-none bg-black/10",
+                "focus:text-gray-900 focus:bg-white focus:border-gray-300 focus:ring-2 focus:ring-gray-500",
                 colors.label,
               )}
-            >
-              {characterName}
-            </span>
+              style={{ maxWidth: TIMELINE_LABEL_WIDTH - 16 }}
+            />
           </div>
         </div>
         <div

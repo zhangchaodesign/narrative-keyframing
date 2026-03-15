@@ -144,7 +144,7 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
     const clonedGroupData = cloneData(groupNode.data) as GroupNodeData;
     const nextGroupData: GroupNodeData = {
       ...clonedGroupData,
-      label: clonedGroupData?.label || "Story Draft",
+      label: clonedGroupData?.label || "Story Outline",
       eventGroupId: nextEventGroupId,
     };
 
