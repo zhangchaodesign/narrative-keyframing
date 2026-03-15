@@ -278,14 +278,14 @@ export function TimelineView() {
     narrativePerspectiveGroupMap,
   ]);
 
-  // Group filtered character tracks by character
+  // Group filtered character tracks by stable parentTrackId (perspectiveGroup node ID)
   const groupedCharacterTracks = filteredCharacterTracks.reduce(
     (acc, track) => {
-      const charName = track.characterName || "Unknown";
-      if (!acc[charName]) {
-        acc[charName] = [];
+      const groupId = track.parentTrackId || track.characterName || "Unknown";
+      if (!acc[groupId]) {
+        acc[groupId] = [];
       }
-      acc[charName].push(track);
+      acc[groupId].push(track);
       return acc;
     },
     {} as Record<string, typeof characterTracks>,
@@ -393,10 +393,10 @@ export function TimelineView() {
 
           {/* Character Perspective Tracks - Grouped by character */}
           {Object.entries(groupedCharacterTracks).map(
-            ([characterName, tracks]) => (
+            ([groupId, tracks]) => (
               <CharacterTrack
-                key={characterName}
-                characterName={characterName}
+                key={groupId}
+                characterName={tracks[0]?.characterName || "Unknown"}
                 tracks={tracks}
                 timeToPixel={timeToPixel}
                 pixelToTime={pixelToTime}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import { useCallback, useState, type ChangeEvent, type FocusEvent } from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { getCharacterColors } from "@/components/shared/colors.constants";
 import { geistMono } from "@/app/fonts";
@@ -22,6 +22,7 @@ import type {
   PerspectiveNodeType,
 } from "@/lib/types/workflow";
 import { createCharacterSnapshotFromPerspective } from "@/lib/utiils/characterUtils";
+import { eventTracker } from "@/lib/utils";
 
 interface CharacterTrackProps {
   characterName: string;
@@ -103,40 +104,93 @@ export function CharacterTrack({
 
   const [collapsed, setCollapsed] = useState(false);
 
-  // Editable character name
-  const [nameValue, setNameValue] = useState(characterName);
   const perspectiveGroupId = tracks[0]?.parentTrackId;
 
-  const handleNameBlur = useCallback(() => {
-    const trimmed = nameValue.trim();
-    if (!trimmed || trimmed === characterName || !perspectiveGroupId) {
-      setNameValue(characterName);
-      return;
-    }
-    setNodes((prev) =>
-      prev.map((node) => {
-        if (node.id !== perspectiveGroupId) return node;
-        return {
-          ...node,
-          data: {
-            ...(node.data as Record<string, unknown>),
-            characterName: trimmed,
-          },
-        } as typeof node;
-      }),
-    );
-  }, [nameValue, characterName, perspectiveGroupId, setNodes]);
+  const handleCharacterNameChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const nextName = event.target.value;
+      if (!perspectiveGroupId) return;
 
-  const handleNameKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
-        e.currentTarget.blur();
-      } else if (e.key === "Escape") {
-        setNameValue(characterName);
-        e.currentTarget.blur();
-      }
+      setNodes((currentNodes) =>
+        currentNodes.map((node) => {
+          if (node.id === perspectiveGroupId && node.type === "perspectiveGroup") {
+            const groupData = node.data ?? {};
+            if ((groupData as { characterName?: string }).characterName === nextName) {
+              return node;
+            }
+            return {
+              ...node,
+              data: {
+                ...groupData,
+                characterName: nextName,
+                label: nextName
+                  ? `${nextName}'s Perspective`
+                  : "First-Person Limited Cluster",
+              },
+            } as typeof node;
+          }
+
+          if (node.parentId === perspectiveGroupId && node.type === "character") {
+            const characterNode = node as CharacterNodeType;
+            if (characterNode.data?.name === nextName) {
+              return characterNode;
+            }
+            return {
+              ...characterNode,
+              data: {
+                ...characterNode.data,
+                name: nextName,
+              },
+            };
+          }
+
+          if (node.parentId === perspectiveGroupId && node.type === "perspective") {
+            const perspectiveNode = node as PerspectiveNodeType;
+            if (perspectiveNode.data?.narrator === nextName) {
+              return perspectiveNode;
+            }
+            return {
+              ...perspectiveNode,
+              data: {
+                ...perspectiveNode.data,
+                narrator: nextName,
+              },
+            };
+          }
+
+          return node;
+        }),
+      );
     },
-    [characterName],
+    [perspectiveGroupId, setNodes],
+  );
+
+  const handleNameInputFocus = useCallback(
+    (_event: FocusEvent<HTMLInputElement>) => {
+      eventTracker({
+        action: "narrator_input_active",
+        data: {
+          clusterLabel: `${characterName}'s Perspective`,
+          narratorName: characterName,
+          perspectiveGroupId: perspectiveGroupId ?? "",
+        },
+      });
+    },
+    [characterName, perspectiveGroupId],
+  );
+
+  const handleNameInputBlur = useCallback(
+    (event: FocusEvent<HTMLInputElement>) => {
+      eventTracker({
+        action: "narrator_input_not_active",
+        data: {
+          clusterLabel: `${characterName}'s Perspective`,
+          narratorName: event.target.value ?? "",
+          perspectiveGroupId: perspectiveGroupId ?? "",
+        },
+      });
+    },
+    [characterName, perspectiveGroupId],
   );
 
   return (
@@ -155,10 +209,10 @@ export function CharacterTrack({
           <div className="flex items-center gap-1 px-1 w-full">
             <input
               type="text"
-              value={nameValue}
-              onChange={(e) => setNameValue(e.target.value)}
-              onBlur={handleNameBlur}
-              onKeyDown={handleNameKeyDown}
+              value={characterName}
+              onChange={handleCharacterNameChange}
+              onFocus={handleNameInputFocus}
+              onBlur={handleNameInputBlur}
               className={cn(
                 geistMono.className,
                 "rounded px-1 py-0.5 text-xs font-bold text-white text-center flex-1 min-w-0",

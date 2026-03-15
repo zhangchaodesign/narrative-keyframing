@@ -20,7 +20,7 @@ export function StudyManager() {
   const canEnd = ifTracking;
 
   return (
-    <div className="relative z-50" ref={panelRef}>
+    <div className="relative z-1000001" ref={panelRef}>
       <button
         onClick={() => {
           setShowPanel((v) => !v);
