@@ -118,7 +118,9 @@ export function PerspectiveBlock({
           nodeId={item.nodeId}
           isEditing={isEditing}
           onToggleEdit={handleToggleEdit}
-          wrapperClassName="pointer-events-none absolute -top-9 right-0 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 text-gray-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+          buttonPadding="p-1.5"
+          iconSize={16}
+          wrapperClassName="pointer-events-none absolute -top-12 right-0 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
         />
         <div
           className={cn(

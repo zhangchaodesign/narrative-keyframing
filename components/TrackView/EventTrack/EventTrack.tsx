@@ -4,6 +4,7 @@ import React from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 import { EventBlock } from "@/components/TrackView/EventTrack/EventBlock";
+import { EventActionsMenu } from "@/components/shared/EventActionsMenu";
 import type { TimelineTrack } from "@/lib/types/timeline";
 import {
   TIMELINE_LABEL_WIDTH,
@@ -12,6 +13,7 @@ import {
 
 interface EventTrackProps {
   track: TimelineTrack;
+  eventGroupId: string;
   timeToPixel: (position: number) => number;
   pixelToTime: (pixel: number) => number;
   snapTime: (time: number) => number;
@@ -20,6 +22,7 @@ interface EventTrackProps {
 
 export function EventTrack({
   track,
+  eventGroupId,
   timeToPixel,
   timelineScale,
 }: EventTrackProps) {
@@ -33,7 +36,7 @@ export function EventTrack({
         className="absolute left-0 top-0 h-full bg-gray-50 border-r border-gray-200 flex items-center justify-center z-10"
         style={{ width: TIMELINE_LABEL_WIDTH }}
       >
-        <div className="flex flex-col items-center gap-1 px-2">
+        <div className="flex flex-col items-center gap-2 px-2">
           <span
             className={cn(
               geistMono.className,
@@ -42,6 +45,7 @@ export function EventTrack({
           >
             Story Outline
           </span>
+          <EventActionsMenu eventGroupId={eventGroupId} />
         </div>
       </div>
 

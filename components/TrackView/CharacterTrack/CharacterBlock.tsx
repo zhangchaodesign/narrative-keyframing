@@ -221,6 +221,8 @@ export function CharacterBlock({
         )}
         <CharacterRefreshMenu
           nodeId={item.nodeId}
+          buttonPadding="p-1.5"
+          iconSize={16}
           linkedTooltip={`Refresh ${
             characterName || "character"
           } from perspective`}

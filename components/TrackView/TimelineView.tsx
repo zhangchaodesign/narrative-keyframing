@@ -441,9 +441,10 @@ export function TimelineView() {
           />
 
           {/* Story Track */}
-          {selectedStoryTrack && (
+          {selectedStoryTrack && selectedStoryClusterId && (
             <EventTrack
               track={selectedStoryTrack}
+              eventGroupId={selectedStoryClusterId}
               timeToPixel={timeToPixel}
               pixelToTime={pixelToTime}
               snapTime={snapTime}
