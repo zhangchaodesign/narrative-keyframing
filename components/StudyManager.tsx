@@ -5,6 +5,7 @@ import { useStudyStore } from "@/lib/stores/studyStore";
 import { useEditorStore } from "@/lib/stores/editorStore";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { SlateUtils } from "@/lib/utiils/slateUtils";
+import { combineNarrativeTextsInGroup } from "@/lib/utiils/narrativeUtils";
 import { TbInfoCircleFilled } from "react-icons/tb";
 import { eventTracker } from "@/lib/utils";
 
@@ -81,6 +82,20 @@ export function StudyManager() {
                 const editorState = useEditorStore.getState().value;
                 const editorText = SlateUtils.stateToText(editorState);
                 const { nodes, edges } = useWorkflowStore.getState();
+                const narrativeGroups = nodes.filter(
+                  (node) => node.type === "narrativeGroup",
+                );
+                const narrativeClusters = narrativeGroups.map((group) => ({
+                  groupId: group.id,
+                  label: (group.data as { label?: string })?.label ?? "",
+                  narrativeGroupId:
+                    (group.data as { narrativeGroupId?: number })
+                      ?.narrativeGroupId ?? 0,
+                  combinedNarrative: combineNarrativeTextsInGroup(
+                    group.id,
+                    nodes,
+                  ),
+                }));
                 eventTracker({
                   action: "end_study",
                   data: {
@@ -89,6 +104,7 @@ export function StudyManager() {
                     editorContent: editorText,
                     workflowNodes: nodes,
                     workflowEdges: edges,
+                    narrativeClusters,
                   },
                 });
                 setIfTracking(false);

@@ -41,6 +41,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     [data?.traits],
   );
   const characterName = data?.name?.trim() ?? "";
+  const isNarratorDefined = characterName.length > 0;
   const brainstormContext = useMemo(
     () =>
       buildCharacterBrainstormContext({
@@ -270,7 +271,8 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
       <div
         ref={containerRef}
         className={cn(
-          "relative flex max-h-88 flex-col rounded-lg border-2 bg-white text-xs hover:shadow-lg",
+          "relative flex max-h-88 flex-col rounded-lg border-2 bg-white text-xs",
+          isNarratorDefined ? "hover:shadow-lg" : "opacity-50 pointer-events-none",
           colors.border,
         )}
       >
@@ -394,11 +396,19 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
           type="source"
           position={Position.Top}
           id="perspective"
+          className="pointer-events-auto"
           style={{
             background: "lightgray",
           }}
         />
       </div>
+      {!isNarratorDefined && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg">
+          <span className="rounded bg-gray-800/80 px-2 py-1 text-[10px] font-medium text-white">
+            Set a narrator in the perspective cluster
+          </span>
+        </div>
+      )}
     </div>
   );
 }
