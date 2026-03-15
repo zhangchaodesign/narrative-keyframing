@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { TbCopy, TbTrash } from "react-icons/tb";
+import { TbCopy, TbEraser, TbTrash } from "react-icons/tb";
 
 import type {
   EventGroupNodeType,
@@ -63,6 +63,30 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
     setNodes(result.nodes);
     setEdges(result.edges);
   }, [getNodes, getEdges, nodeId, setEdges, setNodes]);
+
+  const handleClear = useCallback(() => {
+    const nodes = getNodes();
+    const childEvents = nodes.filter(
+      (node) => node.parentId === nodeId && node.type === "event",
+    );
+
+    eventTracker({
+      action: "clear_event_cluster",
+      data: {
+        nodeId,
+        eventCount: childEvents.length,
+      },
+    });
+
+    setNodes((prev) =>
+      prev.map((node) => {
+        if (node.parentId === nodeId && node.type === "event") {
+          return { ...node, data: { ...node.data, description: "" } };
+        }
+        return node;
+      }),
+    );
+  }, [getNodes, nodeId, setNodes]);
 
   const handleDuplicate = useCallback(() => {
     const currentNodes = getNodes();
@@ -192,6 +216,15 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
 
   return (
     <ZoomInvariantWrapper className="pointer-events-none absolute -top-16 right-0 flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+      <button
+        type="button"
+        onClick={handleClear}
+        className="pointer-events-auto rounded-full p-2 transition hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-indigo-500 cursor-pointer"
+        title="Clear all events"
+        aria-label="Clear all events"
+      >
+        <TbEraser size={18} />
+      </button>
       <button
         type="button"
         onClick={handleDuplicate}

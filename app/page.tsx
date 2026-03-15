@@ -14,6 +14,7 @@ import { adjustEventCountForAllClusters } from "@/lib/utiils/workflowUtils";
 import { useUiStore } from "@/lib/stores/uiStore";
 import { StudyManager } from "@/components/StudyManager";
 import { eventTracker } from "@/lib/utils";
+import { exampleEventDescriptions } from "@/components/WorkflowCanvas/workflow.constants";
 
 export default function Page() {
   const viewMode = useUiStore((state) => state.viewMode);
@@ -32,6 +33,25 @@ export default function Page() {
       data: { from: eventCount, to: newCount },
     });
     setEventCountStore(newCount);
+  };
+
+  const handleLoadExamples = () => {
+    eventTracker({ action: "load_examples", data: null });
+    const currentNodes = useWorkflowStore.getState().nodes;
+    const updatedNodes = currentNodes.map((node) => {
+      if (node.type !== "event") return node;
+      const match = node.id.match(/event-(\d+)$/);
+      if (!match) return node;
+      const index = parseInt(match[1], 10) - 1;
+      if (index < exampleEventDescriptions.length) {
+        return {
+          ...node,
+          data: { ...node.data, description: exampleEventDescriptions[index] },
+        };
+      }
+      return node;
+    });
+    setNodes(updatedNodes as typeof currentNodes);
   };
 
   const handleEditorToggle = () => {
@@ -70,7 +90,6 @@ export default function Page() {
       {/* <div className="shrink-0">
         <Header />
       </div> */}
-      <StudyManager />
 
       <div className="flex-1 overflow-hidden">
         <div className="h-full">
@@ -131,7 +150,15 @@ export default function Page() {
                       className="input input-sm input-bordered w-16 rounded"
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleLoadExamples}
+                    className="btn btn-sm btn-soft"
+                  >
+                    Load Examples
+                  </button>
                 </div>
+                <StudyManager />
               </div>
 
               {/* View Content */}

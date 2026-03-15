@@ -71,6 +71,12 @@ export const initialNodes: WorkflowNode[] = [
   },
 ];
 
+export const exampleEventDescriptions: string[] = [
+  "Dawn raid on the village. Aria breaks formation to save a trapped child. Lysa watches from the archive tower, documenting the chaos. Aria is publicly reprimanded and demoted to archive duty under Lysa's supervision.",
+  "Evening in the archives. Aria discovers old battle records. Lysa shares tactical insights from historical texts. They clash over methods but gradually find common ground, planning an ambush strategy together.",
+  "Night battle. Raiders return. Aria and Lysa execute their planned ambush, combining scout tactics with historical strategy. Victory without casualties.",
+];
+
 export const initialEdges: WorkflowEdge[] = [
   {
     id: "edge-event-1-2",

@@ -11,14 +11,15 @@ import { eventTracker } from "@/lib/utils";
 export function StudyManager() {
   const [showPanel, setShowPanel] = useState(false);
   const [userIdInput, setUserIdInput] = useState("");
-  const { user, setUser, task, setTask, ifTracking, setIfTracking } = useStudyStore();
+  const { user, setUser, task, setTask, ifTracking, setIfTracking } =
+    useStudyStore();
   const panelRef = useRef<HTMLDivElement>(null);
 
   const canStart = userIdInput.trim() !== "" && task !== "" && !ifTracking;
   const canEnd = ifTracking;
 
   return (
-    <div className="absolute top-1.5 right-3 z-50" ref={panelRef}>
+    <div className="relative z-50" ref={panelRef}>
       <button
         onClick={() => {
           setShowPanel((v) => !v);
