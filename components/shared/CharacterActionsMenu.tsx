@@ -24,6 +24,7 @@ type CharacterRefreshMenuProps = {
   ariaLabelLinked?: string;
   ariaLabelUnlinked?: string;
   extraButtons?: ReactNode;
+  classes?: string;
 };
 
 export function CharacterRefreshMenu({
@@ -35,6 +36,7 @@ export function CharacterRefreshMenu({
   ariaLabelLinked = "Refresh snapshot from perspective narration",
   ariaLabelUnlinked = "Link this character to a perspective with text to refresh",
   extraButtons,
+  classes,
 }: CharacterRefreshMenuProps) {
   const nodes = useWorkflowStore((state) => state.nodes);
   const edges = useWorkflowStore((state) => state.edges);
@@ -176,7 +178,12 @@ export function CharacterRefreshMenu({
   ]);
 
   return (
-    <div className="pointer-events-none absolute -top-12 right-0 z-50 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+    <div
+      className={cn(
+        classes,
+        "pointer-events-none absolute right-0 z-50 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100",
+      )}
+    >
       <button
         type="button"
         onClick={handleRefresh}

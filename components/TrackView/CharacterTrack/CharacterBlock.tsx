@@ -233,6 +233,7 @@ export function CharacterBlock({
           ariaLabelLinked={`Refresh ${
             characterName || "character"
           } from perspective`}
+          classes="-top-12"
         />
         <div className="flex flex-1 flex-col gap-3 p-3 min-h-0">
           <div className="flex items-center justify-between">

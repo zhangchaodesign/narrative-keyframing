@@ -74,6 +74,7 @@ export function CharacterMenu({ nodeId }: { nodeId: string }) {
           </button>
         </>
       }
+      classes="-top-10"
     />
   );
 }
