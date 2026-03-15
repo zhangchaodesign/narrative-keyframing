@@ -26,7 +26,7 @@ export function NarrativeTrack({
 }: NarrativeTrackProps) {
   return (
     <div
-      className="relative border-b border-gray-200"
+      className="sticky top-0 z-50 border-b border-gray-200"
       style={{ height: TIMELINE_NARRATIVE_TRACK_HEIGHT }}
     >
       {/* Track Label */}
