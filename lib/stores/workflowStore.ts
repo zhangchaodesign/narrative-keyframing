@@ -1629,6 +1629,68 @@ const workflowStoreCreator: import("zustand").StateCreator<WorkflowState> = (set
         return { selectedEvidenceAttributes: next };
       } else {
         next[key] = true;
+
+        // Auto-select all matching evidence snippets when selecting a trait
+        const characterNode = state.nodes.find(
+          (node) => node.id === characterId && node.type === "character",
+        );
+        const parentId = characterNode?.parentId;
+        if (!parentId) {
+          return { selectedEvidenceAttributes: next };
+        }
+
+        const normalizedAttribute = attribute.trim().toLowerCase();
+        const nextSnippets = { ...state.selectedSnippets };
+        let snippetsChanged = false;
+
+        state.nodes.forEach((node) => {
+          if (node.type !== "perspective" || node.parentId !== parentId) {
+            return;
+          }
+          const perspectiveData = node.data as {
+            analysisEvidence?: Array<{
+              characterId: string;
+              characterName: string;
+              items: Array<{
+                text: string;
+                category: string;
+                attributes: string[];
+              }>;
+            }>;
+          };
+          const evidenceEntries = perspectiveData?.analysisEvidence ?? [];
+
+          evidenceEntries.forEach((entry) => {
+            if (entry.characterId !== characterId) return;
+
+            entry.items.forEach((item) => {
+              const matches = item.attributes.some(
+                (attr) => attr.trim().toLowerCase() === normalizedAttribute,
+              );
+              if (!matches) return;
+
+              const snippetKey = buildSnippetKey(node.id, item.text);
+              if (!nextSnippets[snippetKey]) {
+                nextSnippets[snippetKey] = {
+                  perspectiveNodeId: node.id,
+                  text: item.text,
+                  characterId: entry.characterId,
+                  characterName: entry.characterName,
+                  attributes: item.attributes,
+                };
+                snippetsChanged = true;
+              }
+            });
+          });
+        });
+
+        if (snippetsChanged) {
+          return {
+            selectedEvidenceAttributes: next,
+            selectedSnippets: nextSnippets,
+          };
+        }
+
         return { selectedEvidenceAttributes: next };
       }
     }),

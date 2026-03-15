@@ -41,7 +41,8 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
     [data?.traits],
   );
   const characterName = data?.name?.trim() ?? "";
-  const isNarratorDefined = characterName.length > 0;
+  const isNarratorDefined =
+    characterName.length > 0 && !/^Character\s*\d*$/i.test(characterName);
   const brainstormContext = useMemo(
     () =>
       buildCharacterBrainstormContext({
@@ -208,7 +209,15 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         }),
       );
     }
-  }, [data?.isRefreshing, data?.name, data?.perspectiveId, data?.traits, id, nodes, setNodes]);
+  }, [
+    data?.isRefreshing,
+    data?.name,
+    data?.perspectiveId,
+    data?.traits,
+    id,
+    nodes,
+    setNodes,
+  ]);
 
   const handleSelectAllTraits = useCallback(() => {
     const traitsToSelect = allTraits.filter((trait) => {
@@ -232,7 +241,13 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         toggleEvidenceAttribute(id, trait);
       }
     });
-  }, [allTraits, id, selectedEvidenceAttributes, toggleEvidenceAttribute, data?.name]);
+  }, [
+    allTraits,
+    id,
+    selectedEvidenceAttributes,
+    toggleEvidenceAttribute,
+    data?.name,
+  ]);
 
   const handleDeselectAllTraits = useCallback(() => {
     const traitsToDeselect = allTraits.filter((trait) => {
@@ -256,7 +271,13 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         toggleEvidenceAttribute(id, trait);
       }
     });
-  }, [allTraits, id, selectedEvidenceAttributes, toggleEvidenceAttribute, data?.name]);
+  }, [
+    allTraits,
+    id,
+    selectedEvidenceAttributes,
+    toggleEvidenceAttribute,
+    data?.name,
+  ]);
 
   const handleToggleAllTraits = useCallback(() => {
     if (areAllTraitsSelected) {
@@ -272,7 +293,9 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
         ref={containerRef}
         className={cn(
           "relative flex max-h-88 flex-col rounded-lg border-2 bg-white text-xs",
-          isNarratorDefined ? "hover:shadow-lg" : "opacity-50 pointer-events-none",
+          isNarratorDefined
+            ? "hover:shadow-lg"
+            : "opacity-50 pointer-events-none",
           colors.border,
         )}
       >
@@ -405,7 +428,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
       {!isNarratorDefined && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg">
           <span className="rounded bg-gray-800/80 px-2 py-1 text-[10px] font-medium text-white">
-            Set a narrator in the perspective cluster
+            Set a character name
           </span>
         </div>
       )}

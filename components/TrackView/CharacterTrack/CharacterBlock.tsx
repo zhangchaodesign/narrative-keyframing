@@ -69,6 +69,8 @@ export function CharacterBlock({
   );
 
   const characterName = characterData?.name?.trim() ?? "";
+  const isDefaultName =
+    characterName.length === 0 || /^Character\s*\d*$/i.test(characterName);
   const isRefreshing = Boolean(characterData?.isRefreshing);
   const brainstormContext = useMemo(() => {
     if (!characterNode) {
@@ -207,7 +209,8 @@ export function CharacterBlock({
     >
       <div
         className={cn(
-          "group relative flex h-full flex-col rounded-lg border-2 bg-white text-xs text-gray-800 transition-shadow hover:shadow-lg",
+          "group relative flex h-full flex-col rounded-lg border-2 bg-white text-xs text-gray-800 transition-shadow",
+          isDefaultName ? "opacity-50 pointer-events-none" : "hover:shadow-lg",
           colors.border,
         )}
       >
@@ -293,6 +296,13 @@ export function CharacterBlock({
           </div>
         </div>
       </div>
+      {isDefaultName && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg">
+          <span className="rounded bg-gray-800/80 px-2 py-1 text-[10px] font-medium text-white">
+            Set a character name
+          </span>
+        </div>
+      )}
     </div>
   );
 }
