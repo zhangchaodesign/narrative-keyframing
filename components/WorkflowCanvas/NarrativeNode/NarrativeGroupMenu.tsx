@@ -103,7 +103,7 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
   }, [duplicateNarrativeGroup, nodeId, nodes]);
 
   return (
-    <ZoomInvariantWrapper className="pointer-events-none absolute -top-16 right-0 rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+    <ZoomInvariantWrapper className="pointer-events-none absolute -top-16 right-0 rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-md opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100 after:absolute after:left-0 after:top-full after:h-5 after:w-full after:content-['']">
       <NarrativeActionsMenu
         nodeId={nodeId}
         wrapperClassName="flex items-center gap-2"
