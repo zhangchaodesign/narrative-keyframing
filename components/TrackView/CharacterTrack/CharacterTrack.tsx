@@ -8,6 +8,7 @@ import { PerspectiveBlock } from "@/components/TrackView/CharacterTrack/Perspect
 import { CharacterBlock } from "@/components/TrackView/CharacterTrack/CharacterBlock";
 import { PerspectiveTrackMenu } from "@/components/TrackView/CharacterTrack/PerspectiveTrackMenu";
 import { AddCharacterButton } from "@/components/shared/CharacterSnapshotButton";
+import { TbChevronDown, TbChevronRight } from "react-icons/tb";
 import type { TimelineTrack } from "@/lib/types/timeline";
 import {
   TIMELINE_LABEL_WIDTH,
@@ -99,6 +100,8 @@ export function CharacterTrack({
 
   const perspectivesWithoutChars = perspectivesWithoutCharacters();
 
+  const [collapsed, setCollapsed] = useState(false);
+
   // Editable character name
   const [nameValue, setNameValue] = useState(characterName);
   const perspectiveGroupId = tracks[0]?.parentTrackId;
@@ -144,11 +147,11 @@ export function CharacterTrack({
       >
         <div
           className={cn(
-            "absolute left-0 top-0 h-full border-r border-gray-200 flex items-center justify-center z-10 bg-gray-50/50",
+            "absolute left-0 top-0 h-full border-r border-gray-200 flex items-center z-10 bg-gray-50/50",
           )}
           style={{ width: TIMELINE_LABEL_WIDTH }}
         >
-          <div className="flex flex-col items-center gap-1 px-2">
+          <div className="flex items-center gap-1 px-1 w-full">
             <input
               type="text"
               value={nameValue}
@@ -157,23 +160,29 @@ export function CharacterTrack({
               onKeyDown={handleNameKeyDown}
               className={cn(
                 geistMono.className,
-                "rounded px-2 py-0.5 text-xs font-bold text-white text-center w-full",
+                "rounded px-1 py-0.5 text-xs font-bold text-white text-center flex-1 min-w-0",
                 "border border-white/30 outline-none bg-black/10",
                 "focus:text-gray-900 focus:bg-white focus:border-gray-300 focus:ring-2 focus:ring-gray-500",
                 colors.label,
               )}
-              style={{ maxWidth: TIMELINE_LABEL_WIDTH - 16 }}
             />
           </div>
         </div>
         <div
-          className={cn("absolute top-0 right-0 h-full bg-gray-50/50")}
+          className={cn("absolute top-0 right-0 h-full bg-gray-50/50 flex items-center justify-center")}
           style={{ left: TIMELINE_LABEL_WIDTH }}
-        ></div>
+        >
+          <button
+            onClick={() => setCollapsed((prev) => !prev)}
+            className="p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-700 transition-colors"
+          >
+            {collapsed ? <TbChevronRight size={16} /> : <TbChevronDown size={16} />}
+          </button>
+        </div>
       </div>
 
       {/* Character Subtrack */}
-      {characterTrack && (
+      {!collapsed && characterTrack && (
         <div
           className="relative border-t border-gray-200"
           style={{ height: TIMELINE_CHARACTER_SUBTRACK_HEIGHT }}
@@ -247,7 +256,7 @@ export function CharacterTrack({
       )}
 
       {/* Perspective Subtrack */}
-      {perspectiveTrack && (
+      {!collapsed && perspectiveTrack && (
         <div
           className="relative border-t border-gray-200"
           style={{ height: TIMELINE_CHARACTER_SUBTRACK_HEIGHT }}

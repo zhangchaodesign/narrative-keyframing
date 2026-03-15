@@ -17,7 +17,10 @@ import { useUiStore } from "@/lib/stores/uiStore";
 import { StudyManager } from "@/components/StudyManager";
 import { eventTracker } from "@/lib/utils";
 import { exampleEventDescriptions } from "@/components/WorkflowCanvas/workflow.constants";
-import type { NarrativeCluster, StoryOutlineCluster } from "@/lib/types/timeline";
+import type {
+  NarrativeCluster,
+  StoryOutlineCluster,
+} from "@/lib/types/timeline";
 import type { ThirdPersonGroupNodeType } from "@/lib/types/workflow";
 
 export default function Page() {
@@ -25,10 +28,18 @@ export default function Page() {
   const setViewMode = useUiStore((state) => state.setViewMode);
   const eventCount = useUiStore((state) => state.eventCount);
   const setEventCountStore = useUiStore((state) => state.setEventCount);
-  const selectedStoryClusterId = useUiStore((state) => state.selectedStoryClusterId);
-  const setSelectedStoryClusterId = useUiStore((state) => state.setSelectedStoryClusterId);
-  const selectedNarrativeClusterId = useUiStore((state) => state.selectedNarrativeClusterId);
-  const setSelectedNarrativeClusterId = useUiStore((state) => state.setSelectedNarrativeClusterId);
+  const selectedStoryClusterId = useUiStore(
+    (state) => state.selectedStoryClusterId,
+  );
+  const setSelectedStoryClusterId = useUiStore(
+    (state) => state.setSelectedStoryClusterId,
+  );
+  const selectedNarrativeClusterId = useUiStore(
+    (state) => state.selectedNarrativeClusterId,
+  );
+  const setSelectedNarrativeClusterId = useUiStore(
+    (state) => state.setSelectedNarrativeClusterId,
+  );
   const [isEditorCollapsed, setIsEditorCollapsed] = useState(true);
   const isInitialMount = useRef(true);
 
@@ -61,15 +72,26 @@ export default function Page() {
   useEffect(() => {
     if (
       selectedNarrativeClusterId &&
-      !filteredNarrativeClusters.find((c) => c.id === selectedNarrativeClusterId)
+      !filteredNarrativeClusters.find(
+        (c) => c.id === selectedNarrativeClusterId,
+      )
     ) {
       setSelectedNarrativeClusterId(
-        filteredNarrativeClusters.length > 0 ? filteredNarrativeClusters[0].id : null,
+        filteredNarrativeClusters.length > 0
+          ? filteredNarrativeClusters[0].id
+          : null,
       );
-    } else if (!selectedNarrativeClusterId && filteredNarrativeClusters.length > 0) {
+    } else if (
+      !selectedNarrativeClusterId &&
+      filteredNarrativeClusters.length > 0
+    ) {
       setSelectedNarrativeClusterId(filteredNarrativeClusters[0].id);
     }
-  }, [filteredNarrativeClusters, selectedNarrativeClusterId, setSelectedNarrativeClusterId]);
+  }, [
+    filteredNarrativeClusters,
+    selectedNarrativeClusterId,
+    setSelectedNarrativeClusterId,
+  ]);
 
   const formatStoryClusterLabel = (cluster: StoryOutlineCluster) => {
     if (typeof cluster.eventGroupNumber === "number") {
@@ -91,12 +113,16 @@ export default function Page() {
     return cluster.label;
   };
 
-  const handleStoryClusterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleStoryClusterChange = (
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
     const nextClusterId = event.target.value;
     eventTracker({
       action: "change_timeline_story_dropdown",
       data: {
-        from: storyOutlineClusters.find((c) => c.id === selectedStoryClusterId) ?? null,
+        from:
+          storyOutlineClusters.find((c) => c.id === selectedStoryClusterId) ??
+          null,
         to: storyOutlineClusters.find((c) => c.id === nextClusterId) ?? null,
         optionCount: storyOutlineClusters.length,
       },
@@ -104,7 +130,9 @@ export default function Page() {
     setSelectedStoryClusterId(nextClusterId);
   };
 
-  const handleNarrativeClusterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleNarrativeClusterChange = (
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
     const value = event.target.value;
     const nextClusterId = value || null;
     const narrativeOptions = selectedStoryClusterId
@@ -113,7 +141,9 @@ export default function Page() {
     eventTracker({
       action: "change_timeline_narrative_dropdown",
       data: {
-        from: narrativeOptions.find((c) => c.id === selectedNarrativeClusterId) ?? null,
+        from:
+          narrativeOptions.find((c) => c.id === selectedNarrativeClusterId) ??
+          null,
         to: narrativeOptions.find((c) => c.id === nextClusterId) ?? null,
         optionCount: narrativeOptions.length + 1,
       },
@@ -122,10 +152,18 @@ export default function Page() {
   };
 
   // Narrative table controls
-  const narrativeTableGroupId = useUiStore((state) => state.narrativeTableGroupId);
-  const setNarrativeTableGroupId = useUiStore((state) => state.setNarrativeTableGroupId);
-  const narrativeTableHighlight = useUiStore((state) => state.narrativeTableHighlight);
-  const setNarrativeTableHighlight = useUiStore((state) => state.setNarrativeTableHighlight);
+  const narrativeTableGroupId = useUiStore(
+    (state) => state.narrativeTableGroupId,
+  );
+  const setNarrativeTableGroupId = useUiStore(
+    (state) => state.setNarrativeTableGroupId,
+  );
+  const narrativeTableHighlight = useUiStore(
+    (state) => state.narrativeTableHighlight,
+  );
+  const setNarrativeTableHighlight = useUiStore(
+    (state) => state.setNarrativeTableHighlight,
+  );
 
   const narrativeGroups = useMemo(
     () =>
@@ -157,12 +195,15 @@ export default function Page() {
     return group.id ? `${label} (${group.id})` : label;
   };
 
-  const handleTableGroupChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleTableGroupChange = (
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
     const nextGroupId = event.target.value || undefined;
     eventTracker({
       action: "change_narrative_table_group",
       data: {
-        from: narrativeGroups.find((g) => g.id === resolvedTableGroupId) ?? null,
+        from:
+          narrativeGroups.find((g) => g.id === resolvedTableGroupId) ?? null,
         to: narrativeGroups.find((g) => g.id === nextGroupId) ?? null,
         groupCount: narrativeGroups.length,
       },
@@ -312,51 +353,53 @@ export default function Page() {
                   </button>
                 </div>
                 <div className="flex items-center gap-3">
-                  {viewMode === "timeline" && storyOutlineClusters.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <label
-                        htmlFor="story-cluster-select"
-                        className="text-xs text-gray-600 whitespace-nowrap"
-                      >
-                        Story Outline
-                      </label>
-                      <select
-                        id="story-cluster-select"
-                        value={selectedStoryClusterId || ""}
-                        onChange={handleStoryClusterChange}
-                        className="select select-sm select-bordered"
-                      >
-                        {storyOutlineClusters.map((cluster) => (
-                          <option key={cluster.id} value={cluster.id}>
-                            {formatStoryClusterLabel(cluster)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                  {viewMode === "timeline" && filteredNarrativeClusters.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <label
-                        htmlFor="narrative-cluster-select"
-                        className="text-xs text-gray-600"
-                      >
-                        Narrative
-                      </label>
-                      <select
-                        id="narrative-cluster-select"
-                        value={selectedNarrativeClusterId || ""}
-                        onChange={handleNarrativeClusterChange}
-                        className="select select-sm select-bordered"
-                      >
-                        <option value="">None</option>
-                        {filteredNarrativeClusters.map((cluster) => (
-                          <option key={cluster.id} value={cluster.id}>
-                            {formatNarrativeClusterLabel(cluster)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                  {viewMode === "timeline" &&
+                    storyOutlineClusters.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <label
+                          htmlFor="story-cluster-select"
+                          className="text-xs text-gray-600 whitespace-nowrap"
+                        >
+                          Outline
+                        </label>
+                        <select
+                          id="story-cluster-select"
+                          value={selectedStoryClusterId || ""}
+                          onChange={handleStoryClusterChange}
+                          className="select select-sm select-bordered"
+                        >
+                          {storyOutlineClusters.map((cluster) => (
+                            <option key={cluster.id} value={cluster.id}>
+                              {formatStoryClusterLabel(cluster)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  {viewMode === "timeline" &&
+                    filteredNarrativeClusters.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <label
+                          htmlFor="narrative-cluster-select"
+                          className="text-xs text-gray-600"
+                        >
+                          Narrative
+                        </label>
+                        <select
+                          id="narrative-cluster-select"
+                          value={selectedNarrativeClusterId || ""}
+                          onChange={handleNarrativeClusterChange}
+                          className="select select-sm select-bordered"
+                        >
+                          <option value="">None</option>
+                          {filteredNarrativeClusters.map((cluster) => (
+                            <option key={cluster.id} value={cluster.id}>
+                              {formatNarrativeClusterLabel(cluster)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   {viewMode === "narrative-table" && (
                     <>
                       <div className="flex items-center gap-2">
@@ -403,7 +446,11 @@ export default function Page() {
                         }
                       >
                         <TbHighlight size={16} />
-                        <span>{narrativeTableHighlight ? "Highlighting On" : "Highlighting Off"}</span>
+                        <span>
+                          {narrativeTableHighlight
+                            ? "Highlighting On"
+                            : "Highlighting Off"}
+                        </span>
                       </button>
                     </>
                   )}

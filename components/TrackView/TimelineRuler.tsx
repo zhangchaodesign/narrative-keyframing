@@ -8,7 +8,6 @@ import {
   TIMELINE_RULER_HEIGHT,
 } from "@/components/TrackView/constants";
 
-
 interface TimelineRulerProps {
   totalDuration: number;
   timeToPixel: (time: number) => number;
@@ -27,7 +26,7 @@ export function TimelineRuler({
 
   return (
     <div
-      className="sticky z-40 bg-gray-50 border-b border-gray-200"
+      className="sticky z-40 bg-gray-50 border-b-2 border-gray-200"
       style={{ height: TIMELINE_RULER_HEIGHT, top: stickyTop }}
     >
       {/* Track Labels Area */}

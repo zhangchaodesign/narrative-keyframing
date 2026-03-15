@@ -247,7 +247,7 @@ export function NarrativeEventsTable({
       <thead className="sticky top-0 bg-gray-50">
         <tr>
           <th className="min-w-[16rem] w-[16rem] border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">
-            Story Outline
+            Outline
           </th>
           {uniquePerspectives.map((narrator, index) => {
             const charColors = getCharacterColors(narrator);
@@ -270,7 +270,7 @@ export function NarrativeEventsTable({
           })}
           <th className="min-w-80 w-80 border border-gray-300 bg-green-50 px-3 py-2 text-left font-semibold text-green-900">
             <div className="flex items-center gap-1">
-              <span>Enriched Story</span>
+              <span>Story</span>
               <button
                 onClick={onOpenRegenerateDialog}
                 disabled={isRegenerating}

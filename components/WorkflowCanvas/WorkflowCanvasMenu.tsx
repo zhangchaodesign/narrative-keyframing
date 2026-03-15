@@ -40,7 +40,7 @@ export function WorkflowCanvasMenu({
             <li>
               <button type="button" onClick={handleAddCluster}>
                 <TbPlus size={16} className="text-pink-500" />
-                <span>Story Outline Cluster</span>
+                <span>Outline Cluster</span>
               </button>
             </li>
           </ul>

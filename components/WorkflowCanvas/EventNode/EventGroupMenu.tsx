@@ -65,7 +65,6 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
     setEdges(result.edges);
   }, [getNodes, getEdges, nodeId, setEdges, setNodes]);
 
-
   const handleDuplicate = useCallback(() => {
     const currentNodes = getNodes();
     const currentEdges = getEdges();
@@ -122,7 +121,7 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
     const clonedGroupData = cloneData(groupNode.data) as GroupNodeData;
     const nextGroupData: GroupNodeData = {
       ...clonedGroupData,
-      label: clonedGroupData?.label || "Story Outline",
+      label: clonedGroupData?.label || "Outline",
       eventGroupId: nextEventGroupId,
     };
 
