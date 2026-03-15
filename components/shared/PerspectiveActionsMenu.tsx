@@ -17,6 +17,7 @@ import { eventTracker } from "@/lib/utils";
 
 type PerspectiveActionsMenuProps = {
   targetNodeIds: string[];
+  characterName?: string;
   label?: string;
   wrapperClassName?: string;
   buttonPadding?: string;
@@ -25,6 +26,7 @@ type PerspectiveActionsMenuProps = {
 
 export function PerspectiveActionsMenu({
   targetNodeIds,
+  characterName,
   label = "selected perspectives",
   wrapperClassName = "flex items-center gap-1",
   buttonPadding = "p-1",
@@ -47,60 +49,69 @@ export function PerspectiveActionsMenu({
     () => Array.from(new Set(targetNodeIds)),
     [targetNodeIds],
   );
+  const normalizedCharacterName = characterName?.trim() ?? "";
+  const hasDefaultOrEmptyCharacterName =
+    normalizedCharacterName.length === 0 ||
+    /^(Character\s*\d*|Unknown)$/i.test(normalizedCharacterName);
 
-  const handleGeneratePerspectives = useCallback(async (prompt?: string) => {
-    if (isGenerating || uniqueTargetIds.length === 0) {
-      return;
-    }
-
-    setIsGenerating(true);
-    const targetIdSet = new Set(uniqueTargetIds);
-
-    const perspectives = nodes
-      .filter((node): node is import("@/lib/types/workflow").PerspectiveNodeType =>
-        uniqueTargetIds.includes(node.id) && node.type === "perspective")
-      .map((node) => ({
-        id: node.id,
-        narrator: node.data?.narrator,
-        reflection: node.data?.reflection,
-      }));
-
-    eventTracker({
-      action: "generate_perspectives",
-      data: {
-        perspectiveCount: uniqueTargetIds.length,
-        perspectives: perspectives,
-        customPrompt: prompt || "",
-      },
-    });
-
-    try {
-      setNodes((currentNodes) =>
-        setPerspectivesLoading(currentNodes, targetIdSet, true),
-      );
-
-      const preparation = preparePerspectiveGeneration(uniqueTargetIds);
-      if (!preparation) {
-        throw new Error("Unable to prepare generation payload");
+  const handleGeneratePerspectives = useCallback(
+    async (prompt?: string) => {
+      if (isGenerating || uniqueTargetIds.length === 0) {
+        return;
       }
 
-      const updateMap = await generateMultiplePerspectives(
-        preparation,
-        prompt,
-      );
+      setIsGenerating(true);
+      const targetIdSet = new Set(uniqueTargetIds);
 
-      setNodes((currentNodes) =>
-        applyGeneratedPerspectives(currentNodes, updateMap),
-      );
-    } catch (error) {
-      console.error("Error generating perspectives:", error);
-    } finally {
-      setNodes((currentNodes) =>
-        setPerspectivesLoading(currentNodes, targetIdSet, false),
-      );
-      setIsGenerating(false);
-    }
-  }, [isGenerating, preparePerspectiveGeneration, setNodes, uniqueTargetIds]);
+      const perspectives = nodes
+        .filter(
+          (node): node is import("@/lib/types/workflow").PerspectiveNodeType =>
+            uniqueTargetIds.includes(node.id) && node.type === "perspective",
+        )
+        .map((node) => ({
+          id: node.id,
+          narrator: node.data?.narrator,
+          reflection: node.data?.reflection,
+        }));
+
+      eventTracker({
+        action: "generate_perspectives",
+        data: {
+          perspectiveCount: uniqueTargetIds.length,
+          perspectives: perspectives,
+          customPrompt: prompt || "",
+        },
+      });
+
+      try {
+        setNodes((currentNodes) =>
+          setPerspectivesLoading(currentNodes, targetIdSet, true),
+        );
+
+        const preparation = preparePerspectiveGeneration(uniqueTargetIds);
+        if (!preparation) {
+          throw new Error("Unable to prepare generation payload");
+        }
+
+        const updateMap = await generateMultiplePerspectives(
+          preparation,
+          prompt,
+        );
+
+        setNodes((currentNodes) =>
+          applyGeneratedPerspectives(currentNodes, updateMap),
+        );
+      } catch (error) {
+        console.error("Error generating perspectives:", error);
+      } finally {
+        setNodes((currentNodes) =>
+          setPerspectivesLoading(currentNodes, targetIdSet, false),
+        );
+        setIsGenerating(false);
+      }
+    },
+    [isGenerating, preparePerspectiveGeneration, setNodes, uniqueTargetIds],
+  );
 
   const handleAnalyzeAllEvidence = useCallback(async () => {
     if (isAnalyzing || uniqueTargetIds.length === 0) {
@@ -135,9 +146,8 @@ export function PerspectiveActionsMenu({
         setPerspectivesAnalyzing(currentNodes, readyTargetIds, true),
       );
 
-      const results = await analyzeMultiplePerspectivesEvidence(
-        preparedTargets,
-      );
+      const results =
+        await analyzeMultiplePerspectivesEvidence(preparedTargets);
 
       setNodes((currentNodes) => applyAnalysisResults(currentNodes, results));
     } catch (error) {
@@ -229,7 +239,7 @@ export function PerspectiveActionsMenu({
           )}
           title={generateTitle}
           aria-label={generateTitle}
-          disabled={isGenerating}
+          disabled={isGenerating || hasDefaultOrEmptyCharacterName}
         >
           <TbPlayerPlay size={iconSize} />
         </button>
@@ -242,7 +252,7 @@ export function PerspectiveActionsMenu({
           )}
           title={analyzeTitle}
           aria-label={analyzeTitle}
-          disabled={isAnalyzing}
+          disabled={isAnalyzing || hasDefaultOrEmptyCharacterName}
         >
           {isAnalyzing ? (
             <span

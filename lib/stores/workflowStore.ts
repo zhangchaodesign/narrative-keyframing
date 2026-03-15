@@ -908,7 +908,7 @@ const prepareNarrativeEventsData = (
     });
 
     const perspectivesForEvent = perspectiveNodesForEvent.map((pNode) => ({
-      narrator: pNode.data?.narrator || "Unknown narrator",
+      narrator: pNode.data?.narrator || "Unknown",
       reflection: pNode.data?.reflection || "",
     }));
 
@@ -1522,18 +1522,18 @@ const preparePerspectiveGenerationPayload = (
   };
 };
 
-const ENABLE_PERSIST =
-  process.env.NEXT_PUBLIC_ENABLE_PERSIST === "true";
+const ENABLE_PERSIST = process.env.NEXT_PUBLIC_ENABLE_PERSIST === "true";
 
-const workflowStoreCreator: import("zustand").StateCreator<WorkflowState> = (set, get) => ({
+const workflowStoreCreator: import("zustand").StateCreator<WorkflowState> = (
+  set,
+  get,
+) => ({
   ...getInitialState(),
   setNodes: (updater) =>
     set((state) => {
       const nextNodes =
         typeof updater === "function"
-          ? (updater as (nodes: WorkflowNode[]) => WorkflowNode[])(
-              state.nodes,
-            )
+          ? (updater as (nodes: WorkflowNode[]) => WorkflowNode[])(state.nodes)
           : updater;
 
       return {
@@ -1544,9 +1544,7 @@ const workflowStoreCreator: import("zustand").StateCreator<WorkflowState> = (set
     set((state) => {
       const nextEdges = sanitizeEdges(
         typeof updater === "function"
-          ? (updater as (edges: WorkflowEdge[]) => WorkflowEdge[])(
-              state.edges,
-            )
+          ? (updater as (edges: WorkflowEdge[]) => WorkflowEdge[])(state.edges)
           : updater,
       );
 
@@ -1581,9 +1579,7 @@ const workflowStoreCreator: import("zustand").StateCreator<WorkflowState> = (set
     }),
   onEdgesChange: (changes) =>
     set((state) => {
-      const nextEdges = sanitizeEdges(
-        applyEdgeChanges(changes, state.edges),
-      );
+      const nextEdges = sanitizeEdges(applyEdgeChanges(changes, state.edges));
       const nextNodes = applyDerivedNodeState(state.nodes, nextEdges);
 
       return {
@@ -1745,11 +1741,7 @@ const workflowStoreCreator: import("zustand").StateCreator<WorkflowState> = (set
   },
   getPerspectiveEvidenceTargets: (perspectiveIds) => {
     const state = get();
-    return buildBatchEvidenceTargets(
-      perspectiveIds,
-      state.nodes,
-      state.edges,
-    );
+    return buildBatchEvidenceTargets(perspectiveIds, state.nodes, state.edges);
   },
   preparePerspectiveGeneration: (targetNodeIds) => {
     const state = get();

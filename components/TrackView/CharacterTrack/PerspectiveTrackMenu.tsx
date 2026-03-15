@@ -20,6 +20,7 @@ export function PerspectiveTrackMenu({
   return (
     <PerspectiveActionsMenu
       targetNodeIds={targetNodeIds}
+      characterName={characterName}
       label={`all ${characterName} perspectives`}
     />
   );
