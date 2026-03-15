@@ -49,10 +49,36 @@ export function PerspectiveActionsMenu({
     () => Array.from(new Set(targetNodeIds)),
     [targetNodeIds],
   );
-  const normalizedCharacterName = characterName?.trim() ?? "";
-  const hasDefaultOrEmptyCharacterName =
-    normalizedCharacterName.length === 0 ||
-    /^(Character\s*\d*|Unknown)$/i.test(normalizedCharacterName);
+  const hasDefaultOrEmptyCharacterName = useMemo(() => {
+    const isDefaultName = (name: string) =>
+      name.length === 0 || /^(Character\s*\d*|Unknown)$/i.test(name);
+
+    const providedName = characterName?.trim() ?? "";
+    if (!isDefaultName(providedName)) {
+      return false;
+    }
+
+    const targetPerspectives = nodes.filter(
+      (node): node is import("@/lib/types/workflow").PerspectiveNodeType =>
+        uniqueTargetIds.includes(node.id) && node.type === "perspective",
+    );
+    const parentIds = new Set(
+      targetPerspectives
+        .map((node) => node.parentId)
+        .filter((parentId): parentId is string => Boolean(parentId)),
+    );
+
+    const linkedCharacterNames = nodes
+      .filter(
+        (node): node is import("@/lib/types/workflow").CharacterNodeType =>
+          node.type === "character" &&
+          typeof node.parentId === "string" &&
+          parentIds.has(node.parentId),
+      )
+      .map((node) => node.data?.name?.trim() ?? "");
+
+    return !linkedCharacterNames.some((name) => !isDefaultName(name));
+  }, [characterName, nodes, uniqueTargetIds]);
 
   const handleGeneratePerspectives = useCallback(
     async (prompt?: string) => {
