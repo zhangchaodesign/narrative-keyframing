@@ -12,17 +12,21 @@ type UiState = {
   setEventCount: (count: number) => void;
 };
 
-export const useUiStore = create<UiState>()(
-  persist(
-    (set) => ({
-      viewMode: "workflow",
-      narrativeTableGroupId: undefined,
-      eventCount: 3,
-      setViewMode: (viewMode) => set({ viewMode }),
-      setNarrativeTableGroupId: (groupId) =>
-        set({ narrativeTableGroupId: groupId }),
-      setEventCount: (count) => set({ eventCount: count }),
-    }),
-    { name: "characify-ui-store" },
-  ),
-);
+const ENABLE_PERSIST =
+  process.env.NEXT_PUBLIC_ENABLE_PERSIST === "true";
+
+const uiStoreCreator: import("zustand").StateCreator<UiState> = (set) => ({
+  viewMode: "workflow",
+  narrativeTableGroupId: undefined,
+  eventCount: 3,
+  setViewMode: (viewMode) => set({ viewMode }),
+  setNarrativeTableGroupId: (groupId) =>
+    set({ narrativeTableGroupId: groupId }),
+  setEventCount: (count) => set({ eventCount: count }),
+});
+
+export const useUiStore = ENABLE_PERSIST
+  ? create<UiState>()(
+      persist(uiStoreCreator, { name: "characify-ui-store" }),
+    )
+  : create<UiState>()(uiStoreCreator);
