@@ -2,11 +2,11 @@
 
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
+import { useUiStore } from "@/lib/stores/uiStore";
 import { TimelineRuler } from "@/components/TrackView/TimelineRuler";
 import { EventTrack } from "@/components/TrackView/EventTrack/EventTrack";
 import { CharacterTrack } from "@/components/TrackView/CharacterTrack/CharacterTrack";
 import { NarrativeTrack } from "@/components/TrackView/NarrativeTrack/NarrativeTrack";
-import { TimelineHeader } from "@/components/TrackView/TimelineHeader";
 import {
   TIMELINE_LABEL_WIDTH,
   TIMELINE_LEFT_PADDING,
@@ -42,73 +42,9 @@ export function TimelineView() {
     narrativeClusters,
   } = useMemo(() => buildTimelineData(nodes, edges), [nodes, edges]);
 
-  const formatStoryClusterLabel = useCallback(
-    (cluster: (typeof storyOutlineClusters)[number]) => {
-      if (typeof cluster.eventGroupNumber === "number") {
-        return `${cluster.label} ${cluster.eventGroupNumber}`;
-      }
-      if (cluster.eventGroupId) {
-        return `${cluster.label} (${cluster.eventGroupId})`;
-      }
-      return cluster.label;
-    },
-    [],
-  );
-
-  const formatNarrativeClusterLabel = useCallback(
-    (cluster: (typeof narrativeClusters)[number]) => {
-      if (typeof cluster.narrativeGroupNumber === "number") {
-        return `${cluster.label} ${cluster.narrativeGroupNumber}`;
-      }
-      if (cluster.narrativeGroupId) {
-        return `${cluster.label} (${cluster.narrativeGroupId})`;
-      }
-      return cluster.label;
-    },
-    [],
-  );
-
-  // Cluster selection state
-  const [selectedStoryClusterId, setSelectedStoryClusterId] = React.useState<
-    string | null
-  >(null);
-  const [selectedNarrativeClusterId, setSelectedNarrativeClusterId] =
-    React.useState<string | null>(null);
-
-  // Auto-select first cluster on load
-  useEffect(() => {
-    if (storyOutlineClusters.length > 0 && !selectedStoryClusterId) {
-      setSelectedStoryClusterId(storyOutlineClusters[0].id);
-    }
-  }, [storyOutlineClusters, selectedStoryClusterId]);
-
-  // Filter narrative clusters based on selected story cluster
-  const filteredNarrativeClusters = useMemo(() => {
-    if (!selectedStoryClusterId) return narrativeClusters;
-    return narrativeClusters.filter(
-      (cluster) => cluster.linkedEventGroupId === selectedStoryClusterId,
-    );
-  }, [narrativeClusters, selectedStoryClusterId]);
-
-  // Auto-select first narrative cluster, or reset if current selection is no longer in filtered list
-  useEffect(() => {
-    if (
-      selectedNarrativeClusterId &&
-      !filteredNarrativeClusters.find(
-        (c) => c.id === selectedNarrativeClusterId,
-      )
-    ) {
-      // Current selection invalid — fall back to first available
-      setSelectedNarrativeClusterId(
-        filteredNarrativeClusters.length > 0
-          ? filteredNarrativeClusters[0].id
-          : null,
-      );
-    } else if (!selectedNarrativeClusterId && filteredNarrativeClusters.length > 0) {
-      // No selection yet — auto-select first
-      setSelectedNarrativeClusterId(filteredNarrativeClusters[0].id);
-    }
-  }, [filteredNarrativeClusters, selectedNarrativeClusterId]);
+  // Cluster selection state (shared via uiStore, managed by page.tsx)
+  const selectedStoryClusterId = useUiStore((state) => state.selectedStoryClusterId);
+  const selectedNarrativeClusterId = useUiStore((state) => state.selectedNarrativeClusterId);
 
   // Map narrative groups to their connected perspective group IDs
   const narrativePerspectiveGroupMap = useMemo(() => {
@@ -386,8 +322,12 @@ export function TimelineView() {
     const cluster = storyOutlineClusters.find(
       (item) => item.id === selectedStoryClusterId,
     );
-    return cluster ? formatStoryClusterLabel(cluster) : "Story cluster";
-  }, [formatStoryClusterLabel, selectedStoryClusterId, storyOutlineClusters]);
+    if (!cluster) return "Story cluster";
+    if (typeof cluster.eventGroupNumber === "number") {
+      return `${cluster.label} ${cluster.eventGroupNumber}`;
+    }
+    return cluster.label;
+  }, [selectedStoryClusterId, storyOutlineClusters]);
 
   const footerNarrativeLabel = useMemo(() => {
     if (!selectedNarrativeClusterId) {
@@ -396,28 +336,15 @@ export function TimelineView() {
     const cluster = narrativeClusters.find(
       (item) => item.id === selectedNarrativeClusterId,
     );
-    return cluster ? formatNarrativeClusterLabel(cluster) : "Narrative cluster";
-  }, [
-    formatNarrativeClusterLabel,
-    narrativeClusters,
-    selectedNarrativeClusterId,
-  ]);
+    if (!cluster) return "Narrative cluster";
+    if (typeof cluster.narrativeGroupNumber === "number") {
+      return `${cluster.label} ${cluster.narrativeGroupNumber}`;
+    }
+    return cluster.label;
+  }, [narrativeClusters, selectedNarrativeClusterId]);
 
   return (
     <div className="h-full bg-white flex flex-col overflow-hidden">
-      <TimelineHeader
-        storyOutlineClusters={storyOutlineClusters}
-        filteredNarrativeClusters={filteredNarrativeClusters}
-        selectedStoryClusterId={selectedStoryClusterId}
-        onStoryClusterChange={(clusterId) =>
-          setSelectedStoryClusterId(clusterId)
-        }
-        selectedNarrativeClusterId={selectedNarrativeClusterId}
-        onNarrativeClusterChange={(clusterId) =>
-          setSelectedNarrativeClusterId(clusterId)
-        }
-      />
-
       {/* Timeline Container */}
       <div
         ref={timelineRef}

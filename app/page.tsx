@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import clsx from "clsx";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -9,23 +9,176 @@ import { WorkflowCanvas } from "@/components/WorkflowCanvas/WorkflowCanvas";
 import { TimelineView } from "@/components/TrackView/TimelineView";
 import { ViewSwitcher } from "@/components/ViewSwitcher/ViewSwitcher";
 import { NarrativeTableView } from "@/components/TableView/NarrativeTableView";
+import { TbHighlight } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { adjustEventCountForAllClusters } from "@/lib/utiils/workflowUtils";
+import { buildTimelineData } from "@/lib/utiils/timelineUtils";
 import { useUiStore } from "@/lib/stores/uiStore";
 import { StudyManager } from "@/components/StudyManager";
 import { eventTracker } from "@/lib/utils";
 import { exampleEventDescriptions } from "@/components/WorkflowCanvas/workflow.constants";
+import type { NarrativeCluster, StoryOutlineCluster } from "@/lib/types/timeline";
+import type { ThirdPersonGroupNodeType } from "@/lib/types/workflow";
 
 export default function Page() {
   const viewMode = useUiStore((state) => state.viewMode);
   const setViewMode = useUiStore((state) => state.setViewMode);
   const eventCount = useUiStore((state) => state.eventCount);
   const setEventCountStore = useUiStore((state) => state.setEventCount);
+  const selectedStoryClusterId = useUiStore((state) => state.selectedStoryClusterId);
+  const setSelectedStoryClusterId = useUiStore((state) => state.setSelectedStoryClusterId);
+  const selectedNarrativeClusterId = useUiStore((state) => state.selectedNarrativeClusterId);
+  const setSelectedNarrativeClusterId = useUiStore((state) => state.setSelectedNarrativeClusterId);
   const [isEditorCollapsed, setIsEditorCollapsed] = useState(true);
   const isInitialMount = useRef(true);
 
+  const nodes = useWorkflowStore((state) => state.nodes);
+  const edges = useWorkflowStore((state) => state.edges);
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const setEdges = useWorkflowStore((state) => state.setEdges);
+
+  // Timeline cluster data for dropdowns
+  const { storyOutlineClusters, narrativeClusters } = useMemo(
+    () => buildTimelineData(nodes, edges),
+    [nodes, edges],
+  );
+
+  const filteredNarrativeClusters = useMemo(() => {
+    if (!selectedStoryClusterId) return narrativeClusters;
+    return narrativeClusters.filter(
+      (cluster) => cluster.linkedEventGroupId === selectedStoryClusterId,
+    );
+  }, [narrativeClusters, selectedStoryClusterId]);
+
+  // Auto-select first story cluster
+  useEffect(() => {
+    if (storyOutlineClusters.length > 0 && !selectedStoryClusterId) {
+      setSelectedStoryClusterId(storyOutlineClusters[0].id);
+    }
+  }, [storyOutlineClusters, selectedStoryClusterId, setSelectedStoryClusterId]);
+
+  // Auto-select first narrative cluster
+  useEffect(() => {
+    if (
+      selectedNarrativeClusterId &&
+      !filteredNarrativeClusters.find((c) => c.id === selectedNarrativeClusterId)
+    ) {
+      setSelectedNarrativeClusterId(
+        filteredNarrativeClusters.length > 0 ? filteredNarrativeClusters[0].id : null,
+      );
+    } else if (!selectedNarrativeClusterId && filteredNarrativeClusters.length > 0) {
+      setSelectedNarrativeClusterId(filteredNarrativeClusters[0].id);
+    }
+  }, [filteredNarrativeClusters, selectedNarrativeClusterId, setSelectedNarrativeClusterId]);
+
+  const formatStoryClusterLabel = (cluster: StoryOutlineCluster) => {
+    if (typeof cluster.eventGroupNumber === "number") {
+      return `${cluster.label} ${cluster.eventGroupNumber}`;
+    }
+    if (cluster.eventGroupId) {
+      return `${cluster.label} (${cluster.eventGroupId})`;
+    }
+    return cluster.label;
+  };
+
+  const formatNarrativeClusterLabel = (cluster: NarrativeCluster) => {
+    if (typeof cluster.narrativeGroupNumber === "number") {
+      return `${cluster.label} ${cluster.narrativeGroupNumber}`;
+    }
+    if (cluster.narrativeGroupId) {
+      return `${cluster.label} (${cluster.narrativeGroupId})`;
+    }
+    return cluster.label;
+  };
+
+  const handleStoryClusterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextClusterId = event.target.value;
+    eventTracker({
+      action: "change_timeline_story_dropdown",
+      data: {
+        from: storyOutlineClusters.find((c) => c.id === selectedStoryClusterId) ?? null,
+        to: storyOutlineClusters.find((c) => c.id === nextClusterId) ?? null,
+        optionCount: storyOutlineClusters.length,
+      },
+    });
+    setSelectedStoryClusterId(nextClusterId);
+  };
+
+  const handleNarrativeClusterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value;
+    const nextClusterId = value || null;
+    const narrativeOptions = selectedStoryClusterId
+      ? filteredNarrativeClusters
+      : narrativeClusters;
+    eventTracker({
+      action: "change_timeline_narrative_dropdown",
+      data: {
+        from: narrativeOptions.find((c) => c.id === selectedNarrativeClusterId) ?? null,
+        to: narrativeOptions.find((c) => c.id === nextClusterId) ?? null,
+        optionCount: narrativeOptions.length + 1,
+      },
+    });
+    setSelectedNarrativeClusterId(nextClusterId);
+  };
+
+  // Narrative table controls
+  const narrativeTableGroupId = useUiStore((state) => state.narrativeTableGroupId);
+  const setNarrativeTableGroupId = useUiStore((state) => state.setNarrativeTableGroupId);
+  const narrativeTableHighlight = useUiStore((state) => state.narrativeTableHighlight);
+  const setNarrativeTableHighlight = useUiStore((state) => state.setNarrativeTableHighlight);
+
+  const narrativeGroups = useMemo(
+    () =>
+      nodes.filter(
+        (node): node is ThirdPersonGroupNodeType =>
+          node.type === "narrativeGroup",
+      ),
+    [nodes],
+  );
+
+  const resolvedTableGroupId = useMemo(() => {
+    if (
+      narrativeTableGroupId &&
+      narrativeGroups.some((group) => group.id === narrativeTableGroupId)
+    ) {
+      return narrativeTableGroupId;
+    }
+    const activeGroup = narrativeGroups.find(
+      (group) => group.data?.isActiveInEditor,
+    );
+    return activeGroup?.id ?? narrativeGroups[0]?.id;
+  }, [narrativeGroups, narrativeTableGroupId]);
+
+  const formatTableNarrativeLabel = (group: ThirdPersonGroupNodeType) => {
+    const label = group.data?.label?.trim() || "Narrative";
+    if (typeof group.data?.narrativeGroupId === "number") {
+      return `${label} ${group.data.narrativeGroupId}`;
+    }
+    return group.id ? `${label} (${group.id})` : label;
+  };
+
+  const handleTableGroupChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextGroupId = event.target.value || undefined;
+    eventTracker({
+      action: "change_narrative_table_group",
+      data: {
+        from: narrativeGroups.find((g) => g.id === resolvedTableGroupId) ?? null,
+        to: narrativeGroups.find((g) => g.id === nextGroupId) ?? null,
+        groupCount: narrativeGroups.length,
+      },
+    });
+    setNarrativeTableGroupId(nextGroupId);
+  };
+
+  const handleToggleHighlight = () => {
+    eventTracker({
+      action: narrativeTableHighlight
+        ? "disable_narrative_table_highlighting"
+        : "enable_narrative_table_highlighting",
+      data: { narrativeGroupId: resolvedTableGroupId ?? null },
+    });
+    setNarrativeTableHighlight(!narrativeTableHighlight);
+  };
 
   const handleEventCountChange = (newCount: number) => {
     eventTracker({
@@ -158,7 +311,104 @@ export default function Page() {
                     Load Examples
                   </button>
                 </div>
-                <StudyManager />
+                <div className="flex items-center gap-3">
+                  {viewMode === "timeline" && storyOutlineClusters.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor="story-cluster-select"
+                        className="text-xs text-gray-600 whitespace-nowrap"
+                      >
+                        Story Outline
+                      </label>
+                      <select
+                        id="story-cluster-select"
+                        value={selectedStoryClusterId || ""}
+                        onChange={handleStoryClusterChange}
+                        className="select select-sm select-bordered"
+                      >
+                        {storyOutlineClusters.map((cluster) => (
+                          <option key={cluster.id} value={cluster.id}>
+                            {formatStoryClusterLabel(cluster)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {viewMode === "timeline" && filteredNarrativeClusters.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor="narrative-cluster-select"
+                        className="text-xs text-gray-600"
+                      >
+                        Narrative
+                      </label>
+                      <select
+                        id="narrative-cluster-select"
+                        value={selectedNarrativeClusterId || ""}
+                        onChange={handleNarrativeClusterChange}
+                        className="select select-sm select-bordered"
+                      >
+                        <option value="">None</option>
+                        {filteredNarrativeClusters.map((cluster) => (
+                          <option key={cluster.id} value={cluster.id}>
+                            {formatNarrativeClusterLabel(cluster)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {viewMode === "narrative-table" && (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <label
+                          htmlFor="table-narrative-group-select"
+                          className="text-xs text-gray-600 whitespace-nowrap"
+                        >
+                          Narrative
+                        </label>
+                        <select
+                          id="table-narrative-group-select"
+                          value={resolvedTableGroupId ?? ""}
+                          onChange={handleTableGroupChange}
+                          className="select select-sm select-bordered"
+                          disabled={narrativeGroups.length === 0}
+                        >
+                          {narrativeGroups.length === 0 ? (
+                            <option value="">No groups</option>
+                          ) : (
+                            narrativeGroups.map((group) => (
+                              <option key={group.id} value={group.id}>
+                                {formatTableNarrativeLabel(group)}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+                      <button
+                        onClick={handleToggleHighlight}
+                        className={`flex items-center gap-2 rounded px-3 py-1.5 text-xs font-medium transition ${
+                          narrativeTableHighlight
+                            ? "bg-yellow-100 text-yellow-900 hover:bg-yellow-200"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                        title={
+                          narrativeTableHighlight
+                            ? "Disable evidence highlighting"
+                            : "Enable evidence highlighting"
+                        }
+                        aria-label={
+                          narrativeTableHighlight
+                            ? "Disable evidence highlighting"
+                            : "Enable evidence highlighting"
+                        }
+                      >
+                        <TbHighlight size={16} />
+                        <span>{narrativeTableHighlight ? "Highlighting On" : "Highlighting Off"}</span>
+                      </button>
+                    </>
+                  )}
+                  <StudyManager />
+                </div>
               </div>
 
               {/* View Content */}

@@ -9,7 +9,6 @@ import { eventTracker } from "@/lib/utils";
 import { NarrativeEventsTable } from "./NarrativeEventsTable";
 import { NarrativePromptDialog } from "./NarrativePromptDialog";
 import { NarrativeTableFooter } from "./NarrativeTableFooter";
-import { NarrativeTableHeader } from "./NarrativeTableHeader";
 import type { EventData } from "@/types/table";
 
 type NarrativeTableViewProps = {
@@ -17,7 +16,7 @@ type NarrativeTableViewProps = {
 };
 
 export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
-  const [highlightEnabled, setHighlightEnabled] = useState(true);
+  const highlightEnabled = useUiStore((state) => state.narrativeTableHighlight);
   const [showPromptDialog, setShowPromptDialog] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -41,10 +40,6 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
   const narrativeTableGroupId = useUiStore(
     (state) => state.narrativeTableGroupId,
   );
-  const setNarrativeTableGroupId = useUiStore(
-    (state) => state.setNarrativeTableGroupId,
-  );
-
   const narrativeGroups = useMemo(
     () =>
       nodes.filter(
@@ -200,37 +195,6 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
     }
   };
 
-  const handleGroupChange = (nextGroupId?: string) => {
-    const fromGroup =
-      narrativeGroups.find((group) => group.id === resolvedGroupId) ?? null;
-    const toGroup =
-      narrativeGroups.find((group) => group.id === nextGroupId) ?? null;
-
-    eventTracker({
-      action: "change_narrative_table_group",
-      data: {
-        from: fromGroup,
-        to: toGroup,
-        groupCount: narrativeGroups.length,
-      },
-    });
-
-    setNarrativeTableGroupId(nextGroupId);
-  };
-
-  const handleToggleHighlight = () => {
-    eventTracker({
-      action: highlightEnabled
-        ? "disable_narrative_table_highlighting"
-        : "enable_narrative_table_highlighting",
-      data: {
-        narrativeGroupId: resolvedGroupId ?? null,
-      },
-    });
-
-    setHighlightEnabled(!highlightEnabled);
-  };
-
   const handleOpenRegenerateDialog = () => {
     eventTracker({
       action: "open_narrative_table_regenerate_dialog",
@@ -256,15 +220,6 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-white">
-      <NarrativeTableHeader
-        resolvedGroupId={resolvedGroupId}
-        narrativeGroups={narrativeGroups}
-        highlightEnabled={highlightEnabled}
-        formatNarrativeClusterLabel={formatNarrativeClusterLabel}
-        onGroupChange={handleGroupChange}
-        onToggleHighlight={handleToggleHighlight}
-      />
-
       <div className="flex-1 overflow-auto">
         <NarrativeEventsTable
           resolvedGroupId={resolvedGroupId}

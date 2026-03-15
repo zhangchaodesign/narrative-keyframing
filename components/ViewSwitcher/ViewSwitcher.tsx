@@ -47,18 +47,7 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
         <TbTimeline size={16} />
         Track
       </button>
-      <button
-        onClick={() => handleViewChange("workflow")}
-        className={cn(
-          "flex items-center gap-2 rounded px-3 py-1.5 text-xs font-medium transition-colors w-24 justify-center",
-          currentView === "workflow"
-            ? "bg-blue-500 text-white shadow-sm"
-            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
-        )}
-      >
-        <TbLayoutGrid size={16} />
-        Canvas
-      </button>
+
       <button
         onClick={() => handleViewChange("narrative-table")}
         className={cn(
@@ -70,6 +59,19 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
       >
         <TbTable size={16} />
         Table
+      </button>
+
+      <button
+        onClick={() => handleViewChange("workflow")}
+        className={cn(
+          "flex items-center gap-2 rounded px-3 py-1.5 text-xs font-medium transition-colors w-24 justify-center",
+          currentView === "workflow"
+            ? "bg-blue-500 text-white shadow-sm"
+            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+        )}
+      >
+        <TbLayoutGrid size={16} />
+        Canvas
       </button>
     </div>
   );
