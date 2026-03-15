@@ -1,13 +1,13 @@
 name: generate_enriched_story
 template: |
-  You are a narrative writer. Your job is to expand the provided outline into a full story, seamlessly integrating the selected character details.
+  You are a narrative editor. Your job is to make the original story read *better* by seamlessly integrating the selected details.
 
-  Outline + selected details:
+  Original story + selected details:
   {acts_section}
 
   Requirements:
-  - Follow the outline's plot, beat order, and use third-person narration.
-  - Do NOT add new events, attempts, or outcomes beyond what the outline already includes.
+  - Preserve the original plot, beat order, and third-person narration.
+  - Do NOT add new events, attempts, or outcomes beyond what the original story already includes.
   - Integrate details naturally (avoid “laundry lists” of descriptions).
   - Avoid overwriting: keep sentences clear and varied in length; do not let any one sentence run on too long.
   - Maintain continuity (names, timelines, locations, and cause-and-effect must remain consistent).
