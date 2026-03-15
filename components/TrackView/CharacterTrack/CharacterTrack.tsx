@@ -12,6 +12,7 @@ import { TbChevronDown, TbChevronRight } from "react-icons/tb";
 import type { TimelineTrack } from "@/lib/types/timeline";
 import {
   TIMELINE_LABEL_WIDTH,
+  TIMELINE_LEFT_PADDING,
   TIMELINE_CHARACTER_HEADER_HEIGHT,
   TIMELINE_CHARACTER_SUBTRACK_HEIGHT,
 } from "@/components/TrackView/constants";
@@ -168,17 +169,17 @@ export function CharacterTrack({
             />
           </div>
         </div>
-        <div
-          className={cn("absolute top-0 right-0 h-full bg-gray-50/50 flex items-center justify-center")}
-          style={{ left: TIMELINE_LABEL_WIDTH }}
+        <button
+          onClick={() => setCollapsed((prev) => !prev)}
+          className="absolute top-0 h-full flex items-center justify-center hover:bg-gray-100 text-gray-800 hover:text-gray-900 transition-colors"
+          style={{ left: TIMELINE_LABEL_WIDTH, width: TIMELINE_LEFT_PADDING }}
         >
-          <button
-            onClick={() => setCollapsed((prev) => !prev)}
-            className="p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-700 transition-colors"
-          >
-            {collapsed ? <TbChevronRight size={16} /> : <TbChevronDown size={16} />}
-          </button>
-        </div>
+          {collapsed ? (
+            <TbChevronRight size={16} />
+          ) : (
+            <TbChevronDown size={16} />
+          )}
+        </button>
       </div>
 
       {/* Character Subtrack */}

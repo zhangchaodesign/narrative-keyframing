@@ -1,5 +1,5 @@
 export const TIMELINE_LABEL_WIDTH = 120;
-export const TIMELINE_LEFT_PADDING = 20;
+export const TIMELINE_LEFT_PADDING = 30;
 export const TIMELINE_RIGHT_PADDING = 20;
 export const TIMELINE_RULER_HEIGHT = 40;
 export const TIMELINE_STORY_TRACK_HEIGHT = 200;
