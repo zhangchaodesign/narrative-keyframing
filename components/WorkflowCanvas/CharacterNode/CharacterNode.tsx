@@ -403,6 +403,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                   nodeId={id}
                   category={key}
                   label={label}
+                  sizeVariant="character-node"
                   titleClass={titleClass}
                   chipClass={chipClass}
                   emptyClass={emptyClass}

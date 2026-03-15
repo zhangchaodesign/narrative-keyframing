@@ -357,6 +357,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         analysisEvidence={data?.analysisEvidence}
         isEditing={isEditing}
         onReflectionChange={handleReflectionChange}
+        classes="text-[10px]"
       />
       {eventMetadata && (
         <div className="mt-1 flex justify-end gap-2">

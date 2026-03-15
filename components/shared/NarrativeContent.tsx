@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
 import { getCharacterColors } from "@/components/shared/colors.constants";
+import { cn } from "@/lib/utils";
 
 interface SnippetUsage {
   originalSnippet: string;
@@ -13,6 +14,7 @@ interface NarrativeContentProps {
   snippetUsages?: SnippetUsage[];
   isEditing?: boolean;
   onNarrationChange?: (newNarration: string) => void;
+  classes?: string;
 }
 
 type HighlightRange = {
@@ -104,6 +106,7 @@ export function NarrativeContent({
   snippetUsages,
   isEditing = false,
   onNarrationChange,
+  classes,
 }: NarrativeContentProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [editValue, setEditValue] = useState(narration);
@@ -137,7 +140,10 @@ export function NarrativeContent({
           setEditValue(nextValue);
           onNarrationChange?.(nextValue);
         }}
-        className="flex-1 w-full resize-none rounded bg-white border border-gray-300 px-2 py-1 text-xs leading-snug text-gray-800 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-400 nodrag nopan"
+        className={cn(
+          "flex-1 w-full resize-none rounded bg-white border border-gray-300 px-2 py-1 leading-snug text-gray-800 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-400 nodrag nopan",
+          classes,
+        )}
         onWheel={(event) => {
           if (event.ctrlKey || event.metaKey) {
             return;
@@ -158,7 +164,10 @@ export function NarrativeContent({
 
   return (
     <div
-      className="flex-1 overflow-y-auto w-full resize-none rounded bg-gray-50 px-2 py-1 text-xs leading-snug text-gray-800"
+      className={cn(
+        "flex-1 overflow-y-auto w-full resize-none rounded bg-gray-50 px-2 py-1 leading-snug text-gray-800",
+        classes,
+      )}
       onWheel={(event) => {
         if (event.ctrlKey || event.metaKey) {
           return;

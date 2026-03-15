@@ -30,6 +30,7 @@ interface TraitItemProps {
   trait: string;
   index: number;
   label: string;
+  sizeVariant?: "default" | "character-node";
   chipClass: string;
   selectedClass: string;
   onEdit: (index: number, newValue: string) => void;
@@ -42,11 +43,13 @@ export function TraitItem({
   trait,
   index,
   label,
+  sizeVariant = "default",
   chipClass,
   selectedClass,
   onEdit,
   onRemove,
 }: TraitItemProps) {
+  const isCharacterNodeVariant = sizeVariant === "character-node";
   const editingInputRef = useRef<HTMLInputElement | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(trait);
@@ -224,7 +227,8 @@ export function TraitItem({
   return (
     <div
       className={cn(
-        "group/trait relative flex items-center rounded border text-xs transition",
+        "group/trait relative flex items-center rounded border transition",
+        isCharacterNodeVariant ? "text-[10px]" : "text-xs",
         chipClass,
         isSelected && selectedClass,
       )}

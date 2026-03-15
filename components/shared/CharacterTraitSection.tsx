@@ -23,6 +23,7 @@ interface TraitSectionProps {
   nodeId: string;
   category: TraitCategory;
   label: string;
+  sizeVariant?: "default" | "character-node";
   titleClass: string;
   chipClass: string;
   emptyClass: string;
@@ -42,6 +43,7 @@ export function TraitSection({
   nodeId,
   category,
   label,
+  sizeVariant = "default",
   titleClass,
   chipClass,
   emptyClass,
@@ -50,6 +52,7 @@ export function TraitSection({
   brainstormContext,
   onUpdateNodeData,
 }: TraitSectionProps) {
+  const isCharacterNodeVariant = sizeVariant === "character-node";
   const [draftValue, setDraftValue] = useState("");
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [isBrainstorming, setIsBrainstorming] = useState(false);
@@ -315,7 +318,9 @@ export function TraitSection({
     <section className="">
       <div className="flex items-center justify-between gap-2">
         <h4
-          className={`text-xs font-semibold uppercase tracking-wide ${titleClass}`}
+          className={`font-semibold uppercase tracking-wide ${
+            isCharacterNodeVariant ? "text-[11px]" : "text-xs"
+          } ${titleClass}`}
         >
           {label}
         </h4>
@@ -363,6 +368,7 @@ export function TraitSection({
             trait={trait}
             index={index}
             label={label}
+            sizeVariant={sizeVariant}
             chipClass={chipClass}
             selectedClass={selectedClass}
             onEdit={handleUpdateTrait}

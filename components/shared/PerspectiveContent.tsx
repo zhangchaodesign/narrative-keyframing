@@ -15,7 +15,7 @@ import {
 import type { PerspectiveEvidenceItem } from "@/lib/types/workflow";
 import { findTextMatches } from "@/lib/utiils/sharedUtils";
 import { getCharacterColors } from "@/components/shared/colors.constants";
-import { eventTracker } from "@/lib/utils";
+import { cn, eventTracker } from "@/lib/utils";
 
 interface PerspectiveContentProps {
   perspectiveNodeId: string;
@@ -23,6 +23,7 @@ interface PerspectiveContentProps {
   analysisEvidence?: PerspectiveEvidenceItem[];
   isEditing?: boolean;
   onReflectionChange?: (newReflection: string) => void;
+  classes?: string;
 }
 
 type SnippetRange = {
@@ -109,6 +110,7 @@ export function PerspectiveContent({
   analysisEvidence,
   isEditing = false,
   onReflectionChange,
+  classes,
 }: PerspectiveContentProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [editValue, setEditValue] = useState(reflection);
@@ -280,7 +282,10 @@ export function PerspectiveContent({
         ref={textareaRef}
         value={editValue}
         onChange={handleTextChange}
-        className="flex-1 w-full resize-none rounded bg-white border border-gray-300 px-2 py-1 text-xs leading-snug text-gray-800 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-400 nodrag nopan"
+        className={cn(
+          "flex-1 w-full resize-none rounded bg-white border border-gray-300 px-2 py-1 leading-snug text-gray-800 outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-400 nodrag nopan",
+          classes,
+        )}
         onWheel={(event) => {
           if (event.ctrlKey || event.metaKey) {
             return;
@@ -301,7 +306,10 @@ export function PerspectiveContent({
 
   return (
     <div
-      className="flex-1 overflow-y-auto w-full resize-none rounded bg-gray-50 px-2 py-1 text-xs leading-snug text-gray-800"
+      className={cn(
+        "flex-1 overflow-y-auto w-full resize-none rounded bg-gray-50 px-2 py-1 leading-snug text-gray-800",
+        classes,
+      )}
       onWheel={(event) => {
         if (event.ctrlKey || event.metaKey) {
           return;

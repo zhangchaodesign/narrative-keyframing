@@ -145,6 +145,7 @@ export function PerspectiveBlock({
           analysisEvidence={perspectiveData?.analysisEvidence}
           isEditing={isEditing}
           onReflectionChange={handleReflectionChange}
+          classes="text-xs"
         />
       </div>
     </div>

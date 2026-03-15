@@ -168,6 +168,7 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
         snippetUsages={data?.snippetUsages}
         isEditing={isEditing}
         onNarrationChange={handleNarrationChange}
+        classes="text-[10px]"
       />
       {eventMetadata && (
         <div className="mt-1 flex justify-end gap-2">
