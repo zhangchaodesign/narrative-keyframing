@@ -22,7 +22,7 @@ export const initialNodes: WorkflowNode[] = [
     position: { x: 200, y: 20 },
     data: { label: "Story Draft", eventGroupId: 1 },
     style: {
-      width: 1200,
+      width: 920,
       height: 220,
       backgroundColor: "transparent",
       border: "none",
@@ -39,7 +39,7 @@ export const initialNodes: WorkflowNode[] = [
       characterName: "Aria",
     },
     style: {
-      width: 1200,
+      width: 920,
       height: 720,
       backgroundColor: "transparent",
       border: "none",
@@ -50,13 +50,13 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "perspective-group-lysa",
     type: "perspectiveGroup",
-    position: { x: 1300, y: 360 },
+    position: { x: 1020, y: 360 },
     data: {
       label: "Lysa's Perspective",
       characterName: "Lysa",
     },
     style: {
-      width: 1200,
+      width: 920,
       height: 720,
       backgroundColor: "transparent",
       border: "none",
@@ -73,7 +73,7 @@ export const initialNodes: WorkflowNode[] = [
       narrativeGroupId: 1,
     },
     style: {
-      width: 1200,
+      width: 920,
       height: 420,
       backgroundColor: "transparent",
       border: "none",
@@ -88,8 +88,8 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       description:
-        "Dawn raid on the village. Aria breaks formation to save a trapped child. Lysa watches from the archive tower, documenting the chaos.",
-      timeline: "Event 1",
+        "Dawn raid on the village. Aria breaks formation to save a trapped child. Lysa watches from the archive tower, documenting the chaos. Aria is publicly reprimanded and demoted to archive duty under Lysa's supervision.",
+      timeline: "Act 1",
     },
     parentId: "event-group",
     extent: "parent",
@@ -101,8 +101,8 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       description:
-        "Council meeting. Aria is publicly reprimanded and demoted to archive duty under Lysa's supervision. Lysa reluctantly accepts her new charge.",
-      timeline: "Event 2",
+        "Evening in the archives. Aria discovers old battle records. Lysa shares tactical insights from historical texts. They clash over methods but gradually find common ground, planning an ambush strategy together.",
+      timeline: "Act 2",
     },
     parentId: "event-group",
     extent: "parent",
@@ -114,21 +114,8 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       description:
-        "Evening in the archives. Aria discovers old battle records. Lysa shares tactical insights from historical texts. They plan an ambush strategy together.",
-      timeline: "Event 3",
-    },
-    parentId: "event-group",
-    extent: "parent",
-  },
-  {
-    id: "event-4",
-    type: "event",
-    position: { x: 920, y: 60 },
-    draggable: false,
-    data: {
-      description:
         "Night battle. Raiders return. Aria and Lysa execute their planned ambush, combining scout tactics with historical strategy. Victory without casualties.",
-      timeline: "Event 4",
+      timeline: "Act 3",
     },
     parentId: "event-group",
     extent: "parent",
@@ -163,19 +150,6 @@ export const initialNodes: WorkflowNode[] = [
     id: "perspective-aria-3",
     type: "perspective",
     position: { x: 620, y: 60 },
-    draggable: false,
-    data: {
-      narrator: "Aria",
-      reflection: "",
-      isLoading: false,
-    },
-    parentId: "perspective-group-aria",
-    extent: "parent",
-  },
-  {
-    id: "perspective-aria-4",
-    type: "perspective",
-    position: { x: 920, y: 60 },
     draggable: false,
     data: {
       narrator: "Aria",
@@ -225,19 +199,6 @@ export const initialNodes: WorkflowNode[] = [
     extent: "parent",
   },
   {
-    id: "perspective-lysa-4",
-    type: "perspective",
-    position: { x: 920, y: 60 },
-    draggable: false,
-    data: {
-      narrator: "Lysa",
-      reflection: "",
-      isLoading: false,
-    },
-    parentId: "perspective-group-lysa",
-    extent: "parent",
-  },
-  {
     id: "character-aria-1",
     type: "character",
     position: { x: 20, y: 280 },
@@ -262,9 +223,9 @@ export const initialNodes: WorkflowNode[] = [
     extent: "parent",
   },
   {
-    id: "character-aria-4",
+    id: "character-aria-3",
     type: "character",
-    position: { x: 920, y: 280 },
+    position: { x: 620, y: 280 },
     draggable: false,
     data: {
       name: "Aria",
@@ -280,7 +241,7 @@ export const initialNodes: WorkflowNode[] = [
           "Bridge between scouts and scholars",
         ],
       },
-      perspectiveId: "perspective-aria-4",
+      perspectiveId: "perspective-aria-3",
     },
     parentId: "perspective-group-aria",
     extent: "parent",
@@ -310,9 +271,9 @@ export const initialNodes: WorkflowNode[] = [
     extent: "parent",
   },
   {
-    id: "character-lysa-4",
+    id: "character-lysa-3",
     type: "character",
-    position: { x: 920, y: 280 },
+    position: { x: 620, y: 280 },
     draggable: false,
     data: {
       name: "Lysa",
@@ -331,7 +292,7 @@ export const initialNodes: WorkflowNode[] = [
           "Mentor to young tacticians",
         ],
       },
-      perspectiveId: "perspective-lysa-4",
+      perspectiveId: "perspective-lysa-3",
     },
     parentId: "perspective-group-lysa",
     extent: "parent",
@@ -364,18 +325,6 @@ export const initialNodes: WorkflowNode[] = [
     id: "narrative-3",
     type: "narrative",
     position: { x: 620, y: 60 },
-    draggable: false,
-    data: {
-      narration: "",
-      isLoading: false,
-    },
-    parentId: "narration-group",
-    extent: "parent",
-  },
-  {
-    id: "narrative-4",
-    type: "narrative",
-    position: { x: 920, y: 60 },
     draggable: false,
     data: {
       narration: "",
@@ -444,15 +393,6 @@ export const initialEdges: WorkflowEdge[] = [
     type: "eventEdge",
     animated: true,
   },
-  {
-    id: "edge-event-3-4",
-    source: "event-3",
-    target: "event-4",
-    sourceHandle: "event-next",
-    targetHandle: "event-prev",
-    type: "eventEdge",
-    animated: true,
-  },
   // Aria perspective connections
   {
     id: "edge-perspective-aria-1-2",
@@ -467,15 +407,6 @@ export const initialEdges: WorkflowEdge[] = [
     id: "edge-perspective-aria-2-3",
     source: "perspective-aria-2",
     target: "perspective-aria-3",
-    sourceHandle: "perspective-next",
-    targetHandle: "perspective-prev",
-    type: "customEdge",
-    animated: true,
-  },
-  {
-    id: "edge-perspective-aria-3-4",
-    source: "perspective-aria-3",
-    target: "perspective-aria-4",
     sourceHandle: "perspective-next",
     targetHandle: "perspective-prev",
     type: "customEdge",
@@ -500,15 +431,6 @@ export const initialEdges: WorkflowEdge[] = [
     type: "customEdge",
     animated: true,
   },
-  {
-    id: "edge-perspective-lysa-3-4",
-    source: "perspective-lysa-3",
-    target: "perspective-lysa-4",
-    sourceHandle: "perspective-next",
-    targetHandle: "perspective-prev",
-    type: "customEdge",
-    animated: true,
-  },
   // Aria character to perspective connections
   {
     id: "edge-character-aria-1-perspective-aria-1",
@@ -520,9 +442,9 @@ export const initialEdges: WorkflowEdge[] = [
     animated: true,
   },
   {
-    id: "edge-character-aria-4-perspective-aria-4",
-    source: "character-aria-4",
-    target: "perspective-aria-4",
+    id: "edge-character-aria-3-perspective-aria-3",
+    source: "character-aria-3",
+    target: "perspective-aria-3",
     sourceHandle: "perspective",
     targetHandle: "character",
     type: "customEdge",
@@ -539,9 +461,9 @@ export const initialEdges: WorkflowEdge[] = [
     animated: true,
   },
   {
-    id: "edge-character-lysa-4-perspective-lysa-4",
-    source: "character-lysa-4",
-    target: "perspective-lysa-4",
+    id: "edge-character-lysa-3-perspective-lysa-3",
+    source: "character-lysa-3",
+    target: "perspective-lysa-3",
     sourceHandle: "perspective",
     targetHandle: "character",
     type: "customEdge",
@@ -561,15 +483,6 @@ export const initialEdges: WorkflowEdge[] = [
     id: "edge-narrative-2-3",
     source: "narrative-2",
     target: "narrative-3",
-    sourceHandle: "narrative-next",
-    targetHandle: "narrative-prev",
-    type: "customEdge",
-    animated: true,
-  },
-  {
-    id: "edge-narrative-3-4",
-    source: "narrative-3",
-    target: "narrative-4",
     sourceHandle: "narrative-next",
     targetHandle: "narrative-prev",
     type: "customEdge",

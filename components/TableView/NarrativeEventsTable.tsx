@@ -302,7 +302,7 @@ export function NarrativeEventsTable({
               <td className="border border-gray-300 px-3 py-2 align-top text-xs text-gray-700">
                 <div className="space-y-1">
                   <div className="font-medium text-gray-900">
-                    Event_{eventIndex + 1}
+                    Act {eventIndex + 1}
                   </div>
                   <div>
                     {event.eventDescription || (

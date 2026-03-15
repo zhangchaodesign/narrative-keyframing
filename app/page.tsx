@@ -20,7 +20,7 @@ export default function Page() {
   const setViewMode = useUiStore((state) => state.setViewMode);
   const eventCount = useUiStore((state) => state.eventCount);
   const setEventCountStore = useUiStore((state) => state.setEventCount);
-  const [isEditorCollapsed, setIsEditorCollapsed] = useState(false);
+  const [isEditorCollapsed, setIsEditorCollapsed] = useState(true);
   const isInitialMount = useRef(true);
 
   const setNodes = useWorkflowStore((state) => state.setNodes);
@@ -125,7 +125,9 @@ export default function Page() {
                       min="1"
                       max="20"
                       value={eventCount}
-                      onChange={(e) => handleEventCountChange(Number(e.target.value))}
+                      onChange={(e) =>
+                        handleEventCountChange(Number(e.target.value))
+                      }
                       className="input input-sm input-bordered w-16 rounded"
                     />
                   </div>

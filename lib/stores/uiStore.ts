@@ -17,7 +17,7 @@ export const useUiStore = create<UiState>()(
     (set) => ({
       viewMode: "workflow",
       narrativeTableGroupId: undefined,
-      eventCount: 4,
+      eventCount: 3,
       setViewMode: (viewMode) => set({ viewMode }),
       setNarrativeTableGroupId: (groupId) =>
         set({ narrativeTableGroupId: groupId }),
