@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, type ChangeEvent } from "react";
+import { useCallback, type ChangeEvent, type FocusEvent } from "react";
 import { Position, type NodeProps, useReactFlow } from "@xyflow/react";
 import { EventHandle } from "@/components/WorkflowCanvas/EventNode/EventHandle";
 import type {
@@ -10,6 +10,7 @@ import type {
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
+import { eventTracker } from "@/lib/utils";
 
 export function EventNode({ id, data }: NodeProps<EventNodeType>) {
   const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
@@ -35,6 +36,34 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
     [id, setNodes],
   );
 
+  const handleFocus = useCallback(
+    (_event: FocusEvent<HTMLTextAreaElement>) => {
+      eventTracker({
+        action: "event_input_active",
+        data: {
+          eventNodeId: id,
+          timeline: data?.timeline ?? "",
+          description: data?.description ?? "",
+        },
+      });
+    },
+    [id, data?.timeline, data?.description],
+  );
+
+  const handleBlur = useCallback(
+    (event: FocusEvent<HTMLTextAreaElement>) => {
+      eventTracker({
+        action: "event_input_not_active",
+        data: {
+          eventNodeId: id,
+          timeline: data?.timeline ?? "",
+          description: event.target.value ?? "",
+        },
+      });
+    },
+    [id, data?.timeline],
+  );
+
   return (
     <div className="group relative w-64 rounded-lg border-2 border-gray-500 bg-white p-3 text-xs hover:shadow-lg">
       <div
@@ -48,6 +77,8 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
       <textarea
         value={data?.description ?? ""}
         onChange={handleDescriptionChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         placeholder="Describe the event..."
         rows={4}
         onPointerDown={(event) => {

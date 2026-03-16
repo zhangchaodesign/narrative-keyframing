@@ -6,12 +6,14 @@ import React, {
   useMemo,
   useState,
   type ChangeEvent,
+  type FocusEvent,
 } from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
 import type { TimelineItem } from "@/lib/types/timeline";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TrackView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
+import { eventTracker } from "@/lib/utils";
 
 interface EventBlockProps {
   item: TimelineItem;
@@ -64,6 +66,34 @@ export function EventBlock({
     [item.nodeId, setNodes],
   );
 
+  const handleFocus = useCallback(
+    (_event: FocusEvent<HTMLTextAreaElement>) => {
+      eventTracker({
+        action: "event_input_active",
+        data: {
+          eventNodeId: item.nodeId,
+          actLabel: `Act ${item.position + 1}`,
+          content: draftContent,
+        },
+      });
+    },
+    [item.nodeId, item.position, draftContent],
+  );
+
+  const handleBlur = useCallback(
+    (event: FocusEvent<HTMLTextAreaElement>) => {
+      eventTracker({
+        action: "event_input_not_active",
+        data: {
+          eventNodeId: item.nodeId,
+          actLabel: `Act ${item.position + 1}`,
+          content: event.target.value ?? "",
+        },
+      });
+    },
+    [item.nodeId, item.position],
+  );
+
   const headerLabel = useMemo(
     () => `Act ${item.position + 1}`,
     [item.position],
@@ -91,6 +121,8 @@ export function EventBlock({
           <textarea
             value={draftContent}
             onChange={handleContentChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
             placeholder="Describe the event..."
             rows={3}
             onPointerDown={(event) => {
