@@ -5,7 +5,7 @@ import { cn } from "@/lib/utiils/sharedUtils";
 import { getCharacterColors } from "@/components/shared/colors.constants";
 import { geistMono } from "@/app/fonts";
 import type { TimelineItem } from "@/lib/types/timeline";
-import type { PerspectiveNodeType } from "@/lib/types/workflow";
+import type { CharacterNodeType, PerspectiveNodeType } from "@/lib/types/workflow";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TrackView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { PerspectiveSingleActionsMenu } from "@/components/shared/PerspectiveNodeMenu";
@@ -52,21 +52,37 @@ export function PerspectiveBlock({
       // Save the edited reflection
       setNodes((nodesState) =>
         nodesState.map((node) => {
-          if (node.id !== item.nodeId || node.type !== "perspective") {
-            return node;
+          if (node.id === item.nodeId && node.type === "perspective") {
+            const existingData = node.data as PerspectiveNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                reflection: editedReflection,
+                // Clear evidence analysis when reflection is edited
+                analysisEvidence: [],
+                analysisStatus: "idle",
+                analysisStatusMessage: undefined,
+              },
+            };
           }
-          const existingData = node.data as PerspectiveNodeType["data"];
-          return {
-            ...node,
-            data: {
-              ...existingData,
-              reflection: editedReflection,
-              // Clear evidence analysis when reflection is edited
-              analysisEvidence: [],
-              analysisStatus: "idle",
-              analysisStatusMessage: undefined,
-            },
-          };
+
+          if (
+            node.type === "character" &&
+            (node.data as CharacterNodeType["data"])?.perspectiveId ===
+              item.nodeId
+          ) {
+            const existingData = node.data as CharacterNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                showUpdatePrompt: true,
+              },
+            };
+          }
+
+          return node;
         }),
       );
       setIsEditing(false);

@@ -303,7 +303,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
           <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-black/10 p-3 text-center text-white backdrop-blur-xs">
             <div className="w-full max-w-xs rounded-lg bg-white/90 p-3 text-gray-900 shadow-lg">
               <p className="text-xs font-medium">
-                Update the character sheet with the latest perspective?
+                Update the character snapshot with the latest perspective?
               </p>
               <div className="mt-3 flex justify-center gap-2">
                 <button

@@ -18,12 +18,19 @@ import {
 } from "@/lib/stores/workflowStore";
 import { TraitSection } from "@/components/shared/CharacterTraitSection";
 import { CharacterRefreshMenu } from "@/components/shared/CharacterActionsMenu";
-import type { CharacterNodeData, CharacterTraits } from "@/lib/types/workflow";
+import type {
+  CharacterNodeData,
+  CharacterNodeType,
+  CharacterTraits,
+} from "@/lib/types/workflow";
 import {
   CHARACTER_TRAIT_CATEGORIES,
   buildCharacterBrainstormContext,
   normalizeCharacterTraits,
+  refreshCharacterSnapshotFromPerspective,
+  type WorkflowNodesSetter,
 } from "@/lib/utiils/characterUtils";
+import { eventTracker } from "@/lib/utils";
 
 interface CharacterBlockProps {
   item: TimelineItem;
@@ -198,6 +205,123 @@ export function CharacterBlock({
     }
   }, [areAllTraitsSelected, handleDeselectAllTraits, handleSelectAllTraits]);
 
+  const handleDismissUpdatePrompt = useCallback(() => {
+    eventTracker({
+      action: "dismiss_character_update_prompt",
+      data: {
+        characterId: item.nodeId,
+        characterName: characterData?.name,
+        characterTraits: characterData?.traits,
+      },
+    });
+
+    setNodes((nodesState) =>
+      nodesState.map((node) => {
+        if (node.id !== item.nodeId || node.type !== "character") {
+          return node;
+        }
+        const existingData = node.data as CharacterNodeData;
+        return {
+          ...node,
+          data: {
+            ...existingData,
+            showUpdatePrompt: false,
+          },
+        };
+      }),
+    );
+  }, [characterData?.name, characterData?.traits, item.nodeId, setNodes]);
+
+  const handleConfirmUpdatePrompt = useCallback(async () => {
+    if (characterData?.isRefreshing) {
+      return;
+    }
+
+    eventTracker({
+      action: "confirm_character_update_prompt",
+      data: {
+        characterId: item.nodeId,
+        characterName: characterData?.name,
+        characterTraits: characterData?.traits,
+        perspectiveId: characterData?.perspectiveId,
+      },
+    });
+
+    setNodes((nodesState) =>
+      nodesState.map((node) => {
+        if (node.id !== item.nodeId || node.type !== "character") {
+          return node;
+        }
+        const existingData = node.data as CharacterNodeData;
+        return {
+          ...node,
+          data: {
+            ...existingData,
+            isRefreshing: true,
+            showUpdatePrompt: false,
+          },
+        };
+      }),
+    );
+
+    try {
+      await refreshCharacterSnapshotFromPerspective({
+        nodeId: item.nodeId,
+        nodes,
+        setNodes: setNodes as WorkflowNodesSetter,
+      });
+
+      const updatedNode = nodes.find(
+        (node): node is CharacterNodeType =>
+          node.id === item.nodeId && node.type === "character",
+      );
+
+      eventTracker({
+        action: "confirm_character_update_prompt_success",
+        data: {
+          characterId: item.nodeId,
+          characterName: updatedNode?.data?.name,
+          updatedCharacterTraits: updatedNode?.data?.traits,
+          perspectiveId: updatedNode?.data?.perspectiveId,
+        },
+      });
+    } catch (error) {
+      console.error("Error refreshing character snapshot:", error);
+      eventTracker({
+        action: "confirm_character_update_prompt_error",
+        data: {
+          characterId: item.nodeId,
+          characterName: characterData?.name,
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+      });
+    } finally {
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
+          if (node.id !== item.nodeId || node.type !== "character") {
+            return node;
+          }
+          const existingData = node.data as CharacterNodeData;
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              isRefreshing: false,
+            },
+          };
+        }),
+      );
+    }
+  }, [
+    characterData?.isRefreshing,
+    characterData?.name,
+    characterData?.perspectiveId,
+    characterData?.traits,
+    item.nodeId,
+    nodes,
+    setNodes,
+  ]);
+
   const nameInputPlaceholder = characterName ? characterName : "Unknown";
 
   return (
@@ -215,6 +339,31 @@ export function CharacterBlock({
           colors.border,
         )}
       >
+        {characterData?.showUpdatePrompt && !isRefreshing && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-black/10 p-3 text-center text-white backdrop-blur-xs">
+            <div className="w-full max-w-xs rounded-lg bg-white/90 p-3 text-gray-900 shadow-lg">
+              <p className="text-xs font-medium">
+                Update the character snapshot with the latest perspective?
+              </p>
+              <div className="mt-3 flex justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDismissUpdatePrompt}
+                  className="btn btn-xs"
+                >
+                  Not now
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmUpdatePrompt}
+                  className="btn btn-xs btn-neutral"
+                >
+                  Update
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {isRefreshing && (
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-warning"></span>
