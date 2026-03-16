@@ -40,6 +40,9 @@ export function PerspectiveSingleActionsMenu({
   const preparePerspectiveGeneration = useWorkflowStore(
     (state) => state.preparePerspectiveGeneration,
   );
+  const syncSelectedSnippetsFromEvidence = useWorkflowStore(
+    (state) => state.syncSelectedSnippetsFromEvidence,
+  );
   const [showPromptDialog, setShowPromptDialog] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
 
@@ -126,11 +129,13 @@ export function PerspectiveSingleActionsMenu({
       analysisStatusMessage: result.message,
       analysisEvidence: result.evidence,
     });
+    syncSelectedSnippetsFromEvidence();
   }, [
     getPerspectiveEvidenceTarget,
     isAnalyzingEvidence,
     nodeId,
     perspectiveData,
+    syncSelectedSnippetsFromEvidence,
     updateAnalysisState,
   ]);
 

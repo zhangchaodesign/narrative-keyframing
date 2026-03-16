@@ -77,6 +77,7 @@ type WorkflowState = {
   toggleEvidenceAttribute: (characterId: string, attribute: string) => void;
   clearEvidenceAttribute: (characterId: string, attribute: string) => void;
   clearAllEvidenceAttributes: () => void;
+  syncSelectedSnippetsFromEvidence: () => void;
   toggleSnippet: (snippet: SelectedSnippet) => void;
   clearSnippet: (perspectiveNodeId: string, snippetText: string) => void;
   clearAllSnippets: () => void;
@@ -1701,6 +1702,86 @@ const workflowStoreCreator: import("zustand").StateCreator<WorkflowState> = (
       return { selectedEvidenceAttributes: next };
     }),
   clearAllEvidenceAttributes: () => set({ selectedEvidenceAttributes: {} }),
+  syncSelectedSnippetsFromEvidence: () =>
+    set((state) => {
+      const selectedAttributes = state.selectedEvidenceAttributes ?? {};
+      const selectedKeys = Object.keys(selectedAttributes).filter(
+        (key) => selectedAttributes[key],
+      );
+
+      if (selectedKeys.length === 0) {
+        return {};
+      }
+
+      const selectedByCharacter = new Map<string, Set<string>>();
+      selectedKeys.forEach((key) => {
+        const separatorIndex = key.indexOf("::");
+        if (separatorIndex <= 0) {
+          return;
+        }
+        const characterId = key.slice(0, separatorIndex);
+        const attribute = key.slice(separatorIndex + 2).trim().toLowerCase();
+        if (!characterId || !attribute) {
+          return;
+        }
+        const existing = selectedByCharacter.get(characterId);
+        if (existing) {
+          existing.add(attribute);
+          return;
+        }
+        selectedByCharacter.set(characterId, new Set([attribute]));
+      });
+
+      if (selectedByCharacter.size === 0) {
+        return {};
+      }
+
+      const nextSnippets = { ...(state.selectedSnippets ?? {}) };
+      let changed = false;
+
+      state.nodes.forEach((node) => {
+        if (node.type !== "perspective") {
+          return;
+        }
+
+        const perspectiveData = node.data as PerspectiveNodeType["data"];
+        const evidenceEntries = perspectiveData?.analysisEvidence ?? [];
+
+        evidenceEntries.forEach((entry) => {
+          const selectedAttributesForCharacter = selectedByCharacter.get(
+            entry.characterId,
+          );
+          if (!selectedAttributesForCharacter) {
+            return;
+          }
+
+          entry.items.forEach((item) => {
+            const matchesSelectedAttribute = item.attributes.some((attr) =>
+              selectedAttributesForCharacter.has(attr.trim().toLowerCase()),
+            );
+            if (!matchesSelectedAttribute) {
+              return;
+            }
+
+            const snippetKey = buildSnippetKey(node.id, item.text);
+            if (nextSnippets[snippetKey]) {
+              return;
+            }
+
+            nextSnippets[snippetKey] = {
+              perspectiveNodeId: node.id,
+              text: item.text,
+              characterId: entry.characterId,
+              characterName: entry.characterName,
+              attributes: item.attributes,
+            };
+            changed = true;
+          });
+        });
+      });
+
+      return changed ? { selectedSnippets: nextSnippets } : {};
+    }),
   toggleSnippet: (snippet) =>
     set((state) => {
       const key = buildSnippetKey(snippet.perspectiveNodeId, snippet.text);

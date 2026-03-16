@@ -143,7 +143,7 @@ export function NarrativeNode({ id, data }: NodeProps<NarrativeNodeType>) {
         <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
           <span className="loading loading-spinner text-green-600"></span>
           <span className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-green-600">
-            Preparing narration...
+            Preparing story...
           </span>
         </div>
       )}

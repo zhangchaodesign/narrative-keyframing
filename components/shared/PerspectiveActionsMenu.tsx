@@ -40,6 +40,9 @@ export function PerspectiveActionsMenu({
   const getPerspectiveEvidenceTargets = useWorkflowStore(
     (state) => state.getPerspectiveEvidenceTargets,
   );
+  const syncSelectedSnippetsFromEvidence = useWorkflowStore(
+    (state) => state.syncSelectedSnippetsFromEvidence,
+  );
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showPromptDialog, setShowPromptDialog] = useState(false);
@@ -176,6 +179,7 @@ export function PerspectiveActionsMenu({
         await analyzeMultiplePerspectivesEvidence(preparedTargets);
 
       setNodes((currentNodes) => applyAnalysisResults(currentNodes, results));
+      syncSelectedSnippetsFromEvidence();
     } catch (error) {
       console.error("Error analyzing evidence for perspectives:", error);
       setNodes((currentNodes) =>
@@ -184,7 +188,13 @@ export function PerspectiveActionsMenu({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [getPerspectiveEvidenceTargets, isAnalyzing, setNodes, uniqueTargetIds]);
+  }, [
+    getPerspectiveEvidenceTargets,
+    isAnalyzing,
+    setNodes,
+    syncSelectedSnippetsFromEvidence,
+    uniqueTargetIds,
+  ]);
 
   const handleGenerateAndAnalyze = useCallback(
     async (prompt?: string) => {
