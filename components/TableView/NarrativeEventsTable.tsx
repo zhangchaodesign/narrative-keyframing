@@ -246,7 +246,7 @@ export function NarrativeEventsTable({
     <table className="w-full border-collapse text-sm">
       <thead className="sticky top-0 bg-gray-50">
         <tr>
-          <th className="min-w-[16rem] w-[16rem] border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">
+          <th className="min-w-[12rem] w-[12rem] border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">
             Outline
           </th>
           {uniquePerspectives.map((narrator, index) => {
@@ -254,7 +254,10 @@ export function NarrativeEventsTable({
             return (
               <th
                 key={`narrator-${index}`}
-                className={`border border-gray-300 px-3 py-2 text-left font-semibold text-white ${charColors.bg}`}
+                className={cn(
+                  "min-w-80 w-80 border border-gray-300 px-3 py-2 text-left font-semibold text-white",
+                  charColors.bg,
+                )}
               >
                 <span
                   className={cn(
@@ -322,10 +325,13 @@ export function NarrativeEventsTable({
                 return (
                   <td
                     key={`${event.narrativeNodeId}-persp-${index}`}
-                    className={`border border-gray-300 px-3 py-2 align-top ${charColors.bg}`}
+                    className={cn(
+                      "min-w-80 w-80 border border-gray-300 px-3 py-2 align-top",
+                      charColors.bg,
+                    )}
                   >
                     {reflection ? (
-                      <div className="text-xs">
+                      <div className="text-xs whitespace-pre-wrap">
                         {highlightReflection({
                           text: reflection,
                           snippets: event.snippets,
@@ -351,7 +357,7 @@ export function NarrativeEventsTable({
                     <span>Regenerating...</span>
                   </div>
                 ) : event.narration ? (
-                  <div className="text-xs">
+                  <div className="text-xs whitespace-pre-wrap">
                     {highlightNarrative(
                       event.narration,
                       event.snippetUsages,
