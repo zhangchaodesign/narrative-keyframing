@@ -841,6 +841,39 @@ const prepareNarrativeEventsData = (
       node.parentId !== undefined &&
       connectedPerspectiveGroupIds.includes(node.parentId),
   );
+  const perspectiveGroupNameById = new Map<string, string>();
+  connectedPerspectiveGroupIds.forEach((perspectiveGroupId) => {
+    const groupNode = nodes.find(
+      (node): node is NarrationGroupNodeType =>
+        node.id === perspectiveGroupId && node.type === "perspectiveGroup",
+    );
+    const groupName = groupNode?.data?.characterName?.trim();
+    if (!groupName) {
+      return;
+    }
+    perspectiveGroupNameById.set(perspectiveGroupId, groupName);
+  });
+  const characterNodes = nodes.filter(
+    (node): node is CharacterNodeType =>
+      node.type === "character" &&
+      node.parentId !== undefined &&
+      connectedPerspectiveGroupIds.includes(node.parentId),
+  );
+  const characterNameByPerspectiveId = new Map<string, string>();
+  characterNodes
+    .sort(
+      (a, b) =>
+        (a.position.x ?? 0) - (b.position.x ?? 0) ||
+        (a.position.y ?? 0) - (b.position.y ?? 0),
+    )
+    .forEach((characterNode) => {
+      const perspectiveId = characterNode.data?.perspectiveId?.trim();
+      const name = characterNode.data?.name?.trim();
+      if (!perspectiveId || !name || characterNameByPerspectiveId.has(perspectiveId)) {
+        return;
+      }
+      characterNameByPerspectiveId.set(perspectiveId, name);
+    });
   const perspectiveNodesByGroup = new Map<string, PerspectiveNodeType[]>();
   connectedPerspectiveGroupIds.forEach((perspectiveGroupId) => {
     const groupNodes = linkedPerspectiveNodes
@@ -908,10 +941,26 @@ const prepareNarrativeEventsData = (
       });
     });
 
-    const perspectivesForEvent = perspectiveNodesForEvent.map((pNode) => ({
-      narrator: pNode.data?.narrator || "Unknown",
-      reflection: pNode.data?.reflection || "",
-    }));
+    const perspectivesForEvent = perspectiveNodesForEvent.map((pNode) => {
+      const narratorFromPerspectiveRaw = pNode.data?.narrator?.trim();
+      const narratorFromPerspective =
+        narratorFromPerspectiveRaw &&
+        !/^(unknown|narrator)$/i.test(narratorFromPerspectiveRaw)
+          ? narratorFromPerspectiveRaw
+          : undefined;
+      const narratorFromCharacter = characterNameByPerspectiveId.get(pNode.id);
+      const narratorFromGroup = pNode.parentId
+        ? perspectiveGroupNameById.get(pNode.parentId)
+        : undefined;
+      return {
+        narrator:
+          narratorFromPerspective ||
+          narratorFromCharacter ||
+          narratorFromGroup ||
+          "Unknown",
+        reflection: pNode.data?.reflection || "",
+      };
+    });
 
     return {
       narrativeNodeId: narrativeNode.id,
