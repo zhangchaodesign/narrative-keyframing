@@ -79,7 +79,7 @@ const buildPerspectiveTracks = (nodes: WorkflowNode[]) => {
   perspectiveGroups.forEach((group) => {
     const characterName = (group.data as { characterName?: string } | undefined)
       ?.characterName;
-    const resolvedCharacterName = characterName || "Unknown";
+    const resolvedCharacterName = characterName ?? "Unknown";
 
     const perspectiveNodes = nodes
       .filter(

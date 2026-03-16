@@ -281,7 +281,7 @@ export function TimelineView() {
   // Group filtered character tracks by stable parentTrackId (perspectiveGroup node ID)
   const groupedCharacterTracks = filteredCharacterTracks.reduce(
     (acc, track) => {
-      const groupId = track.parentTrackId || track.characterName || "Unknown";
+      const groupId = track.parentTrackId ?? track.characterName ?? "Unknown";
       if (!acc[groupId]) {
         acc[groupId] = [];
       }
@@ -396,7 +396,7 @@ export function TimelineView() {
             ([groupId, tracks]) => (
               <CharacterTrack
                 key={groupId}
-                characterName={tracks[0]?.characterName || "Unknown"}
+                characterName={tracks[0]?.characterName ?? "Unknown"}
                 tracks={tracks}
                 timeToPixel={timeToPixel}
                 pixelToTime={pixelToTime}
