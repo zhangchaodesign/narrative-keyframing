@@ -844,7 +844,7 @@ const prepareNarrativeEventsData = (
   const perspectiveGroupNameById = new Map<string, string>();
   connectedPerspectiveGroupIds.forEach((perspectiveGroupId) => {
     const groupNode = nodes.find(
-      (node): node is NarrationGroupNodeType =>
+      (node): node is PerspectiveGroupNodeType =>
         node.id === perspectiveGroupId && node.type === "perspectiveGroup",
     );
     const groupName = groupNode?.data?.characterName?.trim();

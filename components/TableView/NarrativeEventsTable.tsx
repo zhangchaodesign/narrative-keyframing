@@ -246,7 +246,7 @@ export function NarrativeEventsTable({
     <table className="w-full border-collapse text-sm">
       <thead className="sticky top-0 bg-gray-50">
         <tr>
-          <th className="min-w-[12rem] w-[12rem] border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">
+          <th className="min-w-48 w-48 border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">
             Outline
           </th>
           {uniquePerspectives.map((narrator, index) => {
