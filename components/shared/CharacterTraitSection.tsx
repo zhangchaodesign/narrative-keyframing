@@ -2,12 +2,15 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ChangeEvent,
+  type FocusEvent,
   type KeyboardEvent,
 } from "react";
-import { TbCheck, TbPlus, TbSparkles, TbX } from "react-icons/tb";
+import { TbPlus, TbSparkles } from "react-icons/tb";
 import type { CharacterTraits } from "@/lib/types/workflow";
 import { TraitItem } from "@/components/shared/CharacterTraitItem";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
@@ -53,13 +56,22 @@ export function TraitSection({
   onUpdateNodeData,
 }: TraitSectionProps) {
   const isCharacterNodeVariant = sizeVariant === "character-node";
+  const addInputRef = useRef<HTMLInputElement | null>(null);
   const [draftValue, setDraftValue] = useState("");
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [isBrainstorming, setIsBrainstorming] = useState(false);
 
+  const workflowNodes = useWorkflowStore((state) => state.nodes);
   const clearEvidenceAttribute = useWorkflowStore(
     (state) => state.clearEvidenceAttribute,
   );
+
+  const characterName = useMemo(() => {
+    const characterNode = workflowNodes.find(
+      (node) => node.id === nodeId && node.type === "character",
+    );
+    return (characterNode?.data as { name?: string } | undefined)?.name ?? "";
+  }, [workflowNodes, nodeId]);
 
   const canBrainstorm = useMemo(
     () =>
@@ -89,6 +101,7 @@ export function TraitSection({
       action: "add_character_trait",
       data: {
         nodeId: nodeId,
+        characterName: characterName,
         category: category,
         traitValue: trimmed,
       },
@@ -104,7 +117,7 @@ export function TraitSection({
     }));
 
     setDraftValue("");
-  }, [draftValue, onUpdateNodeData, category, nodeId]);
+  }, [draftValue, onUpdateNodeData, category, characterName, nodeId]);
 
   const toggleAddInput = useCallback(() => {
     setIsAddingNew((current) => !current);
@@ -118,6 +131,7 @@ export function TraitSection({
           action: "remove_character_trait",
           data: {
             nodeId: nodeId,
+            characterName: characterName,
             category: category,
             traitValue: traitValue,
             index: index,
@@ -137,7 +151,7 @@ export function TraitSection({
         perspectiveId: currentPerspectiveId,
       }));
     },
-    [clearEvidenceAttribute, nodeId, traits, onUpdateNodeData, category],
+    [clearEvidenceAttribute, nodeId, characterName, traits, onUpdateNodeData, category],
   );
 
   const handleUpdateTrait = useCallback(
@@ -163,6 +177,7 @@ export function TraitSection({
           action: "update_character_trait",
           data: {
             nodeId: nodeId,
+            characterName: characterName,
             category: category,
             index: index,
             oldValue: previousValue,
@@ -186,7 +201,7 @@ export function TraitSection({
         };
       });
     },
-    [clearEvidenceAttribute, nodeId, onUpdateNodeData, category],
+    [clearEvidenceAttribute, nodeId, characterName, onUpdateNodeData, category],
   );
 
   const handleBrainstormTraits = useCallback(async () => {
@@ -200,6 +215,7 @@ export function TraitSection({
       action: "brainstorm_character_traits_start",
       data: {
         nodeId: nodeId,
+        characterName: characterName,
         category: category,
         existingTraits: traits,
         baselineStory: brainstormContext.baselineStoryText,
@@ -220,6 +236,7 @@ export function TraitSection({
           action: "brainstorm_character_traits_no_suggestions",
           data: {
             nodeId: nodeId,
+            characterName: characterName,
             category: category,
             existingTraits: traits,
           },
@@ -246,6 +263,7 @@ export function TraitSection({
         action: "brainstorm_character_traits_success",
         data: {
           nodeId: nodeId,
+          characterName: characterName,
           category: category,
           existingTraits: traits,
           suggestions: suggestions,
@@ -286,6 +304,7 @@ export function TraitSection({
         action: "brainstorm_character_traits_error",
         data: {
           nodeId: nodeId,
+          characterName: characterName,
           category: category,
           existingTraits: traits,
           error: error instanceof Error ? error.message : "Unknown error",
@@ -298,11 +317,52 @@ export function TraitSection({
     brainstormContext,
     canBrainstorm,
     category,
+    characterName,
     isBrainstorming,
     nodeId,
     onUpdateNodeData,
     traits,
   ]);
+
+  useEffect(() => {
+    if (isAddingNew) {
+      addInputRef.current?.focus();
+    }
+  }, [isAddingNew]);
+
+  const handleAddInputFocus = useCallback(
+    (_event: FocusEvent<HTMLInputElement>) => {
+      eventTracker({
+        action: "add_trait_input_active",
+        data: {
+          nodeId: nodeId,
+          characterName: characterName,
+          category: category,
+        },
+      });
+    },
+    [nodeId, characterName, category],
+  );
+
+  const handleAddInputBlur = useCallback(
+    (event: FocusEvent<HTMLInputElement>) => {
+      const trimmed = event.target.value.trim();
+      if (trimmed) {
+        handleAddTrait();
+      }
+
+      eventTracker({
+        action: "add_trait_input_not_active",
+        data: {
+          nodeId: nodeId,
+          characterName: characterName,
+          category: category,
+          traitValue: trimmed,
+        },
+      });
+    },
+    [nodeId, characterName, category, handleAddTrait],
+  );
 
   const onTraitInputKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {
@@ -346,16 +406,10 @@ export function TraitSection({
           <button
             type="button"
             onClick={toggleAddInput}
-            className={`flex cursor-pointer items-center justify-center rounded-full bg-white transition ${
-              isAddingNew
-                ? "text-red-500 hover:text-red-700"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            aria-label={
-              isAddingNew ? `Hide ${label} trait input` : `Add ${label} trait`
-            }
+            className="flex cursor-pointer items-center justify-center rounded-full bg-white text-gray-500 hover:text-gray-700 transition"
+            aria-label={`Add ${label} trait`}
           >
-            {isAddingNew ? <TbX size={12} /> : <TbPlus size={12} />}
+            <TbPlus size={12} />
           </button>
         </div>
       </div>
@@ -375,7 +429,7 @@ export function TraitSection({
             onRemove={handleRemoveTrait}
           />
         ))}
-        {traits.length === 0 && (
+        {traits.length === 0 && !isAddingNew && (
           <span
             className={`rounded border border-dashed bg-white/70 px-2 py-1 text-xs ${emptyClass}`}
           >
@@ -384,22 +438,17 @@ export function TraitSection({
         )}
       </div>
       {isAddingNew && (
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-2">
           <input
+            ref={addInputRef}
             value={draftValue}
             onChange={handleDraftChange}
             onKeyDown={onTraitInputKeyDown}
+            onFocus={handleAddInputFocus}
+            onBlur={handleAddInputBlur}
             placeholder={`Add ${label.toLowerCase()} trait`}
-            className="flex-1 rounded border border-gray-300 bg-gray-50 px-2 py-1 text-xs leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-1 focus:ring-gray-400"
+            className="w-full rounded border border-gray-300 bg-gray-50 px-2 py-1 text-xs leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-gray-400"
           />
-          <button
-            type="button"
-            onClick={handleAddTrait}
-            className="flex cursor-pointer items-center justify-center rounded-full bg-white text-green-500 hover:text-green-700"
-            aria-label={`Confirm ${label} trait`}
-          >
-            <TbCheck size={12} />
-          </button>
         </div>
       )}
     </section>
