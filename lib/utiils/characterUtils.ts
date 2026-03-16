@@ -26,28 +26,25 @@ export const CHARACTER_TRAIT_CATEGORIES: TraitCategoryDefinition[] = [
     key: "physiology",
     label: "Physiology",
     titleClass: "text-gray-700",
-    chipClass:
-      "border-transparent bg-gray-100 text-gray-900",
+    chipClass: "border-transparent bg-gray-100 text-gray-900",
     emptyClass: "border-transparent text-gray-700",
-    selectedClass: "border-transparent bg-blue-500 text-white",
+    selectedClass: "border-transparent bg-blue-100 text-gray-900",
   },
   {
     key: "psychology",
     label: "Psychology",
     titleClass: "text-gray-700",
-    chipClass:
-      "border-transparent bg-gray-100 text-gray-900",
+    chipClass: "border-transparent bg-gray-100 text-gray-900",
     emptyClass: "border-transparent text-gray-700",
-    selectedClass: "border-transparent bg-blue-500 text-white",
+    selectedClass: "border-transparent bg-blue-100 text-gray-900",
   },
   {
     key: "sociology",
     label: "Sociology",
     titleClass: "text-gray-700",
-    chipClass:
-      "border-transparent bg-gray-100 text-gray-900",
+    chipClass: "border-transparent bg-gray-100 text-gray-900",
     emptyClass: "border-transparent text-gray-700",
-    selectedClass: "border-transparent bg-blue-500 text-white",
+    selectedClass: "border-transparent bg-blue-100 text-gray-900",
   },
 ];
 

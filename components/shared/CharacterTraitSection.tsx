@@ -151,7 +151,14 @@ export function TraitSection({
         perspectiveId: currentPerspectiveId,
       }));
     },
-    [clearEvidenceAttribute, nodeId, characterName, traits, onUpdateNodeData, category],
+    [
+      clearEvidenceAttribute,
+      nodeId,
+      characterName,
+      traits,
+      onUpdateNodeData,
+      category,
+    ],
   );
 
   const handleUpdateTrait = useCallback(
@@ -447,7 +454,7 @@ export function TraitSection({
             onFocus={handleAddInputFocus}
             onBlur={handleAddInputBlur}
             placeholder={`Add ${label.toLowerCase()} trait`}
-            className="w-full rounded border border-gray-300 bg-gray-50 px-2 py-1 text-xs leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-gray-400"
+            className="w-full rounded border border-gray-300 px-2 py-1 text-xs leading-snug text-gray-800 outline-none focus:border-gray-500 focus:bg-white focus:ring-gray-400"
           />
         </div>
       )}

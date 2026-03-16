@@ -225,7 +225,7 @@ export function TraitItem({
           className={cn(
             "inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[8px] font-bold transition-colors",
             isSelected
-              ? "border-gray-600 bg-gray-600 text-white"
+              ? "border-blue-500 bg-blue-500 text-white"
               : "border-gray-400 bg-transparent",
           )}
         >
@@ -234,7 +234,7 @@ export function TraitItem({
       </button>
       <div
         className={cn(
-          "group/trait relative flex flex-1 items-center rounded border transition",
+          "group/trait relative flex flex-1 items-center rounded border transition focus-within:border-gray-400 focus-within:ring-1 focus-within:ring-gray-300 focus-within:bg-white",
           isCharacterNodeVariant ? "text-[10px]" : "text-xs",
           chipClass,
           isSelected && selectedClass,
