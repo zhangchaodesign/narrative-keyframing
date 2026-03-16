@@ -179,7 +179,7 @@ ${formatTraits(snapshot.traits)}`;
     console.log("Character interpolation prompt:", prompt);
 
     const { object } = await generateObject({
-      model: openai("gpt-5.3-chat-latest"),
+      model: openai("gpt-4.1"),
       schema: ResponseSchema,
       prompt,
     });

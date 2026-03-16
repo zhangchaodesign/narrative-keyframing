@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     const prompt = renderPromptTemplate(template, { eventsSection });
 
     const result = await generateObject({
-      model: openai("gpt-5.3-chat-latest"),
+      model: openai("gpt-4.1"),
       schema: ResponseSchema,
       prompt,
       temperature: 0.3,

@@ -59,7 +59,7 @@ export function StudyManager() {
             Task
           </label>
           <div className="flex gap-2">
-            {["shapeshifter", "bee"].map((t) => (
+            {["partnership", "secret"].map((t) => (
               <button
                 key={t}
                 onClick={() => !ifTracking && setTask(t)}
