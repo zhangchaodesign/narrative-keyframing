@@ -217,6 +217,41 @@ const buildActsSection = (acts: z.infer<typeof EventDataSchema>[]) => {
     .join("\n\n");
 };
 
+const ensureNarrationParagraphBreaks = (text: string): string => {
+  const normalized = text.replace(/\r\n/g, "\n").trim();
+  if (!normalized) {
+    return normalized;
+  }
+
+  // Respect explicit paragraph formatting from the model.
+  if (/\n\s*\n/.test(normalized)) {
+    return normalized;
+  }
+
+  const sentences =
+    normalized
+      .match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g)
+      ?.map((sentence) => sentence.trim())
+      .filter((sentence) => sentence.length > 0) ?? [];
+
+  if (sentences.length >= 4) {
+    const splitIndex = Math.ceil(sentences.length / 2);
+    return `${sentences.slice(0, splitIndex).join(" ")}\n\n${sentences
+      .slice(splitIndex)
+      .join(" ")}`;
+  }
+
+  const words = normalized.split(/\s+/).filter((word) => word.length > 0);
+  if (words.length >= 70) {
+    const splitIndex = Math.ceil(words.length / 2);
+    return `${words.slice(0, splitIndex).join(" ")}\n\n${words
+      .slice(splitIndex)
+      .join(" ")}`;
+  }
+
+  return normalized;
+};
+
 export async function POST(request: Request) {
   try {
     const payload = RequestSchema.safeParse(await request.json());
@@ -278,7 +313,9 @@ ${trimmedPrompt}`
 
       return {
         narrativeNodeId: eventData.narrativeNodeId,
-        narration: generatedNarrative?.narration ?? "",
+        narration: ensureNarrationParagraphBreaks(
+          generatedNarrative?.narration ?? "",
+        ),
         snippetUsages: enrichedSnippetUsages,
       };
     });

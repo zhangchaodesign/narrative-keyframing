@@ -402,7 +402,7 @@ export function NarrativeGenerationModal({
                           {perspective.narrator}
                         </p>
                         {perspective.reflection && (
-                          <p className="mt-1 text-xs text-gray-700">
+                          <p className="mt-1 whitespace-pre-wrap text-xs text-gray-700">
                             {highlightReflection(
                               perspective.reflection,
                               event.snippets,
