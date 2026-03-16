@@ -165,7 +165,7 @@ export function NarrativeContent({
   return (
     <div
       className={cn(
-        "flex-1 overflow-y-auto w-full resize-none rounded bg-gray-50 px-2 py-1 leading-snug text-gray-800",
+        "flex-1 overflow-y-auto w-full resize-none rounded bg-gray-50 px-2 py-1 leading-snug whitespace-pre-wrap text-gray-800",
         classes,
       )}
       onWheel={(event) => {
