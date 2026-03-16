@@ -404,7 +404,7 @@ export function CharacterBlock({
             </button>
           </div>
           <div
-            className="flex-1 min-h-0 space-y-3 overflow-y-auto"
+            className="flex-1 min-h-0 space-y-3 overflow-y-auto pr-2"
             onWheel={(event) => {
               if (event.ctrlKey || event.metaKey) {
                 return;

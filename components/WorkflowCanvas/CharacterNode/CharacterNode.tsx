@@ -373,7 +373,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
           </div>
 
           <div
-            className="flex-1 min-h-0 space-y-3 overflow-y-auto"
+            className="flex-1 min-h-0 space-y-3 overflow-y-auto pr-1"
             onWheel={(event) => {
               if (event.ctrlKey || event.metaKey) {
                 return;
