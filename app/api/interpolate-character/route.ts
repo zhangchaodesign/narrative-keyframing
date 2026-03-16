@@ -168,7 +168,8 @@ ${formatTraits(snapshot.traits)}`;
       perspectiveText,
       snapshotsSection: snapshotsContext,
       contextSection: perspectiveContext,
-      nearbySnapshotsNote: nearbySnapshots.length > 0 ? " and nearby snapshots" : "",
+      nearbySnapshotsNote:
+        nearbySnapshots.length > 0 ? " and nearby snapshots" : "",
       nearbySnapshotsGuidance:
         nearbySnapshots.length > 0
           ? "- Consider the character's development trajectory from nearby snapshots"
@@ -178,7 +179,7 @@ ${formatTraits(snapshot.traits)}`;
     console.log("Character interpolation prompt:", prompt);
 
     const { object } = await generateObject({
-      model: openai("gpt-4.1"),
+      model: openai("gpt-5.3-chat-latest"),
       schema: ResponseSchema,
       prompt,
     });

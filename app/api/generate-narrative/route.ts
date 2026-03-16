@@ -57,7 +57,11 @@ const TEMPLATE_PATH = path.join(
 );
 
 const normalizeText = (text: string) =>
-  text.toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const wordOverlapScore = (a: string, b: string): number => {
   const wordsA = new Set(normalizeText(a).split(" "));
@@ -240,7 +244,7 @@ ${trimmedPrompt}`
     console.log("Multi-event narrative generation prompt:", prompt);
 
     const { object } = await generateObject({
-      model: openai("gpt-4.1"),
+      model: openai("gpt-5.3-chat-latest"),
       schema: ResponseSchema,
       prompt,
     });

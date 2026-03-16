@@ -322,7 +322,7 @@ export async function POST(request: Request) {
           console.log("Evidence analysis prompt:", prompt);
 
           const { object } = await generateObject({
-            model: openai("gpt-4.1"),
+            model: openai("gpt-5.3-chat-latest"),
             schema: EvidenceResultSchema,
             prompt: prompt,
           });
