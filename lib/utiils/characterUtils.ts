@@ -28,7 +28,7 @@ export const CHARACTER_TRAIT_CATEGORIES: TraitCategoryDefinition[] = [
     titleClass: "text-gray-700",
     chipClass: "border-transparent bg-gray-100 text-gray-900",
     emptyClass: "border-transparent text-gray-700",
-    selectedClass: "border-transparent bg-blue-100 text-gray-900",
+    selectedClass: "border-transparent bg-blue-500 text-white",
   },
   {
     key: "psychology",
@@ -36,7 +36,7 @@ export const CHARACTER_TRAIT_CATEGORIES: TraitCategoryDefinition[] = [
     titleClass: "text-gray-700",
     chipClass: "border-transparent bg-gray-100 text-gray-900",
     emptyClass: "border-transparent text-gray-700",
-    selectedClass: "border-transparent bg-blue-100 text-gray-900",
+    selectedClass: "border-transparent bg-blue-500 text-white",
   },
   {
     key: "sociology",
@@ -44,7 +44,7 @@ export const CHARACTER_TRAIT_CATEGORIES: TraitCategoryDefinition[] = [
     titleClass: "text-gray-700",
     chipClass: "border-transparent bg-gray-100 text-gray-900",
     emptyClass: "border-transparent text-gray-700",
-    selectedClass: "border-transparent bg-blue-100 text-gray-900",
+    selectedClass: "border-transparent bg-blue-500 text-white",
   },
 ];
 

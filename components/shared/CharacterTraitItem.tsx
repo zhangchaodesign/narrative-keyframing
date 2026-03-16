@@ -225,7 +225,7 @@ export function TraitItem({
           className={cn(
             "inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[8px] font-bold transition-colors",
             isSelected
-              ? "border-blue-500 bg-blue-500 text-white"
+              ? "border-gray-500 bg-gray-500 text-white"
               : "border-gray-400 bg-transparent",
           )}
         >
@@ -252,7 +252,12 @@ export function TraitItem({
         <div className="absolute right-1 top-1/2 z-10 -translate-y-1/2 hidden items-center group-hover/trait:flex group-focus-within/trait:flex">
           <button
             onClick={handleRemove}
-            className="pointer-events-auto rounded p-0.5 text-gray-400 hover:text-red-500 cursor-pointer"
+            className={cn(
+              "pointer-events-auto rounded p-0.5 cursor-pointer",
+              isSelected
+                ? "text-white hover:text-red-200"
+                : "text-gray-400 hover:text-red-500",
+            )}
             title="Remove attribute"
             aria-label={`Remove ${label} trait`}
           >
