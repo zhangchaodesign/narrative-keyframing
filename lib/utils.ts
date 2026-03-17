@@ -40,8 +40,7 @@ export function eventTracker(event: {
   data: object | string | null;
 }) {
   const user = useStudyStore.getState().user;
-  const ifTracking = useStudyStore.getState().ifTracking;
-  if (ifTracking && user !== "annonymous") {
+  if (user !== "annonymous") {
     try {
       const task = useStudyStore.getState().task;
       const refId = ref(database, "events/" + user + "/characify" + "/" + task);

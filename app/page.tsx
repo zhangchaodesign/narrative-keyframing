@@ -14,7 +14,8 @@ import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { adjustEventCountForAllClusters } from "@/lib/utiils/workflowUtils";
 import { buildTimelineData } from "@/lib/utiils/timelineUtils";
 import { useUiStore } from "@/lib/stores/uiStore";
-import { StudyManager } from "@/components/StudyManager";
+import { StudyEntryPanel, EndStudyButton } from "@/components/StudyManager";
+import { useStudyStore } from "@/lib/stores/studyStore";
 import { eventTracker } from "@/lib/utils";
 import { exampleEventDescriptions } from "@/components/WorkflowCanvas/workflow.constants";
 import type {
@@ -24,6 +25,7 @@ import type {
 import type { ThirdPersonGroupNodeType } from "@/lib/types/workflow";
 
 export default function Page() {
+  const started = useStudyStore((state) => state.started);
   const viewMode = useUiStore((state) => state.viewMode);
   const setViewMode = useUiStore((state) => state.setViewMode);
   const eventCount = useUiStore((state) => state.eventCount);
@@ -279,6 +281,10 @@ export default function Page() {
     setEdges(result.edges);
   }, [eventCount, setNodes, setEdges]);
 
+  if (!started) {
+    return <StudyEntryPanel />;
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       {/* <div className="shrink-0">
@@ -454,7 +460,7 @@ export default function Page() {
                       </button>
                     </>
                   )}
-                  <StudyManager />
+                  <EndStudyButton />
                 </div>
               </div>
 

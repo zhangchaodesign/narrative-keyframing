@@ -4,10 +4,10 @@ import { persist } from "zustand/middleware";
 type StudyState = {
   user: string;
   task: string;
-  ifTracking: boolean;
+  started: boolean;
   setUser: (user: string) => void;
   setTask: (task: string) => void;
-  setIfTracking: (ifTracking: boolean) => void;
+  setStarted: (started: boolean) => void;
 };
 
 export const useStudyStore = create<StudyState>()(
@@ -15,11 +15,11 @@ export const useStudyStore = create<StudyState>()(
     (set) => ({
       user: "annonymous",
       task: "",
-      ifTracking: false,
+      started: false,
       setUser: (user: string) => set({ user }),
       setTask: (task: string) => set({ task }),
-      setIfTracking: (ifTracking: boolean) => set({ ifTracking }),
+      setStarted: (started: boolean) => set({ started }),
     }),
-    { name: "characify-study-manager-store" },
+    { name: "characify-study-store" },
   ),
 );
