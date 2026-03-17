@@ -245,6 +245,12 @@ export function TraitItem({
           onChange={handleChange}
           onFocus={handleFocus}
           onBlur={handleBlur}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              (event.target as HTMLInputElement).blur();
+            }
+          }}
           onPointerDown={(event) => event.stopPropagation()}
           className="flex-1 min-w-0 bg-transparent px-2 py-1 pr-6 font-medium leading-snug text-inherit outline-none placeholder:text-gray-400 nodrag nopan"
           aria-label={`${label} trait`}
