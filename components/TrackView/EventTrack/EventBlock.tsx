@@ -2,7 +2,6 @@
 
 import React, {
   useCallback,
-  useEffect,
   useMemo,
   useState,
   type ChangeEvent,
@@ -28,10 +27,6 @@ export function EventBlock({
 }: EventBlockProps) {
   const [draftContent, setDraftContent] = useState(item.content);
   const setNodes = useWorkflowStore((state) => state.setNodes);
-
-  useEffect(() => {
-    setDraftContent(item.content);
-  }, [item.content]);
 
   const safeWidth = Math.max(timelineScale - 8, 20);
   const itemWidth = Math.min(safeWidth, timelineScale);
