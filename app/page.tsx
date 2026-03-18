@@ -236,7 +236,7 @@ export default function Page() {
     const currentNodes = useWorkflowStore.getState().nodes;
     const updatedNodes = currentNodes.map((node) => {
       if (node.type !== "event") return node;
-      const match = node.id.match(/event-(\d+)$/);
+      const match = node.id.match(/event-(?:[^-]+-)?(\d+)$/);
       if (!match) return node;
       const index = parseInt(match[1], 10) - 1;
       if (index < exampleEventDescriptions.length) {

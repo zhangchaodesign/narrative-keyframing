@@ -2,7 +2,9 @@
 
 import React, {
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ChangeEvent,
   type FocusEvent,
@@ -27,6 +29,14 @@ export function EventBlock({
 }: EventBlockProps) {
   const [draftContent, setDraftContent] = useState(item.content);
   const setNodes = useWorkflowStore((state) => state.setNodes);
+  const isFocusedRef = useRef(false);
+
+  // Sync external changes only when not focused
+  useEffect(() => {
+    if (!isFocusedRef.current) {
+      setDraftContent(item.content);
+    }
+  }, [item.content]);
 
   const safeWidth = Math.max(timelineScale - 8, 20);
   const itemWidth = Math.min(safeWidth, timelineScale);
@@ -63,6 +73,7 @@ export function EventBlock({
 
   const handleFocus = useCallback(
     (_event: FocusEvent<HTMLTextAreaElement>) => {
+      isFocusedRef.current = true;
       eventTracker({
         action: "event_input_active",
         data: {
@@ -77,6 +88,7 @@ export function EventBlock({
 
   const handleBlur = useCallback(
     (event: FocusEvent<HTMLTextAreaElement>) => {
+      isFocusedRef.current = false;
       eventTracker({
         action: "event_input_not_active",
         data: {
