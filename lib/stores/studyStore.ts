@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 type StudyState = {
   user: string;
@@ -10,16 +9,11 @@ type StudyState = {
   setStarted: (started: boolean) => void;
 };
 
-export const useStudyStore = create<StudyState>()(
-  persist(
-    (set) => ({
-      user: "annonymous",
-      task: "",
-      started: false,
-      setUser: (user: string) => set({ user }),
-      setTask: (task: string) => set({ task }),
-      setStarted: (started: boolean) => set({ started }),
-    }),
-    { name: "characify-study-store" },
-  ),
-);
+export const useStudyStore = create<StudyState>()((set) => ({
+  user: "annonymous",
+  task: "",
+  started: false,
+  setUser: (user: string) => set({ user }),
+  setTask: (task: string) => set({ task }),
+  setStarted: (started: boolean) => set({ started }),
+}));
