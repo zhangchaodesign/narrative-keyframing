@@ -365,24 +365,11 @@ export function TimelineView() {
             minHeight: "100%",
           }}
         >
-          {/* Narrative Cluster Track - Above ruler */}
-          {selectedNarrativeTrack && (
-            <NarrativeTrack
-              track={selectedNarrativeTrack}
-              timeToPixel={timeToPixel}
-              pixelToTime={pixelToTime}
-              snapTime={snapTime}
-              timelineScale={timelineScale}
-            />
-          )}
-
           {/* Time Ruler */}
           <TimelineRuler
             totalDuration={totalDuration}
             timeToPixel={timeToPixel}
-            stickyTop={
-              selectedNarrativeTrack ? TIMELINE_NARRATIVE_TRACK_HEIGHT : 0
-            }
+            stickyTop={0}
           />
 
           {/* Story Track */}
@@ -410,16 +397,25 @@ export function TimelineView() {
             />
           ))}
 
+          {/* Narrative Cluster Track - Below character tracks */}
+          {selectedNarrativeTrack && (
+            <NarrativeTrack
+              track={selectedNarrativeTrack}
+              timeToPixel={timeToPixel}
+              pixelToTime={pixelToTime}
+              snapTime={snapTime}
+              timelineScale={timelineScale}
+            />
+          )}
+
           {/* Grid Lines */}
           <div
             className="absolute pointer-events-none"
             style={{
-              top:
-                (selectedNarrativeTrack ? TIMELINE_NARRATIVE_TRACK_HEIGHT : 0) +
-                TIMELINE_RULER_HEIGHT,
+              top: TIMELINE_RULER_HEIGHT,
               left: 0,
               right: 0,
-              height: `${totalTimelineHeight - TIMELINE_RULER_HEIGHT - (selectedNarrativeTrack ? TIMELINE_NARRATIVE_TRACK_HEIGHT : 0)}px`,
+              height: `${totalTimelineHeight - TIMELINE_RULER_HEIGHT}px`,
             }}
           >
             {Array.from({ length: Math.ceil(totalDuration) + 1 }, (_, i) => (
