@@ -436,13 +436,12 @@ export function TimelineView() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between border-t border-gray-200 px-4 py-2 text-xs text-gray-600">
+      <div className="flex items-center justify-between border-t border-gray-200 px-2 py-2 text-xs text-gray-600">
         <div className="flex items-center gap-2">
           <span className="font-medium">{footerStoryLabel}</span>
           <span>•</span>
-          <span>{footerNarrativeLabel}</span>
-        </div>
-        <div className="flex items-center gap-2">
+          <span className="font-medium">{footerNarrativeLabel}</span>
+          <span>•</span>
           <span>{selectedStoryTrack?.items.length ?? 0} plots</span>
           <span>•</span>
           <span>{Object.keys(groupedCharacterTracks).length} characters</span>
