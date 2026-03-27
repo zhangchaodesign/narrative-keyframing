@@ -17,7 +17,10 @@ import { useUiStore } from "@/lib/stores/uiStore";
 import { StudyEntryPanel, EndStudyButton } from "@/components/StudyManager";
 import { useStudyStore } from "@/lib/stores/studyStore";
 import { eventTracker } from "@/lib/utils";
-import { exampleEventDescriptions } from "@/components/WorkflowCanvas/workflow.constants";
+import {
+  exampleEventDescriptions,
+  exampleCharacters,
+} from "@/components/WorkflowCanvas/workflow.constants.3act";
 import type {
   NarrativeCluster,
   StoryOutlineCluster,
@@ -233,21 +236,216 @@ export default function Page() {
 
   const handleLoadExamples = () => {
     eventTracker({ action: "load_examples", data: null });
-    const currentNodes = useWorkflowStore.getState().nodes;
-    const updatedNodes = currentNodes.map((node) => {
-      if (node.type !== "event") return node;
-      const match = node.id.match(/event-(?:[^-]+-)?(\d+)$/);
-      if (!match) return node;
-      const index = parseInt(match[1], 10) - 1;
-      if (index < exampleEventDescriptions.length) {
-        return {
-          ...node,
-          data: { ...node.data, description: exampleEventDescriptions[index] },
-        };
-      }
-      return node;
-    });
-    setNodes(updatedNodes as typeof currentNodes);
+
+    // Set event count to match the example (5 plots)
+    const targetEventCount = exampleEventDescriptions.length;
+    if (eventCount !== targetEventCount) {
+      handleEventCountChange(targetEventCount);
+    }
+
+    // Wait a tick for the event count adjustment to apply, then load data
+    setTimeout(() => {
+      const currentNodes = useWorkflowStore.getState().nodes;
+      const currentEdges = useWorkflowStore.getState().edges;
+
+      // Collect perspective groups to identify char1 vs char2
+      const perspectiveGroups = currentNodes.filter(
+        (n) => n.type === "perspectiveGroup",
+      );
+      const sortedGroups = [...perspectiveGroups].sort(
+        (a, b) => a.position.x - b.position.x,
+      );
+      const char1GroupId = sortedGroups[0]?.id;
+      const char2GroupId = sortedGroups[1]?.id;
+
+      // Get sorted perspective nodes per group
+      const getPerspectivesForGroup = (groupId: string | undefined) => {
+        if (!groupId) return [];
+        return currentNodes
+          .filter((n) => n.type === "perspective" && n.parentId === groupId)
+          .sort((a, b) => a.position.x - b.position.x);
+      };
+
+      const char1Perspectives = getPerspectivesForGroup(char1GroupId);
+      const char2Perspectives = getPerspectivesForGroup(char2GroupId);
+
+      // Build a map of perspectiveId -> existing character node
+      const charByPerspective = new Map<
+        string,
+        (typeof currentNodes)[number]
+      >();
+      currentNodes.forEach((n) => {
+        if (n.type === "character" && n.data?.perspectiveId) {
+          charByPerspective.set(n.data.perspectiveId as string, n);
+        }
+      });
+
+      // Track new nodes and edges to add
+      const newNodes: typeof currentNodes = [];
+      const newEdges: typeof currentEdges = [];
+      const timestamp = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+      // Create character nodes for perspectives that don't have one
+      const ensureCharacterNodes = (
+        perspectives: typeof currentNodes,
+        groupId: string | undefined,
+        charSnapshots: typeof exampleCharacters.char1,
+      ) => {
+        if (!groupId) return;
+        perspectives.forEach((pNode, actIndex) => {
+          if (actIndex >= charSnapshots.length) return;
+          if (charByPerspective.has(pNode.id)) return; // already has a character node
+
+          const snapshot = charSnapshots[actIndex];
+          const newCharId = `character-example-${timestamp}-${groupId}-${actIndex}`;
+          newNodes.push({
+            id: newCharId,
+            type: "character",
+            position: { x: pNode.position.x, y: 280 },
+            draggable: false,
+            data: {
+              name: snapshot.name,
+              traits: { ...snapshot.traits },
+              perspectiveId: pNode.id,
+            },
+            parentId: groupId,
+            extent: "parent",
+          } as (typeof currentNodes)[number]);
+
+          newEdges.push({
+            id: `edge-${newCharId}-${pNode.id}`,
+            source: newCharId,
+            target: pNode.id,
+            sourceHandle: "perspective",
+            targetHandle: "character",
+            type: "customEdge",
+            animated: true,
+          } as (typeof currentEdges)[number]);
+        });
+      };
+
+      ensureCharacterNodes(
+        char1Perspectives,
+        char1GroupId,
+        exampleCharacters.char1,
+      );
+      ensureCharacterNodes(
+        char2Perspectives,
+        char2GroupId,
+        exampleCharacters.char2,
+      );
+
+      // Map existing character nodes to their plot index
+      const getActIndex = (
+        perspectiveId: string,
+        perspectives: typeof currentNodes,
+      ) => perspectives.findIndex((p) => p.id === perspectiveId);
+
+      const updatedNodes = currentNodes.map((node) => {
+        // Load event descriptions
+        if (node.type === "event") {
+          const eventNodes = currentNodes
+            .filter((n) => n.type === "event" && n.parentId === node.parentId)
+            .sort((a, b) => a.position.x - b.position.x);
+          const index = eventNodes.findIndex((n) => n.id === node.id);
+          if (index >= 0 && index < exampleEventDescriptions.length) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                description: exampleEventDescriptions[index],
+              },
+            };
+          }
+          return node;
+        }
+
+        // Load character data for existing character nodes
+        if (node.type === "character") {
+          const perspId = (node.data as { perspectiveId?: string })
+            ?.perspectiveId;
+          if (!perspId) return node;
+
+          let charSnapshots: typeof exampleCharacters.char1 | undefined;
+          let perspectives: typeof currentNodes = [];
+
+          if (node.parentId === char1GroupId) {
+            charSnapshots = exampleCharacters.char1;
+            perspectives = char1Perspectives;
+          } else if (node.parentId === char2GroupId) {
+            charSnapshots = exampleCharacters.char2;
+            perspectives = char2Perspectives;
+          }
+          if (!charSnapshots) return node;
+
+          const actIndex = getActIndex(perspId, perspectives);
+          if (actIndex < 0 || actIndex >= charSnapshots.length) return node;
+
+          const snapshot = charSnapshots[actIndex];
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              name: snapshot.name,
+              traits: { ...snapshot.traits },
+            },
+          };
+        }
+
+        // Update perspective group character names
+        if (node.type === "perspectiveGroup") {
+          if (node.id === char1GroupId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                characterName: exampleCharacters.char1[0].name,
+              },
+            };
+          }
+          if (node.id === char2GroupId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                characterName: exampleCharacters.char2[0].name,
+              },
+            };
+          }
+          return node;
+        }
+
+        // Update perspective narrator names
+        if (node.type === "perspective") {
+          if (node.parentId === char1GroupId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                narrator: exampleCharacters.char1[0].name,
+              },
+            };
+          }
+          if (node.parentId === char2GroupId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                narrator: exampleCharacters.char2[0].name,
+              },
+            };
+          }
+          return node;
+        }
+
+        return node;
+      });
+
+      const allNodes = [...updatedNodes, ...newNodes] as typeof currentNodes;
+      const allEdges = [...currentEdges, ...newEdges] as typeof currentEdges;
+      setNodes(allNodes);
+      setEdges(allEdges);
+    }, 100);
   };
 
   const handleEditorToggle = () => {
@@ -337,7 +535,7 @@ export default function Page() {
                   />
                   <div className="form-control">
                     <label className="label py-0 px-1 mr-1">
-                      <span className="label-text text-xs">Events</span>
+                      <span className="label-text text-xs">Plots</span>
                     </label>
                     <input
                       type="number"
@@ -350,13 +548,13 @@ export default function Page() {
                       className="input input-sm input-bordered w-16 rounded"
                     />
                   </div>
-                  <button
+                  {/* <button
                     type="button"
                     onClick={handleLoadExamples}
                     className="btn btn-sm btn-soft"
                   >
                     Load Examples
-                  </button>
+                  </button> */}
                 </div>
                 <div className="flex items-center gap-3">
                   {viewMode === "timeline" &&

@@ -54,7 +54,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
     }
 
     const events = eventNodes.map((node) => ({
-      label: node.data.timeline || "Act",
+      label: node.data.timeline || "Plot",
       description: node.data.description || "",
     }));
 
@@ -116,7 +116,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       );
 
       const events = eventNodes.map((node) => ({
-        label: node.data.timeline || "Act",
+        label: node.data.timeline || "Plot",
         description: node.data.description || "",
       }));
 
@@ -215,7 +215,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           title="Add a custom perspective group"
         >
           <TbPlus size={14} />
-          Add a First-Person Limited Cluster
+          Add a Character Arc
         </button>
       </div>
 

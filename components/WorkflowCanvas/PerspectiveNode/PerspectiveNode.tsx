@@ -120,7 +120,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
       eventNodes[Math.min(perspectiveIndex, eventNodes.length - 1)];
 
     const timelineLabel =
-      eventNode?.data?.timeline ?? `Act ${perspectiveIndex + 1}`;
+      eventNode?.data?.timeline ?? `Plot ${perspectiveIndex + 1}`;
     const clusterLabel = connectedEventGroup?.label?.trim() ?? "";
     const clusterId = connectedEventGroup?.eventGroupId;
     const assembledDisplay = [clusterLabel, clusterId]
@@ -365,7 +365,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
             className={cn(
               "inline-flex items-center rounded text-[9px] font-semibold tracking-wide text-gray-500",
             )}
-            title={`Act: ${eventMetadata.timelineLabel}`}
+            title={`Plot: ${eventMetadata.timelineLabel}`}
           >
             {eventMetadata.clusterDisplay
               ? `${eventMetadata.clusterDisplay} / ${eventMetadata.timelineLabel}`

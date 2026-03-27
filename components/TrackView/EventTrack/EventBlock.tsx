@@ -78,7 +78,7 @@ export function EventBlock({
         action: "event_input_active",
         data: {
           eventNodeId: item.nodeId,
-          actLabel: `Act ${item.position + 1}`,
+          actLabel: `Plot ${item.position + 1}`,
           content: draftContent,
         },
       });
@@ -93,7 +93,7 @@ export function EventBlock({
         action: "event_input_not_active",
         data: {
           eventNodeId: item.nodeId,
-          actLabel: `Act ${item.position + 1}`,
+          actLabel: `Plot ${item.position + 1}`,
           content: event.target.value ?? "",
         },
       });
@@ -102,7 +102,7 @@ export function EventBlock({
   );
 
   const headerLabel = useMemo(
-    () => `Act ${item.position + 1}`,
+    () => `Plot ${item.position + 1}`,
     [item.position],
   );
 

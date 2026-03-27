@@ -121,7 +121,7 @@ export function NarrativeBlock({
           >
             <span className="flex items-center gap-1" aria-hidden="true">
               <span>📖</span>
-              <span>Act {narrativeSequence}</span>
+              <span>Plot {narrativeSequence}</span>
             </span>
           </div>
           <NarrativeContent

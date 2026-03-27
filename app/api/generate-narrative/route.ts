@@ -147,14 +147,14 @@ const renderPromptTemplate = (
     }
   });
 
-const buildActsSection = (acts: z.infer<typeof EventDataSchema>[]) => {
-  return acts
-    .map((act, index) => {
+const buildActsSection = (plots: z.infer<typeof EventDataSchema>[]) => {
+  return plots
+    .map((plot, index) => {
       const actNumber = index + 1;
-      const actSummary = act.eventDescription?.trim() ?? "";
-      const snippets = act.snippets ?? [];
+      const actSummary = plot.eventDescription?.trim() ?? "";
+      const snippets = plot.snippets ?? [];
 
-      const lines: string[] = [`Act ${actNumber}`, "<<<", actSummary, ">>>"];
+      const lines: string[] = [`Plot ${actNumber}`, "<<<", actSummary, ">>>"];
 
       if (!snippets.length) {
         lines.push("Selected details: (none)");

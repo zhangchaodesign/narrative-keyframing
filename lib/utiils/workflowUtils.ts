@@ -1082,7 +1082,7 @@ export function createPerspectiveGroup(
 
   const label = characterName
     ? `${characterName}'s Perspective`
-    : "First-Person Limited Cluster";
+    : "Character Arc";
 
   const newGroupNode: WorkflowNode = {
     id: newGroupId,
@@ -1335,7 +1335,7 @@ export function createNarrativeGroup(
       y: newGroupY,
     },
     data: {
-      label: "Third-Person Omniscient Cluster",
+      label: "Third-Person Narrative Cluster",
       narrativeGroupId: nextNarrativeGroupId,
     },
     style: {

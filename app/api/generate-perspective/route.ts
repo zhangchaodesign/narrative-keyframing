@@ -198,7 +198,7 @@ const buildActText = (tasks: z.infer<typeof PerspectiveTaskSchema>[]) => {
   if (tasks.length === 1) {
     const task = tasks[0];
     if (!task) {
-      return "No act provided.";
+      return "No plot provided.";
     }
     return `${task.eventObjective}`;
   }

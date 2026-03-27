@@ -52,9 +52,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
               data: {
                 ...groupData,
                 characterName: nextName,
-                label: nextName
-                  ? `${nextName}'s Perspective`
-                  : "First-Person Limited Cluster",
+                label: nextName ? `${nextName}'s Perspective` : "Character Arc",
               },
             };
           }
@@ -99,7 +97,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       eventTracker({
         action: "narrator_input_active",
         data: {
-          clusterLabel: data?.label || "First-Person Limited Cluster",
+          clusterLabel: data?.label || "Character Arc",
           narratorName: data?.characterName ?? "",
           perspectiveGroupId: id,
         },
@@ -113,7 +111,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       eventTracker({
         action: "narrator_input_not_active",
         data: {
-          clusterLabel: data?.label || "First-Person Limited Cluster",
+          clusterLabel: data?.label || "Character Arc",
           narratorName: event.target.value ?? "",
           perspectiveGroupId: id,
         },
@@ -157,7 +155,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
     eventTracker({
       action: "add_narrative_group",
       data: {
-        perspectiveClusterLabel: data?.label || "First-Person Limited Cluster",
+        perspectiveClusterLabel: data?.label || "Character Arc",
         characterName: data?.characterName || "",
         eventGroupId: eventGroupId || null,
         nodesCreated: result.nodes.length,
@@ -271,7 +269,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           )}
         >
           <TbPlus size={14} />
-          Add a Third-Person Omniscient Cluster
+          Add a Third-Person Narrative Cluster
         </button>
       </div>
       <CustomHandle type="target" position={Position.Top} id="group-bridge" />

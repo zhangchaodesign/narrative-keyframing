@@ -273,7 +273,7 @@ export function NarrativeEventsTable({
           })}
           <th className="min-w-80 w-80 border border-gray-300 bg-green-50 px-3 py-2 text-left font-semibold text-green-900">
             <div className="flex items-center gap-1">
-              <span>Story</span>
+              <span>Narrative</span>
               <button
                 onClick={onOpenRegenerateDialog}
                 disabled={isRegenerating}
@@ -305,7 +305,7 @@ export function NarrativeEventsTable({
               <td className="border border-gray-300 px-3 py-2 align-top text-xs text-gray-700">
                 <div className="space-y-1">
                   <div className="font-medium text-gray-900">
-                    Act {eventIndex + 1}
+                    Plot {eventIndex + 1}
                   </div>
                   <div>
                     {event.eventDescription || (

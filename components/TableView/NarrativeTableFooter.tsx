@@ -16,13 +16,13 @@ export function NarrativeTableFooter({
   totalSnippetCount,
 }: NarrativeTableFooterProps) {
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 px-6 py-2 text-xs text-gray-600">
+    <div className="flex items-center justify-between border-t border-gray-200 px-2 py-2 text-xs text-gray-600">
       <div className="flex items-center gap-2">
         <span className="font-medium">{resolvedGroupLabel}</span>
         <span>•</span>
-        <span>{eventCount} events</span>
+        <span>{eventCount} plots</span>
         <span>•</span>
-        <span>{perspectiveCount} perspectives</span>
+        <span>{perspectiveCount} characters</span>
       </div>
       <div className="flex items-center gap-2">
         <span>

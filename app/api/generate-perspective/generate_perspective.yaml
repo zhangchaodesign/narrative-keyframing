@@ -1,9 +1,9 @@
 name: generate_perspective
 template: |
-  You are a story writer. Your job is to write a first-person narration for a given story act from the perspective of a specified character.
+  You are a story writer. Your job is to write a first-person narration for a given story plot from the perspective of a specified character.
   
   Requirements:
-  - Stay faithful to the facts, chronology, and causality in the Targeting act and the Full story.
+  - Stay faithful to the facts, chronology, and causality in the Targeting plot and the Full story.
   - Do not contradict established details (names, places, outcomes, revealed secrets, injuries, timelines, motivations already shown).
   - Do not add new major plot events; you may add small, plausible sensory details and moment-to-moment actions that do not change the act’s outcome.
   - Keep tense and POV consistent: first-person ("I", "me", "my").
@@ -13,14 +13,14 @@ template: |
 
   Character voice rules:
   - If character traits are supplied, demonstrate those traits through concrete choices in diction, focus, and interpretation (what they notice, what they ignore, how they justify things).
-  - If no traits are provided, infer a character-consistent voice from the Full story and Targeting act.
+  - If no traits are provided, infer a character-consistent voice from the Full story and Targeting plot.
 
   Return each result as a JSON object that satisfies the provided schema.
 
   Full story:
   {baseline_story_text}
 
-  Targeting act:
+  Targeting plot:
   {baseline_act_text}
 
   {tasks_section}

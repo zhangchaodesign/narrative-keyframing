@@ -10,7 +10,7 @@ import {
 import {
   initialEdges,
   initialNodes,
-} from "@/components/WorkflowCanvas/workflow.constants";
+} from "@/components/WorkflowCanvas/workflow.constants.3act";
 import type {
   CharacterNodeType,
   CharacterTraits,
@@ -869,7 +869,11 @@ const prepareNarrativeEventsData = (
     .forEach((characterNode) => {
       const perspectiveId = characterNode.data?.perspectiveId?.trim();
       const name = characterNode.data?.name?.trim();
-      if (!perspectiveId || !name || characterNameByPerspectiveId.has(perspectiveId)) {
+      if (
+        !perspectiveId ||
+        !name ||
+        characterNameByPerspectiveId.has(perspectiveId)
+      ) {
         return;
       }
       characterNameByPerspectiveId.set(perspectiveId, name);
@@ -1769,7 +1773,10 @@ const workflowStoreCreator: import("zustand").StateCreator<WorkflowState> = (
           return;
         }
         const characterId = key.slice(0, separatorIndex);
-        const attribute = key.slice(separatorIndex + 2).trim().toLowerCase();
+        const attribute = key
+          .slice(separatorIndex + 2)
+          .trim()
+          .toLowerCase();
         if (!characterId || !attribute) {
           return;
         }

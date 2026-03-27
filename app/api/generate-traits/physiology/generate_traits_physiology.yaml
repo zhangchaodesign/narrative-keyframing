@@ -5,19 +5,19 @@ template: |
   Full story:
   {baseline_story_text}
 
-  Targeting act:
+  Targeting plot:
   {baseline_act_text}
 
   Character: {character_name}
   Existing physiology traits: {existing_traits_text}
 
-  Brainstorm three concise physiology traits for this targeting act in the story.
+  Brainstorm three concise physiology traits for this targeting plot in the story.
   These traits should sharpen characterization and help guide revisions to improve the story.
 
   Guidelines:
   - Focus on Physical appearance, clothing, body language, visible characteristics.
   - Keep each trait 3-8 words
-  - Ground traits in the story act and the full story
+  - Ground traits in the story plot and the full story
   - Avoid repeating existing traits or near-duplicates
   - Return exactly three traits
 

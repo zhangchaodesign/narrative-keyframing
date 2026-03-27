@@ -43,8 +43,12 @@ export function TimelineView() {
   } = useMemo(() => buildTimelineData(nodes, edges), [nodes, edges]);
 
   // Cluster selection state (shared via uiStore, managed by page.tsx)
-  const selectedStoryClusterId = useUiStore((state) => state.selectedStoryClusterId);
-  const selectedNarrativeClusterId = useUiStore((state) => state.selectedNarrativeClusterId);
+  const selectedStoryClusterId = useUiStore(
+    (state) => state.selectedStoryClusterId,
+  );
+  const selectedNarrativeClusterId = useUiStore(
+    (state) => state.selectedNarrativeClusterId,
+  );
 
   // Map narrative groups to their connected perspective group IDs
   const narrativePerspectiveGroupMap = useMemo(() => {
@@ -376,7 +380,9 @@ export function TimelineView() {
           <TimelineRuler
             totalDuration={totalDuration}
             timeToPixel={timeToPixel}
-            stickyTop={selectedNarrativeTrack ? TIMELINE_NARRATIVE_TRACK_HEIGHT : 0}
+            stickyTop={
+              selectedNarrativeTrack ? TIMELINE_NARRATIVE_TRACK_HEIGHT : 0
+            }
           />
 
           {/* Story Track */}
@@ -392,25 +398,25 @@ export function TimelineView() {
           )}
 
           {/* Character Perspective Tracks - Grouped by character */}
-          {Object.entries(groupedCharacterTracks).map(
-            ([groupId, tracks]) => (
-              <CharacterTrack
-                key={groupId}
-                characterName={tracks[0]?.characterName ?? "Unknown"}
-                tracks={tracks}
-                timeToPixel={timeToPixel}
-                pixelToTime={pixelToTime}
-                snapTime={snapTime}
-                timelineScale={timelineScale}
-              />
-            ),
-          )}
+          {Object.entries(groupedCharacterTracks).map(([groupId, tracks]) => (
+            <CharacterTrack
+              key={groupId}
+              characterName={tracks[0]?.characterName ?? "Unknown"}
+              tracks={tracks}
+              timeToPixel={timeToPixel}
+              pixelToTime={pixelToTime}
+              snapTime={snapTime}
+              timelineScale={timelineScale}
+            />
+          ))}
 
           {/* Grid Lines */}
           <div
             className="absolute pointer-events-none"
             style={{
-              top: (selectedNarrativeTrack ? TIMELINE_NARRATIVE_TRACK_HEIGHT : 0) + TIMELINE_RULER_HEIGHT,
+              top:
+                (selectedNarrativeTrack ? TIMELINE_NARRATIVE_TRACK_HEIGHT : 0) +
+                TIMELINE_RULER_HEIGHT,
               left: 0,
               right: 0,
               height: `${totalTimelineHeight - TIMELINE_RULER_HEIGHT - (selectedNarrativeTrack ? TIMELINE_NARRATIVE_TRACK_HEIGHT : 0)}px`,
@@ -437,11 +443,11 @@ export function TimelineView() {
           <span>{footerNarrativeLabel}</span>
         </div>
         <div className="flex items-center gap-2">
-          <span>{selectedStoryTrack?.items.length ?? 0} events</span>
+          <span>{selectedStoryTrack?.items.length ?? 0} plots</span>
           <span>•</span>
           <span>{Object.keys(groupedCharacterTracks).length} characters</span>
-          <span>•</span>
-          <span>{selectedNarrativeTrack?.items.length ?? 0} narratives</span>
+          {/* <span>•</span>
+          <span>{selectedNarrativeTrack?.items.length ?? 0} narratives</span> */}
         </div>
       </div>
     </div>

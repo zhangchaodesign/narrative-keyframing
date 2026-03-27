@@ -1,6 +1,11 @@
 "use client";
 
-import { useCallback, useState, type ChangeEvent, type FocusEvent } from "react";
+import {
+  useCallback,
+  useState,
+  type ChangeEvent,
+  type FocusEvent,
+} from "react";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { getCharacterColors } from "@/components/shared/colors.constants";
 import { geistMono } from "@/app/fonts";
@@ -113,9 +118,15 @@ export function CharacterTrack({
 
       setNodes((currentNodes) =>
         currentNodes.map((node) => {
-          if (node.id === perspectiveGroupId && node.type === "perspectiveGroup") {
+          if (
+            node.id === perspectiveGroupId &&
+            node.type === "perspectiveGroup"
+          ) {
             const groupData = node.data ?? {};
-            if ((groupData as { characterName?: string }).characterName === nextName) {
+            if (
+              (groupData as { characterName?: string }).characterName ===
+              nextName
+            ) {
               return node;
             }
             return {
@@ -123,14 +134,15 @@ export function CharacterTrack({
               data: {
                 ...groupData,
                 characterName: nextName,
-                label: nextName
-                  ? `${nextName}'s Perspective`
-                  : "First-Person Limited Cluster",
+                label: nextName ? `${nextName}'s Perspective` : "Character Arc",
               },
             } as typeof node;
           }
 
-          if (node.parentId === perspectiveGroupId && node.type === "character") {
+          if (
+            node.parentId === perspectiveGroupId &&
+            node.type === "character"
+          ) {
             const characterNode = node as CharacterNodeType;
             if (characterNode.data?.name === nextName) {
               return characterNode;
@@ -144,7 +156,10 @@ export function CharacterTrack({
             };
           }
 
-          if (node.parentId === perspectiveGroupId && node.type === "perspective") {
+          if (
+            node.parentId === perspectiveGroupId &&
+            node.type === "perspective"
+          ) {
             const perspectiveNode = node as PerspectiveNodeType;
             if (perspectiveNode.data?.narrator === nextName) {
               return perspectiveNode;

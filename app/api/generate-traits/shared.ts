@@ -79,9 +79,7 @@ export const parseTraitsRequest = (raw: unknown): ParseResult => {
         baselineStoryText: parsed.data.baselineStoryText.trim(),
         baselineActText: parsed.data.baselineActText.trim(),
         characterName: resolvedName,
-        existingTraitsText: normalizeExistingTraits(
-          parsed.data.existingTraits,
-        ),
+        existingTraitsText: normalizeExistingTraits(parsed.data.existingTraits),
       },
     };
   }
@@ -91,7 +89,7 @@ export const parseTraitsRequest = (raw: unknown): ParseResult => {
     error: new z.ZodError([
       {
         code: z.ZodIssueCode.custom,
-        message: "Missing required baseline story/act text.",
+        message: "Missing required baseline story/plot text.",
         path: [],
       },
     ]),
@@ -106,7 +104,9 @@ const stripTemplateIndent = (text: string) => {
   if (!hasIndent) {
     return text;
   }
-  return lines.map((line) => (line.startsWith("  ") ? line.slice(2) : line)).join("\n");
+  return lines
+    .map((line) => (line.startsWith("  ") ? line.slice(2) : line))
+    .join("\n");
 };
 
 export const loadPromptTemplate = async (filePath: string) => {
