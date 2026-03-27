@@ -326,7 +326,7 @@ export function TimelineView() {
     const cluster = storyOutlineClusters.find(
       (item) => item.id === selectedStoryClusterId,
     );
-    if (!cluster) return "Story cluster";
+    if (!cluster) return "Outline cluster";
     if (typeof cluster.eventGroupNumber === "number") {
       return `${cluster.label} ${cluster.eventGroupNumber}`;
     }
