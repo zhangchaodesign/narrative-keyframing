@@ -179,18 +179,27 @@ export default function Page() {
     [nodes],
   );
 
+  const filteredTableNarrativeGroups = useMemo(() => {
+    if (!selectedStoryClusterId) return narrativeGroups;
+    return narrativeGroups.filter(
+      (group) => group.data?.connectedEventGroup?.id === selectedStoryClusterId,
+    );
+  }, [narrativeGroups, selectedStoryClusterId]);
+
   const resolvedTableGroupId = useMemo(() => {
     if (
       narrativeTableGroupId &&
-      narrativeGroups.some((group) => group.id === narrativeTableGroupId)
+      filteredTableNarrativeGroups.some(
+        (group) => group.id === narrativeTableGroupId,
+      )
     ) {
       return narrativeTableGroupId;
     }
-    const activeGroup = narrativeGroups.find(
+    const activeGroup = filteredTableNarrativeGroups.find(
       (group) => group.data?.isActiveInEditor,
     );
-    return activeGroup?.id ?? narrativeGroups[0]?.id;
-  }, [narrativeGroups, narrativeTableGroupId]);
+    return activeGroup?.id ?? filteredTableNarrativeGroups[0]?.id;
+  }, [filteredTableNarrativeGroups, narrativeTableGroupId]);
 
   const formatTableNarrativeLabel = (group: ThirdPersonGroupNodeType) => {
     const label = group.data?.label?.trim() || "Narrative";
@@ -606,6 +615,28 @@ export default function Page() {
                     )}
                   {viewMode === "narrative-table" && (
                     <>
+                      {storyOutlineClusters.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <label
+                            htmlFor="table-story-cluster-select"
+                            className="text-xs text-gray-600 whitespace-nowrap"
+                          >
+                            Outline
+                          </label>
+                          <select
+                            id="table-story-cluster-select"
+                            value={selectedStoryClusterId || ""}
+                            onChange={handleStoryClusterChange}
+                            className="select select-sm select-bordered"
+                          >
+                            {storyOutlineClusters.map((cluster) => (
+                              <option key={cluster.id} value={cluster.id}>
+                                {formatStoryClusterLabel(cluster)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       <div className="flex items-center gap-2">
                         <label
                           htmlFor="table-narrative-group-select"
@@ -618,12 +649,12 @@ export default function Page() {
                           value={resolvedTableGroupId ?? ""}
                           onChange={handleTableGroupChange}
                           className="select select-sm select-bordered"
-                          disabled={narrativeGroups.length === 0}
+                          disabled={filteredTableNarrativeGroups.length === 0}
                         >
-                          {narrativeGroups.length === 0 ? (
+                          {filteredTableNarrativeGroups.length === 0 ? (
                             <option value="">No groups</option>
                           ) : (
-                            narrativeGroups.map((group) => (
+                            filteredTableNarrativeGroups.map((group) => (
                               <option key={group.id} value={group.id}>
                                 {formatTableNarrativeLabel(group)}
                               </option>

@@ -81,6 +81,17 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
     return group ? formatNarrativeClusterLabel(group) : "Narrative Overview";
   }, [formatNarrativeClusterLabel, narrativeGroups, resolvedGroupId]);
 
+  const outlineLabel = useMemo(() => {
+    const group = narrativeGroups.find((item) => item.id === resolvedGroupId);
+    const connected = group?.data?.connectedEventGroup;
+    if (!connected) return undefined;
+    const label = connected.label?.trim() || "Outline";
+    if (typeof connected.eventGroupId === "number") {
+      return `${label} ${connected.eventGroupId}`;
+    }
+    return label;
+  }, [narrativeGroups, resolvedGroupId]);
+
   const preparedEventsData = useMemo(() => {
     if (!resolvedGroupId) {
       return [];
@@ -237,6 +248,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
       </div>
 
       <NarrativeTableFooter
+        outlineLabel={outlineLabel}
         resolvedGroupLabel={resolvedGroupLabel}
         eventCount={eventsData.length}
         perspectiveCount={uniquePerspectives.length}
