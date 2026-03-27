@@ -334,7 +334,7 @@ export function NarrativeGenerationModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-3">
           <h2 className="text font-semibold text-gray-900">
-            Generate Third-Person Omniscient Narrative
+            Generate Third-Person Narrative
           </h2>
           <button
             onClick={() => handleCloseWithTracking("close_button")}
