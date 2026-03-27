@@ -94,7 +94,7 @@ export function NarrativeBlock({
       }}
     >
       <div className="group relative flex h-full flex-col rounded-lg border-2 border-primary bg-white text-xs text-gray-800 transition-shadow hover:shadow-lg">
-        <div className="pointer-events-none absolute -top-12 right-0 z-50 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+        {/* <div className="pointer-events-none absolute -top-12 right-0 z-50 flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 shadow-sm opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
           <NarrativeNodeMenu
             nodeId={item.nodeId}
             narrativeText={narrationText}
@@ -103,7 +103,7 @@ export function NarrativeBlock({
             buttonPadding="p-1.5"
             iconSize={16}
           />
-        </div>
+        </div> */}
         {isLoading && (
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-green-600"></span>
