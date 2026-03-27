@@ -545,7 +545,7 @@ export default function Page() {
                       onChange={(e) =>
                         handleEventCountChange(Number(e.target.value))
                       }
-                      className="input input-sm input-bordered w-16 rounded"
+                      className="input input-sm input-bordered w-16 rounded-lg"
                     />
                   </div>
                   {/* <button
