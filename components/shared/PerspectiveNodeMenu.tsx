@@ -185,95 +185,95 @@ export function PerspectiveSingleActionsMenu({
 
   const handleRegeneratePerspective = useCallback(
     async (prompt?: string) => {
-    if (isRegenerating || isEditing || !hasCharacterConnection) {
-      return;
-    }
-
-    eventTracker({
-      action: "regenerate_single_perspective",
-      data: {
-        perspectiveId: nodeId,
-        narrator: perspectiveData?.narrator,
-        reflection: perspectiveData?.reflection,
-        customPrompt: prompt || "",
-      },
-    });
-
-    setNodes((currentNodes) =>
-      currentNodes.map((node) => {
-        if (node.id !== nodeId || node.type !== "perspective") {
-          return node;
-        }
-        const existingData = node.data as PerspectiveNodeType["data"];
-        return {
-          ...node,
-          data: {
-            ...existingData,
-            isLoading: true,
-          },
-        };
-      }),
-    );
-
-    try {
-      const preparation = preparePerspectiveGeneration([nodeId]);
-      if (!preparation) {
-        throw new Error("Unable to prepare regeneration payload");
+      if (isRegenerating || isEditing || !hasCharacterConnection) {
+        return;
       }
 
-      const { previousPerspective, nextPerspective } =
-        computeNeighborReflections();
-
-      const reflection = await regenerateSinglePerspective({
-        preparation,
-        previousPerspective,
-        nextPerspective,
-        customPrompt: prompt,
+      eventTracker({
+        action: "regenerate_single_perspective",
+        data: {
+          perspectiveId: nodeId,
+          narrator: perspectiveData?.narrator,
+          reflection: perspectiveData?.reflection,
+          customPrompt: prompt || "",
+        },
       });
-      const hasContent = reflection.trim().length > 0;
 
       setNodes((currentNodes) =>
         currentNodes.map((node) => {
           if (node.id !== nodeId || node.type !== "perspective") {
             return node;
           }
-
           const existingData = node.data as PerspectiveNodeType["data"];
           return {
             ...node,
             data: {
               ...existingData,
-              reflection,
-              isLoading: false,
-              isAnalyzingEvidence: false,
-              analysisStatus: "idle",
-              analysisStatusMessage: hasContent
-                ? undefined
-                : PERSPECTIVE_MESSAGES.NEED_REFLECTION,
-              analysisEvidence: hasContent ? [] : undefined,
+              isLoading: true,
             },
           };
         }),
       );
-    } catch (error) {
-      console.error("Error regenerating perspective:", error);
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          if (node.id !== nodeId || node.type !== "perspective") {
-            return node;
-          }
 
-          const existingData = node.data as PerspectiveNodeType["data"];
-          return {
-            ...node,
-            data: {
-              ...existingData,
-              isLoading: false,
-            },
-          };
-        }),
-      );
-    }
+      try {
+        const preparation = preparePerspectiveGeneration([nodeId]);
+        if (!preparation) {
+          throw new Error("Unable to prepare regeneration payload");
+        }
+
+        const { previousPerspective, nextPerspective } =
+          computeNeighborReflections();
+
+        const reflection = await regenerateSinglePerspective({
+          preparation,
+          previousPerspective,
+          nextPerspective,
+          customPrompt: prompt,
+        });
+        const hasContent = reflection.trim().length > 0;
+
+        setNodes((currentNodes) =>
+          currentNodes.map((node) => {
+            if (node.id !== nodeId || node.type !== "perspective") {
+              return node;
+            }
+
+            const existingData = node.data as PerspectiveNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                reflection,
+                isLoading: false,
+                isAnalyzingEvidence: false,
+                analysisStatus: "idle",
+                analysisStatusMessage: hasContent
+                  ? undefined
+                  : PERSPECTIVE_MESSAGES.NEED_REFLECTION,
+                analysisEvidence: hasContent ? [] : undefined,
+              },
+            };
+          }),
+        );
+      } catch (error) {
+        console.error("Error regenerating perspective:", error);
+        setNodes((currentNodes) =>
+          currentNodes.map((node) => {
+            if (node.id !== nodeId || node.type !== "perspective") {
+              return node;
+            }
+
+            const existingData = node.data as PerspectiveNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                isLoading: false,
+              },
+            };
+          }),
+        );
+      }
     },
     [
       computeNeighborReflections,
@@ -289,9 +289,9 @@ export function PerspectiveSingleActionsMenu({
 
   const handleRegenerateAndAnalyze = useCallback(
     async (prompt?: string) => {
-    if (isRegenerating || isAnalyzingEvidence || isEditing) {
-      return;
-    }
+      if (isRegenerating || isAnalyzingEvidence || isEditing) {
+        return;
+      }
 
       await handleRegeneratePerspective(prompt);
       await handleAnalyzeEvidence();
@@ -321,7 +321,7 @@ export function PerspectiveSingleActionsMenu({
 
   const promptDialogContent = showPromptDialog && (
     <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative w-full max-w-md rounded bg-white p-4">
+      <div className="relative w-full max-w-md rounded-lg bg-white p-4">
         <fieldset className="fieldset">
           <legend className="fieldset-legend">Custom Prompt (Optional)</legend>
           <textarea

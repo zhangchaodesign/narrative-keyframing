@@ -23,7 +23,7 @@ export function NarrativePromptDialog({
 
   return (
     <div className="fixed inset-0 z-10000 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative w-full max-w-md rounded bg-white p-4">
+      <div className="relative w-full max-w-md rounded-lg bg-white p-4">
         <fieldset className="fieldset">
           <legend className="fieldset-legend">Custom Prompt (Optional)</legend>
           <textarea
