@@ -126,7 +126,7 @@ export function CharacterRefreshMenu({
         },
       });
     } catch (error) {
-      console.error("Error refreshing character snapshot:", error);
+      console.error("Error refreshing character keyframe:", error);
       eventTracker({
         action: "refresh_character_snapshot_error",
         data: {

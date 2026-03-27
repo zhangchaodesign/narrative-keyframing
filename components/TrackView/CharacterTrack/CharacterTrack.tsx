@@ -52,7 +52,7 @@ export function CharacterTrack({
   const setNodes = useWorkflowStore((state) => state.setNodes);
   const setEdges = useWorkflowStore((state) => state.setEdges);
 
-  // For each perspective, check if it has a character snapshot
+  // For each perspective, check if it has a character keyframe
   const perspectivesWithoutCharacters = useCallback(() => {
     if (!perspectiveTrack) return [];
 
@@ -66,7 +66,7 @@ export function CharacterTrack({
     });
   }, [perspectiveTrack, nodes]);
 
-  // Handler to create character snapshot for a perspective
+  // Handler to create character keyframe for a perspective
   const handleCreateCharacter = useCallback(
     async (perspectiveNodeId: string) => {
       const updateFlag = (next: boolean) => {
@@ -97,7 +97,7 @@ export function CharacterTrack({
           setEdges,
         });
       } catch (error) {
-        console.error("Error creating character snapshot:", error);
+        console.error("Error creating character keyframe:", error);
       } finally {
         updateFlag(false);
       }
@@ -269,7 +269,7 @@ export function CharacterTrack({
                 "text-xs font-semibold text-center",
               )}
             >
-              Snapshot
+              Keyframe
             </span>
           </div>
           <div

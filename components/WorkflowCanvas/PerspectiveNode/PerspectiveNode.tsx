@@ -293,7 +293,7 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         setEdges,
       });
     } catch (error) {
-      console.error("Error creating character snapshot:", error);
+      console.error("Error creating character keyframe:", error);
     } finally {
       setNodes((nodesState) =>
         nodesState.map((node) => {

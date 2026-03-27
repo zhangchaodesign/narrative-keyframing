@@ -308,7 +308,7 @@ export function TimelineView() {
     Object.values(groupedCharacterTracks).forEach(() => {
       height += TIMELINE_CHARACTER_HEADER_HEIGHT;
       height += TIMELINE_CHARACTER_SUBTRACK_HEIGHT; // Perspective
-      height += TIMELINE_CHARACTER_SUBTRACK_HEIGHT; // Character snapshot
+      height += TIMELINE_CHARACTER_SUBTRACK_HEIGHT; // Character keyframe
     });
 
     // Narrative track - always add height when track exists

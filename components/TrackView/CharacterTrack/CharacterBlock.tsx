@@ -286,7 +286,7 @@ export function CharacterBlock({
         },
       });
     } catch (error) {
-      console.error("Error refreshing character snapshot:", error);
+      console.error("Error refreshing character keyframe:", error);
       eventTracker({
         action: "confirm_character_update_prompt_error",
         data: {
@@ -343,7 +343,7 @@ export function CharacterBlock({
           <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-black/10 p-3 text-center text-white backdrop-blur-xs">
             <div className="w-full max-w-xs rounded-lg bg-white/90 p-3 text-gray-900 shadow-lg">
               <p className="text-xs font-medium">
-                Update the character snapshot with the latest perspective?
+                Update the character keyframe with the latest perspective?
               </p>
               <div className="mt-3 flex justify-center gap-2">
                 <button
@@ -368,7 +368,7 @@ export function CharacterBlock({
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-warning"></span>
             <span className="mt-2 text-xs font-semibold uppercase tracking-wide text-warning">
-              Updating snapshot...
+              Updating keyframe...
             </span>
           </div>
         )}
@@ -392,7 +392,7 @@ export function CharacterBlock({
                 "text-xs font-semibold uppercase tracking-wide text-gray-800",
               )}
             >
-              🧙 Character Snapshot
+              🧙 Character Keyframe
             </div>
             <button
               type="button"

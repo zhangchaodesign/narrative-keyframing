@@ -527,7 +527,7 @@ export async function interpolateCharacterSnapshot(
   if (!response.ok) {
     const message = await response.text();
     throw new Error(
-      `Failed to interpolate character snapshot (${response.status}): ${message}`,
+      `Failed to interpolate character keyframe (${response.status}): ${message}`,
     );
   }
 
@@ -676,7 +676,7 @@ export async function refreshCharacterSnapshotFromPerspective({
 }
 
 /**
- * Parameters for creating a character snapshot from a perspective
+ * Parameters for creating a character keyframe from a perspective
  */
 export type CreateCharacterSnapshotParams = {
   perspectiveNodeId: string;
@@ -687,9 +687,9 @@ export type CreateCharacterSnapshotParams = {
 };
 
 /**
- * Creates a character snapshot node linked to a perspective node
+ * Creates a character keyframe node linked to a perspective node
  * Handles both node creation and edge connection
- * @param params Parameters for character snapshot creation
+ * @param params Parameters for character keyframe creation
  * @returns Promise that resolves when creation is complete
  */
 export async function createCharacterSnapshotFromPerspective(
@@ -727,7 +727,7 @@ export async function createCharacterSnapshotFromPerspective(
     attributes: string[];
   }> = [];
 
-  // Interpolate character snapshot from LLM
+  // Interpolate character keyframe from LLM
   try {
     const result = await interpolateCharacterSnapshot({
       nodes,

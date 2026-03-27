@@ -34,8 +34,8 @@ export function AddCharacterButton({
   const buttonText = isProcessing
     ? "Interpolating..."
     : variant === "timeline"
-    ? "Add Snapshot"
-    : "Add Character Snapshot";
+      ? "Add Keyframe"
+      : "Add Character Keyframe";
 
   return (
     <button

@@ -401,12 +401,12 @@ export function PerspectiveSingleActionsMenu({
           )}
           title={
             hasCharacterConnection
-              ? "Regenerate this perspective from its character snapshot"
+              ? "Regenerate this perspective from its character keyframe"
               : "Connect a character to regenerate this perspective"
           }
           aria-label={
             hasCharacterConnection
-              ? "Regenerate this perspective from its character snapshot"
+              ? "Regenerate this perspective from its character keyframe"
               : "Connect a character to regenerate this perspective"
           }
           disabled={isRegenerating || isEditing || !hasCharacterConnection}

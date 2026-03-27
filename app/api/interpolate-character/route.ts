@@ -186,16 +186,16 @@ ${formatTraits(snapshot.traits)}`;
 
     if (!object?.characterSnapshot) {
       return NextResponse.json(
-        { error: "Failed to generate character snapshot" },
+        { error: "Failed to generate character keyframe" },
         { status: 500 },
       );
     }
 
     return NextResponse.json(object);
   } catch (error) {
-    console.error("Error interpolating character snapshot:", error);
+    console.error("Error interpolating character keyframe:", error);
     return NextResponse.json(
-      { error: "Unable to interpolate character snapshot" },
+      { error: "Unable to interpolate character keyframe" },
       { status: 500 },
     );
   }
