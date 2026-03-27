@@ -122,7 +122,7 @@ export const parseEventTimelineIndex = (
  * @param index Timeline index number
  * @returns Formatted timeline string
  */
-export const formatEventTimeline = (index: number): string => `Event ${index}`;
+export const formatEventTimeline = (index: number): string => `Plot ${index}`;
 
 // ============================================================================
 // SORTING UTILITIES
@@ -460,7 +460,7 @@ export function adjustEventCountForAllClusters(
           draggable: false,
           data: {
             description: "",
-            timeline: `Event ${currentEventCount + i + 1}`,
+            timeline: `Plot ${currentEventCount + i + 1}`,
           },
           parentId: groupId,
           extent: "parent",
@@ -933,7 +933,7 @@ export function createStoryOutlineCluster(
       draggable: false,
       data: {
         description: "",
-        timeline: `Event ${index + 1}`,
+        timeline: `Plot ${index + 1}`,
       },
       parentId: newGroupId,
       extent: "parent",

@@ -548,13 +548,13 @@ export default function Page() {
                       className="input input-sm input-bordered w-16 rounded"
                     />
                   </div>
-                  {/* <button
+                  <button
                     type="button"
                     onClick={handleLoadExamples}
                     className="btn btn-sm btn-soft"
                   >
                     Load Examples
-                  </button> */}
+                  </button>
                 </div>
                 <div className="flex items-center gap-3">
                   {viewMode === "timeline" &&
