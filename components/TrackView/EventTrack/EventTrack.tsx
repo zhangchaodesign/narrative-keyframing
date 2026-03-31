@@ -43,7 +43,7 @@ export function EventTrack({
               "text-xs font-semibold text-gray-600 text-center",
             )}
           >
-            Outline
+            Plot
           </span>
           <EventActionsMenu eventGroupId={eventGroupId} />
         </div>

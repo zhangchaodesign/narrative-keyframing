@@ -61,7 +61,7 @@ const buildEventTrack = (
     storyItems.length > 0
       ? {
           id: "story-track",
-          label: "Outline",
+          label: "Plot Cluster",
           type: "story",
           items: storyItems,
         }
@@ -248,10 +248,10 @@ const buildStoryOutlineClusters = (
     if (storyItems.length > 0) {
       clusters.push({
         id: group.id,
-        label: groupData?.label || "Outline",
+        label: groupData?.label || "Plot Cluster",
         track: {
           id: `story-track-${group.id}`,
-          label: groupData?.label || "Outline",
+          label: groupData?.label || "Plot Cluster",
           type: "story",
           items: storyItems,
         },

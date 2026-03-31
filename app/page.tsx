@@ -573,7 +573,7 @@ export default function Page() {
                           htmlFor="story-cluster-select"
                           className="text-xs text-gray-600 whitespace-nowrap"
                         >
-                          Outline
+                          Plot
                         </label>
                         <select
                           id="story-cluster-select"
@@ -621,7 +621,7 @@ export default function Page() {
                             htmlFor="table-story-cluster-select"
                             className="text-xs text-gray-600 whitespace-nowrap"
                           >
-                            Outline
+                            Plot
                           </label>
                           <select
                             id="table-story-cluster-select"

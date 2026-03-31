@@ -20,7 +20,7 @@ export const initialNodes: WorkflowNode[] = [
     id: "event-group",
     type: "eventGroup",
     position: { x: 200, y: 20 },
-    data: { label: "Outline", eventGroupId: 1 },
+    data: { label: "Plot Cluster", eventGroupId: 1 },
     style: {
       width: 920,
       height: 220,
@@ -69,7 +69,7 @@ export const initialNodes: WorkflowNode[] = [
     type: "narrativeGroup",
     position: { x: 520, y: 1200 },
     data: {
-      label: "Third-Person Narrative Cluster",
+      label: "Narrative Cluster",
       narrativeGroupId: 1,
     },
     style: {

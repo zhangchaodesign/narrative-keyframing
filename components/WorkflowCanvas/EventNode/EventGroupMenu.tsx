@@ -121,7 +121,7 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
     const clonedGroupData = cloneData(groupNode.data) as GroupNodeData;
     const nextGroupData: GroupNodeData = {
       ...clonedGroupData,
-      label: clonedGroupData?.label || "Outline",
+      label: clonedGroupData?.label || "Plot Cluster",
       eventGroupId: nextEventGroupId,
     };
 

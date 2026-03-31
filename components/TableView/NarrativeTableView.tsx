@@ -85,7 +85,7 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
     const group = narrativeGroups.find((item) => item.id === resolvedGroupId);
     const connected = group?.data?.connectedEventGroup;
     if (!connected) return undefined;
-    const label = connected.label?.trim() || "Outline";
+    const label = connected.label?.trim() || "Plot Cluster";
     if (typeof connected.eventGroupId === "number") {
       return `${label} ${connected.eventGroupId}`;
     }

@@ -909,7 +909,7 @@ export function createStoryOutlineCluster(
       y: newGroupY,
     },
     data: {
-      label: "Outline",
+      label: "Plot Cluster",
       eventGroupId: nextEventGroupId,
     },
     style: {
@@ -1335,7 +1335,7 @@ export function createNarrativeGroup(
       y: newGroupY,
     },
     data: {
-      label: "Third-Person Narrative Cluster",
+      label: "Narrative Cluster",
       narrativeGroupId: nextNarrativeGroupId,
     },
     style: {

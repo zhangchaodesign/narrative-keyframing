@@ -9,7 +9,7 @@ import { geistMono } from "@/app/fonts";
 
 export function NarrativeGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   const isActive = data?.isActiveInEditor ?? false;
-  const baseLabel = data?.label ?? "Third-Person Narrative Cluster";
+  const baseLabel = data?.label ?? "Narrative Cluster";
   const labelWithId =
     typeof data?.narrativeGroupId === "number"
       ? `${baseLabel} ${data.narrativeGroupId}`

@@ -269,7 +269,7 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           )}
         >
           <TbPlus size={14} />
-          Add a Third-Person Narrative Cluster
+          Add a Narrative Cluster
         </button>
       </div>
       <CustomHandle type="target" position={Position.Top} id="group-bridge" />

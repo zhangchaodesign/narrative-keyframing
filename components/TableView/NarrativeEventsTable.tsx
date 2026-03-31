@@ -247,7 +247,7 @@ export function NarrativeEventsTable({
       <thead className="sticky top-0 bg-gray-50">
         <tr>
           <th className="min-w-48 w-48 border border-gray-300 bg-gray-50 px-3 py-2 text-left font-semibold text-gray-700">
-            Outline
+            Plot
           </th>
           {uniquePerspectives.map((narrator, index) => {
             const charColors = getCharacterColors(narrator);

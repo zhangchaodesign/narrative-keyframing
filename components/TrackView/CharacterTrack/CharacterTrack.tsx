@@ -269,7 +269,7 @@ export function CharacterTrack({
                 "text-xs font-semibold text-center",
               )}
             >
-              Keyframe
+              Character
             </span>
           </div>
           <div
