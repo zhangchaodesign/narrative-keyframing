@@ -10,7 +10,7 @@ import {
 import {
   initialEdges,
   initialNodes,
-} from "@/components/WorkflowCanvas/workflow.constants.3act";
+} from "@/components/WorkflowCanvas/workflow.constants.default";
 import type {
   CharacterNodeType,
   CharacterTraits,

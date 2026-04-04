@@ -24,7 +24,7 @@ const ENABLE_PERSIST =
 const uiStoreCreator: import("zustand").StateCreator<UiState> = (set) => ({
   viewMode: "timeline",
   narrativeTableGroupId: undefined,
-  eventCount: 3,
+  eventCount: 5,
   selectedStoryClusterId: null,
   selectedNarrativeClusterId: null,
   narrativeTableHighlight: true,

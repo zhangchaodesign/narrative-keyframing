@@ -173,7 +173,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
         {labelWithSequence}
       </div>
       <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex flex-row items-center gap-1">
-        {/* <button
+        <button
           type="button"
           onClick={handleExtractCharacters}
           disabled={isExtracting}
@@ -185,7 +185,7 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
           ) : (
             <TbRefresh size={18} className="text-gray-600" />
           )}
-        </button> */}
+        </button>
         {characters.length > 0 && (
           <>
             {characters.map((character, index) => (

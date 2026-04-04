@@ -21,7 +21,10 @@ import {
   exampleEventDescriptions,
   exampleCharacters,
 } from "@/components/WorkflowCanvas/workflow.constants.dragon";
-import { createPerspectiveGroup } from "@/lib/utiils/workflowUtils";
+import {
+  createPerspectiveGroup,
+  createNarrativeGroup,
+} from "@/lib/utiils/workflowUtils";
 import type {
   NarrativeCluster,
   StoryOutlineCluster,
@@ -258,66 +261,80 @@ export default function Page() {
       let currentNodes = useWorkflowStore.getState().nodes;
       let currentEdges = useWorkflowStore.getState().edges;
 
-      // Create additional perspective groups if the example has more characters than existing groups
+      // Create a narrative group if none exists
+      if (!currentNodes.some((n) => n.type === "narrativeGroup")) {
+        const narrativeResult = createNarrativeGroup(currentNodes);
+        currentNodes = [...currentNodes, ...narrativeResult.nodes];
+        currentEdges = [...currentEdges, ...narrativeResult.edges];
+      }
+
+      const narrativeGroup = currentNodes.find(
+        (n) => n.type === "narrativeGroup",
+      );
+
+      // Create perspective groups for each character in the example
       const existingGroups = currentNodes.filter(
         (n) => n.type === "perspectiveGroup",
       );
       const extraGroupsNeeded = exampleCharacters.length - existingGroups.length;
-      if (extraGroupsNeeded > 0) {
-        // Find the narrative group to connect new perspective groups to it
-        const narrativeGroup = currentNodes.find(
-          (n) => n.type === "narrativeGroup",
-        );
-
-        for (let i = 0; i < extraGroupsNeeded; i++) {
-          const charConfig = exampleCharacters[existingGroups.length + i];
-          const result = createPerspectiveGroup(currentNodes, currentEdges, {
-            characterName: charConfig?.name ?? "",
-          });
-          // Remove character nodes created by createPerspectiveGroup at positions
-          // where the example has null snapshots (no character snapshot needed)
-          const newPerspectives = result.nodes
-            .filter((n) => n.type === "perspective")
-            .sort((a, b) => a.position.x - b.position.x);
-          const unwantedCharIds = new Set<string>();
-          if (charConfig) {
-            result.nodes.forEach((n) => {
-              if (n.type !== "character" || !n.data?.perspectiveId) return;
-              const perspIdx = newPerspectives.findIndex(
-                (p) => p.id === (n.data as { perspectiveId: string }).perspectiveId,
-              );
-              if (perspIdx >= 0 && perspIdx < charConfig.snapshots.length && !charConfig.snapshots[perspIdx]) {
-                unwantedCharIds.add(n.id);
-              }
-            });
-          }
-
-          const filteredNodes = result.nodes.filter((n) => !unwantedCharIds.has(n.id));
-          const filteredEdges = result.edges.filter(
-            (e) => !unwantedCharIds.has(e.source) && !unwantedCharIds.has(e.target),
-          );
-          currentNodes = [...currentNodes, ...filteredNodes];
-          currentEdges = [...currentEdges, ...filteredEdges];
-
-          // Also connect the new perspective group to the narrative group
-          if (narrativeGroup) {
-            const newGroupNode = result.nodes.find(
-              (n) => n.type === "perspectiveGroup",
+      for (let i = 0; i < extraGroupsNeeded; i++) {
+        const charConfig = exampleCharacters[existingGroups.length + i];
+        const result = createPerspectiveGroup(currentNodes, currentEdges, {
+          characterName: charConfig?.name ?? "",
+        });
+        // Remove character nodes created by createPerspectiveGroup at positions
+        // where the example has null snapshots (no character snapshot needed)
+        const newPerspectives = result.nodes
+          .filter((n) => n.type === "perspective")
+          .sort((a, b) => a.position.x - b.position.x);
+        const unwantedCharIds = new Set<string>();
+        if (charConfig) {
+          result.nodes.forEach((n) => {
+            if (n.type !== "character" || !n.data?.perspectiveId) return;
+            const perspIdx = newPerspectives.findIndex(
+              (p) =>
+                p.id ===
+                (n.data as { perspectiveId: string }).perspectiveId,
             );
-            if (newGroupNode) {
-              currentEdges = [
-                ...currentEdges,
-                {
-                  id: `edge-${newGroupNode.id}-${narrativeGroup.id}`,
-                  source: newGroupNode.id,
-                  target: narrativeGroup.id,
-                  sourceHandle: "narrative-bridge",
-                  targetHandle: "group-bridge",
-                  type: "customEdge",
-                  animated: true,
-                } as (typeof currentEdges)[number],
-              ];
+            if (
+              perspIdx >= 0 &&
+              perspIdx < charConfig.snapshots.length &&
+              !charConfig.snapshots[perspIdx]
+            ) {
+              unwantedCharIds.add(n.id);
             }
+          });
+        }
+
+        const filteredNodes = result.nodes.filter(
+          (n) => !unwantedCharIds.has(n.id),
+        );
+        const filteredEdges = result.edges.filter(
+          (e) =>
+            !unwantedCharIds.has(e.source) &&
+            !unwantedCharIds.has(e.target),
+        );
+        currentNodes = [...currentNodes, ...filteredNodes];
+        currentEdges = [...currentEdges, ...filteredEdges];
+
+        // Connect the new perspective group to the narrative group
+        if (narrativeGroup) {
+          const newGroupNode = result.nodes.find(
+            (n) => n.type === "perspectiveGroup",
+          );
+          if (newGroupNode) {
+            currentEdges = [
+              ...currentEdges,
+              {
+                id: `edge-${newGroupNode.id}-${narrativeGroup.id}`,
+                source: newGroupNode.id,
+                target: narrativeGroup.id,
+                sourceHandle: "narrative-bridge",
+                targetHandle: "group-bridge",
+                type: "customEdge",
+                animated: true,
+              } as (typeof currentEdges)[number],
+            ];
           }
         }
       }
