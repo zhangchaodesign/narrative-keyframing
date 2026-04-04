@@ -20,7 +20,8 @@ import { eventTracker } from "@/lib/utils";
 import {
   exampleEventDescriptions,
   exampleCharacters,
-} from "@/components/WorkflowCanvas/workflow.constants.3act";
+} from "@/components/WorkflowCanvas/workflow.constants.dragon";
+import { createPerspectiveGroup } from "@/lib/utiils/workflowUtils";
 import type {
   NarrativeCluster,
   StoryOutlineCluster,
@@ -246,7 +247,7 @@ export default function Page() {
   const handleLoadExamples = () => {
     eventTracker({ action: "load_examples", data: null });
 
-    // Set event count to match the example (5 plots)
+    // Set event count to match the example
     const targetEventCount = exampleEventDescriptions.length;
     if (eventCount !== targetEventCount) {
       handleEventCountChange(targetEventCount);
@@ -254,29 +255,91 @@ export default function Page() {
 
     // Wait a tick for the event count adjustment to apply, then load data
     setTimeout(() => {
-      const currentNodes = useWorkflowStore.getState().nodes;
-      const currentEdges = useWorkflowStore.getState().edges;
+      let currentNodes = useWorkflowStore.getState().nodes;
+      let currentEdges = useWorkflowStore.getState().edges;
 
-      // Collect perspective groups to identify char1 vs char2
-      const perspectiveGroups = currentNodes.filter(
+      // Create additional perspective groups if the example has more characters than existing groups
+      const existingGroups = currentNodes.filter(
         (n) => n.type === "perspectiveGroup",
       );
-      const sortedGroups = [...perspectiveGroups].sort(
-        (a, b) => a.position.x - b.position.x,
-      );
-      const char1GroupId = sortedGroups[0]?.id;
-      const char2GroupId = sortedGroups[1]?.id;
+      const extraGroupsNeeded = exampleCharacters.length - existingGroups.length;
+      if (extraGroupsNeeded > 0) {
+        // Find the narrative group to connect new perspective groups to it
+        const narrativeGroup = currentNodes.find(
+          (n) => n.type === "narrativeGroup",
+        );
 
-      // Get sorted perspective nodes per group
-      const getPerspectivesForGroup = (groupId: string | undefined) => {
-        if (!groupId) return [];
-        return currentNodes
-          .filter((n) => n.type === "perspective" && n.parentId === groupId)
+        for (let i = 0; i < extraGroupsNeeded; i++) {
+          const charConfig = exampleCharacters[existingGroups.length + i];
+          const result = createPerspectiveGroup(currentNodes, currentEdges, {
+            characterName: charConfig?.name ?? "",
+          });
+          // Remove character nodes created by createPerspectiveGroup at positions
+          // where the example has null snapshots (no character snapshot needed)
+          const newPerspectives = result.nodes
+            .filter((n) => n.type === "perspective")
+            .sort((a, b) => a.position.x - b.position.x);
+          const unwantedCharIds = new Set<string>();
+          if (charConfig) {
+            result.nodes.forEach((n) => {
+              if (n.type !== "character" || !n.data?.perspectiveId) return;
+              const perspIdx = newPerspectives.findIndex(
+                (p) => p.id === (n.data as { perspectiveId: string }).perspectiveId,
+              );
+              if (perspIdx >= 0 && perspIdx < charConfig.snapshots.length && !charConfig.snapshots[perspIdx]) {
+                unwantedCharIds.add(n.id);
+              }
+            });
+          }
+
+          const filteredNodes = result.nodes.filter((n) => !unwantedCharIds.has(n.id));
+          const filteredEdges = result.edges.filter(
+            (e) => !unwantedCharIds.has(e.source) && !unwantedCharIds.has(e.target),
+          );
+          currentNodes = [...currentNodes, ...filteredNodes];
+          currentEdges = [...currentEdges, ...filteredEdges];
+
+          // Also connect the new perspective group to the narrative group
+          if (narrativeGroup) {
+            const newGroupNode = result.nodes.find(
+              (n) => n.type === "perspectiveGroup",
+            );
+            if (newGroupNode) {
+              currentEdges = [
+                ...currentEdges,
+                {
+                  id: `edge-${newGroupNode.id}-${narrativeGroup.id}`,
+                  source: newGroupNode.id,
+                  target: narrativeGroup.id,
+                  sourceHandle: "narrative-bridge",
+                  targetHandle: "group-bridge",
+                  type: "customEdge",
+                  animated: true,
+                } as (typeof currentEdges)[number],
+              ];
+            }
+          }
+        }
+      }
+
+      // Collect perspective groups sorted by x position
+      const perspectiveGroups = currentNodes
+        .filter((n) => n.type === "perspectiveGroup")
+        .sort((a, b) => a.position.x - b.position.x);
+
+      // Build a mapping: groupId -> { charConfig, perspectives }
+      const groupMappings = perspectiveGroups.map((group, idx) => {
+        const charConfig = exampleCharacters[idx];
+        const perspectives = currentNodes
+          .filter((n) => n.type === "perspective" && n.parentId === group.id)
           .sort((a, b) => a.position.x - b.position.x);
-      };
+        return { groupId: group.id, charConfig, perspectives };
+      });
 
-      const char1Perspectives = getPerspectivesForGroup(char1GroupId);
-      const char2Perspectives = getPerspectivesForGroup(char2GroupId);
+      // Build a set of groupIds that have example data
+      const groupIdToCharConfig = new Map(
+        groupMappings.map((m) => [m.groupId, m]),
+      );
 
       // Build a map of perspectiveId -> existing character node
       const charByPerspective = new Map<
@@ -294,18 +357,15 @@ export default function Page() {
       const newEdges: typeof currentEdges = [];
       const timestamp = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-      // Create character nodes for perspectives that don't have one
-      const ensureCharacterNodes = (
-        perspectives: typeof currentNodes,
-        groupId: string | undefined,
-        charSnapshots: typeof exampleCharacters.char1,
-      ) => {
-        if (!groupId) return;
+      // Create character nodes for perspectives that need one (non-null snapshots only)
+      for (const { groupId, charConfig, perspectives } of groupMappings) {
+        if (!charConfig) continue;
         perspectives.forEach((pNode, actIndex) => {
-          if (actIndex >= charSnapshots.length) return;
+          if (actIndex >= charConfig.snapshots.length) return;
+          const snapshot = charConfig.snapshots[actIndex];
+          if (!snapshot) return; // skip null snapshots
           if (charByPerspective.has(pNode.id)) return; // already has a character node
 
-          const snapshot = charSnapshots[actIndex];
           const newCharId = `character-example-${timestamp}-${groupId}-${actIndex}`;
           newNodes.push({
             id: newCharId,
@@ -331,18 +391,7 @@ export default function Page() {
             animated: true,
           } as (typeof currentEdges)[number]);
         });
-      };
-
-      ensureCharacterNodes(
-        char1Perspectives,
-        char1GroupId,
-        exampleCharacters.char1,
-      );
-      ensureCharacterNodes(
-        char2Perspectives,
-        char2GroupId,
-        exampleCharacters.char2,
-      );
+      }
 
       // Map existing character nodes to their plot index
       const getActIndex = (
@@ -373,24 +422,18 @@ export default function Page() {
         if (node.type === "character") {
           const perspId = (node.data as { perspectiveId?: string })
             ?.perspectiveId;
-          if (!perspId) return node;
+          if (!perspId || !node.parentId) return node;
 
-          let charSnapshots: typeof exampleCharacters.char1 | undefined;
-          let perspectives: typeof currentNodes = [];
+          const mapping = groupIdToCharConfig.get(node.parentId);
+          if (!mapping?.charConfig) return node;
 
-          if (node.parentId === char1GroupId) {
-            charSnapshots = exampleCharacters.char1;
-            perspectives = char1Perspectives;
-          } else if (node.parentId === char2GroupId) {
-            charSnapshots = exampleCharacters.char2;
-            perspectives = char2Perspectives;
-          }
-          if (!charSnapshots) return node;
+          const actIndex = getActIndex(perspId, mapping.perspectives);
+          if (actIndex < 0 || actIndex >= mapping.charConfig.snapshots.length)
+            return node;
 
-          const actIndex = getActIndex(perspId, perspectives);
-          if (actIndex < 0 || actIndex >= charSnapshots.length) return node;
+          const snapshot = mapping.charConfig.snapshots[actIndex];
+          if (!snapshot) return node; // null snapshot, skip
 
-          const snapshot = charSnapshots[actIndex];
           return {
             ...node,
             data: {
@@ -403,21 +446,13 @@ export default function Page() {
 
         // Update perspective group character names
         if (node.type === "perspectiveGroup") {
-          if (node.id === char1GroupId) {
+          const mapping = groupIdToCharConfig.get(node.id);
+          if (mapping?.charConfig) {
             return {
               ...node,
               data: {
                 ...node.data,
-                characterName: exampleCharacters.char1[0].name,
-              },
-            };
-          }
-          if (node.id === char2GroupId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                characterName: exampleCharacters.char2[0].name,
+                characterName: mapping.charConfig.name,
               },
             };
           }
@@ -426,21 +461,14 @@ export default function Page() {
 
         // Update perspective narrator names
         if (node.type === "perspective") {
-          if (node.parentId === char1GroupId) {
+          if (!node.parentId) return node;
+          const mapping = groupIdToCharConfig.get(node.parentId);
+          if (mapping?.charConfig) {
             return {
               ...node,
               data: {
                 ...node.data,
-                narrator: exampleCharacters.char1[0].name,
-              },
-            };
-          }
-          if (node.parentId === char2GroupId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                narrator: exampleCharacters.char2[0].name,
+                narrator: mapping.charConfig.name,
               },
             };
           }
