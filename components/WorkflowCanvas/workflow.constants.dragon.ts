@@ -1,216 +1,923 @@
-export type ExampleCharacterData = {
-  name: string;
-  traits: {
-    physiology: string[];
-    psychology: string[];
-    sociology: string[];
-  };
-};
+import type { WorkflowEdge, WorkflowNode } from "@/lib/types/workflow";
 
-export const exampleEventDescriptions: string[] = [
-  "Alfred and Betty are looking at a picture when they begin imagining a world of castles, knights, and dragons. What starts as an ordinary moment soon feels like the beginning of a real adventure.",
-  "A dragon appears, and Alfred and Betty run away as fast as they can. They are frightened, but they know they cannot hide forever.",
-  "Alfred becomes a brave knight, and Betty becomes a powerful wizard. Together, they prepare to face the dragon with courage, skill, and magic.",
-  "Alfred fights the dragon with his sword while Betty uses her magic to weaken it. Working as a team, they defeat the dragon and save the land.",
-  "After their victory, Alfred and Betty stand proudly near the castle. They celebrate their success and remember that bravery and teamwork helped them save the day.",
+export type {
+  EventNodeData,
+  PerspectiveNodeData,
+  NarrativeNodeData,
+  CharacterTraits,
+  CharacterNodeData,
+  EventNodeType,
+  PerspectiveNodeType,
+  NarrativeNodeType,
+  CharacterNodeType,
+  GroupNodeType,
+  WorkflowNode,
+  WorkflowEdge,
+} from "@/lib/types/workflow";
+
+export const initialNodes: WorkflowNode[] = [
+  {
+    id: "event-group",
+    type: "eventGroup",
+    position: { x: 200, y: 20 },
+    data: { label: "Plot Cluster", eventGroupId: 1 },
+    style: {
+      width: 1520,
+      height: 220,
+      backgroundColor: "transparent",
+      border: "none",
+      padding: 0,
+      boxShadow: "none",
+    },
+  },
+  {
+    id: "perspective-group-alfred",
+    type: "perspectiveGroup",
+    position: { x: 0, y: 360 },
+    data: {
+      label: "Alfred's Perspective",
+      characterName: "Alfred",
+    },
+    style: {
+      width: 1520,
+      height: 720,
+      backgroundColor: "transparent",
+      border: "none",
+      padding: 0,
+      boxShadow: "none",
+    },
+  },
+  {
+    id: "perspective-group-betty",
+    type: "perspectiveGroup",
+    position: { x: 1620, y: 360 },
+    data: {
+      label: "Betty's Perspective",
+      characterName: "Betty",
+    },
+    style: {
+      width: 1520,
+      height: 720,
+      backgroundColor: "transparent",
+      border: "none",
+      padding: 0,
+      boxShadow: "none",
+    },
+  },
+  {
+    id: "perspective-group-dragon",
+    type: "perspectiveGroup",
+    position: { x: 3240, y: 360 },
+    data: {
+      label: "Dragon's Perspective",
+      characterName: "Dragon",
+    },
+    style: {
+      width: 1520,
+      height: 720,
+      backgroundColor: "transparent",
+      border: "none",
+      padding: 0,
+      boxShadow: "none",
+    },
+  },
+  {
+    id: "narration-group",
+    type: "narrativeGroup",
+    position: { x: 1620, y: 1200 },
+    data: {
+      label: "Narrative Cluster",
+      narrativeGroupId: 1,
+    },
+    style: {
+      width: 1520,
+      height: 420,
+      backgroundColor: "transparent",
+      border: "none",
+      padding: 0,
+      boxShadow: "none",
+    },
+  },
+  {
+    id: "event-1",
+    type: "event",
+    position: { x: 20, y: 60 },
+    draggable: false,
+    data: {
+      description:
+        "Alfred and Betty are looking at a picture when they begin imagining a world of castles, knights, and dragons. What starts as an ordinary moment soon feels like the beginning of a real adventure.",
+      timeline: "Plot 1",
+    },
+    parentId: "event-group",
+    extent: "parent",
+  },
+  {
+    id: "event-2",
+    type: "event",
+    position: { x: 320, y: 60 },
+    draggable: false,
+    data: {
+      description:
+        "A dragon appears, and Alfred and Betty run away as fast as they can. They are frightened, but they know they cannot hide forever.",
+      timeline: "Plot 2",
+    },
+    parentId: "event-group",
+    extent: "parent",
+  },
+  {
+    id: "event-3",
+    type: "event",
+    position: { x: 620, y: 60 },
+    draggable: false,
+    data: {
+      description:
+        "Alfred becomes a brave knight, and Betty becomes a powerful wizard. Together, they prepare to face the dragon with courage, skill, and magic.",
+      timeline: "Plot 3",
+    },
+    parentId: "event-group",
+    extent: "parent",
+  },
+  {
+    id: "event-4",
+    type: "event",
+    position: { x: 920, y: 60 },
+    draggable: false,
+    data: {
+      description:
+        "Alfred fights the dragon with his sword while Betty uses her magic to weaken it. Working as a team, they defeat the dragon and save the land.",
+      timeline: "Plot 4",
+    },
+    parentId: "event-group",
+    extent: "parent",
+  },
+  {
+    id: "event-5",
+    type: "event",
+    position: { x: 1220, y: 60 },
+    draggable: false,
+    data: {
+      description:
+        "After their victory, Alfred and Betty stand proudly near the castle. They celebrate their success and remember that bravery and teamwork helped them save the day.",
+      timeline: "Plot 5",
+    },
+    parentId: "event-group",
+    extent: "parent",
+  },
+  {
+    id: "perspective-alfred-1",
+    type: "perspective",
+    position: { x: 20, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Alfred",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-alfred",
+    extent: "parent",
+  },
+  {
+    id: "perspective-alfred-2",
+    type: "perspective",
+    position: { x: 320, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Alfred",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-alfred",
+    extent: "parent",
+  },
+  {
+    id: "perspective-alfred-3",
+    type: "perspective",
+    position: { x: 620, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Alfred",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-alfred",
+    extent: "parent",
+  },
+  {
+    id: "perspective-alfred-4",
+    type: "perspective",
+    position: { x: 920, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Alfred",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-alfred",
+    extent: "parent",
+  },
+  {
+    id: "perspective-alfred-5",
+    type: "perspective",
+    position: { x: 1220, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Alfred",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-alfred",
+    extent: "parent",
+  },
+  {
+    id: "perspective-betty-1",
+    type: "perspective",
+    position: { x: 20, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Betty",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-betty",
+    extent: "parent",
+  },
+  {
+    id: "perspective-betty-2",
+    type: "perspective",
+    position: { x: 320, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Betty",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-betty",
+    extent: "parent",
+  },
+  {
+    id: "perspective-betty-3",
+    type: "perspective",
+    position: { x: 620, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Betty",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-betty",
+    extent: "parent",
+  },
+  {
+    id: "perspective-betty-4",
+    type: "perspective",
+    position: { x: 920, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Betty",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-betty",
+    extent: "parent",
+  },
+  {
+    id: "perspective-betty-5",
+    type: "perspective",
+    position: { x: 1220, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Betty",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-betty",
+    extent: "parent",
+  },
+  {
+    id: "perspective-dragon-1",
+    type: "perspective",
+    position: { x: 20, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Dragon",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-dragon",
+    extent: "parent",
+  },
+  {
+    id: "perspective-dragon-2",
+    type: "perspective",
+    position: { x: 320, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Dragon",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-dragon",
+    extent: "parent",
+  },
+  {
+    id: "perspective-dragon-3",
+    type: "perspective",
+    position: { x: 620, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Dragon",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-dragon",
+    extent: "parent",
+  },
+  {
+    id: "perspective-dragon-4",
+    type: "perspective",
+    position: { x: 920, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Dragon",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-dragon",
+    extent: "parent",
+  },
+  {
+    id: "perspective-dragon-5",
+    type: "perspective",
+    position: { x: 1220, y: 60 },
+    draggable: false,
+    data: {
+      narrator: "Dragon",
+      reflection: "",
+      isLoading: false,
+    },
+    parentId: "perspective-group-dragon",
+    extent: "parent",
+  },
+  {
+    id: "character-alfred-1",
+    type: "character",
+    position: { x: 20, y: 280 },
+    draggable: false,
+    data: {
+      name: "Alfred",
+      traits: {
+        physiology: ["Small child", "Bright curious eyes"],
+        psychology: ["Imaginative", "Curious", "Easily excited by adventure"],
+        sociology: ["Best friends with Betty", "Loves looking at picture books"],
+      },
+      perspectiveId: "perspective-alfred-1",
+    },
+    parentId: "perspective-group-alfred",
+    extent: "parent",
+  },
+  {
+    id: "character-alfred-3",
+    type: "character",
+    position: { x: 620, y: 280 },
+    draggable: false,
+    data: {
+      name: "Alfred",
+      traits: {
+        physiology: ["Wears shining knight's armor", "Carries a gleaming sword"],
+        psychology: [
+          "Determined to protect others",
+          "Overcomes fear with courage",
+          "Ready to fight for what is right",
+        ],
+        sociology: ["Sworn protector of the land", "Trusted battle partner to Betty"],
+      },
+      perspectiveId: "perspective-alfred-3",
+    },
+    parentId: "perspective-group-alfred",
+    extent: "parent",
+  },
+  {
+    id: "character-alfred-5",
+    type: "character",
+    position: { x: 1220, y: 280 },
+    draggable: false,
+    data: {
+      name: "Alfred",
+      traits: {
+        physiology: ["Stands tall and proud", "Battle-worn but smiling"],
+        psychology: ["Brave and confident", "Humble in victory", "Values teamwork above all"],
+        sociology: ["Hero of the castle", "Celebrated alongside Betty"],
+      },
+      perspectiveId: "perspective-alfred-5",
+    },
+    parentId: "perspective-group-alfred",
+    extent: "parent",
+  },
+  {
+    id: "character-betty-1",
+    type: "character",
+    position: { x: 20, y: 280 },
+    draggable: false,
+    data: {
+      name: "Betty",
+      traits: {
+        physiology: ["Small child", "Wide-eyed and attentive"],
+        psychology: ["Imaginative", "Thoughtful", "Quick-witted and resourceful"],
+        sociology: ["Best friends with Alfred", "Loves stories and make-believe"],
+      },
+      perspectiveId: "perspective-betty-1",
+    },
+    parentId: "perspective-group-betty",
+    extent: "parent",
+  },
+  {
+    id: "character-betty-3",
+    type: "character",
+    position: { x: 620, y: 280 },
+    draggable: false,
+    data: {
+      name: "Betty",
+      traits: {
+        physiology: ["Wears a flowing wizard's robe", "Carries a glowing magical staff"],
+        psychology: [
+          "Focused and disciplined",
+          "Channels creativity into powerful spells",
+          "Calm under pressure",
+        ],
+        sociology: ["Powerful wizard of the realm", "Strategic partner to Alfred"],
+      },
+      perspectiveId: "perspective-betty-3",
+    },
+    parentId: "perspective-group-betty",
+    extent: "parent",
+  },
+  {
+    id: "character-betty-5",
+    type: "character",
+    position: { x: 1220, y: 280 },
+    draggable: false,
+    data: {
+      name: "Betty",
+      traits: {
+        physiology: ["Sparkling magical aura", "Staff glows with residual power"],
+        psychology: [
+          "Wise beyond her years",
+          "Proud of what teamwork achieved",
+          "Celebrates others' bravery",
+        ],
+        sociology: ["Celebrated wizard of the land", "Loyal companion to Alfred"],
+      },
+      perspectiveId: "perspective-betty-5",
+    },
+    parentId: "perspective-group-betty",
+    extent: "parent",
+  },
+  {
+    id: "character-dragon-2",
+    type: "character",
+    position: { x: 320, y: 280 },
+    draggable: false,
+    data: {
+      name: "Dragon",
+      traits: {
+        physiology: [
+          "Enormous scaly beast",
+          "Breathes scorching fire",
+          "Wings that darken the sky",
+        ],
+        psychology: [
+          "Fearsome and territorial",
+          "Driven by hunger and dominance",
+          "Unaware of its own loneliness",
+        ],
+        sociology: ["Terror of the kingdom", "Feared by all villagers"],
+      },
+      perspectiveId: "perspective-dragon-2",
+    },
+    parentId: "perspective-group-dragon",
+    extent: "parent",
+  },
+  {
+    id: "character-dragon-4",
+    type: "character",
+    position: { x: 920, y: 280 },
+    draggable: false,
+    data: {
+      name: "Dragon",
+      traits: {
+        physiology: ["Scales cracked by sword strikes", "Fire weakened by Betty's magic"],
+        psychology: [
+          "Furious but increasingly desperate",
+          "Surprised by the children's courage",
+          "Fighting with all remaining strength",
+        ],
+        sociology: ["Challenged for the first time", "Losing grip on its dominance"],
+      },
+      perspectiveId: "perspective-dragon-4",
+    },
+    parentId: "perspective-group-dragon",
+    extent: "parent",
+  },
+  {
+    id: "character-dragon-5",
+    type: "character",
+    position: { x: 1220, y: 280 },
+    draggable: false,
+    data: {
+      name: "Dragon",
+      traits: {
+        physiology: ["Defeated and grounded", "Fire extinguished"],
+        psychology: [
+          "Humbled by defeat",
+          "Beginning to understand respect",
+          "No longer driven by rage",
+        ],
+        sociology: [
+          "No longer a threat to the kingdom",
+          "A reminder that courage conquers fear",
+        ],
+      },
+      perspectiveId: "perspective-dragon-5",
+    },
+    parentId: "perspective-group-dragon",
+    extent: "parent",
+  },
+  {
+    id: "narrative-1",
+    type: "narrative",
+    position: { x: 20, y: 60 },
+    draggable: false,
+    data: {
+      narration: "",
+      isLoading: false,
+    },
+    parentId: "narration-group",
+    extent: "parent",
+  },
+  {
+    id: "narrative-2",
+    type: "narrative",
+    position: { x: 320, y: 60 },
+    draggable: false,
+    data: {
+      narration: "",
+      isLoading: false,
+    },
+    parentId: "narration-group",
+    extent: "parent",
+  },
+  {
+    id: "narrative-3",
+    type: "narrative",
+    position: { x: 620, y: 60 },
+    draggable: false,
+    data: {
+      narration: "",
+      isLoading: false,
+    },
+    parentId: "narration-group",
+    extent: "parent",
+  },
+  {
+    id: "narrative-4",
+    type: "narrative",
+    position: { x: 920, y: 60 },
+    draggable: false,
+    data: {
+      narration: "",
+      isLoading: false,
+    },
+    parentId: "narration-group",
+    extent: "parent",
+  },
+  {
+    id: "narrative-5",
+    type: "narrative",
+    position: { x: 1220, y: 60 },
+    draggable: false,
+    data: {
+      narration: "",
+      isLoading: false,
+    },
+    parentId: "narration-group",
+    extent: "parent",
+  },
 ];
 
-/**
- * Each entry is one character's snapshots across the 5 plots.
- * Use `null` for plots where no character snapshot is needed.
- */
-export const exampleCharacters: {
-  name: string;
-  snapshots: (ExampleCharacterData | null)[];
-}[] = [
+export const initialEdges: WorkflowEdge[] = [
   {
-    name: "Alfred",
-    snapshots: [
-      // Plot 1 — The Discovery
-      {
-        name: "Alfred",
-        traits: {
-          physiology: ["Small child", "Bright curious eyes"],
-          psychology: [
-            "Imaginative",
-            "Curious",
-            "Easily excited by adventure",
-          ],
-          sociology: [
-            "Best friends with Betty",
-            "Loves looking at picture books",
-          ],
-        },
-      },
-      // Plot 2 — no snapshot
-      null,
-      // Plot 3 — The Transformation
-      {
-        name: "Alfred",
-        traits: {
-          physiology: [
-            "Wears shining knight's armor",
-            "Carries a gleaming sword",
-          ],
-          psychology: [
-            "Determined to protect others",
-            "Overcomes fear with courage",
-            "Ready to fight for what is right",
-          ],
-          sociology: [
-            "Sworn protector of the land",
-            "Trusted battle partner to Betty",
-          ],
-        },
-      },
-      // Plot 4 — no snapshot
-      null,
-      // Plot 5 — The Happy Ending
-      {
-        name: "Alfred",
-        traits: {
-          physiology: ["Stands tall and proud", "Battle-worn but smiling"],
-          psychology: [
-            "Brave and confident",
-            "Humble in victory",
-            "Values teamwork above all",
-          ],
-          sociology: [
-            "Hero of the castle",
-            "Celebrated alongside Betty",
-          ],
-        },
-      },
-    ],
+    id: "edge-event-group-perspective-group-alfred",
+    source: "event-group",
+    target: "perspective-group-alfred",
+    sourceHandle: "group-bridge",
+    targetHandle: "group-bridge",
+    type: "customEdge",
+    animated: true,
   },
   {
-    name: "Betty",
-    snapshots: [
-      // Plot 1 — The Discovery
-      {
-        name: "Betty",
-        traits: {
-          physiology: ["Small child", "Wide-eyed and attentive"],
-          psychology: [
-            "Imaginative",
-            "Thoughtful",
-            "Quick-witted and resourceful",
-          ],
-          sociology: [
-            "Best friends with Alfred",
-            "Loves stories and make-believe",
-          ],
-        },
-      },
-      // Plot 2 — no snapshot
-      null,
-      // Plot 3 — The Transformation
-      {
-        name: "Betty",
-        traits: {
-          physiology: [
-            "Wears a flowing wizard's robe",
-            "Carries a glowing magical staff",
-          ],
-          psychology: [
-            "Focused and disciplined",
-            "Channels creativity into powerful spells",
-            "Calm under pressure",
-          ],
-          sociology: [
-            "Powerful wizard of the realm",
-            "Strategic partner to Alfred",
-          ],
-        },
-      },
-      // Plot 4 — no snapshot
-      null,
-      // Plot 5 — The Happy Ending
-      {
-        name: "Betty",
-        traits: {
-          physiology: [
-            "Sparkling magical aura",
-            "Staff glows with residual power",
-          ],
-          psychology: [
-            "Wise beyond her years",
-            "Proud of what teamwork achieved",
-            "Celebrates others' bravery",
-          ],
-          sociology: [
-            "Celebrated wizard of the land",
-            "Loyal companion to Alfred",
-          ],
-        },
-      },
-    ],
+    id: "edge-event-group-perspective-group-betty",
+    source: "event-group",
+    target: "perspective-group-betty",
+    sourceHandle: "group-bridge",
+    targetHandle: "group-bridge",
+    type: "customEdge",
+    animated: true,
   },
   {
-    name: "Dragon",
-    snapshots: [
-      // Plot 1 — no snapshot
-      null,
-      // Plot 2 — The Danger
-      {
-        name: "Dragon",
-        traits: {
-          physiology: [
-            "Enormous scaly beast",
-            "Breathes scorching fire",
-            "Wings that darken the sky",
-          ],
-          psychology: [
-            "Fearsome and territorial",
-            "Driven by hunger and dominance",
-            "Unaware of its own loneliness",
-          ],
-          sociology: [
-            "Terror of the kingdom",
-            "Feared by all villagers",
-          ],
-        },
-      },
-      // Plot 3 — no snapshot
-      null,
-      // Plot 4 — The Battle
-      {
-        name: "Dragon",
-        traits: {
-          physiology: [
-            "Scales cracked by sword strikes",
-            "Fire weakened by Betty's magic",
-          ],
-          psychology: [
-            "Furious but increasingly desperate",
-            "Surprised by the children's courage",
-            "Fighting with all remaining strength",
-          ],
-          sociology: [
-            "Challenged for the first time",
-            "Losing grip on its dominance",
-          ],
-        },
-      },
-      // Plot 5 — The Happy Ending
-      {
-        name: "Dragon",
-        traits: {
-          physiology: [
-            "Defeated and grounded",
-            "Fire extinguished",
-          ],
-          psychology: [
-            "Humbled by defeat",
-            "Beginning to understand respect",
-            "No longer driven by rage",
-          ],
-          sociology: [
-            "No longer a threat to the kingdom",
-            "A reminder that courage conquers fear",
-          ],
-        },
-      },
-    ],
+    id: "edge-event-group-perspective-group-dragon",
+    source: "event-group",
+    target: "perspective-group-dragon",
+    sourceHandle: "group-bridge",
+    targetHandle: "group-bridge",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-group-alfred-narration-group",
+    source: "perspective-group-alfred",
+    target: "narration-group",
+    sourceHandle: "narrative-bridge",
+    targetHandle: "group-bridge",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-group-betty-narration-group",
+    source: "perspective-group-betty",
+    target: "narration-group",
+    sourceHandle: "narrative-bridge",
+    targetHandle: "group-bridge",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-group-dragon-narration-group",
+    source: "perspective-group-dragon",
+    target: "narration-group",
+    sourceHandle: "narrative-bridge",
+    targetHandle: "group-bridge",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-event-1-2",
+    source: "event-1",
+    target: "event-2",
+    sourceHandle: "event-next",
+    targetHandle: "event-prev",
+    type: "eventEdge",
+    animated: true,
+  },
+  {
+    id: "edge-event-2-3",
+    source: "event-2",
+    target: "event-3",
+    sourceHandle: "event-next",
+    targetHandle: "event-prev",
+    type: "eventEdge",
+    animated: true,
+  },
+  {
+    id: "edge-event-3-4",
+    source: "event-3",
+    target: "event-4",
+    sourceHandle: "event-next",
+    targetHandle: "event-prev",
+    type: "eventEdge",
+    animated: true,
+  },
+  {
+    id: "edge-event-4-5",
+    source: "event-4",
+    target: "event-5",
+    sourceHandle: "event-next",
+    targetHandle: "event-prev",
+    type: "eventEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-alfred-1-2",
+    source: "perspective-alfred-1",
+    target: "perspective-alfred-2",
+    sourceHandle: "perspective-next",
+    targetHandle: "perspective-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-alfred-2-3",
+    source: "perspective-alfred-2",
+    target: "perspective-alfred-3",
+    sourceHandle: "perspective-next",
+    targetHandle: "perspective-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-alfred-3-4",
+    source: "perspective-alfred-3",
+    target: "perspective-alfred-4",
+    sourceHandle: "perspective-next",
+    targetHandle: "perspective-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-alfred-4-5",
+    source: "perspective-alfred-4",
+    target: "perspective-alfred-5",
+    sourceHandle: "perspective-next",
+    targetHandle: "perspective-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-betty-1-2",
+    source: "perspective-betty-1",
+    target: "perspective-betty-2",
+    sourceHandle: "perspective-next",
+    targetHandle: "perspective-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-betty-2-3",
+    source: "perspective-betty-2",
+    target: "perspective-betty-3",
+    sourceHandle: "perspective-next",
+    targetHandle: "perspective-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-betty-3-4",
+    source: "perspective-betty-3",
+    target: "perspective-betty-4",
+    sourceHandle: "perspective-next",
+    targetHandle: "perspective-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-betty-4-5",
+    source: "perspective-betty-4",
+    target: "perspective-betty-5",
+    sourceHandle: "perspective-next",
+    targetHandle: "perspective-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-dragon-1-2",
+    source: "perspective-dragon-1",
+    target: "perspective-dragon-2",
+    sourceHandle: "perspective-next",
+    targetHandle: "perspective-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-dragon-2-3",
+    source: "perspective-dragon-2",
+    target: "perspective-dragon-3",
+    sourceHandle: "perspective-next",
+    targetHandle: "perspective-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-dragon-3-4",
+    source: "perspective-dragon-3",
+    target: "perspective-dragon-4",
+    sourceHandle: "perspective-next",
+    targetHandle: "perspective-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-perspective-dragon-4-5",
+    source: "perspective-dragon-4",
+    target: "perspective-dragon-5",
+    sourceHandle: "perspective-next",
+    targetHandle: "perspective-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-character-alfred-1-perspective-alfred-1",
+    source: "character-alfred-1",
+    target: "perspective-alfred-1",
+    sourceHandle: "perspective",
+    targetHandle: "character",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-character-alfred-3-perspective-alfred-3",
+    source: "character-alfred-3",
+    target: "perspective-alfred-3",
+    sourceHandle: "perspective",
+    targetHandle: "character",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-character-alfred-5-perspective-alfred-5",
+    source: "character-alfred-5",
+    target: "perspective-alfred-5",
+    sourceHandle: "perspective",
+    targetHandle: "character",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-character-betty-1-perspective-betty-1",
+    source: "character-betty-1",
+    target: "perspective-betty-1",
+    sourceHandle: "perspective",
+    targetHandle: "character",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-character-betty-3-perspective-betty-3",
+    source: "character-betty-3",
+    target: "perspective-betty-3",
+    sourceHandle: "perspective",
+    targetHandle: "character",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-character-betty-5-perspective-betty-5",
+    source: "character-betty-5",
+    target: "perspective-betty-5",
+    sourceHandle: "perspective",
+    targetHandle: "character",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-character-dragon-2-perspective-dragon-2",
+    source: "character-dragon-2",
+    target: "perspective-dragon-2",
+    sourceHandle: "perspective",
+    targetHandle: "character",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-character-dragon-4-perspective-dragon-4",
+    source: "character-dragon-4",
+    target: "perspective-dragon-4",
+    sourceHandle: "perspective",
+    targetHandle: "character",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-character-dragon-5-perspective-dragon-5",
+    source: "character-dragon-5",
+    target: "perspective-dragon-5",
+    sourceHandle: "perspective",
+    targetHandle: "character",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-narrative-1-2",
+    source: "narrative-1",
+    target: "narrative-2",
+    sourceHandle: "narrative-next",
+    targetHandle: "narrative-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-narrative-2-3",
+    source: "narrative-2",
+    target: "narrative-3",
+    sourceHandle: "narrative-next",
+    targetHandle: "narrative-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-narrative-3-4",
+    source: "narrative-3",
+    target: "narrative-4",
+    sourceHandle: "narrative-next",
+    targetHandle: "narrative-prev",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-narrative-4-5",
+    source: "narrative-4",
+    target: "narrative-5",
+    sourceHandle: "narrative-next",
+    targetHandle: "narrative-prev",
+    type: "customEdge",
+    animated: true,
   },
 ];
