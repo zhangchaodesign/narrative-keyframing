@@ -193,7 +193,7 @@ export function NarrativeActionsMenu({
     });
 
     setNarrativeTableGroupId(nodeId);
-    setViewMode("narrative-table");
+    setViewMode("table");
   }, [getNarrativeEventsData, nodeId, setNarrativeTableGroupId, setViewMode]);
 
   const Modals = useMemo(

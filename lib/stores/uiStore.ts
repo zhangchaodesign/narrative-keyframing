@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type ViewMode = "workflow" | "timeline" | "narrative-table";
+export type ViewMode = "workflow" | "timeline" | "table";
 
 type UiState = {
   viewMode: ViewMode;
@@ -18,11 +18,10 @@ type UiState = {
   setNarrativeTableHighlight: (enabled: boolean) => void;
 };
 
-const ENABLE_PERSIST =
-  process.env.NEXT_PUBLIC_ENABLE_PERSIST === "true";
+const ENABLE_PERSIST = process.env.NEXT_PUBLIC_ENABLE_PERSIST === "true";
 
 const uiStoreCreator: import("zustand").StateCreator<UiState> = (set) => ({
-  viewMode: "timeline",
+  viewMode: "workflow",
   narrativeTableGroupId: undefined,
   eventCount: 5,
   selectedStoryClusterId: null,
@@ -33,12 +32,12 @@ const uiStoreCreator: import("zustand").StateCreator<UiState> = (set) => ({
     set({ narrativeTableGroupId: groupId }),
   setEventCount: (count) => set({ eventCount: count }),
   setSelectedStoryClusterId: (id) => set({ selectedStoryClusterId: id }),
-  setSelectedNarrativeClusterId: (id) => set({ selectedNarrativeClusterId: id }),
-  setNarrativeTableHighlight: (enabled) => set({ narrativeTableHighlight: enabled }),
+  setSelectedNarrativeClusterId: (id) =>
+    set({ selectedNarrativeClusterId: id }),
+  setNarrativeTableHighlight: (enabled) =>
+    set({ narrativeTableHighlight: enabled }),
 });
 
 export const useUiStore = ENABLE_PERSIST
-  ? create<UiState>()(
-      persist(uiStoreCreator, { name: "characify-ui-store" }),
-    )
+  ? create<UiState>()(persist(uiStoreCreator, { name: "characify-ui-store" }))
   : create<UiState>()(uiStoreCreator);

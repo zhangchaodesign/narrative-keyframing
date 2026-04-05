@@ -17,7 +17,7 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
     const nameMap: Record<ViewMode, string> = {
       workflow: "canvas",
       timeline: "track",
-      "narrative-table": "table",
+      table: "table",
     };
     return nameMap[view] || view;
   };
@@ -62,10 +62,10 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
       </button>
 
       <button
-        onClick={() => handleViewChange("narrative-table")}
+        onClick={() => handleViewChange("table")}
         className={cn(
           "flex items-center gap-2 rounded px-3 py-1.5 text-xs font-medium transition-colors w-24 justify-center",
-          currentView === "narrative-table"
+          currentView === "table"
             ? "bg-blue-500 text-white shadow-sm"
             : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
         )}

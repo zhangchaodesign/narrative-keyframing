@@ -413,7 +413,7 @@ export default function Page() {
                         </select>
                       </div>
                     )}
-                  {viewMode === "narrative-table" && (
+                  {viewMode === "table" && (
                     <>
                       {storyOutlineClusters.length > 0 && (
                         <div className="flex items-center gap-2">
