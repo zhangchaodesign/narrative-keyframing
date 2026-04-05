@@ -48,26 +48,9 @@ export const initialNodes: WorkflowNode[] = [
     },
   },
   {
-    id: "perspective-group-betty",
-    type: "perspectiveGroup",
-    position: { x: 1620, y: 360 },
-    data: {
-      label: "Betty's Perspective",
-      characterName: "Betty",
-    },
-    style: {
-      width: 1520,
-      height: 720,
-      backgroundColor: "transparent",
-      border: "none",
-      padding: 0,
-      boxShadow: "none",
-    },
-  },
-  {
     id: "perspective-group-dragon",
     type: "perspectiveGroup",
-    position: { x: 3240, y: 360 },
+    position: { x: 1620, y: 360 },
     data: {
       label: "Dragon's Perspective",
       characterName: "Dragon",
@@ -84,7 +67,7 @@ export const initialNodes: WorkflowNode[] = [
   {
     id: "narration-group",
     type: "narrativeGroup",
-    position: { x: 1620, y: 1200 },
+    position: { x: 820, y: 1200 },
     data: {
       label: "Narrative Cluster",
       narrativeGroupId: 1,
@@ -105,7 +88,7 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       description:
-        "Alfred and Betty are looking at a picture when they begin imagining a world of castles, knights, and dragons. What starts as an ordinary moment soon feels like the beginning of a real adventure.",
+        "Alfred stares at an old castle painting and imagines himself in a kingdom of knights and fire-breathing beasts.",
       timeline: "Plot 1",
     },
     parentId: "event-group",
@@ -118,7 +101,7 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       description:
-        "A dragon appears, and Alfred and Betty run away as fast as they can. They are frightened, but they know they cannot hide forever.",
+        "A dragon descends over the valley, and Alfred flees through the forest while searching for a way to survive.",
       timeline: "Plot 2",
     },
     parentId: "event-group",
@@ -131,7 +114,7 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       description:
-        "Alfred becomes a brave knight, and Betty becomes a powerful wizard. Together, they prepare to face the dragon with courage, skill, and magic.",
+        "Alfred dons ancient armor and trains with a sword, choosing to confront the dragon instead of hiding.",
       timeline: "Plot 3",
     },
     parentId: "event-group",
@@ -144,7 +127,7 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       description:
-        "Alfred fights the dragon with his sword while Betty uses her magic to weaken it. Working as a team, they defeat the dragon and save the land.",
+        "At the castle ruins, Alfred battles the dragon in a brutal duel and finally brings it down.",
       timeline: "Plot 4",
     },
     parentId: "event-group",
@@ -157,7 +140,7 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       description:
-        "After their victory, Alfred and Betty stand proudly near the castle. They celebrate their success and remember that bravery and teamwork helped them save the day.",
+        "At sunrise, Alfred stands victorious by the castle, honored as the knight who saved the kingdom.",
       timeline: "Plot 5",
     },
     parentId: "event-group",
@@ -226,71 +209,6 @@ export const initialNodes: WorkflowNode[] = [
       isLoading: false,
     },
     parentId: "perspective-group-alfred",
-    extent: "parent",
-  },
-  {
-    id: "perspective-betty-1",
-    type: "perspective",
-    position: { x: 20, y: 60 },
-    draggable: false,
-    data: {
-      narrator: "Betty",
-      reflection: "",
-      isLoading: false,
-    },
-    parentId: "perspective-group-betty",
-    extent: "parent",
-  },
-  {
-    id: "perspective-betty-2",
-    type: "perspective",
-    position: { x: 320, y: 60 },
-    draggable: false,
-    data: {
-      narrator: "Betty",
-      reflection: "",
-      isLoading: false,
-    },
-    parentId: "perspective-group-betty",
-    extent: "parent",
-  },
-  {
-    id: "perspective-betty-3",
-    type: "perspective",
-    position: { x: 620, y: 60 },
-    draggable: false,
-    data: {
-      narrator: "Betty",
-      reflection: "",
-      isLoading: false,
-    },
-    parentId: "perspective-group-betty",
-    extent: "parent",
-  },
-  {
-    id: "perspective-betty-4",
-    type: "perspective",
-    position: { x: 920, y: 60 },
-    draggable: false,
-    data: {
-      narrator: "Betty",
-      reflection: "",
-      isLoading: false,
-    },
-    parentId: "perspective-group-betty",
-    extent: "parent",
-  },
-  {
-    id: "perspective-betty-5",
-    type: "perspective",
-    position: { x: 1220, y: 60 },
-    draggable: false,
-    data: {
-      narrator: "Betty",
-      reflection: "",
-      isLoading: false,
-    },
-    parentId: "perspective-group-betty",
     extent: "parent",
   },
   {
@@ -368,9 +286,32 @@ export const initialNodes: WorkflowNode[] = [
       traits: {
         physiology: ["Small child", "Bright curious eyes"],
         psychology: ["Imaginative", "Curious", "Easily excited by adventure"],
-        sociology: ["Best friends with Betty", "Loves looking at picture books"],
+        sociology: ["Dreamer from the village", "Loves heroic legends"],
       },
       perspectiveId: "perspective-alfred-1",
+    },
+    parentId: "perspective-group-alfred",
+    extent: "parent",
+  },
+  {
+    id: "character-alfred-2",
+    type: "character",
+    position: { x: 320, y: 280 },
+    draggable: false,
+    data: {
+      name: "Alfred",
+      traits: {
+        physiology: [
+          "Breathing hard from sprinting",
+          "Clothes torn by brambles",
+        ],
+        psychology: ["Fearful", "Uncertain", "Desperate to find safety"],
+        sociology: [
+          "A lone survivor in the valley",
+          "Driven to protect his home",
+        ],
+      },
+      perspectiveId: "perspective-alfred-2",
     },
     parentId: "perspective-group-alfred",
     extent: "parent",
@@ -383,13 +324,19 @@ export const initialNodes: WorkflowNode[] = [
     data: {
       name: "Alfred",
       traits: {
-        physiology: ["Wears shining knight's armor", "Carries a gleaming sword"],
+        physiology: [
+          "Wears shining knight's armor",
+          "Carries a gleaming sword",
+        ],
         psychology: [
           "Determined to protect others",
           "Overcomes fear with courage",
           "Ready to fight for what is right",
         ],
-        sociology: ["Sworn protector of the land", "Trusted battle partner to Betty"],
+        sociology: [
+          "Sworn protector of the land",
+          "Trusted by the castle guard",
+        ],
       },
       perspectiveId: "perspective-alfred-3",
     },
@@ -405,71 +352,16 @@ export const initialNodes: WorkflowNode[] = [
       name: "Alfred",
       traits: {
         physiology: ["Stands tall and proud", "Battle-worn but smiling"],
-        psychology: ["Brave and confident", "Humble in victory", "Values teamwork above all"],
-        sociology: ["Hero of the castle", "Celebrated alongside Betty"],
+        psychology: [
+          "Brave and confident",
+          "Humble in victory",
+          "Steady under pressure",
+        ],
+        sociology: ["Hero of the castle", "Guardian of the kingdom"],
       },
       perspectiveId: "perspective-alfred-5",
     },
     parentId: "perspective-group-alfred",
-    extent: "parent",
-  },
-  {
-    id: "character-betty-1",
-    type: "character",
-    position: { x: 20, y: 280 },
-    draggable: false,
-    data: {
-      name: "Betty",
-      traits: {
-        physiology: ["Small child", "Wide-eyed and attentive"],
-        psychology: ["Imaginative", "Thoughtful", "Quick-witted and resourceful"],
-        sociology: ["Best friends with Alfred", "Loves stories and make-believe"],
-      },
-      perspectiveId: "perspective-betty-1",
-    },
-    parentId: "perspective-group-betty",
-    extent: "parent",
-  },
-  {
-    id: "character-betty-3",
-    type: "character",
-    position: { x: 620, y: 280 },
-    draggable: false,
-    data: {
-      name: "Betty",
-      traits: {
-        physiology: ["Wears a flowing wizard's robe", "Carries a glowing magical staff"],
-        psychology: [
-          "Focused and disciplined",
-          "Channels creativity into powerful spells",
-          "Calm under pressure",
-        ],
-        sociology: ["Powerful wizard of the realm", "Strategic partner to Alfred"],
-      },
-      perspectiveId: "perspective-betty-3",
-    },
-    parentId: "perspective-group-betty",
-    extent: "parent",
-  },
-  {
-    id: "character-betty-5",
-    type: "character",
-    position: { x: 1220, y: 280 },
-    draggable: false,
-    data: {
-      name: "Betty",
-      traits: {
-        physiology: ["Sparkling magical aura", "Staff glows with residual power"],
-        psychology: [
-          "Wise beyond her years",
-          "Proud of what teamwork achieved",
-          "Celebrates others' bravery",
-        ],
-        sociology: ["Celebrated wizard of the land", "Loyal companion to Alfred"],
-      },
-      perspectiveId: "perspective-betty-5",
-    },
-    parentId: "perspective-group-betty",
     extent: "parent",
   },
   {
@@ -505,13 +397,19 @@ export const initialNodes: WorkflowNode[] = [
     data: {
       name: "Dragon",
       traits: {
-        physiology: ["Scales cracked by sword strikes", "Fire weakened by Betty's magic"],
+        physiology: [
+          "Scales cracked by sword strikes",
+          "Fire faltering after the duel",
+        ],
         psychology: [
           "Furious but increasingly desperate",
-          "Surprised by the children's courage",
+          "Surprised by Alfred's courage",
           "Fighting with all remaining strength",
         ],
-        sociology: ["Challenged for the first time", "Losing grip on its dominance"],
+        sociology: [
+          "Challenged for the first time",
+          "Losing grip on its dominance",
+        ],
       },
       perspectiveId: "perspective-dragon-4",
     },
@@ -615,15 +513,6 @@ export const initialEdges: WorkflowEdge[] = [
     animated: true,
   },
   {
-    id: "edge-event-group-perspective-group-betty",
-    source: "event-group",
-    target: "perspective-group-betty",
-    sourceHandle: "group-bridge",
-    targetHandle: "group-bridge",
-    type: "customEdge",
-    animated: true,
-  },
-  {
     id: "edge-event-group-perspective-group-dragon",
     source: "event-group",
     target: "perspective-group-dragon",
@@ -635,15 +524,6 @@ export const initialEdges: WorkflowEdge[] = [
   {
     id: "edge-perspective-group-alfred-narration-group",
     source: "perspective-group-alfred",
-    target: "narration-group",
-    sourceHandle: "narrative-bridge",
-    targetHandle: "group-bridge",
-    type: "customEdge",
-    animated: true,
-  },
-  {
-    id: "edge-perspective-group-betty-narration-group",
-    source: "perspective-group-betty",
     target: "narration-group",
     sourceHandle: "narrative-bridge",
     targetHandle: "group-bridge",
@@ -732,42 +612,6 @@ export const initialEdges: WorkflowEdge[] = [
     animated: true,
   },
   {
-    id: "edge-perspective-betty-1-2",
-    source: "perspective-betty-1",
-    target: "perspective-betty-2",
-    sourceHandle: "perspective-next",
-    targetHandle: "perspective-prev",
-    type: "customEdge",
-    animated: true,
-  },
-  {
-    id: "edge-perspective-betty-2-3",
-    source: "perspective-betty-2",
-    target: "perspective-betty-3",
-    sourceHandle: "perspective-next",
-    targetHandle: "perspective-prev",
-    type: "customEdge",
-    animated: true,
-  },
-  {
-    id: "edge-perspective-betty-3-4",
-    source: "perspective-betty-3",
-    target: "perspective-betty-4",
-    sourceHandle: "perspective-next",
-    targetHandle: "perspective-prev",
-    type: "customEdge",
-    animated: true,
-  },
-  {
-    id: "edge-perspective-betty-4-5",
-    source: "perspective-betty-4",
-    target: "perspective-betty-5",
-    sourceHandle: "perspective-next",
-    targetHandle: "perspective-prev",
-    type: "customEdge",
-    animated: true,
-  },
-  {
     id: "edge-perspective-dragon-1-2",
     source: "perspective-dragon-1",
     target: "perspective-dragon-2",
@@ -813,6 +657,15 @@ export const initialEdges: WorkflowEdge[] = [
     animated: true,
   },
   {
+    id: "edge-character-alfred-2-perspective-alfred-2",
+    source: "character-alfred-2",
+    target: "perspective-alfred-2",
+    sourceHandle: "perspective",
+    targetHandle: "character",
+    type: "customEdge",
+    animated: true,
+  },
+  {
     id: "edge-character-alfred-3-perspective-alfred-3",
     source: "character-alfred-3",
     target: "perspective-alfred-3",
@@ -825,33 +678,6 @@ export const initialEdges: WorkflowEdge[] = [
     id: "edge-character-alfred-5-perspective-alfred-5",
     source: "character-alfred-5",
     target: "perspective-alfred-5",
-    sourceHandle: "perspective",
-    targetHandle: "character",
-    type: "customEdge",
-    animated: true,
-  },
-  {
-    id: "edge-character-betty-1-perspective-betty-1",
-    source: "character-betty-1",
-    target: "perspective-betty-1",
-    sourceHandle: "perspective",
-    targetHandle: "character",
-    type: "customEdge",
-    animated: true,
-  },
-  {
-    id: "edge-character-betty-3-perspective-betty-3",
-    source: "character-betty-3",
-    target: "perspective-betty-3",
-    sourceHandle: "perspective",
-    targetHandle: "character",
-    type: "customEdge",
-    animated: true,
-  },
-  {
-    id: "edge-character-betty-5-perspective-betty-5",
-    source: "character-betty-5",
-    target: "perspective-betty-5",
     sourceHandle: "perspective",
     targetHandle: "character",
     type: "customEdge",

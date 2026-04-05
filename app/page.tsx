@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import clsx from "clsx";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -9,9 +9,13 @@ import { WorkflowCanvas } from "@/components/WorkflowCanvas/WorkflowCanvas";
 import { TimelineView } from "@/components/TrackView/TimelineView";
 import { ViewSwitcher } from "@/components/ViewSwitcher/ViewSwitcher";
 import { NarrativeTableView } from "@/components/TableView/NarrativeTableView";
-import { TbHighlight } from "react-icons/tb";
+import { TbHighlight, TbPlus } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
-import { adjustEventCountForAllClusters } from "@/lib/utiils/workflowUtils";
+import {
+  adjustEventCountForAllClusters,
+  createPerspectiveGroup,
+  createNarrativeGroup,
+} from "@/lib/utiils/workflowUtils";
 import { buildTimelineData } from "@/lib/utiils/timelineUtils";
 import { useUiStore } from "@/lib/stores/uiStore";
 import { StudyEntryPanel, EndStudyButton } from "@/components/StudyManager";
@@ -25,7 +29,11 @@ import type {
   NarrativeCluster,
   StoryOutlineCluster,
 } from "@/lib/types/timeline";
-import type { ThirdPersonGroupNodeType } from "@/lib/types/workflow";
+import type {
+  ThirdPersonGroupNodeType,
+  WorkflowNode,
+  WorkflowEdge,
+} from "@/lib/types/workflow";
 
 export default function Page() {
   const started = useStudyStore((state) => state.started);
@@ -155,6 +163,127 @@ export default function Page() {
     });
     setSelectedNarrativeClusterId(nextClusterId);
   };
+
+  const handleAddCharacterArc = useCallback(() => {
+    if (!selectedStoryClusterId) return;
+
+    const currentNodes = nodes as WorkflowNode[];
+    const currentEdges = edges as WorkflowEdge[];
+
+    // 1. Create the perspective group (character arc)
+    const perspResult = createPerspectiveGroup(currentNodes, currentEdges, {
+      characterName: "",
+      eventGroupId: selectedStoryClusterId,
+    });
+
+    if (perspResult.nodes.length === 0) return;
+
+    const perspGroupNode = perspResult.nodes.find(
+      (node) => node.type === "perspectiveGroup",
+    );
+    if (!perspGroupNode) return;
+
+    let allNewNodes = [...perspResult.nodes];
+    let allNewEdges = [...perspResult.edges];
+
+    if (selectedNarrativeClusterId) {
+      // 2a. Connect to the selected narrative cluster
+      const bridgingEdge: WorkflowEdge = {
+        id: `edge-${perspGroupNode.id}-${selectedNarrativeClusterId}`,
+        source: perspGroupNode.id,
+        target: selectedNarrativeClusterId,
+        sourceHandle: "narrative-bridge",
+        targetHandle: "group-bridge",
+        type: "customEdge",
+        animated: true,
+      };
+      allNewEdges.push(bridgingEdge);
+    } else if (narrativeClusters.length === 0) {
+      // 2b. No narrative clusters exist — auto-create one and connect
+      const narrativeResult = createNarrativeGroup(
+        [...currentNodes, ...allNewNodes],
+        { eventGroupId: selectedStoryClusterId },
+      );
+
+      if (narrativeResult.nodes.length > 0) {
+        const narrativeGroupNode = narrativeResult.nodes.find(
+          (node) => node.type === "narrativeGroup",
+        );
+
+        if (narrativeGroupNode) {
+          // Position narrative group below perspective group
+          const baselineHeight =
+            typeof perspGroupNode.style?.height === "number"
+              ? perspGroupNode.style.height
+              : 640;
+          const repositionedNarrativeNodes = narrativeResult.nodes.map(
+            (node) => {
+              if (node.id === narrativeGroupNode.id) {
+                return {
+                  ...node,
+                  position: {
+                    x: perspGroupNode.position.x,
+                    y: perspGroupNode.position.y + baselineHeight + 80,
+                  },
+                };
+              }
+              return node;
+            },
+          );
+
+          const newNarrativeGroup = repositionedNarrativeNodes.find(
+            (node) => node.type === "narrativeGroup",
+          )!;
+
+          const bridgingEdge: WorkflowEdge = {
+            id: `edge-${perspGroupNode.id}-${newNarrativeGroup.id}`,
+            source: perspGroupNode.id,
+            target: newNarrativeGroup.id,
+            sourceHandle: "narrative-bridge",
+            targetHandle: "group-bridge",
+            type: "customEdge",
+            animated: true,
+          };
+
+          allNewNodes = [...allNewNodes, ...repositionedNarrativeNodes];
+          allNewEdges = [
+            ...allNewEdges,
+            ...narrativeResult.edges,
+            bridgingEdge,
+          ];
+
+          // Auto-select the new narrative cluster after state updates
+          setTimeout(() => {
+            setSelectedNarrativeClusterId(newNarrativeGroup.id);
+          }, 0);
+        }
+      }
+    }
+
+    eventTracker({
+      action: "add_character_arc_from_timeline",
+      data: {
+        eventGroupId: selectedStoryClusterId,
+        connectedToNarrative: !!selectedNarrativeClusterId,
+        autoCreatedNarrative:
+          !selectedNarrativeClusterId && narrativeClusters.length === 0,
+        nodesCreated: allNewNodes.length,
+        edgesCreated: allNewEdges.length,
+      },
+    });
+
+    setNodes((prev) => [...prev, ...allNewNodes]);
+    setEdges((prev) => [...prev, ...allNewEdges]);
+  }, [
+    selectedStoryClusterId,
+    selectedNarrativeClusterId,
+    narrativeClusters.length,
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    setSelectedNarrativeClusterId,
+  ]);
 
   // Narrative table controls
   const narrativeTableGroupId = useUiStore(
@@ -366,6 +495,22 @@ export default function Page() {
                   </button>
                 </div>
                 <div className="flex items-center gap-3">
+                  {viewMode === "timeline" && (
+                    <button
+                      type="button"
+                      onClick={handleAddCharacterArc}
+                      disabled={!selectedStoryClusterId}
+                      className="btn btn-sm btn-soft gap-1"
+                      title={
+                        !selectedStoryClusterId
+                          ? "Select a plot cluster first"
+                          : "Add a character arc"
+                      }
+                    >
+                      <TbPlus size={14} />
+                      Add Character Arc
+                    </button>
+                  )}
                   {viewMode === "timeline" &&
                     storyOutlineClusters.length > 0 && (
                       <div className="flex items-center gap-2">
@@ -412,6 +557,7 @@ export default function Page() {
                         </select>
                       </div>
                     )}
+
                   {viewMode === "table" && (
                     <>
                       {storyOutlineClusters.length > 0 && (
