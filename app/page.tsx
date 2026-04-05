@@ -404,7 +404,6 @@ export default function Page() {
                           onChange={handleNarrativeClusterChange}
                           className="select select-sm select-bordered"
                         >
-                          <option value="">None</option>
                           {filteredNarrativeClusters.map((cluster) => (
                             <option key={cluster.id} value={cluster.id}>
                               {formatNarrativeClusterLabel(cluster)}
