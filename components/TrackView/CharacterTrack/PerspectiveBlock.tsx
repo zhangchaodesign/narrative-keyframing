@@ -14,6 +14,11 @@ import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { PerspectiveSingleActionsMenu } from "@/components/shared/PerspectiveNodeMenu";
 import { PerspectiveContent } from "@/components/shared/PerspectiveContent";
 import { PerspectiveStatusLabel } from "@/components/shared/PerspectiveStatusLabel";
+import {
+  analyzeSinglePerspectiveEvidence,
+  PERSPECTIVE_MESSAGES,
+  regenerateSinglePerspective,
+} from "@/lib/utiils/perspectiveUtils";
 
 interface PerspectiveBlockProps {
   item: TimelineItem;
@@ -106,6 +111,175 @@ export function PerspectiveBlock({
     setEditedReflection(newReflection);
   }, []);
 
+  const getPerspectiveEvidenceTarget = useWorkflowStore(
+    (state) => state.getPerspectiveEvidenceTarget,
+  );
+  const preparePerspectiveGeneration = useWorkflowStore(
+    (state) => state.preparePerspectiveGeneration,
+  );
+  const syncSelectedSnippetsFromEvidence = useWorkflowStore(
+    (state) => state.syncSelectedSnippetsFromEvidence,
+  );
+
+  const computeNeighborReflections = useCallback(() => {
+    const perspectiveNode = nodes.find(
+      (node): node is PerspectiveNodeType =>
+        node.id === item.nodeId && node.type === "perspective",
+    );
+    if (!perspectiveNode || !perspectiveNode.parentId) {
+      return {};
+    }
+
+    const sortedSiblings = nodes
+      .filter(
+        (node): node is PerspectiveNodeType =>
+          node.type === "perspective" &&
+          node.parentId === perspectiveNode.parentId,
+      )
+      .sort((a, b) => a.position.x - b.position.x);
+
+    const currentIndex = sortedSiblings.findIndex(
+      (node) => node.id === item.nodeId,
+    );
+    if (currentIndex < 0) {
+      return {};
+    }
+
+    let previousPerspective: string | undefined;
+    let nextPerspective: string | undefined;
+
+    if (currentIndex > 0) {
+      const content =
+        sortedSiblings[currentIndex - 1]?.data?.reflection?.trim() ?? "";
+      if (content.length > 0) {
+        previousPerspective = content;
+      }
+    }
+
+    if (currentIndex < sortedSiblings.length - 1) {
+      const content =
+        sortedSiblings[currentIndex + 1]?.data?.reflection?.trim() ?? "";
+      if (content.length > 0) {
+        nextPerspective = content;
+      }
+    }
+
+    return { previousPerspective, nextPerspective };
+  }, [item.nodeId, nodes]);
+
+  const handleDismissUpdatePrompt = useCallback(() => {
+    setNodes((nodesState) =>
+      nodesState.map((node) => {
+        if (node.id !== item.nodeId || node.type !== "perspective") {
+          return node;
+        }
+        const existingData = node.data as PerspectiveNodeType["data"];
+        return {
+          ...node,
+          data: {
+            ...existingData,
+            showUpdatePrompt: false,
+          },
+        };
+      }),
+    );
+  }, [item.nodeId, setNodes]);
+
+  const handleConfirmUpdatePrompt = useCallback(async () => {
+    if (isAnalyzingEvidence) {
+      return;
+    }
+
+    // Dismiss the prompt and start regeneration + analysis.
+    setNodes((nodesState) =>
+      nodesState.map((node) => {
+        if (node.id !== item.nodeId || node.type !== "perspective") {
+          return node;
+        }
+        const existingData = node.data as PerspectiveNodeType["data"];
+        return {
+          ...node,
+          data: {
+            ...existingData,
+            showUpdatePrompt: false,
+            isLoading: true,
+            isAnalyzingEvidence: true,
+            analysisStatus: "running",
+            analysisStatusMessage: PERSPECTIVE_MESSAGES.ANALYZING,
+            analysisEvidence: [],
+          },
+        };
+      }),
+    );
+
+    try {
+      const preparation = preparePerspectiveGeneration([item.nodeId]);
+      const { previousPerspective, nextPerspective } =
+        computeNeighborReflections();
+      const reflection = await regenerateSinglePerspective({
+        preparation,
+        previousPerspective,
+        nextPerspective,
+      });
+
+      const target = getPerspectiveEvidenceTarget(item.nodeId);
+      const result = await analyzeSinglePerspectiveEvidence(
+        target ? { ...target, reflection } : target,
+      );
+      const hasContent = reflection.trim().length > 0;
+
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
+          if (node.id !== item.nodeId || node.type !== "perspective") {
+            return node;
+          }
+          const existingData = node.data as PerspectiveNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              reflection,
+              isLoading: false,
+              isAnalyzingEvidence: false,
+              analysisStatus: result.success ? "success" : "idle",
+              analysisStatusMessage: hasContent
+                ? result.message
+                : PERSPECTIVE_MESSAGES.NEED_REFLECTION,
+              analysisEvidence: hasContent ? result.evidence : [],
+            },
+          };
+        }),
+      );
+      syncSelectedSnippetsFromEvidence();
+    } catch (error) {
+      console.error("Error regenerating perspective:", error);
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
+          if (node.id !== item.nodeId || node.type !== "perspective") {
+            return node;
+          }
+          const existingData = node.data as PerspectiveNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              isLoading: false,
+              isAnalyzingEvidence: false,
+            },
+          };
+        }),
+      );
+    }
+  }, [
+    computeNeighborReflections,
+    getPerspectiveEvidenceTarget,
+    isAnalyzingEvidence,
+    item.nodeId,
+    preparePerspectiveGeneration,
+    setNodes,
+    syncSelectedSnippetsFromEvidence,
+  ]);
+
   const title = useMemo(
     () => `Perspective ${item.position + 1}`,
     [item.position],
@@ -125,6 +299,31 @@ export function PerspectiveBlock({
           colors.border,
         )}
       >
+        {perspectiveData?.showUpdatePrompt && !isAnalyzingEvidence && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-black/10 p-3 text-center text-white backdrop-blur-xs">
+            <div className="w-full max-w-xs rounded-lg bg-white/90 p-3 text-gray-900 shadow-lg">
+              <p className="text-xs font-medium">
+                Update Perspective Keyframe?
+              </p>
+              <div className="mt-3 flex justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleDismissUpdatePrompt}
+                  className="btn btn-xs"
+                >
+                  Not now
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmUpdatePrompt}
+                  className="btn btn-xs btn-neutral"
+                >
+                  Update
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {isLoading && (
           <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
             <span className="loading loading-spinner text-secondary"></span>

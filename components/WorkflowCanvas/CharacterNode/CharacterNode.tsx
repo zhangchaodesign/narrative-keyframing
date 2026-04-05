@@ -5,7 +5,11 @@ import { Position, type NodeProps } from "@xyflow/react";
 import { CustomHandle } from "@/components/WorkflowCanvas/CustomHandle";
 import { CharacterMenu } from "@/components/WorkflowCanvas/CharacterNode/CharacterMenu";
 import { TraitSection } from "@/components/shared/CharacterTraitSection";
-import type { CharacterNodeType, CharacterTraits } from "@/lib/types/workflow";
+import type {
+  CharacterNodeType,
+  CharacterTraits,
+  PerspectiveNodeType,
+} from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { getCharacterColors } from "@/components/shared/colors.constants";
 import { geistMono } from "@/app/fonts";
@@ -98,6 +102,63 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
           };
         }),
       );
+    },
+    [id, setNodes],
+  );
+
+  // Wrapper that updates character traits AND flags the linked perspective
+  const updateCharacterTraits = useCallback(
+    (
+      updater: (
+        current: CharacterTraits,
+        name: string,
+        perspectiveId: string,
+      ) => CharacterNodeType["data"],
+    ) => {
+      setNodes((nodesState) => {
+        // First, find the character node to get its perspectiveId
+        const charNode = nodesState.find(
+          (node) => node.id === id && node.type === "character",
+        );
+        const perspectiveId = (
+          charNode?.data as CharacterNodeType["data"] | undefined
+        )?.perspectiveId;
+
+        return nodesState.map((node) => {
+          // Update the character node (same as updateNodeData)
+          if (node.id === id && node.type === "character") {
+            const currentData = node.data as CharacterNodeType["data"];
+            const currentTraits = normalizeCharacterTraits(currentData?.traits);
+
+            return {
+              ...node,
+              data: updater(
+                currentTraits,
+                currentData?.name ?? "",
+                currentData?.perspectiveId ?? "",
+              ),
+            };
+          }
+
+          // Flag the linked perspective to show update prompt
+          if (
+            perspectiveId &&
+            node.id === perspectiveId &&
+            node.type === "perspective"
+          ) {
+            const existingData = node.data as PerspectiveNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                showUpdatePrompt: true,
+              },
+            };
+          }
+
+          return node;
+        });
+      });
     },
     [id, setNodes],
   );
@@ -410,7 +471,7 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
                   selectedClass={selectedClass}
                   traits={traits[key] ?? []}
                   brainstormContext={brainstormContext}
-                  onUpdateNodeData={updateNodeData}
+                  onUpdateNodeData={updateCharacterTraits}
                 />
               ),
             )}

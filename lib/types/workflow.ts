@@ -15,6 +15,7 @@ export type PerspectiveNodeData = {
   analysisStatus?: "idle" | "running" | "success" | "error";
   analysisStatusMessage?: string;
   analysisEvidence?: PerspectiveEvidenceItem[];
+  showUpdatePrompt?: boolean;
 };
 
 export type NarrativeNodeData = {

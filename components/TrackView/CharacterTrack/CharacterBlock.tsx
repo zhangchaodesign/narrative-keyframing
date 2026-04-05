@@ -22,6 +22,7 @@ import type {
   CharacterNodeData,
   CharacterNodeType,
   CharacterTraits,
+  PerspectiveNodeType,
 } from "@/lib/types/workflow";
 import {
   CHARACTER_TRAIT_CATEGORIES,
@@ -150,6 +151,65 @@ export function CharacterBlock({
           };
         }),
       );
+    },
+    [item.nodeId, setNodes],
+  );
+
+  // Wrapper that updates character traits AND flags the linked perspective
+  const updateCharacterTraits = useCallback(
+    (
+      updater: (
+        currentTraits: CharacterTraits,
+        currentName: string,
+        currentPerspectiveId: string,
+      ) => CharacterNodeData,
+    ) => {
+      setNodes((nodesState) => {
+        // First, find the character node to get its perspectiveId
+        const charNode = nodesState.find(
+          (node) => node.id === item.nodeId && node.type === "character",
+        );
+        const perspectiveId = (charNode?.data as CharacterNodeData | undefined)
+          ?.perspectiveId;
+
+        return nodesState.map((node) => {
+          // Update the character node (same as updateCharacterNode)
+          if (node.id === item.nodeId && node.type === "character") {
+            const currentData = node.data as CharacterNodeData | undefined;
+            const currentTraits = normalizeCharacterTraits(currentData?.traits);
+
+            return {
+              ...node,
+              data: {
+                ...currentData,
+                ...updater(
+                  currentTraits,
+                  currentData?.name ?? "",
+                  currentData?.perspectiveId ?? "",
+                ),
+              },
+            };
+          }
+
+          // Flag the linked perspective to show update prompt
+          if (
+            perspectiveId &&
+            node.id === perspectiveId &&
+            node.type === "perspective"
+          ) {
+            const existingData = node.data as PerspectiveNodeType["data"];
+            return {
+              ...node,
+              data: {
+                ...existingData,
+                showUpdatePrompt: true,
+              },
+            };
+          }
+
+          return node;
+        });
+      });
     },
     [item.nodeId, setNodes],
   );
@@ -440,7 +500,7 @@ export function CharacterBlock({
                   selectedClass={selectedClass}
                   traits={traits[key] ?? []}
                   brainstormContext={brainstormContext}
-                  onUpdateNodeData={updateCharacterNode}
+                  onUpdateNodeData={updateCharacterTraits}
                 />
               ),
             )}

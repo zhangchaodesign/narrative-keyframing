@@ -20,6 +20,11 @@ import { getCharacterColors } from "@/components/shared/colors.constants";
 import { createCharacterSnapshotFromPerspective } from "@/lib/utiils/characterUtils";
 import { geistMono } from "@/app/fonts";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
+import {
+  analyzeSinglePerspectiveEvidence,
+  PERSPECTIVE_MESSAGES,
+  regenerateSinglePerspective,
+} from "@/lib/utiils/perspectiveUtils";
 
 export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
   const colors = getCharacterColors(data?.narrator ?? id);
@@ -194,6 +199,173 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
     );
   }, [edges, id, nodes, setNodes]);
 
+  const getPerspectiveEvidenceTarget = useWorkflowStore(
+    (state) => state.getPerspectiveEvidenceTarget,
+  );
+  const preparePerspectiveGeneration = useWorkflowStore(
+    (state) => state.preparePerspectiveGeneration,
+  );
+  const syncSelectedSnippetsFromEvidence = useWorkflowStore(
+    (state) => state.syncSelectedSnippetsFromEvidence,
+  );
+
+  const computeNeighborReflections = useCallback(() => {
+    const perspectiveNode = nodes.find(
+      (node): node is PerspectiveNodeType =>
+        node.id === id && node.type === "perspective",
+    );
+    if (!perspectiveNode || !perspectiveNode.parentId) {
+      return {};
+    }
+
+    const sortedSiblings = nodes
+      .filter(
+        (node): node is PerspectiveNodeType =>
+          node.type === "perspective" &&
+          node.parentId === perspectiveNode.parentId,
+      )
+      .sort((a, b) => a.position.x - b.position.x);
+
+    const currentIndex = sortedSiblings.findIndex((node) => node.id === id);
+    if (currentIndex < 0) {
+      return {};
+    }
+
+    let previousPerspective: string | undefined;
+    let nextPerspective: string | undefined;
+
+    if (currentIndex > 0) {
+      const content =
+        sortedSiblings[currentIndex - 1]?.data?.reflection?.trim() ?? "";
+      if (content.length > 0) {
+        previousPerspective = content;
+      }
+    }
+
+    if (currentIndex < sortedSiblings.length - 1) {
+      const content =
+        sortedSiblings[currentIndex + 1]?.data?.reflection?.trim() ?? "";
+      if (content.length > 0) {
+        nextPerspective = content;
+      }
+    }
+
+    return { previousPerspective, nextPerspective };
+  }, [id, nodes]);
+
+  const handleDismissUpdatePrompt = useCallback(() => {
+    setNodes((nodesState) =>
+      nodesState.map((node) => {
+        if (node.id !== id || node.type !== "perspective") {
+          return node;
+        }
+        const existingData = node.data as PerspectiveNodeType["data"];
+        return {
+          ...node,
+          data: {
+            ...existingData,
+            showUpdatePrompt: false,
+          },
+        };
+      }),
+    );
+  }, [id, setNodes]);
+
+  const handleConfirmUpdatePrompt = useCallback(async () => {
+    if (isAnalyzingEvidence) {
+      return;
+    }
+
+    // Dismiss the prompt and start regeneration + analysis.
+    setNodes((nodesState) =>
+      nodesState.map((node) => {
+        if (node.id !== id || node.type !== "perspective") {
+          return node;
+        }
+        const existingData = node.data as PerspectiveNodeType["data"];
+        return {
+          ...node,
+          data: {
+            ...existingData,
+            showUpdatePrompt: false,
+            isLoading: true,
+            isAnalyzingEvidence: true,
+            analysisStatus: "running",
+            analysisStatusMessage: PERSPECTIVE_MESSAGES.ANALYZING,
+            analysisEvidence: [],
+          },
+        };
+      }),
+    );
+
+    try {
+      const preparation = preparePerspectiveGeneration([id]);
+      const { previousPerspective, nextPerspective } =
+        computeNeighborReflections();
+      const reflection = await regenerateSinglePerspective({
+        preparation,
+        previousPerspective,
+        nextPerspective,
+      });
+
+      const target = getPerspectiveEvidenceTarget(id);
+      const result = await analyzeSinglePerspectiveEvidence(
+        target ? { ...target, reflection } : target,
+      );
+      const hasContent = reflection.trim().length > 0;
+
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
+          if (node.id !== id || node.type !== "perspective") {
+            return node;
+          }
+          const existingData = node.data as PerspectiveNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              reflection,
+              isLoading: false,
+              isAnalyzingEvidence: false,
+              analysisStatus: result.success ? "success" : "idle",
+              analysisStatusMessage: hasContent
+                ? result.message
+                : PERSPECTIVE_MESSAGES.NEED_REFLECTION,
+              analysisEvidence: hasContent ? result.evidence : [],
+            },
+          };
+        }),
+      );
+      syncSelectedSnippetsFromEvidence();
+    } catch (error) {
+      console.error("Error regenerating perspective:", error);
+      setNodes((nodesState) =>
+        nodesState.map((node) => {
+          if (node.id !== id || node.type !== "perspective") {
+            return node;
+          }
+          const existingData = node.data as PerspectiveNodeType["data"];
+          return {
+            ...node,
+            data: {
+              ...existingData,
+              isLoading: false,
+              isAnalyzingEvidence: false,
+            },
+          };
+        }),
+      );
+    }
+  }, [
+    computeNeighborReflections,
+    getPerspectiveEvidenceTarget,
+    isAnalyzingEvidence,
+    id,
+    preparePerspectiveGeneration,
+    setNodes,
+    syncSelectedSnippetsFromEvidence,
+  ]);
+
   const handleToggleEdit = useCallback(() => {
     if (isEditing) {
       // Save the edited reflection
@@ -320,6 +492,32 @@ export function PerspectiveNode({ id, data }: NodeProps<PerspectiveNodeType>) {
         colors.border,
       )}
     >
+      {data?.showUpdatePrompt && !isAnalyzingEvidence && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-black/10 p-3 text-center text-white backdrop-blur-xs">
+          <div className="w-full max-w-xs rounded-lg bg-white/90 p-3 text-gray-900 shadow-lg">
+            <p className="text-xs font-medium">
+              Regenerate perspective and re-analyze with latest character
+              traits?
+            </p>
+            <div className="mt-3 flex justify-center gap-2">
+              <button
+                type="button"
+                onClick={handleDismissUpdatePrompt}
+                className="btn btn-xs"
+              >
+                Not now
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmUpdatePrompt}
+                className="btn btn-xs btn-neutral"
+              >
+                Regenerate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {isLoading && (
         <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm">
           <span className="loading loading-spinner text-secondary"></span>
