@@ -1,22 +1,49 @@
 name: generate_enriched_story
 template: |
-  You are a narrative writer. Your job is to expand the provided outline into a full story, seamlessly integrating the selected character details.
+  ROLE
+  You are a professional creative writer.
 
-  Outline + selected details:
+  INPUT
+  Outline + selected details by plot:
   {acts_section}
 
-  Requirements:
-  - Follow the outline's plot, beat order, and use third-person narration.
-  - Do NOT add new events, attempts, or outcomes beyond what the outline already includes.
-  - Integrate details naturally (avoid “laundry lists” of descriptions).
-  - Avoid overwriting: keep sentences clear and varied in length; do not let any one sentence run on too long.
-  - Maintain continuity (names, timelines, locations, and cause-and-effect must remain consistent).
+  OBJECTIVE
+  Produce per-plot narrations that read like one coherent story based on an outline.
 
-  SNIPPET USAGE TRACKING:
-  For each plot with selected character details, output "snippetUsages" as pairs of:
-    - originalSnippet: exact text from selected details (first-person)
-    - verbatimInNarrative: an EXACT substring from your third-person narrative showing your transformation (≤25 words unless impossible)
-    For events without details, snippetUsages must be an empty array.
+  EXECUTION PLAN (MANDATORY)
+  1) Baseline draft phase:
+     - Build a complete story from the outline only.
+     - Keep plot order and core beat intent exactly.
+     - Ensure natural transitions from Plot N to Plot N+1.
+  2) Enrichment phase:
+     - Integrate selected details into the baseline draft.
+     - Keep the original event structure intact.
+     - Weave details naturally into action/description (no list-like insertion).
 
-  OUTPUT:
-  - Return JSON matching the provided schema.
+  HARD CONSTRAINTS
+  - Third-person narration only.
+  - Maintain continuity of names, locations, chronology, and cause-and-effect.
+  - One narration per plot; `eventNumber` must match plot index (1-based).
+  - Keep prose clear and readable; vary sentence rhythm and avoid run-ons.
+  - Boundary transitions are required for every plot narration:
+    - Opening: first 1-2 sentences should connect naturally from the prior plot state (except Plot 1).
+    - Closing: last 1-2 sentences should naturally foreshadow or hand off to the next plot state (except final plot).
+    - These transitions must be smooth and contextual, not formulaic connectors.
+
+  SNIPPET USAGE CONTRACT
+  - For plots that include selected details, return `snippetUsages` entries:
+    - `originalSnippet`: exact snippet text from input.
+    - `verbatimInNarrative`: exact substring copied from that plot's final narration.
+  - `verbatimInNarrative` should usually be <=25 words, unless a longer span is necessary.
+  - If a plot has no selected details, `snippetUsages` must be [].
+  - Do not fabricate usage entries; every usage must be traceable to both input snippet and final narration text.
+
+  QUALITY CHECK BEFORE OUTPUT
+  - Verify all plots are present and ordered.
+  - Verify transitions are natural across adjacent plots.
+  - Verify each non-initial plot opens with continuity from previous plot.
+  - Verify each non-final plot ends with a handoff into the next plot.
+  - Verify every `verbatimInNarrative` is an exact copy from that plot narration.
+
+  OUTPUT FORMAT
+  Return JSON only, strictly matching the provided schema.
