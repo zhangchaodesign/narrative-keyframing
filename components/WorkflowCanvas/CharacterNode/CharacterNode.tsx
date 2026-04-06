@@ -147,6 +147,10 @@ export function CharacterNode({ id, data }: NodeProps<CharacterNodeType>) {
             node.type === "perspective"
           ) {
             const existingData = node.data as PerspectiveNodeType["data"];
+            const hasReflection = Boolean(existingData?.reflection?.trim());
+            if (!hasReflection) {
+              return node;
+            }
             return {
               ...node,
               data: {

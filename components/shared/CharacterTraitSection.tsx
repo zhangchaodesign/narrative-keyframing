@@ -423,7 +423,7 @@ export function TraitSection({
       <div className="mt-2 flex flex-col gap-2">
         {traits.map((trait, index) => (
           <TraitItem
-            key={`${category}-${index}`}
+            key={`${nodeId}-${category}-${trait}-${index}`}
             category={category}
             nodeId={nodeId}
             trait={trait}

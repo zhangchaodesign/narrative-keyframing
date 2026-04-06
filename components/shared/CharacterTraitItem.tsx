@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
   useState,
   type ChangeEvent,
@@ -49,6 +50,11 @@ export function TraitItem({
 }: TraitItemProps) {
   const isCharacterNodeVariant = sizeVariant === "character-node";
   const [draftValue, setDraftValue] = useState(trait);
+
+  // Keep local draft in sync when parent trait list changes (e.g. delete/reorder).
+  useEffect(() => {
+    setDraftValue(trait);
+  }, [trait]);
 
   const selectedEvidenceAttributes = useWorkflowStore(
     (state) => state.selectedEvidenceAttributes,

@@ -153,7 +153,8 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       narrator: "Alfred",
-      reflection: "",
+      reflection:
+        "The afternoon sun makes the dust in our sitting room spin like fairy motes, and I press my nose closer to the yellowed painting above the mantel. My eyes chase the winding stone walls, the banners flapping beside pointed rooftops. I imagine soft grass underfoot and the big iron gate creaking open just for me. With each heartbeat, the old castle pulls me in—closer and closer—until I’m not just little Alfred on the rug. I’m a brave knight with shiny armor (I pat my chest, pretending to clang), my sword ready, every hair tingling for adventure.\n\nMy toes twitch when I spot the painted shadows in the valley. In my mind, they stretch and shift—a hint of a dragon’s tail, a glint of gold eye. I hide behind a painted tree, breath quick and sharp, trying to spot a weakness. If I only had a shield! My Mother calls to tidy up, but I hardly hear her over the shouts of painted villagers. They need me. I press my hand to the rough frame and promise them: I’m coming. No beast will win while I’m their knight.",
       isLoading: false,
     },
     parentId: "perspective-group-alfred",
@@ -166,7 +167,8 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       narrator: "Alfred",
-      reflection: "",
+      reflection:
+        "Branches whipped my face as I crashed through the underbrush, breath rasping in my chest. Every heartbeat thudded against my ribs, urging me onward as the dragon’s shadow crossed the canopy overhead. My shirt snagged on thorns, the fabric tearing, but I barely felt it past the burning in my calves and the raw panic clawing at my mind.\n\nThe smoke stung my eyes, thick and acrid, drifting from the fields behind me—home, swallowed by fire. I gulped down another lungful of smoky air, nearly tripping on a root as I searched the tangled forest for any sign of shelter. Was anyone else left, or had I been the only one fast enough to run? I pressed on, desperate to find a hollow, a rock outcrop, anything. Each roar behind me seemed closer, promising that if I stopped, if I faltered, there would be nothing left. Yet through the terror, something flickered—if I could keep moving, if I could find cover, maybe there was a chance not just to hide, but to find some way to fight for what was left.",
       isLoading: false,
     },
     parentId: "perspective-group-alfred",
@@ -179,7 +181,8 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       narrator: "Alfred",
-      reflection: "",
+      reflection:
+        "The armor sat heavy on my shoulders as I buckled the last strap, its metal scent sharp in the chill light. Each plate whispered with the promise of pain and hope. I looked at my hands—knuckles split, blisters raw, nails rimmed with black where sword hilt met palm. Every moment training in these ruins, chasing the shape of my own fear, had carved me into something different. I was not born a knight, but now, with every swing, I held the future of the valley in my fists.\n\nWhen the castle guard offered their silent nods, trust sparked like flint striking stone. I remembered running—lungs burning, terror wild—yet here I was, standing my ground. The old sword felt right in my grip, its balance learned by bruises and stubborn will. I pictured scales and fire, and instead of retreat, I flexed my grip tighter, pushing terror aside. This is what I am for. To guard, to fight, to choose courage where fear had once reigned. Today, I would face the dragon, not as prey, but as protector.",
       isLoading: false,
     },
     parentId: "perspective-group-alfred",
@@ -192,7 +195,8 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       narrator: "Alfred",
-      reflection: "",
+      reflection:
+        "Steel clanged, sparks spit wild as my blade met dragon-scale. Armor weighed heavy, pressing sharp ridges into my burning shoulders. My breath rasped inside the helmet—thick with sweat, the taste of iron and smoke on my tongue. The dragon’s eyes blazed gold above me, every exhale a furnace, every claw-skid gouging stone. My hands—calloused, trembling—tightened on the hilt, knuckles splitting anew as I forced the sword’s tip beneath a wing, just as it reared.\n\nEvery instinct screamed to run, to flee the heat peeling paint from crumbling walls, but I drove forward, vision tunneling until nothing existed but sparks, blood, and the roar of its rage. Fear was everywhere, threading my ribs tight, yet I found the rhythm I’d earned in lonely hours—step, twist, strike—using the battered shield to turn aside the shredding jaws. One last lunge: blade sliding home beneath scales, the dragon’s cry shaking the stones. Then—silence, its shadow unmoving. Gasping, armor ringing hollow, I staggered upright. Dawn bled over the shattered keep. I stood atop broken stones, breathing hard, knowing the terror and the triumph shimmering together in my bones.",
       isLoading: false,
     },
     parentId: "perspective-group-alfred",
@@ -205,7 +209,8 @@ export const initialNodes: WorkflowNode[] = [
     draggable: false,
     data: {
       narrator: "Alfred",
-      reflection: "",
+      reflection:
+        "The first light of dawn glints off my battered breastplate, painting the castle stones gold and rose. My hands ache, fingers wrapped tight around the pommel of the sword that not long ago struck true against the dragon’s scales. My breath still clouds in the morning chill, but I lift my head high. The silence now feels different; it is a peace hard-won, layered over the memory of roars and flame. Villagers fill the ruined courtyard, eyes wide, voices hushed in awe I am not sure I deserve. I meet their gazes with a nod—no grand gestures, just the steady knowledge that I did what duty required. Wind stirs the banners where I stand. Smoke and blood cling faintly to my skin, but beneath it, I feel a strange warmth, pride edged with grateful relief. My legs want to fold with exhaustion, but I lock my knees and smile, because the kingdom needs a guardian who can endure—someone who sees through fear and stands when it matters most. Today, they call me a knight. But more important to me: today, the people are safe.",
       isLoading: false,
     },
     parentId: "perspective-group-alfred",
@@ -327,9 +332,9 @@ export const initialNodes: WorkflowNode[] = [
         physiology: [
           "Wears shining knight's armor",
           "Carries a gleaming sword",
+          "Calloused hands from intense training",
         ],
         psychology: [
-          "Determined to protect others",
           "Overcomes fear with courage",
           "Ready to fight for what is right",
         ],
@@ -339,6 +344,27 @@ export const initialNodes: WorkflowNode[] = [
         ],
       },
       perspectiveId: "perspective-alfred-3",
+    },
+    parentId: "perspective-group-alfred",
+    extent: "parent",
+  },
+  {
+    id: "character-alfred-4",
+    type: "character",
+    position: { x: 920, y: 280 },
+    draggable: false,
+    data: {
+      name: "Alfred",
+      traits: {
+        physiology: [
+          "Wears heavy armor",
+          "Calloused and trembling hands",
+          "Sweating from exertion",
+        ],
+        psychology: ["Fighting through fear"],
+        sociology: ["Knight facing a dragon", "Protector of the kingdom"],
+      },
+      perspectiveId: "perspective-alfred-4",
     },
     parentId: "perspective-group-alfred",
     extent: "parent",
@@ -669,6 +695,15 @@ export const initialEdges: WorkflowEdge[] = [
     id: "edge-character-alfred-3-perspective-alfred-3",
     source: "character-alfred-3",
     target: "perspective-alfred-3",
+    sourceHandle: "perspective",
+    targetHandle: "character",
+    type: "customEdge",
+    animated: true,
+  },
+  {
+    id: "edge-character-alfred-4-perspective-alfred-4",
+    source: "character-alfred-4",
+    target: "perspective-alfred-4",
     sourceHandle: "perspective",
     targetHandle: "character",
     type: "customEdge",
