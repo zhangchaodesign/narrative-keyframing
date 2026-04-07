@@ -85,19 +85,27 @@ function highlightNarrative(
       );
     }
 
-    const highlightClass = range.narrator
-      ? getCharacterColors(range.narrator).highlight
-      : "bg-green-200";
-
-    segments.push(
-      <mark
-        key={`segment-${index}-highlight`}
-        className={`rounded px-0.5 py-0.5 text-gray-900 ${highlightClass}`}
-        title={`Based on: "${range.originalSnippet}"${range.narrator ? ` (${range.narrator})` : ""}`}
-      >
-        {text.slice(range.start, range.end)}
-      </mark>,
-    );
+    if (range.narrator) {
+      const highlightClass = getCharacterColors(range.narrator).highlight;
+      segments.push(
+        <mark
+          key={`segment-${index}-highlight`}
+          className={`rounded px-0.5 py-0.5 text-gray-900 ${highlightClass}`}
+          title={`Based on: "${range.originalSnippet}" (${range.narrator})`}
+        >
+          {text.slice(range.start, range.end)}
+        </mark>,
+      );
+    } else {
+      segments.push(
+        <span
+          key={`segment-${index}-text-unmatched`}
+          title={`Based on: "${range.originalSnippet}"`}
+        >
+          {text.slice(range.start, range.end)}
+        </span>,
+      );
+    }
     cursor = range.end;
   });
 
