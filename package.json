@@ -1,7 +1,18 @@
 {
   "name": "narrative-keyframing",
   "version": "0.1.0",
+  "description": "A keyframe-based interface for controlling plot, character arcs, and perspective in generative creative writing.",
   "private": true,
+  "license": "MIT",
+  "author": "Chao Zhang",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhangchaodesign/narrative-keyframing.git"
+  },
+  "homepage": "https://github.com/zhangchaodesign/narrative-keyframing#readme",
+  "bugs": {
+    "url": "https://github.com/zhangchaodesign/narrative-keyframing/issues"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",

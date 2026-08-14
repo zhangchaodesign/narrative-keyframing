@@ -390,6 +390,39 @@
   backdrop-filter: blur(10px);
 }
 
+.video-sound-toggle {
+  position: absolute;
+  left: 28px;
+  bottom: 24px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  color: #fff8ec;
+  background: rgba(28, 21, 40, 0.72);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 750;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.video-sound-toggle:hover {
+  background: rgba(28, 21, 40, 0.9);
+  transform: translateY(-1px);
+}
+
+.video-sound-toggle:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+
 .video-title {
   position: absolute;
   right: 28px;

@@ -8,6 +8,7 @@ import {
   Github,
   Sparkles,
 } from "lucide-react";
+import { PreviewVideo } from "@/components/PreviewVideo";
 
 export const metadata: Metadata = {
   title: "Project · Narrative Keyframing",
@@ -82,23 +83,7 @@ export default function ProjectPage() {
         </header>
 
         <section className="project-preview" aria-label="Project preview">
-          <div className="video-placeholder">
-            <video
-              className="homepage-video"
-              src="/NarrativeKeyframing30s.mp4"
-              autoPlay
-              // muted
-              loop
-              playsInline
-              preload="metadata"
-              aria-label="Thirty-second preview of Narrative Keyframing"
-            />
-            <div className="video-paper-grain" aria-hidden="true" />
-            <span className="video-kicker">30-second preview</span>
-            <div className="video-title">
-              <small>Narrative Keyframing · UIST 2026</small>
-            </div>
-          </div>
+          <PreviewVideo />
         </section>
 
         <section

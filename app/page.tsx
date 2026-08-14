@@ -7,6 +7,7 @@ import {
   Github,
   Sparkles,
 } from "lucide-react";
+import { PreviewVideo } from "@/components/PreviewVideo";
 
 export default function HomePage() {
   return (
@@ -95,23 +96,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="video-placeholder">
-          <video
-            className="homepage-video"
-            src="/NarrativeKeyframing30s.mp4"
-            autoPlay
-            // muted
-            loop
-            playsInline
-            preload="metadata"
-            aria-label="Thirty-second preview of Narrative Keyframing"
-          />
-          <div className="video-paper-grain" aria-hidden="true" />
-          <span className="video-kicker">30-second preview</span>
-          <div className="video-title">
-            <small>Narrative Keyframing · UIST 2026</small>
-          </div>
-        </div>
+        <PreviewVideo />
       </section>
 
       <section className="entry-grid" aria-label="Explore Narrative Keyframing">
