@@ -87,7 +87,7 @@ export default function ProjectPage() {
               className="homepage-video"
               src="/NarrativeKeyframing30s.mp4"
               autoPlay
-              muted
+              // muted
               loop
               playsInline
               preload="metadata"

@@ -100,7 +100,7 @@ export default function HomePage() {
             className="homepage-video"
             src="/NarrativeKeyframing30s.mp4"
             autoPlay
-            muted
+            // muted
             loop
             playsInline
             preload="metadata"
