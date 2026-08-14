@@ -166,7 +166,7 @@ export default function ProjectPage() {
           </h2>
           <div className="project-media-frame project-demo-frame">
             <iframe
-              src="https://www.youtube.com/embed/QRTmqnHnT4s"
+              src="https://www.youtube.com/embed/as-Gz14iRLY"
               title="Full Narrative Keyframing demo video"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen

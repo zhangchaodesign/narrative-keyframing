@@ -22,47 +22,70 @@ export function ApiKeyEntryPanel() {
   return (
     <div className="landing-page tool-gate-page">
       <div className="tool-gate-card">
-        <h1 className="tool-gate-title">
-          <em>Welcome!</em>
-        </h1>
-        <p className="tool-gate-description">
-          Enter your OpenAI API key to start using the tool. It&apos;s stored
-          only in your browser and sent directly with your requests.
-        </p>
-
-        <div className="tool-gate-field">
-          <label className="tool-gate-label">OpenAI API Key</label>
-          <input
-            type="password"
-            value={keyInput}
-            onChange={(e) => setKeyInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleStart();
-            }}
-            placeholder="sk-..."
-            className="tool-gate-input"
-            autoFocus
-          />
-          <p className="tool-gate-hint">
-            Get a key from{" "}
-            <a
-              href="https://platform.openai.com/api-keys"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              platform.openai.com/api-keys
-            </a>
-            .
+        <div className="tool-gate-form">
+          <h1 className="tool-gate-title">
+            <em>Welcome!</em>
+          </h1>
+          <p className="tool-gate-description">
+            Enter your OpenAI API key to start using the tool. It&apos;s stored
+            only in your browser and sent directly with your requests.
           </p>
+
+          <div className="tool-gate-field">
+            <label className="tool-gate-label">OpenAI API Key</label>
+            <input
+              type="password"
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleStart();
+              }}
+              placeholder="sk-..."
+              className="tool-gate-input"
+              autoFocus
+            />
+            <p className="tool-gate-hint">
+              Get a key from{" "}
+              <a
+                href="https://platform.openai.com/api-keys"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                platform.openai.com/api-keys
+              </a>
+              .
+            </p>
+          </div>
+
+          <button
+            onClick={handleStart}
+            disabled={!canStart}
+            className="tool-gate-button"
+          >
+            Start
+          </button>
         </div>
 
-        <button
-          onClick={handleStart}
-          disabled={!canStart}
-          className="tool-gate-button"
+        <section
+          className="tool-gate-tutorial"
+          aria-labelledby="tutorial-title"
         >
-          Start
-        </button>
+          <div className="tool-gate-tutorial-heading">
+            <span>Tutorial</span>
+            <div>
+              <h2 id="tutorial-title">See Narrative Keyframing in action</h2>
+              <p>Watch the walkthrough to learn how to use the tool.</p>
+            </div>
+          </div>
+          <div className="tool-gate-video">
+            <iframe
+              src="https://www.youtube.com/embed/as-Gz14iRLY"
+              title="Narrative Keyframing tutorial"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          </div>
+        </section>
       </div>
     </div>
   );
