@@ -13,7 +13,6 @@ import {
   applyAnalysisResults,
 } from "@/lib/utiils/perspectiveUtils";
 import { cn } from "@/lib/utiils/sharedUtils";
-import { eventTracker } from "@/lib/utils";
 
 type PerspectiveActionsMenuProps = {
   targetNodeIds: string[];
@@ -103,15 +102,6 @@ export function PerspectiveActionsMenu({
           reflection: node.data?.reflection,
         }));
 
-      eventTracker({
-        action: "generate_perspectives",
-        data: {
-          perspectiveCount: uniqueTargetIds.length,
-          perspectives: perspectives,
-          customPrompt: prompt || "",
-        },
-      });
-
       try {
         setNodes((currentNodes) =>
           setPerspectivesLoading(currentNodes, targetIdSet, true),
@@ -157,18 +147,6 @@ export function PerspectiveActionsMenu({
       setIsAnalyzing(false);
       return;
     }
-
-    eventTracker({
-      action: "analyze_multiple_perspectives_evidence",
-      data: {
-        perspectiveCount: preparedTargets.length,
-        perspectives: preparedTargets.map((target) => ({
-          nodeId: target.nodeId,
-          characters: target.target.characters,
-          reflection: target.target.reflection,
-        })),
-      },
-    });
 
     try {
       setNodes((currentNodes) =>

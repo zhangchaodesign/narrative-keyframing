@@ -19,7 +19,6 @@ import type {
   CharacterNodeType,
   PerspectiveNodeType,
 } from "@/lib/types/workflow";
-import { eventTracker } from "@/lib/utils";
 
 type TraitCategory = keyof CharacterTraits;
 
@@ -131,19 +130,6 @@ export function TraitItem({
       event.stopPropagation();
       const willBeSelected = !isSelected;
 
-      eventTracker({
-        action: willBeSelected
-          ? "highlight_trait_evidence"
-          : "unhighlight_trait_evidence",
-        data: {
-          nodeId: nodeId,
-          characterName: characterName,
-          category: category,
-          traitValue: trait,
-          evidenceCount: evidenceCount,
-        },
-      });
-
       toggleEvidenceAttribute(nodeId, trait);
     },
     [
@@ -170,18 +156,7 @@ export function TraitItem({
   );
 
   const handleFocus = useCallback(
-    (_event: FocusEvent<HTMLInputElement>) => {
-      eventTracker({
-        action: "trait_input_active",
-        data: {
-          nodeId: nodeId,
-          characterName: characterName,
-          category: category,
-          traitValue: draftValue,
-          evidenceCount: evidenceCount,
-        },
-      });
-    },
+    (_event: FocusEvent<HTMLInputElement>) => {},
     [nodeId, characterName, category, draftValue, evidenceCount],
   );
 
@@ -191,17 +166,6 @@ export function TraitItem({
       if (!trimmed) {
         setDraftValue(trait);
       }
-
-      eventTracker({
-        action: "trait_input_not_active",
-        data: {
-          nodeId: nodeId,
-          characterName: characterName,
-          category: category,
-          traitValue: trimmed || trait,
-          evidenceCount: evidenceCount,
-        },
-      });
     },
     [nodeId, characterName, category, trait, evidenceCount],
   );

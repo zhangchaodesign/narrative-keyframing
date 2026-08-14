@@ -13,7 +13,6 @@ import {
 } from "@/lib/utiils/characterUtils";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { deleteNodeWithEdges } from "@/lib/utiils/workflowUtils";
-import { eventTracker } from "@/lib/utils";
 
 type CharacterRefreshMenuProps = {
   nodeId: string;
@@ -90,18 +89,6 @@ export function CharacterRefreshMenu({
       return;
     }
 
-    eventTracker({
-      action: "refresh_character_snapshot",
-      data: {
-        characterId: nodeId,
-        characterName: characterNode?.data?.name,
-        characterTraits: characterNode?.data?.traits,
-        perspectiveId: characterNode?.data?.perspectiveId,
-        perspectiveNarrator: perspectiveNode?.data?.narrator,
-        perspectiveReflection: perspectiveNode?.data?.reflection,
-      },
-    });
-
     updateRefreshingState(true);
     try {
       await refreshCharacterSnapshotFromPerspective({
@@ -116,25 +103,8 @@ export function CharacterRefreshMenu({
           node.id === nodeId && node.type === "character",
       );
 
-      eventTracker({
-        action: "refresh_character_snapshot_success",
-        data: {
-          characterId: nodeId,
-          characterName: updatedCharacter?.data?.name,
-          updatedCharacterTraits: updatedCharacter?.data?.traits,
-          perspectiveId: updatedCharacter?.data?.perspectiveId,
-        },
-      });
     } catch (error) {
       console.error("Error refreshing character keyframe:", error);
-      eventTracker({
-        action: "refresh_character_snapshot_error",
-        data: {
-          characterId: nodeId,
-          characterName: characterNode?.data?.name,
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-      });
     } finally {
       updateRefreshingState(false);
     }
@@ -153,17 +123,6 @@ export function CharacterRefreshMenu({
   const ariaLabel = hasPerspectiveLink ? ariaLabelLinked : ariaLabelUnlinked;
 
   const handleDelete = useCallback(() => {
-    eventTracker({
-      action: "delete_character",
-      data: {
-        characterId: nodeId,
-        characterName: characterNode?.data?.name,
-        characterTraits: characterNode?.data?.traits,
-        perspectiveId: characterNode?.data?.perspectiveId,
-        perspectiveNarrator: perspectiveNode?.data?.narrator,
-        perspectiveReflection: perspectiveNode?.data?.reflection,
-      },
-    });
     const result = deleteNodeWithEdges(nodeId, nodes, edges);
     setNodes(result.nodes);
     setEdges(result.edges);

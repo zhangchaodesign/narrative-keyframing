@@ -10,7 +10,6 @@ import type {
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
-import { eventTracker } from "@/lib/utils";
 
 export function EventNode({ id, data }: NodeProps<EventNodeType>) {
   const { setNodes } = useReactFlow<WorkflowNode, WorkflowEdge>();
@@ -37,30 +36,12 @@ export function EventNode({ id, data }: NodeProps<EventNodeType>) {
   );
 
   const handleFocus = useCallback(
-    (_event: FocusEvent<HTMLTextAreaElement>) => {
-      eventTracker({
-        action: "event_input_active",
-        data: {
-          eventNodeId: id,
-          timeline: data?.timeline ?? "",
-          description: data?.description ?? "",
-        },
-      });
-    },
+    (_event: FocusEvent<HTMLTextAreaElement>) => {},
     [id, data?.timeline, data?.description],
   );
 
   const handleBlur = useCallback(
-    (event: FocusEvent<HTMLTextAreaElement>) => {
-      eventTracker({
-        action: "event_input_not_active",
-        data: {
-          eventNodeId: id,
-          timeline: data?.timeline ?? "",
-          description: event.target.value ?? "",
-        },
-      });
-    },
+    (event: FocusEvent<HTMLTextAreaElement>) => {},
     [id, data?.timeline],
   );
 

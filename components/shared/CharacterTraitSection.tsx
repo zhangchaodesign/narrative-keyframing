@@ -18,7 +18,6 @@ import {
   brainstormCharacterTraits,
   type CharacterBrainstormContext,
 } from "@/lib/utiils/characterUtils";
-import { eventTracker } from "@/lib/utils";
 
 type TraitCategory = keyof CharacterTraits;
 
@@ -97,16 +96,6 @@ export function TraitSection({
     const trimmed = draftValue.trim();
     if (!trimmed) return;
 
-    eventTracker({
-      action: "add_character_trait",
-      data: {
-        nodeId: nodeId,
-        characterName: characterName,
-        category: category,
-        traitValue: trimmed,
-      },
-    });
-
     onUpdateNodeData((currentTraits, currentName, currentPerspectiveId) => ({
       name: currentName,
       traits: {
@@ -127,16 +116,6 @@ export function TraitSection({
     (index: number) => {
       const traitValue = traits[index];
       if (traitValue) {
-        eventTracker({
-          action: "remove_character_trait",
-          data: {
-            nodeId: nodeId,
-            characterName: characterName,
-            category: category,
-            traitValue: traitValue,
-            index: index,
-          },
-        });
         clearEvidenceAttribute(nodeId, traitValue);
       }
 
@@ -180,18 +159,6 @@ export function TraitSection({
 
         const previousValue = categoryTraits[index];
 
-        eventTracker({
-          action: "update_character_trait",
-          data: {
-            nodeId: nodeId,
-            characterName: characterName,
-            category: category,
-            index: index,
-            oldValue: previousValue,
-            newValue: trimmed,
-          },
-        });
-
         if (previousValue) {
           clearEvidenceAttribute(nodeId, previousValue);
         }
@@ -218,18 +185,6 @@ export function TraitSection({
 
     const normalizeTrait = (value: string) => value.trim().toLowerCase();
 
-    eventTracker({
-      action: "brainstorm_character_traits_start",
-      data: {
-        nodeId: nodeId,
-        characterName: characterName,
-        category: category,
-        existingTraits: traits,
-        baselineStory: brainstormContext.baselineStoryText,
-        baselineAct: brainstormContext.baselineActText,
-      },
-    });
-
     setIsBrainstorming(true);
     try {
       const suggestions = await brainstormCharacterTraits({
@@ -239,15 +194,6 @@ export function TraitSection({
       });
 
       if (suggestions.length === 0) {
-        eventTracker({
-          action: "brainstorm_character_traits_no_suggestions",
-          data: {
-            nodeId: nodeId,
-            characterName: characterName,
-            category: category,
-            existingTraits: traits,
-          },
-        });
         return;
       }
 
@@ -264,18 +210,6 @@ export function TraitSection({
         if (!normalized.has(key)) {
           newSuggestions.push(cleaned);
         }
-      });
-
-      eventTracker({
-        action: "brainstorm_character_traits_success",
-        data: {
-          nodeId: nodeId,
-          characterName: characterName,
-          category: category,
-          existingTraits: traits,
-          suggestions: suggestions,
-          newSuggestions: newSuggestions,
-        },
       });
 
       onUpdateNodeData((currentTraits, currentName, currentPerspectiveId) => {
@@ -307,16 +241,6 @@ export function TraitSection({
       });
     } catch (error) {
       console.error("Error brainstorming traits:", error);
-      eventTracker({
-        action: "brainstorm_character_traits_error",
-        data: {
-          nodeId: nodeId,
-          characterName: characterName,
-          category: category,
-          existingTraits: traits,
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-      });
     } finally {
       setIsBrainstorming(false);
     }
@@ -338,16 +262,7 @@ export function TraitSection({
   }, [isAddingNew]);
 
   const handleAddInputFocus = useCallback(
-    (_event: FocusEvent<HTMLInputElement>) => {
-      eventTracker({
-        action: "add_trait_input_active",
-        data: {
-          nodeId: nodeId,
-          characterName: characterName,
-          category: category,
-        },
-      });
-    },
+    (_event: FocusEvent<HTMLInputElement>) => {},
     [nodeId, characterName, category],
   );
 
@@ -357,16 +272,6 @@ export function TraitSection({
       if (trimmed) {
         handleAddTrait();
       }
-
-      eventTracker({
-        action: "add_trait_input_not_active",
-        data: {
-          nodeId: nodeId,
-          characterName: characterName,
-          category: category,
-          traitValue: trimmed,
-        },
-      });
     },
     [nodeId, characterName, category, handleAddTrait],
   );

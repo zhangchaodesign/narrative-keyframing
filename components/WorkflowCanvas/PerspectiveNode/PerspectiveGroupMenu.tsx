@@ -16,7 +16,6 @@ import {
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { PerspectiveActionsMenu } from "@/components/shared/PerspectiveActionsMenu";
 import { ZoomInvariantWrapper } from "@/components/WorkflowCanvas/ZoomInvariantWrapper";
-import { eventTracker } from "@/lib/utils";
 import type { PerspectiveGroupNodeType } from "@/lib/types/workflow";
 
 type PerspectiveGroupMenuProps = {
@@ -48,31 +47,6 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
       (node) => node.type === "character",
     );
 
-    eventTracker({
-      action: "delete_perspective_cluster",
-      data: {
-        clusterLabel: groupNode?.data?.label || "Untitled",
-        characterName: groupNode?.data?.characterName || "",
-        totalNodes: childNodes.length,
-        perspectiveCount: perspectiveNodes.length,
-        characterCount: characterNodes.length,
-        nodeTypes: childNodes.reduce(
-          (acc, node) => {
-            const type = node.type || "unknown";
-            acc[type] = (acc[type] || 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>,
-        ),
-        childrenData: childNodes.map((node) => ({
-          id: node.id,
-          type: node.type,
-          data: node.data,
-          position: node.position,
-        })),
-      },
-    });
-
     const result = deleteNodeCluster(nodeId, nodes, edges);
 
     setNodes(result.nodes);
@@ -100,30 +74,6 @@ export function PerspectiveGroupMenu({ nodeId }: PerspectiveGroupMenuProps) {
       (node) => node.type === "character",
     );
 
-    eventTracker({
-      action: "duplicate_perspective_cluster",
-      data: {
-        clusterLabel: groupNode.data?.label || "Untitled",
-        characterName: groupNode.data?.characterName || "",
-        totalNodes: childNodes.length,
-        perspectiveCount: perspectiveNodes.length,
-        characterCount: characterNodes.length,
-        nodeTypes: childNodes.reduce(
-          (acc, node) => {
-            const type = node.type || "unknown";
-            acc[type] = (acc[type] || 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>,
-        ),
-        childrenData: childNodes.map((node) => ({
-          id: node.id,
-          type: node.type,
-          data: node.data,
-          position: node.position,
-        })),
-      },
-    });
     const clusterNodeIds = new Set<string>([
       nodeId,
       ...childNodes.map((n) => n.id),

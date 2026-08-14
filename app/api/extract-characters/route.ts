@@ -1,8 +1,8 @@
 "use server";
 
 import { NextResponse } from "next/server";
-import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
+import { getOpenAiProvider } from "@/lib/openaiServer";
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
@@ -72,6 +72,14 @@ const renderPromptTemplate = (
 
 export async function POST(request: Request) {
   try {
+    const openaiProvider = getOpenAiProvider(request);
+    if (!openaiProvider) {
+      return NextResponse.json(
+        { error: "Missing OpenAI API key" },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json();
     const parsed = RequestSchema.safeParse(body);
 
@@ -92,7 +100,7 @@ export async function POST(request: Request) {
     const prompt = renderPromptTemplate(template, { eventsSection });
 
     const result = await generateObject({
-      model: openai("gpt-4.1"),
+      model: openaiProvider("gpt-4.1"),
       schema: ResponseSchema,
       prompt,
       temperature: 0.3,

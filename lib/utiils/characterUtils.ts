@@ -9,6 +9,7 @@ import type {
   WorkflowNode,
 } from "@/lib/types/workflow";
 import { getNodeByIndex } from "@/lib/utiils/workflowUtils";
+import { getOpenAiApiKeyHeader } from "@/lib/openaiClientHeaders";
 
 export type TraitCategory = keyof CharacterTraits;
 
@@ -463,7 +464,10 @@ export async function brainstormCharacterTraits({
 
   const response = await fetch(endpointMap[category], {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...getOpenAiApiKeyHeader(),
+    },
     body: JSON.stringify({
       baseline_story_text: context.baselineStoryText,
       baseline_act_text: context.baselineActText,
@@ -514,7 +518,10 @@ export async function interpolateCharacterSnapshot(
 
   const response = await fetch("/api/interpolate-character", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...getOpenAiApiKeyHeader(),
+    },
     body: JSON.stringify({
       perspectiveText,
       fullPerspectiveText,

@@ -4,7 +4,6 @@ import { useCallback } from "react";
 import { TbEraser } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { cn } from "@/lib/utiils/sharedUtils";
-import { eventTracker } from "@/lib/utils";
 
 type EventActionsMenuProps = {
   eventGroupId: string;
@@ -26,14 +25,6 @@ export function EventActionsMenu({
     const childEvents = nodes.filter(
       (node) => node.parentId === eventGroupId && node.type === "event",
     );
-
-    eventTracker({
-      action: "clear_event_cluster",
-      data: {
-        nodeId: eventGroupId,
-        eventCount: childEvents.length,
-      },
-    });
 
     setNodes((prev) =>
       prev.map((node) => {

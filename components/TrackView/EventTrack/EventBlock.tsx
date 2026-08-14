@@ -14,7 +14,6 @@ import { geistMono } from "@/app/fonts";
 import type { TimelineItem } from "@/lib/types/timeline";
 import { TIMELINE_LABEL_WIDTH } from "@/components/TrackView/constants";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
-import { eventTracker } from "@/lib/utils";
 
 interface EventBlockProps {
   item: TimelineItem;
@@ -74,14 +73,6 @@ export function EventBlock({
   const handleFocus = useCallback(
     (_event: FocusEvent<HTMLTextAreaElement>) => {
       isFocusedRef.current = true;
-      eventTracker({
-        action: "event_input_active",
-        data: {
-          eventNodeId: item.nodeId,
-          actLabel: `Plot ${item.position + 1}`,
-          content: draftContent,
-        },
-      });
     },
     [item.nodeId, item.position, draftContent],
   );
@@ -89,14 +80,6 @@ export function EventBlock({
   const handleBlur = useCallback(
     (event: FocusEvent<HTMLTextAreaElement>) => {
       isFocusedRef.current = false;
-      eventTracker({
-        action: "event_input_not_active",
-        data: {
-          eventNodeId: item.nodeId,
-          actLabel: `Plot ${item.position + 1}`,
-          content: event.target.value ?? "",
-        },
-      });
     },
     [item.nodeId, item.position],
   );

@@ -1,5 +1,4 @@
 import { TbPlus, TbChevronDown } from "react-icons/tb";
-import { eventTracker } from "@/lib/utils";
 
 interface WorkflowCanvasMenuProps {
   eventCount: number;
@@ -11,10 +10,6 @@ export function WorkflowCanvasMenu({
   onAddStoryOutlineCluster,
 }: WorkflowCanvasMenuProps) {
   const handleAddCluster = () => {
-    eventTracker({
-      action: "add_story_cluster",
-      data: { eventCount },
-    });
     onAddStoryOutlineCluster(eventCount);
   };
 

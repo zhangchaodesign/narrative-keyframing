@@ -12,7 +12,6 @@ import {
 } from "@/lib/utiils/perspectiveUtils";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { TbPencil, TbCheck } from "react-icons/tb";
-import { eventTracker } from "@/lib/utils";
 
 type PerspectiveSingleActionsMenuProps = {
   nodeId: string;
@@ -53,13 +52,6 @@ export function PerspectiveSingleActionsMenu({
   const perspectiveData = perspectiveNode?.data;
 
   const handleToggleEdit = useCallback(() => {
-    eventTracker({
-      action: isEditing ? "save_perspective_edit" : "start_perspective_edit",
-      data: {
-        narrator: perspectiveData?.narrator,
-        reflection: perspectiveData?.reflection,
-      },
-    });
     onToggleEdit?.();
   }, [isEditing, onToggleEdit, perspectiveData]);
 
@@ -103,15 +95,6 @@ export function PerspectiveSingleActionsMenu({
     if (isAnalyzingEvidence) {
       return;
     }
-
-    eventTracker({
-      action: "analyze_single_perspective_evidence",
-      data: {
-        narrator: perspectiveData?.narrator,
-        reflection: perspectiveData?.reflection,
-        analysisStatus: perspectiveData?.analysisStatus,
-      },
-    });
 
     updateAnalysisState({
       isAnalyzingEvidence: true,
@@ -188,16 +171,6 @@ export function PerspectiveSingleActionsMenu({
       if (isRegenerating || isEditing || !hasCharacterConnection) {
         return;
       }
-
-      eventTracker({
-        action: "regenerate_single_perspective",
-        data: {
-          perspectiveId: nodeId,
-          narrator: perspectiveData?.narrator,
-          reflection: perspectiveData?.reflection,
-          customPrompt: prompt || "",
-        },
-      });
 
       setNodes((currentNodes) =>
         currentNodes.map((node) => {

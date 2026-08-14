@@ -1,4 +1,17 @@
-import { Geist, Geist_Mono, Noto_Serif, Noto_Sans } from "next/font/google";
+import {
+  Caveat,
+  Geist,
+  Geist_Mono,
+  Noto_Serif,
+  Noto_Sans,
+} from "next/font/google";
+
+export const caveat = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin"],
+  display: "swap",
+  weight: "variable",
+});
 
 export const geistSans = Geist({
   variable: "--font-geist-sans",

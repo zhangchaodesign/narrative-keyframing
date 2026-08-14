@@ -7,7 +7,6 @@ import { deleteNodeCluster } from "@/lib/utiils/workflowUtils";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { NarrativeActionsMenu } from "@/components/shared/NarrativeActionsMenu";
 import { ZoomInvariantWrapper } from "@/components/WorkflowCanvas/ZoomInvariantWrapper";
-import { eventTracker } from "@/lib/utils";
 import type { NarrationGroupNodeType } from "@/lib/types/workflow";
 
 type NarrativeGroupMenuProps = {
@@ -34,30 +33,6 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
       (node) => node.type === "narrative",
     );
 
-    eventTracker({
-      action: "delete_narrative_cluster",
-      data: {
-        clusterLabel: groupNode?.data?.label || "Untitled",
-        narrativeGroupNumber: groupNode?.data?.narrativeGroupId || 0,
-        totalNodes: childNodes.length,
-        narrativeCount: narrativeNodes.length,
-        nodeTypes: childNodes.reduce(
-          (acc, node) => {
-            const type = node.type || "unknown";
-            acc[type] = (acc[type] || 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>,
-        ),
-        childrenData: childNodes.map((node) => ({
-          id: node.id,
-          type: node.type,
-          data: node.data,
-          position: node.position,
-        })),
-      },
-    });
-
     const result = deleteNodeCluster(nodeId, nodes, edges);
 
     setNodes(result.nodes);
@@ -74,30 +49,6 @@ export function NarrativeGroupMenu({ nodeId }: NarrativeGroupMenuProps) {
     const narrativeNodes = childNodes.filter(
       (node) => node.type === "narrative",
     );
-
-    eventTracker({
-      action: "duplicate_narrative_cluster",
-      data: {
-        clusterLabel: groupNode?.data?.label || "Untitled",
-        narrativeGroupNumber: groupNode?.data?.narrativeGroupId || 0,
-        totalNodes: childNodes.length,
-        narrativeCount: narrativeNodes.length,
-        nodeTypes: childNodes.reduce(
-          (acc, node) => {
-            const type = node.type || "unknown";
-            acc[type] = (acc[type] || 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>,
-        ),
-        childrenData: childNodes.map((node) => ({
-          id: node.id,
-          type: node.type,
-          data: node.data,
-          position: node.position,
-        })),
-      },
-    });
 
     duplicateNarrativeGroup(nodeId);
   }, [duplicateNarrativeGroup, nodeId, nodes]);

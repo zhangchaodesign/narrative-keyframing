@@ -31,7 +31,6 @@ import {
   refreshCharacterSnapshotFromPerspective,
   type WorkflowNodesSetter,
 } from "@/lib/utiils/characterUtils";
-import { eventTracker } from "@/lib/utils";
 
 interface CharacterBlockProps {
   item: TimelineItem;
@@ -270,15 +269,6 @@ export function CharacterBlock({
   }, [areAllTraitsSelected, handleDeselectAllTraits, handleSelectAllTraits]);
 
   const handleDismissUpdatePrompt = useCallback(() => {
-    eventTracker({
-      action: "dismiss_character_update_prompt",
-      data: {
-        characterId: item.nodeId,
-        characterName: characterData?.name,
-        characterTraits: characterData?.traits,
-      },
-    });
-
     setNodes((nodesState) =>
       nodesState.map((node) => {
         if (node.id !== item.nodeId || node.type !== "character") {
@@ -300,16 +290,6 @@ export function CharacterBlock({
     if (characterData?.isRefreshing) {
       return;
     }
-
-    eventTracker({
-      action: "confirm_character_update_prompt",
-      data: {
-        characterId: item.nodeId,
-        characterName: characterData?.name,
-        characterTraits: characterData?.traits,
-        perspectiveId: characterData?.perspectiveId,
-      },
-    });
 
     setNodes((nodesState) =>
       nodesState.map((node) => {
@@ -339,26 +319,8 @@ export function CharacterBlock({
         (node): node is CharacterNodeType =>
           node.id === item.nodeId && node.type === "character",
       );
-
-      eventTracker({
-        action: "confirm_character_update_prompt_success",
-        data: {
-          characterId: item.nodeId,
-          characterName: updatedNode?.data?.name,
-          updatedCharacterTraits: updatedNode?.data?.traits,
-          perspectiveId: updatedNode?.data?.perspectiveId,
-        },
-      });
     } catch (error) {
       console.error("Error refreshing character keyframe:", error);
-      eventTracker({
-        action: "confirm_character_update_prompt_error",
-        data: {
-          characterId: item.nodeId,
-          characterName: characterData?.name,
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-      });
     } finally {
       setNodes((nodesState) =>
         nodesState.map((node) => {

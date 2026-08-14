@@ -21,7 +21,6 @@ import type {
 import { cn } from "@/lib/utiils/sharedUtils";
 import { getCharacterColors } from "@/components/shared/colors.constants";
 import { geistMono } from "@/app/fonts";
-import { eventTracker } from "@/lib/utils";
 
 const zoomSelector = (s: any) => s.transform[2] >= 0.9;
 
@@ -93,30 +92,12 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   );
 
   const handleNarratorInputFocus = useCallback(
-    (_event: FocusEvent<HTMLInputElement>) => {
-      eventTracker({
-        action: "narrator_input_active",
-        data: {
-          clusterLabel: data?.label || "Character Arc",
-          narratorName: data?.characterName ?? "",
-          perspectiveGroupId: id,
-        },
-      });
-    },
+    (_event: FocusEvent<HTMLInputElement>) => {},
     [data?.characterName, data?.label, id],
   );
 
   const handleNarratorInputBlur = useCallback(
-    (event: FocusEvent<HTMLInputElement>) => {
-      eventTracker({
-        action: "narrator_input_not_active",
-        data: {
-          clusterLabel: data?.label || "Character Arc",
-          narratorName: event.target.value ?? "",
-          perspectiveGroupId: id,
-        },
-      });
-    },
+    (event: FocusEvent<HTMLInputElement>) => {},
     [data?.label, id],
   );
 
@@ -151,29 +132,6 @@ export function PerspectiveGroupNode({ id, data }: NodeProps<GroupNodeType>) {
     if (!createdGroupNode) {
       return;
     }
-
-    eventTracker({
-      action: "add_narrative_group",
-      data: {
-        perspectiveClusterLabel: data?.label || "Character Arc",
-        characterName: data?.characterName || "",
-        eventGroupId: eventGroupId || null,
-        nodesCreated: result.nodes.length,
-        edgesCreated: result.edges.length,
-        createdNodes: result.nodes.map((node) => ({
-          id: node.id,
-          type: node.type,
-          data: node.data,
-          position: node.position,
-        })),
-        createdEdges: result.edges.map((edge) => ({
-          id: edge.id,
-          source: edge.source,
-          target: edge.target,
-          data: edge.data,
-        })),
-      },
-    });
 
     const perspectiveGroup = currentNodes.find(
       (node) => node.id === id && node.type === "perspectiveGroup",

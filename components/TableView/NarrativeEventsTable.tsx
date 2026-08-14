@@ -5,7 +5,6 @@ import { TbRefresh } from "react-icons/tb";
 import { geistMono } from "@/app/fonts";
 import { getCharacterColors } from "@/components/shared/colors.constants";
 import { cn, findTextMatches } from "@/lib/utiils/sharedUtils";
-import { eventTracker } from "@/lib/utils";
 import type { SelectedSnippet } from "@/lib/stores/workflowStore";
 import type { EventData, NarrativeSnippet, SnippetUsage } from "@/types/table";
 
@@ -174,19 +173,6 @@ function highlightReflection({
             characterName: snippet.characterName,
             attributes: snippet.attributes,
           };
-
-          eventTracker({
-            action: isSelected
-              ? "deselect_narrative_table_snippet"
-              : "select_narrative_table_snippet",
-            data: {
-              perspectiveNodeId: snippet.perspectiveNodeId,
-              characterId: snippet.characterId,
-              characterName: snippet.characterName ?? null,
-              snippetText: snippet.text,
-              attributes: snippet.attributes,
-            },
-          });
 
           toggleSnippet(snippetData);
 

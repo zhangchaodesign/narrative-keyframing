@@ -6,6 +6,7 @@ import {
   type PerspectiveEvidenceTarget,
   type PerspectivePreparationResult,
 } from "@/lib/types/perspective";
+import { getOpenAiApiKeyHeader } from "@/lib/openaiClientHeaders";
 
 const NEED_REFLECTION_MESSAGE = "Add a perspective to analyze evidence.";
 const ANALYZING_EVIDENCE_MESSAGE = "Analyzing evidence...";
@@ -91,6 +92,7 @@ export async function analyzeSinglePerspectiveEvidence(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...getOpenAiApiKeyHeader(),
       },
       body: JSON.stringify(target),
     });
@@ -164,6 +166,7 @@ export async function analyzeMultiplePerspectivesEvidence(
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            ...getOpenAiApiKeyHeader(),
           },
           body: JSON.stringify(target),
         });
@@ -236,6 +239,7 @@ export async function generateMultiplePerspectives(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...getOpenAiApiKeyHeader(),
         },
         body: JSON.stringify({
           eventSequence,
@@ -302,6 +306,7 @@ export async function regenerateSinglePerspective({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...getOpenAiApiKeyHeader(),
     },
     body: JSON.stringify({
       eventSequence: preparation.eventSequence,

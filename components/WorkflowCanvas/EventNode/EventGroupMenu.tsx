@@ -17,7 +17,6 @@ import {
 } from "@/lib/utiils/workflowUtils";
 import { ZoomInvariantWrapper } from "@/components/WorkflowCanvas/ZoomInvariantWrapper";
 import { EventActionsMenu } from "@/components/shared/EventActionsMenu";
-import { eventTracker } from "@/lib/utils";
 
 type EventGroupMenuProps = {
   nodeId: string;
@@ -42,22 +41,6 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
 
     const childNodes = nodes.filter((node) => node.parentId === nodeId);
     const eventNodes = childNodes.filter((node) => node.type === "event");
-
-    eventTracker({
-      action: "delete_event_cluster",
-      data: {
-        clusterLabel: groupNode?.data?.label || "Untitled",
-        eventGroupNumber: groupNode?.data?.eventGroupId || 0,
-        totalNodes: childNodes.length,
-        eventCount: eventNodes.length,
-        childrenData: childNodes.map((node) => ({
-          id: node.id,
-          type: node.type,
-          data: node.data,
-          position: node.position,
-        })),
-      },
-    });
 
     const result = deleteNodeCluster(nodeId, nodes, edges);
 
@@ -90,21 +73,6 @@ export function EventGroupMenu({ nodeId }: EventGroupMenuProps) {
     const childNodes = currentNodes.filter((node) => node.parentId === nodeId);
     const eventNodes = childNodes.filter((node) => node.type === "event");
 
-    eventTracker({
-      action: "duplicate_event_cluster",
-      data: {
-        clusterLabel: groupNode.data?.label || "Untitled",
-        eventGroupNumber: groupNode.data?.eventGroupId || 0,
-        totalNodes: childNodes.length,
-        eventCount: eventNodes.length,
-        childrenData: childNodes.map((node) => ({
-          id: node.id,
-          type: node.type,
-          data: node.data,
-          position: node.position,
-        })),
-      },
-    });
     const clusterNodeIds = new Set<string>([
       nodeId,
       ...childNodes.map((n) => n.id),

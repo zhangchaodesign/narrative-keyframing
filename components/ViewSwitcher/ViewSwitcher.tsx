@@ -3,7 +3,6 @@
 import { cn } from "@/lib/utiils/sharedUtils";
 import { TbLayoutGrid, TbTable, TbTimeline } from "react-icons/tb";
 import type { ViewMode as UiViewMode } from "@/lib/stores/uiStore";
-import { eventTracker } from "@/lib/utils";
 
 export type ViewMode = UiViewMode;
 
@@ -23,13 +22,6 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
   };
 
   const handleViewChange = (view: ViewMode) => {
-    eventTracker({
-      action: "switch_view",
-      data: {
-        from: getViewDisplayName(currentView),
-        to: getViewDisplayName(view),
-      },
-    });
     onViewChange(view);
   };
 

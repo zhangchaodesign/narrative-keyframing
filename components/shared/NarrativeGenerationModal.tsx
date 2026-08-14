@@ -6,7 +6,6 @@ import { TbX } from "react-icons/tb";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { SelectedSnippet } from "@/lib/stores/workflowStore";
 import { getCharacterColors } from "@/components/shared/colors.constants";
-import { eventTracker } from "@/lib/utils";
 
 type EventData = {
   narrativeNodeId: string;
@@ -138,19 +137,6 @@ export function NarrativeGenerationModal({
     const key = `${perspectiveNodeId}::${snippetText}`;
     const isCurrentlySelected = selectedSnippetKeys.has(key);
 
-    eventTracker({
-      action: isCurrentlySelected
-        ? "deselect_narrative_generation_snippet"
-        : "select_narrative_generation_snippet",
-      data: {
-        perspectiveNodeId: snippet.perspectiveNodeId,
-        characterId: snippet.characterId,
-        characterName: snippet.characterName ?? null,
-        snippetText: snippet.text,
-        attributes: snippet.attributes ?? [],
-      },
-    });
-
     // Update local state
     setSelectedSnippetKeys((prev) => {
       const next = new Set(prev);
@@ -190,35 +176,14 @@ export function NarrativeGenerationModal({
         allSnippetKeys.add(`${snippet.perspectiveNodeId}::${snippet.text}`);
       });
     });
-    eventTracker({
-      action: "select_all_snippets",
-      data: {
-        count: allSnippetKeys.size,
-        eventCount: eventsData.length,
-        allSnippet: Array.from(allSnippetKeys),
-      },
-    });
     setSelectedSnippetKeys(allSnippetKeys);
   };
 
   const handleDeselectAll = () => {
-    eventTracker({
-      action: "deselect_all_snippets",
-      data: {
-        previouslySelectedCount: selectedSnippetKeys.size,
-      },
-    });
     setSelectedSnippetKeys(new Set());
   };
 
   const handleTabChange = (characterKey: string) => {
-    eventTracker({
-      action: "switch_narrative_generation_character_tab",
-      data: {
-        fromCharacter: activeCharacterKey || null,
-        toCharacter: characterKey,
-      },
-    });
     setActiveCharacterKey(characterKey);
   };
 
@@ -232,14 +197,6 @@ export function NarrativeGenerationModal({
   const handleCloseWithTracking = (
     source: "close_button" | "cancel_button",
   ) => {
-    eventTracker({
-      action: "close_narrative_generation_modal",
-      data: {
-        source: source,
-        selectedSnippetCount: selectedSnippetKeys.size,
-        customPromptLength: customPrompt.length,
-      },
-    });
     onClose();
   };
 

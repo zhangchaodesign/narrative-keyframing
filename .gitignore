@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# large media hosted externally (exceeds GitHub's 100MB limit)
+/public/NarrativeKeyframingDemo.mp4
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

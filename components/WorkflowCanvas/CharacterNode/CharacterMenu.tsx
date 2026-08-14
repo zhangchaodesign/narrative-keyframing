@@ -6,7 +6,6 @@ import { TbCopy } from "react-icons/tb";
 import { duplicateWorkflowNode } from "@/lib/utiils/workflowUtils";
 import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import { CharacterRefreshMenu } from "@/components/shared/CharacterActionsMenu";
-import { eventTracker } from "@/lib/utils";
 import type { CharacterNodeType } from "@/lib/types/workflow";
 
 export function CharacterMenu({ nodeId }: { nodeId: string }) {
@@ -25,24 +24,6 @@ export function CharacterMenu({ nodeId }: { nodeId: string }) {
           node.id === original.data?.perspectiveId &&
           node.type === "perspective",
       );
-
-      eventTracker({
-        action: "duplicate_character",
-        data: {
-          originalCharacterId: original.id,
-          characterName: original.data?.name || "Unnamed",
-          characterTraits: original.data?.traits,
-          perspectiveId: original.data?.perspectiveId,
-          perspectiveNarrator:
-            perspectiveNode?.type === "perspective"
-              ? perspectiveNode.data?.narrator
-              : undefined,
-          perspectiveReflection:
-            perspectiveNode?.type === "perspective"
-              ? perspectiveNode.data?.reflection
-              : undefined,
-        },
-      });
     }
 
     setNodes((currentNodes) => {

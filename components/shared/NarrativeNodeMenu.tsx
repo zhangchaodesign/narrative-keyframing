@@ -3,7 +3,6 @@
 import { useCallback } from "react";
 import { TbCheck, TbPencil } from "react-icons/tb";
 import { cn } from "@/lib/utiils/sharedUtils";
-import { eventTracker } from "@/lib/utils";
 
 type NarrativeNodeMenuProps = {
   nodeId?: string;
@@ -25,13 +24,6 @@ export function NarrativeNodeMenu({
   iconSize = 12,
 }: NarrativeNodeMenuProps) {
   const handleToggleEdit = useCallback(() => {
-    eventTracker({
-      action: isEditing ? "save_narrative_edit" : "start_narrative_edit",
-      data: {
-        nodeId: nodeId,
-        narrativeText: narrativeText,
-      },
-    });
     onToggleEdit?.();
   }, [isEditing, onToggleEdit, nodeId, narrativeText]);
 

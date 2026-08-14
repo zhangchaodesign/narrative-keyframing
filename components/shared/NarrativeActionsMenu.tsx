@@ -13,7 +13,6 @@ import {
   combineNarrativeTextsInGroup,
   generateNarratives,
 } from "@/lib/utiils/narrativeUtils";
-import { eventTracker } from "@/lib/utils";
 
 type NarrativeActionsMenuProps = {
   nodeId: string;
@@ -68,15 +67,6 @@ export function NarrativeActionsMenu({
       (node) => node.type === "narrativeGroup" && node.id === nodeId,
     );
 
-    eventTracker({
-      action: "open_narrative_generation_modal",
-      data: {
-        narrativeGroup: narrativeGroupNode ?? null,
-        event: preparedEventsData,
-        preSelectedSnippet: Array.from(preSelected),
-      },
-    });
-
     setEventsData(preparedEventsData);
     setPreSelectedSnippets(preSelected);
     setIsModalOpen(true);
@@ -96,23 +86,6 @@ export function NarrativeActionsMenu({
             ),
           ),
         }));
-
-        eventTracker({
-          action: "generate_narratives",
-          data: {
-            narrativeGroupId: nodeId,
-            snippetCount: selectedSnippetKeys.size,
-            eventCount: filteredEventsData.length,
-            customPrompt: customPrompt,
-            events: filteredEventsData.map((event) => ({
-              eventId: event.eventId,
-              eventTimeline: event.eventTimeline,
-              eventDescription: event.eventDescription,
-              snippetCount: event.snippets.length,
-              perspectiveCount: event.perspectives.length,
-            })),
-          },
-        });
 
         console.log("Generating narratives for events:", filteredEventsData);
 
@@ -141,14 +114,6 @@ export function NarrativeActionsMenu({
       return;
     }
 
-    eventTracker({
-      action: "populate_editor_from_narrative",
-      data: {
-        narrativeGroup: narrativeGroupNode ?? null,
-        combinedText: combinedText,
-      },
-    });
-
     const slateValue = SlateUtils.textToSlateState(combinedText);
     setValue(slateValue);
 
@@ -174,23 +139,6 @@ export function NarrativeActionsMenu({
       alert("No narrative nodes found in this group");
       return;
     }
-
-    eventTracker({
-      action: "open_narrative_table_view",
-      data: {
-        narrativeGroupId: nodeId,
-        events: preparedEventsData.map((event) => ({
-          narrativeNodeId: event.narrativeNodeId,
-          eventId: event.eventId,
-          eventTimeline: event.eventTimeline,
-          eventDescription: event.eventDescription,
-          narration: event.narration,
-          perspectives: event.perspectives,
-          snippets: event.snippets,
-          snippetUsages: event.snippetUsages,
-        })),
-      },
-    });
 
     setNarrativeTableGroupId(nodeId);
     setViewMode("table");

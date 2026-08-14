@@ -1,657 +1,181 @@
-"use client";
-
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import clsx from "clsx";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Header } from "@/components/Header";
-import { DynamicTextEditor } from "@/components/TextEditor/DynamicTextEditor";
-import { WorkflowCanvas } from "@/components/WorkflowCanvas/WorkflowCanvas";
-import { TimelineView } from "@/components/TrackView/TimelineView";
-import { ViewSwitcher } from "@/components/ViewSwitcher/ViewSwitcher";
-import { NarrativeTableView } from "@/components/TableView/NarrativeTableView";
-import { TbHighlight, TbPlus } from "react-icons/tb";
-import { useWorkflowStore } from "@/lib/stores/workflowStore";
+import Image from "next/image";
+import Link from "next/link";
 import {
-  adjustEventCountForAllClusters,
-  createPerspectiveGroup,
-  createNarrativeGroup,
-} from "@/lib/utiils/workflowUtils";
-import { buildTimelineData } from "@/lib/utiils/timelineUtils";
-import { useUiStore } from "@/lib/stores/uiStore";
-import { StudyEntryPanel, EndStudyButton } from "@/components/StudyManager";
-import { useStudyStore } from "@/lib/stores/studyStore";
-import { eventTracker } from "@/lib/utils";
-import {
-  initialEdges as dragonInitialEdges,
-  initialNodes as dragonInitialNodes,
-} from "@/components/WorkflowCanvas/workflow.constants.dragon";
-import type {
-  NarrativeCluster,
-  StoryOutlineCluster,
-} from "@/lib/types/timeline";
-import type {
-  ThirdPersonGroupNodeType,
-  WorkflowNode,
-  WorkflowEdge,
-} from "@/lib/types/workflow";
+  ArrowRight,
+  BookOpenText,
+  FileText,
+  Github,
+  Sparkles,
+} from "lucide-react";
 
-export default function Page() {
-  const started = useStudyStore((state) => state.started);
-  const viewMode = useUiStore((state) => state.viewMode);
-  const setViewMode = useUiStore((state) => state.setViewMode);
-  const eventCount = useUiStore((state) => state.eventCount);
-  const setEventCountStore = useUiStore((state) => state.setEventCount);
-  const selectedStoryClusterId = useUiStore(
-    (state) => state.selectedStoryClusterId,
-  );
-  const setSelectedStoryClusterId = useUiStore(
-    (state) => state.setSelectedStoryClusterId,
-  );
-  const selectedNarrativeClusterId = useUiStore(
-    (state) => state.selectedNarrativeClusterId,
-  );
-  const setSelectedNarrativeClusterId = useUiStore(
-    (state) => state.setSelectedNarrativeClusterId,
-  );
-  const [isEditorCollapsed, setIsEditorCollapsed] = useState(true);
-  const isInitialMount = useRef(true);
-
-  const nodes = useWorkflowStore((state) => state.nodes);
-  const edges = useWorkflowStore((state) => state.edges);
-  const setNodes = useWorkflowStore((state) => state.setNodes);
-  const setEdges = useWorkflowStore((state) => state.setEdges);
-
-  // Timeline cluster data for dropdowns
-  const { storyOutlineClusters, narrativeClusters } = useMemo(
-    () => buildTimelineData(nodes, edges),
-    [nodes, edges],
-  );
-
-  const filteredNarrativeClusters = useMemo(() => {
-    if (!selectedStoryClusterId) return narrativeClusters;
-    return narrativeClusters.filter(
-      (cluster) => cluster.linkedEventGroupId === selectedStoryClusterId,
-    );
-  }, [narrativeClusters, selectedStoryClusterId]);
-
-  // Auto-select first story cluster
-  useEffect(() => {
-    if (storyOutlineClusters.length > 0 && !selectedStoryClusterId) {
-      setSelectedStoryClusterId(storyOutlineClusters[0].id);
-    }
-  }, [storyOutlineClusters, selectedStoryClusterId, setSelectedStoryClusterId]);
-
-  // Auto-select first narrative cluster
-  useEffect(() => {
-    if (
-      selectedNarrativeClusterId &&
-      !filteredNarrativeClusters.find(
-        (c) => c.id === selectedNarrativeClusterId,
-      )
-    ) {
-      setSelectedNarrativeClusterId(
-        filteredNarrativeClusters.length > 0
-          ? filteredNarrativeClusters[0].id
-          : null,
-      );
-    } else if (
-      !selectedNarrativeClusterId &&
-      filteredNarrativeClusters.length > 0
-    ) {
-      setSelectedNarrativeClusterId(filteredNarrativeClusters[0].id);
-    }
-  }, [
-    filteredNarrativeClusters,
-    selectedNarrativeClusterId,
-    setSelectedNarrativeClusterId,
-  ]);
-
-  const formatStoryClusterLabel = (cluster: StoryOutlineCluster) => {
-    if (typeof cluster.eventGroupNumber === "number") {
-      return `${cluster.label} ${cluster.eventGroupNumber}`;
-    }
-    if (cluster.eventGroupId) {
-      return `${cluster.label} (${cluster.eventGroupId})`;
-    }
-    return cluster.label;
-  };
-
-  const formatNarrativeClusterLabel = (cluster: NarrativeCluster) => {
-    if (typeof cluster.narrativeGroupNumber === "number") {
-      return `${cluster.label} ${cluster.narrativeGroupNumber}`;
-    }
-    if (cluster.narrativeGroupId) {
-      return `${cluster.label} (${cluster.narrativeGroupId})`;
-    }
-    return cluster.label;
-  };
-
-  const handleStoryClusterChange = (
-    event: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-    const nextClusterId = event.target.value;
-    eventTracker({
-      action: "change_timeline_story_dropdown",
-      data: {
-        from:
-          storyOutlineClusters.find((c) => c.id === selectedStoryClusterId) ??
-          null,
-        to: storyOutlineClusters.find((c) => c.id === nextClusterId) ?? null,
-        optionCount: storyOutlineClusters.length,
-      },
-    });
-    setSelectedStoryClusterId(nextClusterId);
-  };
-
-  const handleNarrativeClusterChange = (
-    event: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-    const value = event.target.value;
-    const nextClusterId = value || null;
-    const narrativeOptions = selectedStoryClusterId
-      ? filteredNarrativeClusters
-      : narrativeClusters;
-    eventTracker({
-      action: "change_timeline_narrative_dropdown",
-      data: {
-        from:
-          narrativeOptions.find((c) => c.id === selectedNarrativeClusterId) ??
-          null,
-        to: narrativeOptions.find((c) => c.id === nextClusterId) ?? null,
-        optionCount: narrativeOptions.length + 1,
-      },
-    });
-    setSelectedNarrativeClusterId(nextClusterId);
-  };
-
-  const handleAddCharacterArc = useCallback(() => {
-    if (!selectedStoryClusterId) return;
-
-    const currentNodes = nodes as WorkflowNode[];
-    const currentEdges = edges as WorkflowEdge[];
-
-    // 1. Create the perspective group (character arc)
-    const perspResult = createPerspectiveGroup(currentNodes, currentEdges, {
-      characterName: "",
-      eventGroupId: selectedStoryClusterId,
-    });
-
-    if (perspResult.nodes.length === 0) return;
-
-    const perspGroupNode = perspResult.nodes.find(
-      (node) => node.type === "perspectiveGroup",
-    );
-    if (!perspGroupNode) return;
-
-    let allNewNodes = [...perspResult.nodes];
-    let allNewEdges = [...perspResult.edges];
-
-    if (selectedNarrativeClusterId) {
-      // 2a. Connect to the selected narrative cluster
-      const bridgingEdge: WorkflowEdge = {
-        id: `edge-${perspGroupNode.id}-${selectedNarrativeClusterId}`,
-        source: perspGroupNode.id,
-        target: selectedNarrativeClusterId,
-        sourceHandle: "narrative-bridge",
-        targetHandle: "group-bridge",
-        type: "customEdge",
-        animated: true,
-      };
-      allNewEdges.push(bridgingEdge);
-    } else if (narrativeClusters.length === 0) {
-      // 2b. No narrative clusters exist — auto-create one and connect
-      const narrativeResult = createNarrativeGroup(
-        [...currentNodes, ...allNewNodes],
-        { eventGroupId: selectedStoryClusterId },
-      );
-
-      if (narrativeResult.nodes.length > 0) {
-        const narrativeGroupNode = narrativeResult.nodes.find(
-          (node) => node.type === "narrativeGroup",
-        );
-
-        if (narrativeGroupNode) {
-          // Position narrative group below perspective group
-          const baselineHeight =
-            typeof perspGroupNode.style?.height === "number"
-              ? perspGroupNode.style.height
-              : 640;
-          const repositionedNarrativeNodes = narrativeResult.nodes.map(
-            (node) => {
-              if (node.id === narrativeGroupNode.id) {
-                return {
-                  ...node,
-                  position: {
-                    x: perspGroupNode.position.x,
-                    y: perspGroupNode.position.y + baselineHeight + 80,
-                  },
-                };
-              }
-              return node;
-            },
-          );
-
-          const newNarrativeGroup = repositionedNarrativeNodes.find(
-            (node) => node.type === "narrativeGroup",
-          )!;
-
-          const bridgingEdge: WorkflowEdge = {
-            id: `edge-${perspGroupNode.id}-${newNarrativeGroup.id}`,
-            source: perspGroupNode.id,
-            target: newNarrativeGroup.id,
-            sourceHandle: "narrative-bridge",
-            targetHandle: "group-bridge",
-            type: "customEdge",
-            animated: true,
-          };
-
-          allNewNodes = [...allNewNodes, ...repositionedNarrativeNodes];
-          allNewEdges = [
-            ...allNewEdges,
-            ...narrativeResult.edges,
-            bridgingEdge,
-          ];
-
-          // Auto-select the new narrative cluster after state updates
-          setTimeout(() => {
-            setSelectedNarrativeClusterId(newNarrativeGroup.id);
-          }, 0);
-        }
-      }
-    }
-
-    eventTracker({
-      action: "add_character_arc_from_timeline",
-      data: {
-        eventGroupId: selectedStoryClusterId,
-        connectedToNarrative: !!selectedNarrativeClusterId,
-        autoCreatedNarrative:
-          !selectedNarrativeClusterId && narrativeClusters.length === 0,
-        nodesCreated: allNewNodes.length,
-        edgesCreated: allNewEdges.length,
-      },
-    });
-
-    setNodes((prev) => [...prev, ...allNewNodes]);
-    setEdges((prev) => [...prev, ...allNewEdges]);
-  }, [
-    selectedStoryClusterId,
-    selectedNarrativeClusterId,
-    narrativeClusters.length,
-    nodes,
-    edges,
-    setNodes,
-    setEdges,
-    setSelectedNarrativeClusterId,
-  ]);
-
-  // Narrative table controls
-  const narrativeTableGroupId = useUiStore(
-    (state) => state.narrativeTableGroupId,
-  );
-  const setNarrativeTableGroupId = useUiStore(
-    (state) => state.setNarrativeTableGroupId,
-  );
-  const narrativeTableHighlight = useUiStore(
-    (state) => state.narrativeTableHighlight,
-  );
-  const setNarrativeTableHighlight = useUiStore(
-    (state) => state.setNarrativeTableHighlight,
-  );
-
-  const narrativeGroups = useMemo(
-    () =>
-      nodes.filter(
-        (node): node is ThirdPersonGroupNodeType =>
-          node.type === "narrativeGroup",
-      ),
-    [nodes],
-  );
-
-  const filteredTableNarrativeGroups = useMemo(() => {
-    if (!selectedStoryClusterId) return narrativeGroups;
-    return narrativeGroups.filter(
-      (group) => group.data?.connectedEventGroup?.id === selectedStoryClusterId,
-    );
-  }, [narrativeGroups, selectedStoryClusterId]);
-
-  const resolvedTableGroupId = useMemo(() => {
-    if (
-      narrativeTableGroupId &&
-      filteredTableNarrativeGroups.some(
-        (group) => group.id === narrativeTableGroupId,
-      )
-    ) {
-      return narrativeTableGroupId;
-    }
-    const activeGroup = filteredTableNarrativeGroups.find(
-      (group) => group.data?.isActiveInEditor,
-    );
-    return activeGroup?.id ?? filteredTableNarrativeGroups[0]?.id;
-  }, [filteredTableNarrativeGroups, narrativeTableGroupId]);
-
-  const formatTableNarrativeLabel = (group: ThirdPersonGroupNodeType) => {
-    const label = group.data?.label?.trim() || "Narrative";
-    if (typeof group.data?.narrativeGroupId === "number") {
-      return `${label} ${group.data.narrativeGroupId}`;
-    }
-    return group.id ? `${label} (${group.id})` : label;
-  };
-
-  const handleTableGroupChange = (
-    event: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-    const nextGroupId = event.target.value || undefined;
-    eventTracker({
-      action: "change_narrative_table_group",
-      data: {
-        from:
-          narrativeGroups.find((g) => g.id === resolvedTableGroupId) ?? null,
-        to: narrativeGroups.find((g) => g.id === nextGroupId) ?? null,
-        groupCount: narrativeGroups.length,
-      },
-    });
-    setNarrativeTableGroupId(nextGroupId);
-  };
-
-  const handleToggleHighlight = () => {
-    eventTracker({
-      action: narrativeTableHighlight
-        ? "disable_narrative_table_highlighting"
-        : "enable_narrative_table_highlighting",
-      data: { narrativeGroupId: resolvedTableGroupId ?? null },
-    });
-    setNarrativeTableHighlight(!narrativeTableHighlight);
-  };
-
-  const handleEventCountChange = (newCount: number) => {
-    eventTracker({
-      action: "change_event_count",
-      data: { from: eventCount, to: newCount },
-    });
-    setEventCountStore(newCount);
-  };
-
-  const handleLoadExamples = () => {
-    eventTracker({ action: "load_examples", data: null });
-
-    const targetEventCount = dragonInitialNodes.filter(
-      (node) => node.type === "event",
-    ).length;
-    if (eventCount !== targetEventCount) {
-      handleEventCountChange(targetEventCount);
-    }
-
-    setNodes(structuredClone(dragonInitialNodes));
-    setEdges(structuredClone(dragonInitialEdges));
-  };
-
-  const handleEditorToggle = () => {
-    eventTracker({
-      action: isEditorCollapsed ? "click_chevron_right" : "click_chevron_left",
-      data: {
-        isEditorCollapsedBeforeClick: isEditorCollapsed,
-      },
-    });
-    setIsEditorCollapsed((prev) => !prev);
-  };
-
-  useEffect(() => {
-    // Skip the initial mount to avoid triggering adjustment on page load
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-
-    // Get current state directly from the store to avoid stale closures
-    const currentNodes = useWorkflowStore.getState().nodes;
-    const currentEdges = useWorkflowStore.getState().edges;
-
-    const result = adjustEventCountForAllClusters(
-      currentNodes,
-      currentEdges,
-      eventCount,
-    );
-
-    setNodes(result.nodes);
-    setEdges(result.edges);
-  }, [eventCount, setNodes, setEdges]);
-
-  if (!started) {
-    return <StudyEntryPanel />;
-  }
-
+export default function HomePage() {
   return (
-    <div className="flex h-screen flex-col overflow-hidden">
-      {/* <div className="shrink-0">
-        <Header />
-      </div> */}
+    <main className="landing-page min-h-screen overflow-hidden">
+      <nav className="landing-nav" aria-label="Primary navigation">
+        <Link
+          href="/"
+          className="wordmark"
+          aria-label="Narrative Keyframing home"
+        >
+          <span>Narrative Keyframing</span>
+        </Link>
+        <div className="landing-nav-links">
+          <Link href="/project">About the project</Link>
+          <Link href="/tool" className="nav-tool-link">
+            Open tool <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+        </div>
+      </nav>
 
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full">
-          <div className="flex h-full items-stretch overflow-hidden">
-            <div
-              className={clsx(
-                "relative z-30 h-full transition-all duration-300 ease-in-out shrink-0",
-                isEditorCollapsed ? "w-0" : "w-[600px]",
-              )}
+      <section className="landing-hero">
+        <div className="hero-copy">
+          <h1>
+            <em>Narrative Keyframing</em>
+            <span>for Generative Creative Writing</span>
+          </h1>
+          <div className="hero-authors" aria-label="Authors">
+            <a
+              href="https://chaozhang.design/"
+              target="_blank"
+              rel="noreferrer"
+              className="hero-author"
             >
-              <div
-                className={clsx(
-                  "absolute inset-y-0 left-0 w-[600px] h-full transition-transform duration-300 ease-in-out",
-                  isEditorCollapsed ? "-translate-x-full" : "translate-x-0",
-                )}
-              >
-                <div className="h-full overflow-y-auto">
-                  <DynamicTextEditor conflictHighlight={null} />
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleEditorToggle}
-                aria-label={
-                  isEditorCollapsed ? "Show text editor" : "Hide text editor"
-                }
-                className="absolute top-1/2 left-full z-50 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-l-none rounded-r-full border border-gray-200 border-l-0 bg-white text-gray-600 hover:bg-gray-50"
-              >
-                {isEditorCollapsed ? (
-                  <ChevronRight className="h-5 w-5 mr-1" />
-                ) : (
-                  <ChevronLeft className="h-5 w-5 mr-1" />
-                )}
-              </button>
-            </div>
-
-            <div className="flex-1 min-w-0 overflow-hidden h-full flex flex-col">
-              {/* View Switcher */}
-              <div className="shrink-0 bg-gray-50 border-b border-gray-200 px-2 py-2 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <ViewSwitcher
-                    currentView={viewMode}
-                    onViewChange={setViewMode}
-                  />
-                  <div className="form-control">
-                    <label className="label py-0 px-1 mr-1">
-                      <span className="label-text text-xs">Plots</span>
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="20"
-                      value={eventCount}
-                      onChange={(e) =>
-                        handleEventCountChange(Number(e.target.value))
-                      }
-                      className="input input-sm input-bordered w-16 rounded-lg"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleLoadExamples}
-                    className="btn btn-sm btn-soft"
-                  >
-                    Load Examples
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  {viewMode === "timeline" && (
-                    <button
-                      type="button"
-                      onClick={handleAddCharacterArc}
-                      disabled={!selectedStoryClusterId}
-                      className="btn btn-sm btn-soft gap-1"
-                      title={
-                        !selectedStoryClusterId
-                          ? "Select a plot cluster first"
-                          : "Add a character arc"
-                      }
-                    >
-                      <TbPlus size={14} />
-                      Add Character Arc
-                    </button>
-                  )}
-                  {viewMode === "timeline" &&
-                    storyOutlineClusters.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <label
-                          htmlFor="story-cluster-select"
-                          className="text-xs text-gray-600 whitespace-nowrap"
-                        >
-                          Plot
-                        </label>
-                        <select
-                          id="story-cluster-select"
-                          value={selectedStoryClusterId || ""}
-                          onChange={handleStoryClusterChange}
-                          className="select select-sm select-bordered"
-                        >
-                          {storyOutlineClusters.map((cluster) => (
-                            <option key={cluster.id} value={cluster.id}>
-                              {formatStoryClusterLabel(cluster)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  {viewMode === "timeline" &&
-                    filteredNarrativeClusters.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <label
-                          htmlFor="narrative-cluster-select"
-                          className="text-xs text-gray-600"
-                        >
-                          Narrative
-                        </label>
-                        <select
-                          id="narrative-cluster-select"
-                          value={selectedNarrativeClusterId || ""}
-                          onChange={handleNarrativeClusterChange}
-                          className="select select-sm select-bordered"
-                        >
-                          {filteredNarrativeClusters.map((cluster) => (
-                            <option key={cluster.id} value={cluster.id}>
-                              {formatNarrativeClusterLabel(cluster)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-
-                  {viewMode === "table" && (
-                    <>
-                      {storyOutlineClusters.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <label
-                            htmlFor="table-story-cluster-select"
-                            className="text-xs text-gray-600 whitespace-nowrap"
-                          >
-                            Plot
-                          </label>
-                          <select
-                            id="table-story-cluster-select"
-                            value={selectedStoryClusterId || ""}
-                            onChange={handleStoryClusterChange}
-                            className="select select-sm select-bordered"
-                          >
-                            {storyOutlineClusters.map((cluster) => (
-                              <option key={cluster.id} value={cluster.id}>
-                                {formatStoryClusterLabel(cluster)}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <label
-                          htmlFor="table-narrative-group-select"
-                          className="text-xs text-gray-600 whitespace-nowrap"
-                        >
-                          Narrative
-                        </label>
-                        <select
-                          id="table-narrative-group-select"
-                          value={resolvedTableGroupId ?? ""}
-                          onChange={handleTableGroupChange}
-                          className="select select-sm select-bordered"
-                          disabled={filteredTableNarrativeGroups.length === 0}
-                        >
-                          {filteredTableNarrativeGroups.length === 0 ? (
-                            <option value="">No groups</option>
-                          ) : (
-                            filteredTableNarrativeGroups.map((group) => (
-                              <option key={group.id} value={group.id}>
-                                {formatTableNarrativeLabel(group)}
-                              </option>
-                            ))
-                          )}
-                        </select>
-                      </div>
-                      <button
-                        onClick={handleToggleHighlight}
-                        className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                          narrativeTableHighlight
-                            ? "bg-yellow-100 text-yellow-900 hover:bg-yellow-200"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                        title={
-                          narrativeTableHighlight
-                            ? "Disable evidence highlighting"
-                            : "Enable evidence highlighting"
-                        }
-                        aria-label={
-                          narrativeTableHighlight
-                            ? "Disable evidence highlighting"
-                            : "Enable evidence highlighting"
-                        }
-                      >
-                        <TbHighlight size={16} />
-                        <span>
-                          {narrativeTableHighlight
-                            ? "Highlighting On"
-                            : "Highlighting Off"}
-                        </span>
-                      </button>
-                    </>
-                  )}
-                  <EndStudyButton />
-                </div>
-              </div>
-
-              {/* View Content */}
-              <div className="flex-1 overflow-hidden">
-                {viewMode === "workflow" ? (
-                  <WorkflowCanvas eventCount={eventCount} />
-                ) : viewMode === "timeline" ? (
-                  <TimelineView />
-                ) : (
-                  <NarrativeTableView />
-                )}
-              </div>
-            </div>
+              <Image
+                src="/chao-zhang.jpg"
+                alt="Chao Zhang"
+                width={64}
+                height={64}
+              />
+              <span>
+                <strong>Chao Zhang</strong>
+                <small>Cornell University</small>
+              </span>
+            </a>
+            <a
+              href="https://abedavis.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="hero-author"
+            >
+              <Image
+                src="/abe-davis.png"
+                alt="Abe Davis"
+                width={64}
+                height={64}
+              />
+              <span>
+                <strong>Abe Davis</strong>
+                <small>Cornell University</small>
+              </span>
+            </a>
+          </div>
+          <p className="hero-description">
+            Inspired by keyframes in animation, Narrative Keyframing gives
+            writers fine-grained control over plot, character arcs, and
+            perspective, then leverages AI to interpolate these creative
+            decisions into prose.
+          </p>
+          <div className="hero-resources" aria-label="Project resources">
+            <a
+              href="https://arxiv.org/abs/2608.10337"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <FileText size={17} aria-hidden="true" />
+              Paper
+            </a>
+            <a
+              href="https://github.com/zhangchaodesign/narrative-keyframing"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Github size={17} aria-hidden="true" />
+              GitHub
+            </a>
           </div>
         </div>
-      </div>
-    </div>
+
+        <div className="video-placeholder">
+          <video
+            className="homepage-video"
+            src="/NarrativeKeyframing30s.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-label="Thirty-second preview of Narrative Keyframing"
+          />
+          <div className="video-paper-grain" aria-hidden="true" />
+          <span className="video-kicker">30-second preview</span>
+          <div className="video-title">
+            <small>Narrative Keyframing · UIST 2026</small>
+          </div>
+        </div>
+      </section>
+
+      <section className="entry-grid" aria-label="Explore Narrative Keyframing">
+        <Link href="/tool" className="entry-card entry-card-tool">
+          <div className="entry-card-copy">
+            <span className="entry-number">01</span>
+            <span className="entry-icon">
+              <Sparkles size={20} />
+            </span>
+            <h2>Enter the writing tool</h2>
+            <p>
+              Specify a set of narrative keyframes that describe import plot
+              points, as well as character development and perspective, which AI
+              can then interpolate with editable prose,
+            </p>
+            <span className="entry-action">
+              Start creating <ArrowRight size={18} />
+            </span>
+          </div>
+        </Link>
+
+        <Link href="/project" className="entry-card entry-card-project">
+          <div className="entry-card-copy">
+            <span className="entry-number">02</span>
+            <span className="entry-icon">
+              <BookOpenText size={20} />
+            </span>
+            <h2>Explore the project</h2>
+            <p>
+              Read the research, explore the analogy between keyframing in
+              animation and narrative, see how the three keyframe types connect,
+              and learn what we discovered with writers.
+            </p>
+            <span className="entry-action">
+              Read the story <ArrowRight size={18} />
+            </span>
+          </div>
+        </Link>
+      </section>
+
+      <footer className="landing-footer">
+        <span className="landing-authors">
+          <span className="landing-avatar-stack" aria-hidden="true">
+            <Image src="/chao-zhang.jpg" alt="" width={30} height={30} />
+            <Image src="/abe-davis.png" alt="" width={30} height={30} />
+          </span>
+          Chao Zhang &amp; Abe Davis · Cornell University
+        </span>
+        <span className="footer-institution">
+          <Image
+            className="uist-logo"
+            src="/uist_logo.png"
+            alt="UIST"
+            width={142}
+            height={27}
+          />
+          <Image
+            src="/cornell_logo.svg"
+            alt="Cornell University"
+            width={164}
+            height={28}
+          />
+        </span>
+      </footer>
+    </main>
   );
 }

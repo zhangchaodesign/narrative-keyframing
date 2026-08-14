@@ -1,10 +1,11 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { geistSans, geistMono, notoSerif, notoSans } from "./fonts";
+import { caveat, geistSans, geistMono, notoSerif, notoSans } from "./fonts";
 
 export const metadata: Metadata = {
-  title: "Characify",
-  description: "",
+  title: "Narrative Keyframing",
+  description:
+    "Shape plot, character arcs, and perspective with a keyframe-based creative writing tool.",
 };
 
 export default function RootLayout({
@@ -23,7 +24,7 @@ export default function RootLayout({
       </head>
       <body
         data-theme="light"
-        className={`${geistSans.variable} ${geistMono.variable} ${notoSerif.variable} ${notoSans.variable} antialiased`}
+        className={`${caveat.variable} ${geistSans.variable} ${geistMono.variable} ${notoSerif.variable} ${notoSans.variable} antialiased`}
         cz-shortcut-listen="false"
       >
         {children}

@@ -5,7 +5,6 @@ import { useWorkflowStore } from "@/lib/stores/workflowStore";
 import type { ThirdPersonGroupNodeType } from "@/lib/types/workflow";
 import { generateNarratives } from "@/lib/utiils/narrativeUtils";
 import { useUiStore } from "@/lib/stores/uiStore";
-import { eventTracker } from "@/lib/utils";
 import { NarrativeEventsTable } from "./NarrativeEventsTable";
 import { NarrativePromptDialog } from "./NarrativePromptDialog";
 import { NarrativeTableFooter } from "./NarrativeTableFooter";
@@ -134,16 +133,6 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
   const handleRegenerateNarrative = async () => {
     if (isRegenerating) return;
 
-    eventTracker({
-      action: "regenerate_narrative_table_start",
-      data: {
-        narrativeGroupId: resolvedGroupId ?? null,
-        eventCount: eventsData.length,
-        selectedSnippetCount: snippetCounts.selected,
-        customPrompt,
-      },
-    });
-
     setIsRegenerating(true);
     setShowPromptDialog(false);
 
@@ -160,14 +149,6 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
         events: filteredEventsData,
         customPrompt,
         setNodes,
-      });
-
-      eventTracker({
-        action: "regenerate_narrative_table_success",
-        data: {
-          narrativeGroupId: resolvedGroupId ?? null,
-          eventCount: filteredEventsData.length,
-        },
       });
 
       setEventsData((prevEventsData) =>
@@ -193,13 +174,6 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
       setCustomPrompt("");
     } catch (error) {
       console.error("Error regenerating narrative:", error);
-      eventTracker({
-        action: "regenerate_narrative_table_error",
-        data: {
-          narrativeGroupId: resolvedGroupId ?? null,
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-      });
       alert("Failed to regenerate narrative. Please try again.");
     } finally {
       setIsRegenerating(false);
@@ -207,24 +181,10 @@ export function NarrativeTableView({ groupId }: NarrativeTableViewProps) {
   };
 
   const handleOpenRegenerateDialog = () => {
-    eventTracker({
-      action: "open_narrative_table_regenerate_dialog",
-      data: {
-        narrativeGroupId: resolvedGroupId ?? null,
-        selectedSnippetCount: snippetCounts.selected,
-        totalSnippetCount: snippetCounts.total,
-      },
-    });
     setShowPromptDialog(true);
   };
 
   const handleCancelDialog = () => {
-    eventTracker({
-      action: "cancel_narrative_table_regenerate_dialog",
-      data: {
-        promptLength: customPrompt.length,
-      },
-    });
     setShowPromptDialog(false);
     setCustomPrompt("");
   };

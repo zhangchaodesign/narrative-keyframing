@@ -1,6 +1,7 @@
 import type { NarrativeEventData } from "@/lib/types/narrative";
 import type { TimelineItem } from "@/lib/types/timeline";
 import type { NarrativeNodeType, WorkflowNode } from "@/lib/types/workflow";
+import { getOpenAiApiKeyHeader } from "@/lib/openaiClientHeaders";
 
 export const findNarrativeGroupIdFromTrackItems = (
   items: TimelineItem[],
@@ -103,6 +104,7 @@ export const generateNarratives = async ({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...getOpenAiApiKeyHeader(),
       },
       body: JSON.stringify({
         events,

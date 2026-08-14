@@ -1,8 +1,8 @@
 "use server";
 
 import { NextResponse } from "next/server";
-import { openai } from "@ai-sdk/openai";
 import { generateObject } from "ai";
+import { getOpenAiProvider } from "@/lib/openaiServer";
 import { z } from "zod";
 import fs from "fs/promises";
 import path from "path";
@@ -122,6 +122,14 @@ const formatTraits = (traits: z.infer<typeof TraitListSchema>) => {
 
 export async function POST(request: Request) {
   try {
+    const openaiProvider = getOpenAiProvider(request);
+    if (!openaiProvider) {
+      return NextResponse.json(
+        { error: "Missing OpenAI API key" },
+        { status: 401 },
+      );
+    }
+
     const payload = RequestSchema.safeParse(await request.json());
 
     if (!payload.success) {
@@ -179,7 +187,7 @@ ${formatTraits(snapshot.traits)}`;
     console.log("Character interpolation prompt:", prompt);
 
     const { object } = await generateObject({
-      model: openai("gpt-4.1"),
+      model: openaiProvider("gpt-4.1"),
       schema: ResponseSchema,
       prompt,
     });

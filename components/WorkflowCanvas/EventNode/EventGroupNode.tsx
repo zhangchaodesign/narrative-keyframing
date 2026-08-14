@@ -16,7 +16,7 @@ import type {
 } from "@/lib/types/workflow";
 import { cn } from "@/lib/utiils/sharedUtils";
 import { geistMono } from "@/app/fonts";
-import { eventTracker } from "@/lib/utils";
+import { getOpenAiApiKeyHeader } from "@/lib/openaiClientHeaders";
 
 export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
@@ -59,20 +59,11 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
     }));
 
     try {
-      eventTracker({
-        action: "extract_characters",
-        data: {
-          eventGroupLabel: data?.label ?? "Plot Cluster",
-          eventGroupNumber: data?.eventGroupId ?? 0,
-          eventCount: eventNodes.length,
-          events: events,
-        },
-      });
-
       const response = await fetch("/api/extract-characters", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...getOpenAiApiKeyHeader(),
         },
         body: JSON.stringify({ events }),
       });
@@ -84,22 +75,8 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       const result = await response.json();
       // console.log("Character extraction result:", result);
       setExtractedCharacters(id, result.characters);
-
-      eventTracker({
-        action: "extract_characters_success",
-        data: {
-          characterCount: result.characters.length,
-          characters: result.characters,
-        },
-      });
     } catch (error) {
       console.error("Character extraction error:", error);
-      eventTracker({
-        action: "extract_characters_error",
-        data: {
-          error: error instanceof Error ? error.message : "Unknown error",
-        },
-      });
     } finally {
       setIsExtracting(false);
     }
@@ -128,32 +105,6 @@ export function EventGroupNode({ id, data }: NodeProps<GroupNodeType>) {
       if (result.nodes.length === 0) {
         return;
       }
-
-      eventTracker({
-        action: "add_perspective_group",
-        data: {
-          eventGroupLabel: data?.label ?? "Plot Cluster",
-          eventGroupNumber: data?.eventGroupId ?? 0,
-          characterName: characterName || "Custom",
-          isCustom: characterName === "",
-          eventCount: eventNodes.length,
-          events: events,
-          nodesCreated: result.nodes.length,
-          edgesCreated: result.edges.length,
-          createdNodes: result.nodes.map((node) => ({
-            id: node.id,
-            type: node.type,
-            data: node.data,
-            position: node.position,
-          })),
-          createdEdges: result.edges.map((edge) => ({
-            id: edge.id,
-            source: edge.source,
-            target: edge.target,
-            data: edge.data,
-          })),
-        },
-      });
 
       setNodes((nodes) => [...nodes, ...result.nodes]);
       setEdges((edges) => [...edges, ...result.edges]);

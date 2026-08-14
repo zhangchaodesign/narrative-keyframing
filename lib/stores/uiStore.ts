@@ -39,5 +39,7 @@ const uiStoreCreator: import("zustand").StateCreator<UiState> = (set) => ({
 });
 
 export const useUiStore = ENABLE_PERSIST
-  ? create<UiState>()(persist(uiStoreCreator, { name: "characify-ui-store" }))
+  ? create<UiState>()(
+      persist(uiStoreCreator, { name: "narrative-keyframing-ui-store" }),
+    )
   : create<UiState>()(uiStoreCreator);

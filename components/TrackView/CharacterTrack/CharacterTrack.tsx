@@ -27,7 +27,6 @@ import type {
   PerspectiveNodeType,
 } from "@/lib/types/workflow";
 import { createCharacterSnapshotFromPerspective } from "@/lib/utiils/characterUtils";
-import { eventTracker } from "@/lib/utils";
 
 interface CharacterTrackProps {
   characterName: string;
@@ -181,30 +180,12 @@ export function CharacterTrack({
   );
 
   const handleNameInputFocus = useCallback(
-    (_event: FocusEvent<HTMLInputElement>) => {
-      eventTracker({
-        action: "narrator_input_active",
-        data: {
-          clusterLabel: `${characterName}'s Perspective`,
-          narratorName: characterName,
-          perspectiveGroupId: perspectiveGroupId ?? "",
-        },
-      });
-    },
+    (_event: FocusEvent<HTMLInputElement>) => {},
     [characterName, perspectiveGroupId],
   );
 
   const handleNameInputBlur = useCallback(
-    (event: FocusEvent<HTMLInputElement>) => {
-      eventTracker({
-        action: "narrator_input_not_active",
-        data: {
-          clusterLabel: `${characterName}'s Perspective`,
-          narratorName: event.target.value ?? "",
-          perspectiveGroupId: perspectiveGroupId ?? "",
-        },
-      });
-    },
+    (event: FocusEvent<HTMLInputElement>) => {},
     [characterName, perspectiveGroupId],
   );
 
