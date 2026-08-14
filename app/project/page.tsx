@@ -11,9 +11,9 @@ import {
 import { PreviewVideo } from "@/components/PreviewVideo";
 
 export const metadata: Metadata = {
-  title: "Project · Narrative Keyframing",
+  title: "Narrative Keyframing",
   description:
-    "Narrative Keyframing for Generative Creative Writing — a research project from Cornell University.",
+    "Narrative Keyframing for Generative Creative Writing, a research project from Cornell University.",
 };
 
 const citation = `@inproceedings{zhang2026narrative,
