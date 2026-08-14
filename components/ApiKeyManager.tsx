@@ -79,7 +79,7 @@ export function ApiKeyEntryPanel() {
           </div>
           <div className="tool-gate-video">
             <iframe
-              src="https://www.youtube.com/embed/as-Gz14iRLY"
+              src="https://www.youtube.com/embed/3SguSBn7UlE"
               title="Narrative Keyframing tutorial"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen

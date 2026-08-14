@@ -53,7 +53,7 @@ export default function HomePage() {
               </span>
             </a>
             <a
-              href="https://abedavis.com/"
+              href="https://www.cs.cornell.edu/abe/group/"
               target="_blank"
               rel="noreferrer"
               className="hero-author"

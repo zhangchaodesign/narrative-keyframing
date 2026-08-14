@@ -55,7 +55,11 @@ export default function ProjectPage() {
               Chao Zhang
             </a>
             <span>and</span>
-            <a href="https://abedavis.com/" target="_blank" rel="noreferrer">
+            <a
+              href="https://www.cs.cornell.edu/abe/group/"
+              target="_blank"
+              rel="noreferrer"
+            >
               Abe Davis
             </a>
             <small>Cornell University</small>
@@ -166,7 +170,7 @@ export default function ProjectPage() {
           </h2>
           <div className="project-media-frame project-demo-frame">
             <iframe
-              src="https://www.youtube.com/embed/as-Gz14iRLY"
+              src="https://www.youtube.com/embed/3SguSBn7UlE"
               title="Full Narrative Keyframing demo video"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
