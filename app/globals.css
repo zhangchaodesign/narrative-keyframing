@@ -899,6 +899,7 @@
   border-radius: 18px;
   background: #fff;
   box-sizing: border-box;
+  box-shadow: 10px 10px 0 var(--ink);
 }
 
 .project-figure-frame img {
@@ -916,7 +917,7 @@
   max-width: 100%;
   inline-size: 100%;
   max-inline-size: 100%;
-  margin-top: 14px;
+  margin-top: 24px;
   box-sizing: border-box;
   color: rgba(58, 42, 63, 0.76);
   font-family: var(--font-geist-sans), sans-serif;
@@ -950,6 +951,7 @@
   border-radius: 18px;
   background: #fff;
   box-sizing: border-box;
+  box-shadow: 10px 10px 0 var(--ink);
 }
 
 .project-abstract-visual img {
@@ -1017,6 +1019,11 @@
   }
 
   .video-placeholder {
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+
+  .project-figure-frame,
+  .project-abstract-visual {
     box-shadow: 6px 6px 0 var(--ink);
   }
 

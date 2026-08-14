@@ -82,15 +82,22 @@ export default function ProjectPage() {
         </header>
 
         <section className="project-preview" aria-label="Project preview">
-          <div className="project-media-frame project-preview-frame">
+          <div className="video-placeholder">
             <video
+              className="homepage-video"
               src="/NarrativeKeyframing30s.mp4"
-              controls
+              autoPlay
+              muted
+              loop
               playsInline
               preload="metadata"
-              poster="/track.jpg"
               aria-label="Thirty-second preview of Narrative Keyframing"
             />
+            <div className="video-paper-grain" aria-hidden="true" />
+            <span className="video-kicker">30-second preview</span>
+            <div className="video-title">
+              <small>Narrative Keyframing · UIST 2026</small>
+            </div>
           </div>
         </section>
 
