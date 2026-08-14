@@ -47,7 +47,7 @@ export function PreviewVideo() {
         ) : (
           <VolumeX size={15} aria-hidden="true" />
         )}
-        {isMuted ? "Sound on" : "Sound off"}
+        {isMuted ? "Sound off" : "Sound on"}
       </button>
       <div className="video-title">
         <small>Narrative Keyframing · UIST 2026</small>
