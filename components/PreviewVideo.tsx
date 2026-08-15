@@ -43,9 +43,9 @@ export function PreviewVideo() {
         aria-pressed={!isMuted}
       >
         {isMuted ? (
-          <Volume2 size={15} aria-hidden="true" />
-        ) : (
           <VolumeX size={15} aria-hidden="true" />
+        ) : (
+          <Volume2 size={15} aria-hidden="true" />
         )}
         {isMuted ? "Sound off" : "Sound on"}
       </button>
