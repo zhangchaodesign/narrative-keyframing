@@ -5,6 +5,7 @@ import {
   BookOpenText,
   FileText,
   Github,
+  Video,
   Sparkles,
 } from "lucide-react";
 import { PreviewVideo } from "@/components/PreviewVideo";
@@ -92,6 +93,14 @@ export default function HomePage() {
             >
               <Github size={17} aria-hidden="true" />
               GitHub
+            </a>
+            <a
+              href="https://www.youtube.com/watch?v=3SguSBn7UlE"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Video size={17} aria-hidden="true" />
+              Demo
             </a>
           </div>
         </div>
